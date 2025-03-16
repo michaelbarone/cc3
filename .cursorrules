@@ -206,12 +206,26 @@ Implementation Plan
   - Added UI for user assignment to URL groups with checkboxes
   - Implemented API endpoints for managing user-group assignments
 [X] add users to url groups
-  - Created API endpoints for managing users in URL groups
-  - Implemented UI for assigning users to URL groups
-  - Added functionality to save user assignments
 [X] allow uploading an icon for the urls in the url groups
-[X] create an application config area, where you can name the application and upload an icon.  the name will be visible in the header, the icon can replace the name in the header.
+[X] create an application config area
 [ ] in the admin area for app configuration, add a way to upload a browser favicon
+[ ] Create independent URL management system
+    - Create new database schema for URLs and URL-Group mappings
+    - Write migration script for existing data
+    - Create URL management page in admin area
+    - Update URL Groups page to use new relationship model
+    - Add searchable URL selector with checkboxes for groups
+    - Implement URL ordering within groups
+    - Add mobile URL support with isMobile detection
+    - Move idle timeout setting to URL level
+
+Future Enhancements (Optional):
+- Add URL usage statistics (access counts, active users)
+- Add audit logging for URL-group relationship changes
+- Add warning system when removing URLs from active groups
+- Create tile-based URL management interface
+- Add URL analytics dashboard
+- Implement URL health monitoring
 
 8. User Settings
 [X] create a drop down menu under the username in the header.  it should have links to the admin area (if the user has admin permission) and to the user settings page

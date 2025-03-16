@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, useImperativeHandle, forwardRef } from 'react';
-import { Box, CircularProgress, Alert } from '@mui/material';
+import { Box, CircularProgress, Alert, useTheme, useMediaQuery } from '@mui/material';
 import { Url } from '@/app/lib/types';
 
 // Types for iframe states
@@ -69,6 +69,8 @@ const IframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
     const containerRef = useRef<HTMLDivElement | null>(null);
     const eventListeners = useRef<Record<string, { load: () => void; error: () => void }>>({});
     const isInitialMount = useRef(true);
+    const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
     // Track all available URLs
     const [allUrlsMap, setAllUrlsMap] = useState<Record<string, string>>({});
@@ -776,6 +778,12 @@ const IframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
       }
     }, [iframeStates]);
 
+    // Get the appropriate URL based on device type
+    const getUrlForDevice = (url: Url | null) => {
+      if (!url) return '';
+      return isMobile && url.urlMobile ? url.urlMobile : url.url;
+    };
+
     if (!activeUrl || !activeUrlId) {
       return (
         <Box
@@ -908,6 +916,20 @@ const IframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
               Content has been unloaded to save resources. Click to reload.
             </Alert>
           </Box>
+        )}
+
+        {activeUrl && (
+          <iframe
+            key={activeUrlId}
+            src={getUrlForDevice(activeUrl)}
+            style={{
+              width: '100%',
+              height: '100%',
+              border: 'none'
+            }}
+            onLoad={() => activeUrlId && onLoad?.(activeUrlId)}
+            onError={() => activeUrlId && onError?.(activeUrlId, 'Failed to load URL')}
+          />
         )}
       </Box>
     );
