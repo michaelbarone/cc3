@@ -88,12 +88,18 @@ export default function MenuBar({
   }, []);
 
   // Determine the final menu position with proper fallback
-  // 1. If a valid prop is passed, use it (this preserves backward compatibility)
-  // 2. If not, use the user preference
-  // 3. If no valid preference, default to 'side'
+  // 1. For mobile devices, always use side menu regardless of preference
+  // 2. If a valid prop is passed, use it (this preserves backward compatibility)
+  // 3. If not, use the user preference
+  // 4. If no valid preference, default to 'side'
   let menuPosition: 'side' | 'top' = 'side';
 
-  if (propMenuPosition === 'top' || propMenuPosition === 'side') {
+  // For mobile devices, always use side menu
+  if (isMobile) {
+    // On mobile devices, always use side menu layout regardless of user preference
+    // This ensures consistent and optimized UI for smaller screens
+    menuPosition = 'side';
+  } else if (propMenuPosition === 'top' || propMenuPosition === 'side') {
     menuPosition = propMenuPosition;
   } else if (!preferencesLoading && preferences.menuPosition) {
     menuPosition = preferences.menuPosition;
@@ -103,6 +109,7 @@ export default function MenuBar({
   console.log('MenuBar menuPosition:', {
     propMenuPosition,
     preferenceMenuPosition: preferences.menuPosition,
+    isMobile,
     finalMenuPosition: menuPosition,
     preferencesLoading
   });

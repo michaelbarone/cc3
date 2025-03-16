@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, ReactNode, useEffect } from 'react';
-import { Box, AppBar, Toolbar, IconButton, Typography, Drawer, useTheme, Menu, MenuItem, Divider } from '@mui/material';
+import { Box, AppBar, Toolbar, IconButton, Typography, Drawer, useTheme, Menu, MenuItem, Divider, useMediaQuery } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import CloseIcon from '@mui/icons-material/Close';
 import Brightness4Icon from '@mui/icons-material/Brightness4';
@@ -20,6 +20,11 @@ import { useUserPreferences } from '@/app/lib/hooks/useUserPreferences';
 
 const DRAWER_WIDTH = 240;
 
+interface AppConfig {
+  appName: string;
+  appLogo: string | null;
+}
+
 interface AppLayoutProps {
   children: ReactNode;
   menuContent: ReactNode;
@@ -36,6 +41,10 @@ export default function AppLayout({ children, menuContent, forceMenuPosition }: 
   const [userMenuAnchorEl, setUserMenuAnchorEl] = useState<null | HTMLElement>(null);
   const [menuPosition, setMenuPosition] = useState<'side' | 'top'>('side');
   const [initialRenderComplete, setInitialRenderComplete] = useState(false);
+  const [appConfig, setAppConfig] = useState<AppConfig>({ appName: 'Control Center', appLogo: null });
+
+  // Add check for mobile screens
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
   const userMenuOpen = Boolean(userMenuAnchorEl);
 
@@ -79,6 +88,14 @@ export default function AppLayout({ children, menuContent, forceMenuPosition }: 
 
   // Load menu position from user preferences unless a forced position is provided
   useEffect(() => {
+    // For mobile devices, always use side menu for drawer regardless of preference
+    // Note: This only affects the main layout. The drawer will always use the side menu style on mobile.
+    if (isMobile) {
+      console.log('Mobile device detected - using side menu for drawer');
+      setMenuPosition('side');
+      return;
+    }
+
     if (forceMenuPosition) {
       console.log('Using forced menu position:', forceMenuPosition);
       setMenuPosition(forceMenuPosition);
@@ -91,7 +108,24 @@ export default function AppLayout({ children, menuContent, forceMenuPosition }: 
       console.log('Using default menu position: side');
       setMenuPosition('side');
     }
-  }, [preferences.menuPosition, forceMenuPosition]);
+  }, [preferences.menuPosition, forceMenuPosition, isMobile]);
+
+  // Fetch app configuration
+  useEffect(() => {
+    const fetchAppConfig = async () => {
+      try {
+        const response = await fetch('/api/admin/app-config');
+        if (response.ok) {
+          const data = await response.json();
+          setAppConfig(data);
+        }
+      } catch (error) {
+        console.error('Error fetching app configuration:', error);
+      }
+    };
+
+    fetchAppConfig();
+  }, []);
 
   // Determine if we're still in a loading state
   const isLoading = !initialRenderComplete || (preferencesLoading && !forceMenuPosition);
@@ -113,9 +147,23 @@ export default function AppLayout({ children, menuContent, forceMenuPosition }: 
           }}
         >
           <Toolbar>
-            <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
-              Control Center
-            </Typography>
+            {appConfig.appLogo ? (
+              <Box
+                component="img"
+                src={appConfig.appLogo}
+                alt={appConfig.appName}
+                sx={{
+                  height: 40,
+                  maxWidth: 160,
+                  objectFit: 'contain',
+                  flexGrow: 1
+                }}
+              />
+            ) : (
+              <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
+                {appConfig.appName}
+              </Typography>
+            )}
             {user && (
               <>
                 <Box
@@ -209,30 +257,61 @@ export default function AppLayout({ children, menuContent, forceMenuPosition }: 
           }}
         >
           <Toolbar>
-            <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 0, mr: 4 }}>
-              Control Center
-            </Typography>
-
-            {/* Menu content in the top bar */}
-            <Box sx={{
-              display: { xs: 'none', md: 'flex' },
-              flexGrow: 1,
-              overflow: 'auto',
-              whiteSpace: 'nowrap'
-            }}>
-              {menuContent}
-            </Box>
-
-            {/* Mobile menu toggle */}
+            {/* Mobile menu toggle - place it first for mobile view */}
             <IconButton
               color="inherit"
               aria-label="open drawer"
               edge="start"
               onClick={handleDrawerToggle}
-              sx={{ mr: 2, display: { md: 'none' } }}
+              sx={{
+                mr: 2,
+                display: { md: 'none' },
+                order: { xs: 1, md: 'initial' }
+              }}
             >
               <MenuIcon />
             </IconButton>
+
+            {appConfig.appLogo ? (
+              <Box
+                component="img"
+                src={appConfig.appLogo}
+                alt={appConfig.appName}
+                sx={{
+                  height: 40,
+                  maxWidth: { xs: 120, sm: 160 },
+                  objectFit: 'contain',
+                  flexGrow: { xs: 0, md: 0 },
+                  mr: { xs: 1, md: 4 },
+                  order: { xs: 2, md: 'initial' }
+                }}
+              />
+            ) : (
+              <Typography
+                variant="h6"
+                noWrap
+                component="div"
+                sx={{
+                  flexGrow: { xs: 0, md: 0 },
+                  mr: { xs: 1, md: 4 },
+                  order: { xs: 2, md: 'initial' },
+                  fontSize: { xs: '1rem', sm: '1.25rem' }
+                }}
+              >
+                {appConfig.appName}
+              </Typography>
+            )}
+
+            {/* Menu content in the top bar - hide on mobile */}
+            <Box sx={{
+              display: { xs: 'none', md: 'flex' },
+              flexGrow: 1,
+              overflow: 'auto',
+              whiteSpace: 'nowrap',
+              order: { xs: 4, md: 'initial' }
+            }}>
+              {menuContent}
+            </Box>
 
             {user && (
               <>
@@ -241,16 +320,25 @@ export default function AppLayout({ children, menuContent, forceMenuPosition }: 
                     display: 'flex',
                     alignItems: 'center',
                     cursor: 'pointer',
-                    mr: 2
+                    mr: 2,
+                    ml: { xs: 'auto', md: 0 },
+                    order: { xs: 3, md: 'initial' }
                   }}
                   onClick={handleUserMenuClick}
                   aria-controls={userMenuOpen ? 'user-menu' : undefined}
                   aria-haspopup="true"
                   aria-expanded={userMenuOpen ? 'true' : undefined}
                 >
-                  <AccountCircleIcon sx={{ mr: 1 }} />
-                  <Typography variant="body1">{user.username}</Typography>
-                  <ArrowDropDownIcon />
+                  <AccountCircleIcon sx={{ mr: { xs: 0, sm: 1 } }} />
+                  <Typography
+                    variant="body1"
+                    sx={{
+                      display: { xs: 'none', sm: 'block' }
+                    }}
+                  >
+                    {user.username}
+                  </Typography>
+                  <ArrowDropDownIcon sx={{ display: { xs: 'none', sm: 'block' } }} />
                 </Box>
                 <Menu
                   id="user-menu"
@@ -291,13 +379,21 @@ export default function AppLayout({ children, menuContent, forceMenuPosition }: 
                 </Menu>
               </>
             )}
-            <IconButton color="inherit" onClick={colorMode.toggleColorMode}>
+            <IconButton
+              color="inherit"
+              onClick={colorMode.toggleColorMode}
+              sx={{
+                order: { xs: 5, md: 'initial' }
+              }}
+            >
               {theme.palette.mode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
             </IconButton>
           </Toolbar>
         </AppBar>
 
-        {/* Mobile drawer */}
+        {/* Mobile drawer - always use side layout regardless of preference
+            Even if user prefers top menu, the mobile drawer will show as a side menu
+            for better usability on small screens */}
         <Drawer
           variant="temporary"
           open={mobileOpen}
@@ -309,7 +405,7 @@ export default function AppLayout({ children, menuContent, forceMenuPosition }: 
             display: { xs: 'block', md: 'none' },
             '& .MuiDrawer-paper': {
               boxSizing: 'border-box',
-              width: '100%',
+              width: DRAWER_WIDTH,
               backgroundColor: theme.palette.background.default
             },
           }}
@@ -348,7 +444,8 @@ export default function AppLayout({ children, menuContent, forceMenuPosition }: 
       <AppBar
         position="fixed"
         sx={{
-          zIndex: theme.zIndex.drawer + 1,
+          width: { md: `calc(100% - ${DRAWER_WIDTH}px)` },
+          ml: { md: `${DRAWER_WIDTH}px` },
           bgcolor: theme.palette.background.paper,
           color: theme.palette.text.primary
         }}
@@ -359,13 +456,41 @@ export default function AppLayout({ children, menuContent, forceMenuPosition }: 
             aria-label="open drawer"
             edge="start"
             onClick={handleDrawerToggle}
-            sx={{ mr: 2, display: { md: 'none' } }}
+            sx={{
+              mr: 2,
+              display: { xs: 'block', md: 'none' },
+              order: { xs: 1, md: 'initial' }
+            }}
           >
             <MenuIcon />
           </IconButton>
-          <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
-            Control Center
-          </Typography>
+          {appConfig.appLogo ? (
+            <Box
+              component="img"
+              src={appConfig.appLogo}
+              alt={appConfig.appName}
+              sx={{
+                height: 40,
+                maxWidth: { xs: 120, sm: 160 },
+                objectFit: 'contain',
+                flexGrow: { xs: 0, md: 1 },
+                order: { xs: 2, md: 'initial' }
+              }}
+            />
+          ) : (
+            <Typography
+              variant="h6"
+              noWrap
+              component="div"
+              sx={{
+                flexGrow: { xs: 0, md: 1 },
+                order: { xs: 2, md: 'initial' },
+                fontSize: { xs: '1rem', sm: '1.25rem' }
+              }}
+            >
+              {appConfig.appName}
+            </Typography>
+          )}
           {user && (
             <>
               <Box
@@ -373,16 +498,25 @@ export default function AppLayout({ children, menuContent, forceMenuPosition }: 
                   display: 'flex',
                   alignItems: 'center',
                   cursor: 'pointer',
-                  mr: 2
+                  mr: 2,
+                  ml: { xs: 'auto', md: 0 },
+                  order: { xs: 3, md: 'initial' }
                 }}
                 onClick={handleUserMenuClick}
                 aria-controls={userMenuOpen ? 'user-menu' : undefined}
                 aria-haspopup="true"
                 aria-expanded={userMenuOpen ? 'true' : undefined}
               >
-                <AccountCircleIcon sx={{ mr: 1 }} />
-                <Typography variant="body1">{user.username}</Typography>
-                <ArrowDropDownIcon />
+                <AccountCircleIcon sx={{ mr: { xs: 0, sm: 1 } }} />
+                <Typography
+                  variant="body1"
+                  sx={{
+                    display: { xs: 'none', sm: 'block' }
+                  }}
+                >
+                  {user.username}
+                </Typography>
+                <ArrowDropDownIcon sx={{ display: { xs: 'none', sm: 'block' } }} />
               </Box>
               <Menu
                 id="user-menu"
@@ -423,7 +557,13 @@ export default function AppLayout({ children, menuContent, forceMenuPosition }: 
               </Menu>
             </>
           )}
-          <IconButton color="inherit" onClick={colorMode.toggleColorMode}>
+          <IconButton
+            color="inherit"
+            onClick={colorMode.toggleColorMode}
+            sx={{
+              order: { xs: 4, md: 'initial' }
+            }}
+          >
             {theme.palette.mode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
           </IconButton>
         </Toolbar>
