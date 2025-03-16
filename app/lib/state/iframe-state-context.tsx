@@ -3,6 +3,14 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Url } from '../types';
 
+// Constants for localStorage keys
+const STORAGE_KEYS = {
+  ACTIVE_URL_ID: 'iframe-state-active-url-id',
+  ACTIVE_URL: 'iframe-state-active-url',
+  LOADED_URL_IDS: 'iframe-state-loaded-url-ids',
+  KNOWN_URL_IDS: 'iframe-state-known-url-ids'
+};
+
 interface IframeStateContextType {
   activeUrlId: string | null;
   activeUrl: Url | null;
@@ -33,11 +41,61 @@ interface IframeStateProviderProps {
 }
 
 export function IframeStateProvider({ children }: IframeStateProviderProps) {
-  // Core state
-  const [activeUrlId, setActiveUrlId] = useState<string | null>(null);
-  const [activeUrl, setActiveUrlObject] = useState<Url | null>(null);
-  const [loadedUrlIds, setLoadedUrlIds] = useState<string[]>([]);
-  const [knownUrlIds, setKnownUrlIds] = useState<Set<string>>(new Set());
+  // Initialize state from localStorage if available
+  const [activeUrlId, setActiveUrlId] = useState<string | null>(() => {
+    if (typeof window === 'undefined') return null;
+    const stored = localStorage.getItem(STORAGE_KEYS.ACTIVE_URL_ID);
+    return stored ? stored : null;
+  });
+
+  const [activeUrl, setActiveUrlObject] = useState<Url | null>(() => {
+    if (typeof window === 'undefined') return null;
+    const stored = localStorage.getItem(STORAGE_KEYS.ACTIVE_URL);
+    return stored ? JSON.parse(stored) : null;
+  });
+
+  const [loadedUrlIds, setLoadedUrlIds] = useState<string[]>(() => {
+    if (typeof window === 'undefined') return [];
+    const stored = localStorage.getItem(STORAGE_KEYS.LOADED_URL_IDS);
+    return stored ? JSON.parse(stored) : [];
+  });
+
+  const [knownUrlIds, setKnownUrlIds] = useState<Set<string>>(() => {
+    if (typeof window === 'undefined') return new Set();
+    const stored = localStorage.getItem(STORAGE_KEYS.KNOWN_URL_IDS);
+    return new Set(stored ? JSON.parse(stored) : []);
+  });
+
+  // Persist state changes to localStorage
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    if (activeUrlId) {
+      localStorage.setItem(STORAGE_KEYS.ACTIVE_URL_ID, activeUrlId);
+    } else {
+      localStorage.removeItem(STORAGE_KEYS.ACTIVE_URL_ID);
+    }
+  }, [activeUrlId]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    if (activeUrl) {
+      localStorage.setItem(STORAGE_KEYS.ACTIVE_URL, JSON.stringify(activeUrl));
+    } else {
+      localStorage.removeItem(STORAGE_KEYS.ACTIVE_URL);
+    }
+  }, [activeUrl]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    localStorage.setItem(STORAGE_KEYS.LOADED_URL_IDS, JSON.stringify(loadedUrlIds));
+  }, [loadedUrlIds]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    localStorage.setItem(STORAGE_KEYS.KNOWN_URL_IDS, JSON.stringify(Array.from(knownUrlIds)));
+  }, [knownUrlIds]);
 
   // Helper: Update URL in browser history
   const updateBrowserHistory = (urlId: string) => {
