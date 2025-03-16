@@ -8,6 +8,7 @@ export interface User {
   username: string;
   isAdmin: boolean;
   lastActiveUrl?: string;
+  hasPassword?: boolean;
 }
 
 // Define context type

@@ -21,6 +21,7 @@ export async function GET() {
         username: true,
         isAdmin: true,
         lastActiveUrl: true,
+        passwordHash: true,
       },
     });
 
@@ -31,7 +32,14 @@ export async function GET() {
       );
     }
 
-    return NextResponse.json({ user: userData });
+    // Add hasPassword property based on whether passwordHash exists
+    const userWithHasPassword = {
+      ...userData,
+      hasPassword: !!userData.passwordHash,
+      passwordHash: undefined, // Remove passwordHash from the response
+    };
+
+    return NextResponse.json({ user: userWithHasPassword });
   } catch (error) {
     console.error('Me route error:', error);
     return NextResponse.json(

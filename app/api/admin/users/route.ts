@@ -2,10 +2,11 @@ import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 import { verifyToken } from '@/app/lib/auth/jwt';
 import { cookies } from 'next/headers';
+import { hashPassword } from '@/app/lib/auth/password';
 
 const prisma = new PrismaClient();
 
-// Get all URL groups (admin only)
+// GET - Fetch all users
 export async function GET() {
   try {
     // Verify admin access
@@ -22,23 +23,14 @@ export async function GET() {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    // Get all URL groups with their URLs
-    const urlGroups = await prisma.urlGroup.findMany({
-      include: {
-        urls: {
-          orderBy: {
-            displayOrder: 'asc'
-          }
-        }
-      },
-      orderBy: {
-        name: 'asc'
-      }
+    // Get all users from database
+    const users = await prisma.user.findMany({
+      orderBy: { username: 'asc' }
     });
 
-    return NextResponse.json(urlGroups);
+    return NextResponse.json(users);
   } catch (error) {
-    console.error('Error fetching URL groups:', error);
+    console.error('Error fetching users:', error);
     return NextResponse.json(
       { error: 'Internal Server Error' },
       { status: 500 }
@@ -48,7 +40,7 @@ export async function GET() {
   }
 }
 
-// Create a new URL group (admin only)
+// POST - Create a new user
 export async function POST(request: Request) {
   try {
     // Verify admin access
@@ -66,27 +58,46 @@ export async function POST(request: Request) {
     }
 
     // Parse request body
-    const { name, description } = await request.json();
+    const { username, password, isAdmin } = await request.json();
 
     // Validate input
-    if (!name || name.trim().length === 0) {
+    if (!username || username.trim().length === 0) {
       return NextResponse.json(
-        { error: 'Group name is required' },
+        { error: 'Username is required' },
         { status: 400 }
       );
     }
 
-    // Create new URL group
-    const newUrlGroup = await prisma.urlGroup.create({
+    // Check for existing user with same username
+    const existingUser = await prisma.user.findUnique({
+      where: { username }
+    });
+
+    if (existingUser) {
+      return NextResponse.json(
+        { error: 'Username already exists' },
+        { status: 409 }
+      );
+    }
+
+    // Hash password if provided
+    let passwordHash = null;
+    if (password) {
+      passwordHash = await hashPassword(password);
+    }
+
+    // Create new user
+    const newUser = await prisma.user.create({
       data: {
-        name,
-        description: description || null
+        username,
+        passwordHash,
+        isAdmin: isAdmin === true
       }
     });
 
-    return NextResponse.json(newUrlGroup, { status: 201 });
+    return NextResponse.json(newUser, { status: 201 });
   } catch (error) {
-    console.error('Error creating URL group:', error);
+    console.error('Error creating user:', error);
     return NextResponse.json(
       { error: 'Internal Server Error' },
       { status: 500 }

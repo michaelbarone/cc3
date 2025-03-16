@@ -135,6 +135,11 @@ const IframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
             iframe.style.height = `${docHeight}px`;
             iframe.style.width = `${docWidth}px`;
           }
+
+          // Ensure no scrollbars appear in the iframe content
+          if (iframe.contentDocument.body) {
+            iframe.contentDocument.body.style.overflow = 'hidden';
+          }
         }
       } catch {
         // Silently fail if cross-origin
@@ -267,6 +272,7 @@ const IframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
             height: '100%',
             border: 'none',
             background: '#fff',
+            overflow: 'hidden'
           }}
           sandbox="allow-same-origin allow-scripts allow-forms allow-popups"
           allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
@@ -298,7 +304,7 @@ const IframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
         position: 'relative',
         height: '100%',
         width: '100%',
-        overflow: 'auto'
+        overflow: 'hidden'
       }}>
         {/* Loading indicator */}
         {currentIframeState?.loading && (
@@ -422,6 +428,7 @@ const IframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
                 height: '100%',
                 visibility: activeUrlId === urlId ? 'visible' : 'hidden',
                 zIndex: activeUrlId === urlId ? 1 : 0,
+                overflow: 'hidden'
               }}
             >
               {createIframeElement(urlId, state.url)}

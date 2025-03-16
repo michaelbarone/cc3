@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
 
     // Only allow admin creation if the request is from an admin user
     if (isAdmin) {
-      const user = verifyToken();
+      const user = await verifyToken();
       if (!user?.isAdmin) {
         return NextResponse.json(
           { error: 'Unauthorized' },

@@ -4,7 +4,7 @@ import { prisma } from '@/app/lib/db/prisma';
 
 interface RouteParams {
   params: {
-    groupId: string;
+    id: string;
   };
 }
 
@@ -20,11 +20,11 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    const { groupId } = params;
+    const { id } = params;
 
     // Check if the URL group exists
     const urlGroup = await prisma.urlGroup.findUnique({
-      where: { id: groupId },
+      where: { id },
     });
 
     if (!urlGroup) {
@@ -36,7 +36,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     // Fetch all users assigned to the URL group
     const userUrlGroups = await prisma.userUrlGroup.findMany({
-      where: { urlGroupId: groupId },
+      where: { urlGroupId: id },
       include: {
         user: {
           select: {
@@ -77,7 +77,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    const { groupId } = params;
+    const { id } = params;
     const { userIds } = await request.json();
 
     if (!Array.isArray(userIds)) {
@@ -89,7 +89,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
     // Check if the URL group exists
     const urlGroup = await prisma.urlGroup.findUnique({
-      where: { id: groupId },
+      where: { id },
     });
 
     if (!urlGroup) {
@@ -117,7 +117,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     await prisma.$transaction(async (tx: typeof prisma) => {
       // Delete all existing user-URL group mappings for this group
       await tx.userUrlGroup.deleteMany({
-        where: { urlGroupId: groupId },
+        where: { urlGroupId: id },
       });
 
       // Create new mappings if any
@@ -125,7 +125,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
         await tx.userUrlGroup.createMany({
           data: userIds.map(userId => ({
             userId,
-            urlGroupId: groupId,
+            urlGroupId: id,
           })),
         });
       }

@@ -57,69 +57,51 @@ export default function DashboardPage() {
       if (!user) return;
 
       try {
-        // In a real app, this would be an API call
-        // For now, using mock data
-        const mockData: UrlGroup[] = [
-          {
-            id: '1',
-            name: 'Development Resources',
-            description: 'Useful development tools',
-            urls: [
-              {
-                id: '101',
-                title: 'GitHub',
-                url: 'https://github.com',
-                displayOrder: 1
-              },
-              {
-                id: '102',
-                title: 'Stack Overflow',
-                url: 'https://stackoverflow.com',
-                displayOrder: 2
-              }
-            ]
-          },
-          {
-            id: '2',
-            name: 'Documentation',
-            description: 'Reference docs',
-            urls: [
-              {
-                id: '201',
-                title: 'MDN Web Docs',
-                url: 'https://developer.mozilla.org',
-                displayOrder: 1
-              },
-              {
-                id: '202',
-                title: 'React Docs',
-                url: 'https://reactjs.org/docs/getting-started.html',
-                displayOrder: 2
-              }
-            ]
-          }
-        ];
+        setIsLoading(true);
 
-        setUrlGroups(mockData);
+        // Fetch URL groups from the API
+        const response = await fetch('/api/url-groups');
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch URL groups');
+        }
+
+        const data = await response.json();
+        const fetchedGroups = data.urlGroups || [];
+
+        setUrlGroups(fetchedGroups);
 
         // Set active URL from user's last active URL if available
         if (user.lastActiveUrl) {
           const urlId = user.lastActiveUrl;
 
           // Find the URL in the groups
-          for (const group of mockData) {
-            const url = group.urls.find(url => url.id === urlId);
+          for (const group of fetchedGroups) {
+            const url = group.urls.find((u: Url) => u.id === urlId);
             if (url) {
               setActiveUrlId(url.id);
               setActiveUrl(url);
               break;
             }
           }
+        } else if (fetchedGroups.length > 0 && fetchedGroups[0].urls.length > 0) {
+          // If no last active URL, set the first URL as active
+          const firstUrl = fetchedGroups[0].urls[0];
+          setActiveUrlId(firstUrl.id);
+          setActiveUrl(firstUrl);
+
+          // Save this as the last active URL
+          updateLastActiveUrl(firstUrl.id);
         }
 
         setIsLoading(false);
       } catch (error) {
         console.error('Error fetching URL groups:', error);
+        setNotification({
+          open: true,
+          message: 'Failed to load URL groups. Please try again.',
+          severity: 'error'
+        });
         setIsLoading(false);
       }
     };

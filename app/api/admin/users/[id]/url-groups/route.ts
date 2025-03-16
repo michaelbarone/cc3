@@ -1,38 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyToken } from '@/app/lib/auth/jwt';
 import { prisma } from '@/app/lib/db/prisma';
-import { PrismaClient } from '@prisma/client';
+import { UrlGroup } from '@prisma/client';
 
 interface RouteParams {
   params: {
-    userId: string;
+    id: string;
   };
-}
-
-// Define types for the data structures
-interface UrlData {
-  id: string;
-  title: string;
-  url: string;
-  iconPath: string | null;
-  displayOrder: number;
 }
 
 interface UrlGroupData {
   id: string;
   name: string;
   description: string | null;
-  urls: UrlData[];
-}
-
-interface UserUrlGroupWithData {
-  urlGroup: UrlGroupData;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 // Get all URL groups assigned to a user (admin only)
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
-    const user = verifyToken();
+    const user = await verifyToken();
 
     if (!user || !user.isAdmin) {
       return NextResponse.json(
@@ -41,11 +29,11 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    const { userId } = params;
+    const { id } = params;
 
     // Check if the user exists
     const targetUser = await prisma.user.findUnique({
-      where: { id: userId },
+      where: { id },
     });
 
     if (!targetUser) {
@@ -57,37 +45,18 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     // Fetch all URL groups assigned to the user
     const userUrlGroups = await prisma.userUrlGroup.findMany({
-      where: { userId },
+      where: { userId: id },
       include: {
-        urlGroup: {
-          include: {
-            urls: {
-              orderBy: {
-                displayOrder: 'asc',
-              },
-            },
-          },
-        },
-      },
-    }) as unknown as UserUrlGroupWithData[];
+        urlGroup: true
+      }
+    });
 
     // Transform the data to a more frontend-friendly format
-    const urlGroups = userUrlGroups.map(({ urlGroup }: UserUrlGroupWithData) => ({
-      id: urlGroup.id,
-      name: urlGroup.name,
-      description: urlGroup.description,
-      urls: urlGroup.urls.map((url: UrlData) => ({
-        id: url.id,
-        title: url.title,
-        url: url.url,
-        iconPath: url.iconPath,
-        displayOrder: url.displayOrder,
-      })),
-    }));
+    const urlGroups = userUrlGroups.map(({ urlGroup }: { urlGroup: UrlGroupData }) => urlGroup);
 
-    return NextResponse.json({ urlGroups });
+    return NextResponse.json(urlGroups);
   } catch (error) {
-    console.error('Error fetching user URL groups:', error);
+    console.error('Error fetching URL groups for user:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -98,7 +67,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 // Assign URL groups to a user (admin only)
 export async function POST(request: NextRequest, { params }: RouteParams) {
   try {
-    const user = verifyToken();
+    const user = await verifyToken();
 
     if (!user || !user.isAdmin) {
       return NextResponse.json(
@@ -107,19 +76,19 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    const { userId } = params;
+    const { id } = params;
     const { urlGroupIds } = await request.json();
 
     if (!Array.isArray(urlGroupIds) || urlGroupIds.length === 0) {
       return NextResponse.json(
-        { error: 'URL group IDs are required' },
+        { error: 'URL group IDs must be a non-empty array' },
         { status: 400 }
       );
     }
 
     // Check if the user exists
     const targetUser = await prisma.user.findUnique({
-      where: { id: userId },
+      where: { id },
     });
 
     if (!targetUser) {
@@ -145,18 +114,18 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    // Create new user-URL group mappings
+    // Create user-URL group mappings
     const createPromises = urlGroupIds.map(urlGroupId =>
       prisma.userUrlGroup.upsert({
         where: {
           userId_urlGroupId: {
-            userId,
+            userId: id,
             urlGroupId,
           },
         },
         update: {},
         create: {
-          userId,
+          userId: id,
           urlGroupId,
         },
       })
@@ -177,7 +146,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 // Replace all URL group assignments for a user (admin only)
 export async function PUT(request: NextRequest, { params }: RouteParams) {
   try {
-    const user = verifyToken();
+    const user = await verifyToken();
 
     if (!user || !user.isAdmin) {
       return NextResponse.json(
@@ -186,7 +155,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    const { userId } = params;
+    const { id } = params;
     const { urlGroupIds } = await request.json();
 
     if (!Array.isArray(urlGroupIds)) {
@@ -198,7 +167,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
     // Check if the user exists
     const targetUser = await prisma.user.findUnique({
-      where: { id: userId },
+      where: { id },
     });
 
     if (!targetUser) {
@@ -227,17 +196,17 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     }
 
     // Use transaction to ensure atomicity
-    await prisma.$transaction(async (tx: Omit<PrismaClient, '$connect' | '$disconnect' | '$on' | '$transaction' | '$use'>) => {
-      // Delete all existing user-URL group mappings
+    await prisma.$transaction(async (tx: typeof prisma) => {
+      // Delete all existing user-URL group mappings for this user
       await tx.userUrlGroup.deleteMany({
-        where: { userId },
+        where: { userId: id },
       });
 
       // Create new mappings if any
       if (urlGroupIds.length > 0) {
         await tx.userUrlGroup.createMany({
           data: urlGroupIds.map(urlGroupId => ({
-            userId,
+            userId: id,
             urlGroupId,
           })),
         });
@@ -246,7 +215,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Error replacing user URL groups:', error);
+    console.error('Error updating URL group assignments for user:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

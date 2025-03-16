@@ -1,0 +1,36 @@
+warning: in the working copy of '.cursorrules', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/api/admin/url-groups/route.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/api/auth/me/route.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/api/auth/register/route.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/api/url-groups/route.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/components/iframe/IframeContainer.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/components/layout/AppLayout.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/dashboard/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/lib/auth/auth-context.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/lib/auth/auth-service.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/lib/auth/jwt.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'next.config.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'package-lock.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'package.json', LF will be replaced by CRLF the next time Git touches it
+.cursorrules
+app/api/admin/url-groups/[groupId]/route.ts
+app/api/admin/url-groups/[groupId]/urls/[urlId]/route.ts
+app/api/admin/url-groups/[groupId]/urls/order/route.ts
+app/api/admin/url-groups/[groupId]/urls/route.ts
+app/api/admin/url-groups/[groupId]/users/route.ts
+app/api/admin/url-groups/route.ts
+app/api/admin/users/[userId]/url-groups/[urlGroupId]/route.ts
+app/api/admin/users/[userId]/url-groups/route.ts
+app/api/auth/me/route.ts
+app/api/auth/register/route.ts
+app/api/url-groups/route.ts
+app/components/iframe/IframeContainer.tsx
+app/components/layout/AppLayout.tsx
+app/dashboard/page.tsx
+app/lib/auth/auth-context.tsx
+app/lib/auth/auth-service.ts
+app/lib/auth/jwt.ts
+next.config.ts
+package-lock.json
+package.json
+prisma/dev.db

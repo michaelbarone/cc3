@@ -36,7 +36,7 @@ interface UserUrlGroupItem {
 
 export async function GET() {
   try {
-    const user = verifyToken();
+    const user = await verifyToken();
 
     if (!user) {
       return NextResponse.json(

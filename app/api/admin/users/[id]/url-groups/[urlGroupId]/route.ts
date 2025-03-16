@@ -4,7 +4,7 @@ import { prisma } from '@/app/lib/db/prisma';
 
 interface RouteParams {
   params: {
-    userId: string;
+    id: string;
     urlGroupId: string;
   };
 }
@@ -12,7 +12,7 @@ interface RouteParams {
 // Check if a user has a specific URL group assigned (admin only)
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
-    const user = verifyToken();
+    const user = await verifyToken();
 
     if (!user || !user.isAdmin) {
       return NextResponse.json(
@@ -21,11 +21,11 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    const { userId, urlGroupId } = params;
+    const { id, urlGroupId } = params;
 
     // Check if the user exists
     const targetUser = await prisma.user.findUnique({
-      where: { id: userId },
+      where: { id },
     });
 
     if (!targetUser) {
@@ -47,11 +47,11 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    // Check if the user has this URL group assigned
+    // Check if the user is assigned to the URL group
     const userUrlGroup = await prisma.userUrlGroup.findUnique({
       where: {
         userId_urlGroupId: {
-          userId,
+          userId: id,
           urlGroupId,
         },
       },
@@ -72,7 +72,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 // Assign a specific URL group to a user (admin only)
 export async function PUT(request: NextRequest, { params }: RouteParams) {
   try {
-    const user = verifyToken();
+    const user = await verifyToken();
 
     if (!user || !user.isAdmin) {
       return NextResponse.json(
@@ -81,11 +81,11 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    const { userId, urlGroupId } = params;
+    const { id, urlGroupId } = params;
 
     // Check if the user exists
     const targetUser = await prisma.user.findUnique({
-      where: { id: userId },
+      where: { id },
     });
 
     if (!targetUser) {
@@ -111,13 +111,13 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     await prisma.userUrlGroup.upsert({
       where: {
         userId_urlGroupId: {
-          userId,
+          userId: id,
           urlGroupId,
         },
       },
       update: {},
       create: {
-        userId,
+        userId: id,
         urlGroupId,
       },
     });
@@ -135,7 +135,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 // Remove a specific URL group from a user (admin only)
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
-    const user = verifyToken();
+    const user = await verifyToken();
 
     if (!user || !user.isAdmin) {
       return NextResponse.json(
@@ -144,11 +144,11 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    const { userId, urlGroupId } = params;
+    const { id, urlGroupId } = params;
 
     // Check if the user exists
     const targetUser = await prisma.user.findUnique({
-      where: { id: userId },
+      where: { id },
     });
 
     if (!targetUser) {
@@ -170,28 +170,11 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    // Check if the user has this URL group assigned
-    const userUrlGroup = await prisma.userUrlGroup.findUnique({
+    // Delete the user-URL group mapping if it exists
+    await prisma.userUrlGroup.deleteMany({
       where: {
         userId_urlGroupId: {
-          userId,
-          urlGroupId,
-        },
-      },
-    });
-
-    if (!userUrlGroup) {
-      return NextResponse.json(
-        { error: 'User does not have this URL group assigned' },
-        { status: 404 }
-      );
-    }
-
-    // Remove the user-URL group mapping
-    await prisma.userUrlGroup.delete({
-      where: {
-        userId_urlGroupId: {
-          userId,
+          userId: id,
           urlGroupId,
         },
       },

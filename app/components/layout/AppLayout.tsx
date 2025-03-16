@@ -1,12 +1,17 @@
 'use client';
 
 import { useState, ReactNode } from 'react';
-import { Box, AppBar, Toolbar, IconButton, Typography, Drawer, useTheme } from '@mui/material';
+import { Box, AppBar, Toolbar, IconButton, Typography, Drawer, useTheme, Menu, MenuItem, Divider } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import CloseIcon from '@mui/icons-material/Close';
 import Brightness4Icon from '@mui/icons-material/Brightness4';
 import Brightness7Icon from '@mui/icons-material/Brightness7';
 import LogoutIcon from '@mui/icons-material/Logout';
+import AccountCircleIcon from '@mui/icons-material/AccountCircle';
+import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
+import SettingsIcon from '@mui/icons-material/Settings';
+import DashboardIcon from '@mui/icons-material/Dashboard';
+import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import { ThemeContext } from '@/app/theme/theme-provider';
 import { useAuth } from '@/app/lib/auth/auth-context';
 import { useRouter } from 'next/navigation';
@@ -25,6 +30,17 @@ export default function AppLayout({ children, menuContent }: AppLayoutProps) {
   const theme = useTheme();
   const colorMode = useContext(ThemeContext);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [userMenuAnchorEl, setUserMenuAnchorEl] = useState<null | HTMLElement>(null);
+
+  const userMenuOpen = Boolean(userMenuAnchorEl);
+
+  const handleUserMenuClick = (event: React.MouseEvent<HTMLElement>) => {
+    setUserMenuAnchorEl(event.currentTarget);
+  };
+
+  const handleUserMenuClose = () => {
+    setUserMenuAnchorEl(null);
+  };
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
@@ -34,6 +50,24 @@ export default function AppLayout({ children, menuContent }: AppLayoutProps) {
     await logout();
     router.push('/login');
   };
+
+  const navigateToAdmin = () => {
+    handleUserMenuClose();
+    router.push('/admin');
+  };
+
+  const navigateToSettings = () => {
+    handleUserMenuClose();
+    router.push('/settings');
+  };
+
+  const navigateToDashboard = () => {
+    handleUserMenuClose();
+    router.push('/dashboard');
+  };
+
+  // For debugging
+  console.log('User data:', user);
 
   return (
     <Box sx={{ display: 'flex', height: '100vh' }}>
@@ -60,15 +94,64 @@ export default function AppLayout({ children, menuContent }: AppLayoutProps) {
             Control Center
           </Typography>
           {user && (
-            <Typography variant="body1" sx={{ mr: 2 }}>
-              {user.username}
-            </Typography>
+            <>
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  cursor: 'pointer',
+                  mr: 2
+                }}
+                onClick={handleUserMenuClick}
+                aria-controls={userMenuOpen ? 'user-menu' : undefined}
+                aria-haspopup="true"
+                aria-expanded={userMenuOpen ? 'true' : undefined}
+              >
+                <AccountCircleIcon sx={{ mr: 1 }} />
+                <Typography variant="body1">{user.username}</Typography>
+                <ArrowDropDownIcon />
+              </Box>
+              <Menu
+                id="user-menu"
+                anchorEl={userMenuAnchorEl}
+                open={userMenuOpen}
+                onClose={handleUserMenuClose}
+                MenuListProps={{
+                  'aria-labelledby': 'user-button',
+                }}
+                anchorOrigin={{
+                  vertical: 'bottom',
+                  horizontal: 'right',
+                }}
+                transformOrigin={{
+                  vertical: 'top',
+                  horizontal: 'right',
+                }}
+              >
+                <MenuItem onClick={navigateToDashboard}>
+                  <DashboardIcon sx={{ mr: 1 }} />
+                  Dashboard
+                </MenuItem>
+                <MenuItem onClick={navigateToSettings}>
+                  <SettingsIcon sx={{ mr: 1 }} />
+                  Settings
+                </MenuItem>
+                {user.isAdmin && (
+                  <MenuItem onClick={navigateToAdmin}>
+                    <AdminPanelSettingsIcon sx={{ mr: 1 }} />
+                    Admin Area
+                  </MenuItem>
+                )}
+                <Divider />
+                <MenuItem onClick={handleLogout}>
+                  <LogoutIcon sx={{ mr: 1 }} />
+                  Logout
+                </MenuItem>
+              </Menu>
+            </>
           )}
           <IconButton color="inherit" onClick={colorMode.toggleColorMode}>
             {theme.palette.mode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
-          </IconButton>
-          <IconButton color="inherit" onClick={handleLogout} aria-label="logout">
-            <LogoutIcon />
           </IconButton>
         </Toolbar>
       </AppBar>

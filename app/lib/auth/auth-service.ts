@@ -10,6 +10,7 @@ interface LoginResult {
     id: string;
     username: string;
     isAdmin: boolean;
+    hasPassword?: boolean;
   };
 }
 
@@ -90,6 +91,7 @@ export async function loginUser(username: string, password?: string): Promise<Lo
         id: user.id,
         username: user.username,
         isAdmin: user.isAdmin,
+        hasPassword: !!user.passwordHash,
       },
     };
   } catch (error) {
