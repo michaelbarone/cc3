@@ -28,7 +28,8 @@ import {
   Tooltip,
   Checkbox,
   FormControlLabel,
-  Chip
+  Chip,
+  Autocomplete
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
@@ -40,11 +41,13 @@ import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
 import GroupIcon from '@mui/icons-material/Group';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import IconUpload from '@/app/components/ui/IconUpload';
+import SearchIcon from '@mui/icons-material/Search';
 
 interface Url {
   id: string;
   title: string;
   url: string;
+  urlMobile: string | null;
   iconPath: string | null;
   displayOrder: number;
   idleTimeoutMinutes: number;
@@ -85,6 +88,7 @@ export default function UrlGroupManagement() {
   const [urlFormValues, setUrlFormValues] = useState({
     title: '',
     url: '',
+    urlMobile: '',
     iconPath: '',
     displayOrder: 0,
     idleTimeoutMinutes: 10
@@ -103,6 +107,17 @@ export default function UrlGroupManagement() {
   const [users, setUsers] = useState<User[]>([]);
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
+
+  const [availableUrls, setAvailableUrls] = useState<Url[]>([]);
+  const [selectedUrls, setSelectedUrls] = useState<Url[]>([]);
+  const [loadingUrls, setLoadingUrls] = useState(false);
+
+  const [similarUrls, setSimilarUrls] = useState<{ id: string; title: string; url: string; inGroup: boolean }[]>([]);
+  const [showSimilarUrlsDialog, setShowSimilarUrlsDialog] = useState(false);
+  const [pendingUrlSubmit, setPendingUrlSubmit] = useState<{
+    values: typeof urlFormValues;
+    groupId: string;
+  } | null>(null);
 
   const fetchUrlGroups = async () => {
     try {
@@ -150,6 +165,7 @@ export default function UrlGroupManagement() {
         setUrlFormValues({
           title: '',
           url: '',
+          urlMobile: '',
           iconPath: '',
           displayOrder: maxOrder + 1,
           idleTimeoutMinutes: 10
@@ -173,6 +189,7 @@ export default function UrlGroupManagement() {
         setUrlFormValues({
           title: url.title,
           url: url.url,
+          urlMobile: url.urlMobile || '',
           iconPath: url.iconPath || '',
           displayOrder: url.displayOrder,
           idleTimeoutMinutes: url.idleTimeoutMinutes
@@ -269,6 +286,18 @@ export default function UrlGroupManagement() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(urlFormValues)
         });
+
+        if (response.status === 409) {
+          const data = await response.json();
+          setSimilarUrls(data.matches);
+          setPendingUrlSubmit({
+            values: urlFormValues,
+            groupId: selectedGroup.id
+          });
+          setShowSimilarUrlsDialog(true);
+          return;
+        }
+
         successMessage = 'URL created successfully';
       } else if (dialogType === 'editUrl' && selectedGroup && selectedUrl) {
         response = await fetch(`/api/admin/url-groups/${selectedGroup.id}/urls/${selectedUrl.id}`, {
@@ -299,6 +328,41 @@ export default function UrlGroupManagement() {
       // Refresh data
       fetchUrlGroups();
       handleCloseDialog();
+    } catch (err) {
+      setSnackbar({
+        open: true,
+        message: err instanceof Error ? err.message : 'An unknown error occurred',
+        severity: 'error'
+      });
+    }
+  };
+
+  const handleForceUrlSubmit = async () => {
+    if (!pendingUrlSubmit) return;
+
+    try {
+      const response = await fetch(`/api/admin/url-groups/${pendingUrlSubmit.groupId}/urls?force=true`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(pendingUrlSubmit.values)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData?.error || 'Operation failed');
+      }
+
+      setSnackbar({
+        open: true,
+        message: 'URL created successfully',
+        severity: 'success'
+      });
+
+      fetchUrlGroups();
+      handleCloseDialog();
+      setShowSimilarUrlsDialog(false);
+      setPendingUrlSubmit(null);
+      setSimilarUrls([]);
     } catch (err) {
       setSnackbar({
         open: true,
@@ -437,6 +501,77 @@ export default function UrlGroupManagement() {
     }
   };
 
+  // Fetch available URLs
+  const fetchAvailableUrls = async () => {
+    try {
+      setLoadingUrls(true);
+      const response = await fetch('/api/admin/urls');
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch URLs');
+      }
+
+      const data = await response.json();
+      setAvailableUrls(data);
+    } catch (err) {
+      setSnackbar({
+        open: true,
+        message: err instanceof Error ? err.message : 'Failed to fetch URLs',
+        severity: 'error'
+      });
+    } finally {
+      setLoadingUrls(false);
+    }
+  };
+
+  // Add URL selection dialog
+  const [openUrlSelectionDialog, setOpenUrlSelectionDialog] = useState(false);
+
+  const handleOpenUrlSelectionDialog = () => {
+    fetchAvailableUrls();
+    setOpenUrlSelectionDialog(true);
+  };
+
+  const handleCloseUrlSelectionDialog = () => {
+    setOpenUrlSelectionDialog(false);
+  };
+
+  const handleUrlSelection = (urls: Url[]) => {
+    setSelectedUrls(urls);
+  };
+
+  const handleSaveUrlSelection = async () => {
+    if (!selectedGroup) return;
+
+    try {
+      const response = await fetch(`/api/admin/url-groups/${selectedGroup.id}/urls`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ urlIds: selectedUrls.map(url => url.id) }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData?.error || 'Failed to save URL assignments');
+      }
+
+      setSnackbar({
+        open: true,
+        message: 'URLs assigned successfully',
+        severity: 'success'
+      });
+
+      fetchUrlGroups();
+      handleCloseUrlSelectionDialog();
+    } catch (err) {
+      setSnackbar({
+        open: true,
+        message: err instanceof Error ? err.message : 'Failed to save URL assignments',
+        severity: 'error'
+      });
+    }
+  };
+
   if (loading && urlGroups.length === 0) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
@@ -537,8 +672,21 @@ export default function UrlGroupManagement() {
                       startIcon={<AddIcon />}
                       onClick={() => handleOpenDialog('createUrl', group)}
                       size="small"
+                      sx={{ mr: 1 }}
                     >
                       Add URL
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      startIcon={<LinkIcon />}
+                      onClick={() => {
+                        setSelectedGroup(group);
+                        setSelectedUrls(group.urls);
+                        handleOpenUrlSelectionDialog();
+                      }}
+                      size="small"
+                    >
+                      Select Existing URLs
                     </Button>
                   </Box>
 
@@ -571,7 +719,18 @@ export default function UrlGroupManagement() {
                                     {url.title}
                                   </Box>
                                 }
-                                secondary={url.url}
+                                secondary={
+                                  <Box>
+                                    <Typography variant="body2" component="div">
+                                      {url.url}
+                                    </Typography>
+                                    {url.urlMobile && (
+                                      <Typography variant="body2" color="text.secondary" component="div">
+                                        Mobile: {url.urlMobile}
+                                      </Typography>
+                                    )}
+                                  </Box>
+                                }
                               />
                               <ListItemSecondaryAction>
                                 <Tooltip title="Move Up">
@@ -733,6 +892,17 @@ export default function UrlGroupManagement() {
             <Grid item xs={12}>
               <TextField
                 margin="dense"
+                name="urlMobile"
+                label="Mobile URL"
+                fullWidth
+                variant="outlined"
+                value={urlFormValues.urlMobile || ''}
+                onChange={handleUrlFormChange}
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <TextField
+                margin="dense"
                 name="idleTimeoutMinutes"
                 label="Idle Timeout (minutes)"
                 type="number"
@@ -838,6 +1008,157 @@ export default function UrlGroupManagement() {
             disabled={loadingUsers}
           >
             Save
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* URL Selection Dialog */}
+      <Dialog
+        open={openUrlSelectionDialog}
+        onClose={handleCloseUrlSelectionDialog}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>Select URLs for {selectedGroup?.name}</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+            Select URLs to add to this group
+          </Typography>
+
+          {loadingUrls ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
+              <CircularProgress size={24} />
+            </Box>
+          ) : (
+            <Autocomplete
+              multiple
+              options={availableUrls}
+              getOptionLabel={(option) => option.title}
+              value={selectedUrls}
+              onChange={(_, newValue) => handleUrlSelection(newValue)}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  variant="outlined"
+                  label="Search URLs"
+                  placeholder="Type to search..."
+                  InputProps={{
+                    ...params.InputProps,
+                    startAdornment: (
+                      <>
+                        <SearchIcon color="action" />
+                        {params.InputProps.startAdornment}
+                      </>
+                    ),
+                  }}
+                />
+              )}
+              renderOption={(props, option) => (
+                <li {...props}>
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    {option.iconPath ? (
+                      <img
+                        src={option.iconPath}
+                        alt={option.title}
+                        width={16}
+                        height={16}
+                        style={{ marginRight: 8 }}
+                      />
+                    ) : (
+                      <LinkIcon fontSize="small" sx={{ mr: 1 }} />
+                    )}
+                    <Box>
+                      <Typography variant="body1">{option.title}</Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {option.url}
+                        {option.urlMobile && (
+                          <Typography component="span" variant="body2" color="text.secondary">
+                            {' '}
+                            (Mobile: {option.urlMobile})
+                          </Typography>
+                        )}
+                      </Typography>
+                    </Box>
+                  </Box>
+                </li>
+              )}
+            />
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseUrlSelectionDialog}>Cancel</Button>
+          <Button
+            onClick={handleSaveUrlSelection}
+            variant="contained"
+            disabled={loadingUrls}
+          >
+            Save
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Similar URLs Dialog */}
+      <Dialog
+        open={showSimilarUrlsDialog}
+        onClose={() => {
+          setShowSimilarUrlsDialog(false);
+          setPendingUrlSubmit(null);
+          setSimilarUrls([]);
+        }}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>Similar URLs Found</DialogTitle>
+        <DialogContent>
+          <Box sx={{ mb: 4, p: 2, bgcolor: 'background.paper', borderRadius: 1, border: 1, borderColor: 'divider' }}>
+            <Typography variant="subtitle2" color="primary" gutterBottom>
+              New URL you are trying to add:
+            </Typography>
+            <Typography variant="body1" gutterBottom>
+              {pendingUrlSubmit?.values.title}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {pendingUrlSubmit?.values.url}
+            </Typography>
+          </Box>
+
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            The following similar URLs already exist in the system:
+          </Typography>
+          <List>
+            {similarUrls.map((url) => (
+              <ListItem key={url.id} sx={{ bgcolor: 'action.hover', mb: 1, borderRadius: 1 }}>
+                <ListItemText
+                  primary={url.title}
+                  secondary={
+                    <Box>
+                      <Typography variant="body2" component="span">
+                        {url.url}
+                      </Typography>
+                      {url.inGroup && (
+                        <Typography variant="body2" color="warning.main" component="div">
+                          This URL is already assigned to a group
+                        </Typography>
+                      )}
+                    </Box>
+                  }
+                />
+              </ListItem>
+            ))}
+          </List>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => {
+              setShowSimilarUrlsDialog(false);
+              setPendingUrlSubmit(null);
+              setSimilarUrls([]);
+            }}
+          >
+            Cancel
+          </Button>
+          <Button onClick={handleForceUrlSubmit} variant="contained" color="warning">
+            Create Anyway
           </Button>
         </DialogActions>
       </Dialog>

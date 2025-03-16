@@ -10,6 +10,7 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import PeopleIcon from '@mui/icons-material/People';
 import LinkIcon from '@mui/icons-material/Link';
 import SettingsIcon from '@mui/icons-material/Settings';
+import FolderIcon from '@mui/icons-material/Folder';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 
@@ -35,7 +36,8 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const menuItems = [
     { text: 'Dashboard', icon: <DashboardIcon />, href: '/admin' },
     { text: 'User Management', icon: <PeopleIcon />, href: '/admin/users' },
-    { text: 'URL Groups', icon: <LinkIcon />, href: '/admin/url-groups' },
+    { text: 'URLs', icon: <LinkIcon />, href: '/admin/urls' },
+    { text: 'URL Groups', icon: <FolderIcon />, href: '/admin/url-groups' },
     { text: 'App Configuration', icon: <SettingsIcon />, href: '/admin/app-config' },
   ];
 
