@@ -8,8 +8,8 @@ export default function SettingsPage() {
   const router = useRouter();
 
   useEffect(() => {
-    // Redirect to password settings page since it's the first available settings page
-    router.push('/settings/password');
+    // Redirect to profile settings page since it's the first available settings page
+    router.push('/settings/profile');
   }, [router]);
 
   return (
