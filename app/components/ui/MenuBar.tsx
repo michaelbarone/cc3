@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   List,
   ListItemButton,
@@ -69,6 +69,7 @@ export default function MenuBar({
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const { preferences, loading: preferencesLoading } = useUserPreferences();
+  const isInitialMount = useRef(true);
 
   // Track if this is the first render
   const [initialRenderComplete, setInitialRenderComplete] = useState(false);
@@ -81,7 +82,11 @@ export default function MenuBar({
   const [groupMenuAnchorEl, setGroupMenuAnchorEl] = useState<null | HTMLElement>(null);
 
   // Track all known URL IDs (used to determine if a URL has been loaded before)
-  const [knownUrlIds, setKnownUrlIds] = useState<Set<string>>(new Set());
+  const [knownUrlIds, setKnownUrlIds] = useState<Set<string>>(() => {
+    if (typeof window === 'undefined') return new Set();
+    const stored = localStorage.getItem('iframe-state-known-url-ids');
+    return new Set(stored ? JSON.parse(stored) : []);
+  });
 
   // Add state to track if a long press is in progress
   const [isLongPressInProgress, setIsLongPressInProgress] = useState(false);
@@ -90,6 +95,47 @@ export default function MenuBar({
   useEffect(() => {
     setInitialRenderComplete(true);
   }, []);
+
+  // Restore state from localStorage on mount
+  useEffect(() => {
+    if (!isInitialMount.current) return;
+    isInitialMount.current = false;
+
+    // Restore open groups state
+    const storedOpenGroups = localStorage.getItem('menu-bar-open-groups');
+    if (storedOpenGroups) {
+      try {
+        setOpenGroups(JSON.parse(storedOpenGroups));
+      } catch (error) {
+        console.error('Error restoring open groups state:', error);
+      }
+    }
+
+    // If we have an active URL, ensure its group is open
+    if (activeUrlId) {
+      const activeGroup = urlGroups.find(group =>
+        group.urls.some(url => url.id === activeUrlId)
+      );
+      if (activeGroup) {
+        setOpenGroups(prev => ({
+          ...prev,
+          [activeGroup.id]: true
+        }));
+      }
+    }
+  }, [urlGroups, activeUrlId]);
+
+  // Persist open groups state
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    localStorage.setItem('menu-bar-open-groups', JSON.stringify(openGroups));
+  }, [openGroups]);
+
+  // Persist known URL IDs
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    localStorage.setItem('iframe-state-known-url-ids', JSON.stringify(Array.from(knownUrlIds)));
+  }, [knownUrlIds]);
 
   // Determine the final menu position with proper fallback
   // 1. For mobile devices, always use side menu regardless of preference

@@ -68,12 +68,65 @@ const IframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
     const previousActiveUrlIdRef = useRef<string | null>(null);
     const containerRef = useRef<HTMLDivElement | null>(null);
     const eventListeners = useRef<Record<string, { load: () => void; error: () => void }>>({});
+    const isInitialMount = useRef(true);
 
     // Track all available URLs
     const [allUrlsMap, setAllUrlsMap] = useState<Record<string, string>>({});
 
     // Reference for idle timeout checking interval
     const idleCheckIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+    // Initialize state from localStorage on mount
+    useEffect(() => {
+      if (!isInitialMount.current) return;
+      isInitialMount.current = false;
+
+      const storedLoadedUrlIds = localStorage.getItem('iframe-state-loaded-url-ids');
+      if (storedLoadedUrlIds) {
+        try {
+          const loadedIds = JSON.parse(storedLoadedUrlIds);
+
+          // Initialize states for loaded URLs
+          const initialStates: Record<string, IframeState> = {};
+          loadedIds.forEach((urlId: string) => {
+            if (allUrlsMap[urlId]) {
+              initialStates[urlId] = {
+                id: urlId,
+                url: allUrlsMap[urlId],
+                loading: false,
+                error: null,
+                isUnloaded: false,
+                lastActivityTime: Date.now(),
+                idleTimeoutMinutes: 10
+              };
+            }
+          });
+
+          // Set initial states
+          setIframeStates(initialStates);
+
+          // Notify parent about loaded URLs
+          loadedIds.forEach((urlId: string) => {
+            if (onLoad) onLoad(urlId);
+          });
+
+          console.log('Restored iframe states:', {
+            loadedIds,
+            initialStates: Object.keys(initialStates)
+          });
+        } catch (error) {
+          console.error('Error restoring iframe states:', error);
+        }
+      }
+    }, [allUrlsMap, onLoad]);
+
+    // Sync iframeStates with localStorage
+    useEffect(() => {
+      const loadedIds = Object.keys(iframeStates).filter(
+        id => !iframeStates[id].isUnloaded && !iframeStates[id].loading && !iframeStates[id].error
+      );
+      localStorage.setItem('iframe-state-loaded-url-ids', JSON.stringify(loadedIds));
+    }, [iframeStates]);
 
     // Initialize the global container and move iframes there
     useEffect(() => {
