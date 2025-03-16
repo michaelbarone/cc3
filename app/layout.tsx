@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "./theme/theme-provider";
 import { AuthProvider } from "./lib/auth/auth-context";
+import { Providers } from './providers';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -15,8 +16,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Control Center",
-  description: "A place for all the things",
+  title: "URL Dashboard",
+  description: "A dashboard for managing and displaying URLs in iframes",
 };
 
 export default function RootLayout({
@@ -27,11 +28,13 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
-        <ThemeProvider>
-          <AuthProvider>
-            {children}
-          </AuthProvider>
-        </ThemeProvider>
+        <AuthProvider>
+          <ThemeProvider>
+            <Providers>
+              {children}
+            </Providers>
+          </ThemeProvider>
+        </AuthProvider>
       </body>
     </html>
   );

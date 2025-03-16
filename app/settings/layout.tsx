@@ -7,6 +7,8 @@ import LockIcon from '@mui/icons-material/Lock';
 import AppLayout from '@/app/components/layout/AppLayout';
 import { usePathname } from 'next/navigation';
 import { useRouter } from 'next/navigation';
+import AccountCircleIcon from '@mui/icons-material/AccountCircle';
+import BrushIcon from '@mui/icons-material/Brush';
 
 interface SettingsLayoutProps {
   children: ReactNode;
@@ -19,9 +21,19 @@ function SettingsSidebar() {
 
   const menuItems = [
     {
+      title: 'Profile',
+      icon: <AccountCircleIcon />,
+      path: '/settings/profile'
+    },
+    {
       title: 'Password',
       icon: <LockIcon />,
       path: '/settings/password'
+    },
+    {
+      title: 'Appearance',
+      icon: <BrushIcon />,
+      path: '/settings/appearance'
     }
     // Add more settings pages here as the app grows
   ];
@@ -71,7 +83,7 @@ function SettingsSidebar() {
 
 export default function SettingsLayout({ children }: SettingsLayoutProps) {
   return (
-    <AppLayout menuContent={<SettingsSidebar />}>
+    <AppLayout menuContent={<SettingsSidebar />} forceMenuPosition="side">
       <Box
         sx={{
           display: 'flex',

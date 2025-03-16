@@ -55,14 +55,22 @@ export default function LoginPage() {
     try {
       // Handle login
       if (!isRegistering) {
-        const result = await login(username, password);
-        if (result.success) {
+        try {
+          await login(username, password);
+          // If we get here, login was successful
           router.push(redirectPath);
-        } else {
-          if (result.requiresPassword) {
-            setRequiresPassword(true);
+        } catch (error) {
+          if (error instanceof Error) {
+            // Check if the error message indicates password is required
+            if (error.message.includes('Password required')) {
+              setRequiresPassword(true);
+              setError('Password is required for this account');
+            } else {
+              setError(error.message || 'Login failed');
+            }
+          } else {
+            setError('Login failed');
           }
-          setError(result.message || 'Login failed');
         }
       }
       // Handle registration

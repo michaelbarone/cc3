@@ -2,16 +2,9 @@
 
 import { useState, useRef, useEffect, useImperativeHandle, forwardRef } from 'react';
 import { Box, CircularProgress, Alert } from '@mui/material';
+import { Url } from '@/app/lib/types';
 
-// Types for URLs and iframe states
-interface Url {
-  id: string;
-  title: string;
-  url: string;
-  iconPath?: string;
-  displayOrder: number;
-}
-
+// Types for iframe states
 interface IframeState {
   id: string;
   url: string;

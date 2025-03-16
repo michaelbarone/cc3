@@ -11,6 +11,9 @@ interface LoginResult {
     username: string;
     isAdmin: boolean;
     hasPassword?: boolean;
+    lastActiveUrl?: string;
+    avatarUrl?: string;
+    menuPosition?: string;
   };
 }
 
@@ -36,6 +39,9 @@ export async function loginUser(username: string, password?: string): Promise<Lo
         username: true,
         passwordHash: true,
         isAdmin: true,
+        lastActiveUrl: true,
+        avatarUrl: true,
+        menuPosition: true,
       },
     });
 
@@ -77,7 +83,7 @@ export async function loginUser(username: string, password?: string): Promise<Lo
     const token = generateToken(payload);
 
     // Set the token as a cookie
-    setAuthCookie(token);
+    await setAuthCookie(token);
 
     // Update last active timestamp
     await prisma.user.update({
@@ -92,6 +98,9 @@ export async function loginUser(username: string, password?: string): Promise<Lo
         username: user.username,
         isAdmin: user.isAdmin,
         hasPassword: !!user.passwordHash,
+        lastActiveUrl: user.lastActiveUrl || undefined,
+        avatarUrl: user.avatarUrl || undefined,
+        menuPosition: user.menuPosition || 'side',
       },
     };
   } catch (error) {

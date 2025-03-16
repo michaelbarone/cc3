@@ -9,15 +9,18 @@ export interface User {
   isAdmin: boolean;
   lastActiveUrl?: string;
   hasPassword?: boolean;
+  avatarUrl?: string;
+  menuPosition?: 'side' | 'top';
 }
 
 // Define context type
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  login: (username: string, password?: string) => Promise<{ success: boolean; message?: string; requiresPassword?: boolean }>;
+  login: (username: string, password?: string) => Promise<User>;
   logout: () => Promise<void>;
   register: (username: string, password?: string) => Promise<{ success: boolean; message?: string }>;
+  updateUser: (updatedUser: User) => void;
 }
 
 // Create context
@@ -53,7 +56,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }, []);
 
   // Login function
-  const login = async (username: string, password?: string) => {
+  const login = async (username: string, password?: string): Promise<User> => {
+    setLoading(true);
     try {
       const response = await fetch('/api/auth/login', {
         method: 'POST',
@@ -63,21 +67,26 @@ export function AuthProvider({ children }: AuthProviderProps) {
         body: JSON.stringify({ username, password }),
       });
 
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || errorData.message || 'Login failed');
+      }
+
       const data = await response.json();
 
-      if (response.ok) {
-        setUser(data.user);
-        return { success: true };
-      } else {
-        return {
-          success: false,
-          message: data.error,
-          requiresPassword: data.requiresPassword
-        };
+      // Check if we have the expected response structure
+      if (!data.success || !data.user) {
+        throw new Error('Invalid response from server');
       }
+
+      // Set the user state from the user property
+      setUser(data.user);
+      return data.user;
     } catch (error) {
       console.error('Login error:', error);
-      return { success: false, message: 'An error occurred during login' };
+      throw error;
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -118,12 +127,18 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   };
 
+  // Update user function
+  const updateUser = (updatedUser: User) => {
+    setUser(updatedUser);
+  };
+
   const value = {
     user,
     loading,
     login,
     logout,
     register,
+    updateUser,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
