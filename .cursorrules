@@ -1,0 +1,180 @@
+# Instructions
+
+During your interaction with the user, if you find anything reusable in this project (e.g. version of a library, model name), especially about a fix to a mistake you made or a correction you received, you should take note in the `Lessons` section in the `.cursorrules` file so you will not make the same mistake again.
+
+You should also use the `.cursorrules` file as a Scratchpad to organize your thoughts. Especially when you receive a new task, you should first review the content of the Scratchpad, clear old different task if necessary, first explain the task, and plan the steps you need to take to complete the task. You can use todo markers to indicate the progress, e.g.
+[X] Task 1
+[ ] Task 2
+
+Also update the progress of the task in the Scratchpad when you finish a subtask.
+When a group of subtasks are done, please commit the changes with a short but descriptive message following the commitlint.config.cjs file rules
+Especially when you finished a milestone, it will help to improve your depth of task accomplishment to use the Scratchpad to reflect and plan.
+The goal is to help you maintain a big picture as well as the progress of the task. Always refer to the Scratchpad when you plan the next step.
+
+## Guidance
+  You are an expert in TypeScript, Node.js, Next.js App Router, React, Shadcn UI, Radix UI and Tailwind.
+
+  Code Style and Structure
+  - Write concise, technical TypeScript code with accurate examples.
+  - Use functional and declarative programming patterns; avoid classes.
+  - Prefer iteration and modularization over code duplication.
+  - Use descriptive variable names with auxiliary verbs (e.g., isLoading, hasError).
+  - Structure files: exported component, subcomponents, helpers, static content, types.
+
+  Naming Conventions
+  - Use lowercase with dashes for directories (e.g., components/auth-wizard).
+  - Favor named exports for components.
+
+  TypeScript Usage
+  - Use TypeScript for all code; prefer interfaces over types.
+  - Avoid enums; use maps instead.
+  - Use functional components with TypeScript interfaces.
+
+  Syntax and Formatting
+  - Use the "function" keyword for pure functions.
+  - Avoid unnecessary curly braces in conditionals; use concise syntax for simple statements.
+  - Use declarative JSX.
+
+  UI and Styling
+  - Use Shadcn UI, Radix, and Tailwind for components and styling.
+  - Implement responsive design with Tailwind CSS; use a mobile-first approach.
+
+  Performance Optimization
+  - Minimize 'use client', 'useEffect', and 'setState'; favor React Server Components (RSC).
+  - Wrap client components in Suspense with fallback.
+  - Use dynamic loading for non-critical components.
+  - Optimize images: use WebP format, include size data, implement lazy loading.
+
+  Key Conventions
+  - Use 'nuqs' for URL search parameter state management.
+  - Optimize Web Vitals (LCP, CLS, FID).
+  - Limit 'use client':
+    - Favor server components and Next.js SSR.
+    - Use only for Web API access in small components.
+    - Avoid for data fetching or state management.
+
+  Follow Next.js docs for Data Fetching, Rendering, and Routing.
+
+## Lessons
+
+
+### User Specified Lessons
+
+
+### Cursor learned
+
+
+## Scratchpad
+
+Full-Stack App Plan: Next.js, SQLite, and Docker
+Project Overview
+Building a full-stack app with Next.js (frontend), SQLite (database), and Docker (containerization).
+The app will feature a user settings area, global admin configuration, and URL/iframe management.
+Implementation Plan
+
+1. Project Setup & Architecture
+[X] Set up Next.js 14+ project with App Router
+  - Next.js 15.2.2 project initialized with TypeScript and ESLint
+  - Using App Router structure
+[X] Install and configure Material UI
+  - Installed Material UI packages and dependencies
+  - Set up theme provider with light/dark mode support
+[X] Configure TypeScript for type safety
+  - TypeScript is configured with the project setup
+[X] Set up SQLite with Prisma ORM
+  - Prisma installed and configured with SQLite
+  - Created database schema with User, UrlGroup, Url, and UserUrlGroup models
+[X] Create Docker configuration for development and production
+  - Created Dockerfile with multi-stage build
+  - Set up docker-compose.yml for easier deployment
+  - Added entrypoint script for database migration and server startup
+[X] Implement folder structure following Next.js best practices
+  - Organized components by feature domain
+  - Created necessary directories for app structure
+
+2. Database Design
+[X] User table (id, username, password_hash (nullable), is_admin, last_active_url, created_at, updated_at)
+[X] URL Groups table (id, name, description, created_at, updated_at)
+[X] URLs table (id, url_group_id, title, url, icon_path, display_order, created_at, updated_at)
+[X] User-URL Group mapping table (user_id, url_group_id, created_at)
+
+3. Authentication System
+[X] Create simplified login page with username selection (no password if not set)
+  - Built responsive login page with Material UI components
+  - Implemented conditional password field that only appears when needed
+[X] Implement conditional password field that appears only when user has password set
+  - Created dynamic password field that shows based on user requirements
+  - Added password visibility toggle for better UX
+[X] Set up session management with JWT stored in HTTP-only cookies
+  - Implemented JWT token generation and verification
+  - Created secure HTTP-only cookie storage for tokens
+  - Added user session persistence
+[X] Create protected routes with middleware for authenticated users and admin-only areas
+  - Set up Next.js middleware for route protection
+  - Added special handling for admin-only routes
+  - Created redirect mechanism for unauthenticated users
+
+4. Core UI Components
+[X] Design responsive layout with collapsible menu bar for mobile
+  - Created app layout with collapsible side navigation for mobile
+  - Implemented theme toggle and logout buttons in app bar
+[X] Create primary layout component with menu bar and iframe container area
+  - Developed AppLayout component with flexible content area
+  - Added responsive drawer that collapses on mobile
+[X] Implement iframe component with state management and visibility controls
+  - Built IframeContainer with loading and error states
+  - Implemented hidden iframe caching for multiple URLs
+  - Added iframe reset capability for troubleshooting
+[X] Build responsive menu bar with active state indicators (underline for active iframe)
+  - Created MenuBar component with collapsible URL group sections
+  - Added active state indicators for selected URLs
+  - Implemented long press functionality for iframe reset
+
+5. Menu & URL System
+[ ] Create menu rendering based on user's assigned URL groups
+[ ] Implement URL group management in admin area
+[ ] Add click-and-hold functionality to reset iframe src
+[ ] Create system to track active iframe while maintaining others in background
+[ ] Implement responsive menu collapse for mobile devices
+
+6. Iframe Management
+[ ] Build iframe container system with state persistence
+[ ] Implement auto-sizing to eliminate scrollbars
+[ ] Create state management for multiple loaded iframes with only one visible
+[ ] Add loading indicators and error handling for iframe content
+
+7. Admin Configuration
+[ ] Build admin dashboard UI with protected route
+[ ] Implement user management (create, edit, delete users)
+[ ] Create password optional toggle for user accounts
+[ ] Develop URL group creation and management
+[ ] Build interface for assigning URL groups to users
+
+8. User Settings
+[ ] Create user settings page for password management
+[ ] Store and restore last active URL for user convenience
+[ ] Design architecture to support future setting expansions
+
+9. Containerization
+[ ] Configure Docker for Next.js application
+[ ] Set up SQLite persistence with Docker volumes
+[ ] Create Docker Compose setup for easy deployment
+[ ] Implement proper environment variable management for configuration
+
+10. State Management
+[ ] Implement client-side state management for active iframe tracking
+[ ] Create server-side persistence for user preferences
+[ ] Build efficient state update system for iframe management
+[ ] Implement URL state synchronization with browser history
+
+11. Testing & Deployment
+[ ] Create automated tests for authentication and core functionality
+[ ] Set up CI/CD pipeline for testing and deployment
+[ ] Document deployment procedures
+[ ] Implement database backup strategy
+
+12. Performance Optimization
+[ ] Optimize iframe loading and switching
+[ ] Implement lazy loading for inactive iframe content
+[ ] Configure proper caching policies
+[ ] Optimize SQLite query performance

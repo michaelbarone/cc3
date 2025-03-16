@@ -1,0 +1,50 @@
+// TODO: Add support for accessibility extends: plugin:jsx-a11y/recommended and plugins: jsx-a11y
+{
+  "extends": ["eslint:recommended", "plugin:@typescript-eslint/recommended", "plugin:react/recommended", "plugin:react-hooks/recommended", "plugin:react/jsx-runtime"],
+  "plugins": ["@typescript-eslint", "react", "react-hooks", "prettier"],
+  "parser": "@typescript-eslint/parser",
+  "parserOptions": {
+    "project": ["tsconfig.json"],
+    "ecmaVersion": 2021,
+    "sourceType": "module",
+    "ecmaFeatures": {
+      "jsx": true
+    }
+  },
+  "rules": {
+    "prettier/prettier": [
+      "error",
+      {
+        "endOfLine":"auto"
+      }
+    ],
+    "no-unused-vars": "off",
+    "no-extra-boolean-cast": "off",
+    "react/react-in-jsx-scope": "off",
+    "no-console": "warn",
+    "@typescript-eslint/no-unused-vars": [
+      "warn",
+      {
+        "varsIgnorePattern": "^(?:React|expand)$"
+      }
+    ],
+    "@typescript-eslint/no-explicit-any": "warn" //,
+    // "no-restricted-syntax": [
+    //   "warn",
+    //   {
+    //     "selector": "JSXElement[openingElement.name.name='Button']",
+    //     "message": "Please use the <EdgeBtn /> component instead of <Button></Button>"
+    //    }
+    // ]
+  },
+  "env": {
+    "browser": true,
+    "node": true,
+    "es2021": true
+  },
+  "settings": {
+    "react": {
+      "version": "detect"
+    }
+  }
+}
