@@ -19,7 +19,6 @@ import {
 } from '@mui/material';
 import ExpandLess from '@mui/icons-material/ExpandLess';
 import ExpandMore from '@mui/icons-material/ExpandMore';
-import WebIcon from '@mui/icons-material/Web';
 import FolderIcon from '@mui/icons-material/Folder';
 import PowerSettingsNewIcon from '@mui/icons-material/PowerSettingsNew';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
@@ -481,19 +480,38 @@ export default function MenuBar({
                               }
                             }}
                           >
-                            {isLoaded && !isActive ? (
-                              <Badge
-                                color="success"
-                                variant="dot"
-                                overlap="circular"
-                                sx={{ mr: 1 }}
-                              >
-                                <WebIcon fontSize="small" />
-                              </Badge>
-                            ) : (
-                              <WebIcon fontSize="small" sx={{ mr: 1 }} />
-                            )}
-                            {url.title}
+                            <Box sx={{
+                              position: 'relative',
+                              display: 'flex',
+                              alignItems: 'center'
+                            }}>
+                              {url.iconPath ? (
+                                <Box
+                                  component="img"
+                                  src={url.iconPath}
+                                  alt={url.title}
+                                  sx={{
+                                    width: 24,
+                                    height: 24,
+                                    objectFit: 'contain'
+                                  }}
+                                />
+                              ) : (
+                                url.title
+                              )}
+                              {isLoaded && (
+                                <Badge
+                                  color="success"
+                                  variant="dot"
+                                  overlap="circular"
+                                  sx={{
+                                    position: 'absolute',
+                                    top: -2,
+                                    right: -2,
+                                  }}
+                                />
+                              )}
+                            </Box>
                           </Button>
                         </Tooltip>
                       );
@@ -551,19 +569,38 @@ export default function MenuBar({
                     }
                   }}
                 >
-                  {isLoaded && !isActive ? (
-                    <Badge
-                      color="success"
-                      variant="dot"
-                      overlap="circular"
-                      sx={{ mr: 1 }}
-                    >
-                      <WebIcon fontSize="small" />
-                    </Badge>
-                  ) : (
-                    <WebIcon fontSize="small" sx={{ mr: 1 }} />
-                  )}
-                  {url.title}
+                  <Box sx={{
+                    position: 'relative',
+                    display: 'flex',
+                    alignItems: 'center'
+                  }}>
+                    {url.iconPath ? (
+                      <Box
+                        component="img"
+                        src={url.iconPath}
+                        alt={url.title}
+                        sx={{
+                          width: 24,
+                          height: 24,
+                          objectFit: 'contain'
+                        }}
+                      />
+                    ) : (
+                      url.title
+                    )}
+                    {isLoaded && (
+                      <Badge
+                        color="success"
+                        variant="dot"
+                        overlap="circular"
+                        sx={{
+                          position: 'absolute',
+                          top: -2,
+                          right: -2,
+                        }}
+                      />
+                    )}
+                  </Box>
                 </Button>
               </Tooltip>
             );
@@ -644,20 +681,43 @@ export default function MenuBar({
                         onTouchStart={() => handleTouchStart(url)}
                       >
                         <ListItemIcon sx={{ minWidth: 36 }}>
-                          {isLoaded && !isActive ? (
-                            <Badge
-                              color="success"
-                              variant="dot"
-                              overlap="circular"
-                            >
-                              <WebIcon fontSize="small" />
-                            </Badge>
-                          ) : (
-                            <WebIcon fontSize="small" />
-                          )}
+                          <Box sx={{ position: 'relative' }}>
+                            {url.iconPath ? (
+                              <Box
+                                component="img"
+                                src={url.iconPath}
+                                alt={url.title}
+                                sx={{
+                                  width: 24,
+                                  height: 24,
+                                  objectFit: 'contain'
+                                }}
+                              />
+                            ) : null}
+                          </Box>
                         </ListItemIcon>
                         <ListItemText
-                          primary={url.title}
+                          primary={
+                            <Box sx={{
+                              position: 'relative',
+                              display: 'flex',
+                              alignItems: 'center'
+                            }}>
+                              {url.title}
+                              {isLoaded && (
+                                <Badge
+                                  color="success"
+                                  variant="dot"
+                                  overlap="circular"
+                                  sx={{
+                                    position: 'absolute',
+                                    top: -2,
+                                    right: -2,
+                                  }}
+                                />
+                              )}
+                            </Box>
+                          }
                           primaryTypographyProps={{
                             variant: 'body2',
                             fontWeight: isActive ? 'bold' : 'normal',
