@@ -4,6 +4,7 @@ import "./globals.css";
 import { ThemeProvider } from "./theme/theme-provider";
 import { AuthProvider } from "./lib/auth/auth-context";
 import { Providers } from './providers';
+import { prisma } from './lib/db/prisma';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -15,16 +16,30 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export const metadata: Metadata = {
-  title: "URL Dashboard",
-  description: "A dashboard for managing and displaying URLs in iframes",
-};
+async function getAppConfig() {
+  return await prisma.appConfig.findUnique({
+    where: { id: 'app-config' },
+  });
+}
 
-export default function RootLayout({
+export async function generateMetadata(): Promise<Metadata> {
+  const appConfig = await getAppConfig();
+
+  return {
+    title: {
+      template: `%s | ${appConfig?.appName || 'Control Center'}`,
+      default: appConfig?.appName || 'Control Center',
+    },
+    description: "A dashboard for managing and displaying URLs in iframes",
+    icons: appConfig?.favicon ? [{ rel: 'icon', url: appConfig.favicon }] : [],
+  };
+}
+
+export default async function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable}`}>

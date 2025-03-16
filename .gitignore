@@ -5,6 +5,7 @@
 public/icons/*
 public/logos/*
 public/avatars/*
+public/favicon*
 
 # dependencies
 /node_modules

@@ -56,8 +56,9 @@ model UserUrlGroup {
 
 model AppConfig {
   id                 String   @id @default("app-config")
-  appName            String   @default("URL Dashboard")
+  appName            String   @default("Control Center")
   appLogo            String?
+  favicon            String?
   loginTheme         String   @default("dark")
   registrationEnabled Boolean  @default(false)
   createdAt          DateTime @default(now())

@@ -18,11 +18,13 @@ import {
   Switch
 } from '@mui/material';
 import LogoUpload from '@/app/components/ui/LogoUpload';
+import FaviconUpload from '@/app/components/ui/FaviconUpload';
 
 interface AppConfig {
   id: string;
   appName: string;
   appLogo: string | null;
+  favicon: string | null;
   loginTheme: string;
   registrationEnabled: boolean;
   createdAt: string;
@@ -247,13 +249,17 @@ export default function AppConfigPage() {
       )}
 
       <Grid container spacing={4}>
-        {/* App Name Configuration */}
+        {/* App Branding Configuration */}
         <Grid item xs={12} md={6}>
           <Card>
-            <CardHeader title="Application Name" />
+            <CardHeader title="Application Branding" />
             <Divider />
             <CardContent>
-              <Box sx={{ mb: 2 }}>
+              {/* App Name Section */}
+              <Box sx={{ mb: 4 }}>
+                <Typography variant="subtitle1" sx={{ mb: 1 }}>
+                  Application Name
+                </Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                   The application name will be displayed in the header and browser title.
                 </Typography>
@@ -273,21 +279,18 @@ export default function AppConfigPage() {
                   {saving ? <CircularProgress size={24} /> : 'Save'}
                 </Button>
               </Box>
-            </CardContent>
-          </Card>
-        </Grid>
 
-        {/* App Logo Configuration */}
-        <Grid item xs={12} md={6}>
-          <Card>
-            <CardHeader title="Application Logo" />
-            <Divider />
-            <CardContent>
-              <Box sx={{ mb: 2 }}>
+              <Divider sx={{ my: 3 }} />
+
+              {/* App Logo Section */}
+              <Box sx={{ mb: 4 }}>
+                <Typography variant="subtitle1" sx={{ mb: 1 }}>
+                  Application Logo
+                </Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                   The application logo will be displayed in the header. If no logo is set, the application name will be shown instead.
                 </Typography>
-                <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
                   <LogoUpload
                     logoUrl={appConfig?.appLogo || null}
                     onUploadSuccess={handleLogoUploadSuccess}
@@ -297,6 +300,151 @@ export default function AppConfigPage() {
                       severity: 'error'
                     })}
                     onDelete={handleLogoDelete}
+                  />
+                </Box>
+                {/* Theme Previews for Logo */}
+                <Box sx={{ mt: 3 }}>
+                  <Box sx={{ display: 'flex', gap: 2 }}>
+                    {/* Light Theme Preview */}
+                    <Box
+                      sx={{
+                        flex: 1,
+                        p: 2,
+                        bgcolor: '#ffffff',
+                        color: '#000000',
+                        borderRadius: 1,
+                        border: 1,
+                        borderColor: 'divider',
+                      }}
+                    >
+                      <Box sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: 2,
+                      }}>
+                        <Box sx={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          height: 48,
+                          flex: 1,
+                        }}>
+                          {appConfig?.appLogo ? (
+                            <Box
+                              component="img"
+                              src={appConfig.appLogo}
+                              alt={appName}
+                              sx={{
+                                height: 40,
+                                maxWidth: 160,
+                                objectFit: 'contain',
+                              }}
+                            />
+                          ) : (
+                            <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+                              {appName}
+                            </Typography>
+                          )}
+                        </Box>
+                        <Typography variant="caption">
+                          Light Theme
+                        </Typography>
+                      </Box>
+                    </Box>
+                    {/* Dark Theme Preview */}
+                    <Box
+                      sx={{
+                        flex: 1,
+                        p: 2,
+                        bgcolor: '#121212',
+                        color: '#ffffff',
+                        borderRadius: 1,
+                        border: 1,
+                        borderColor: 'divider',
+                      }}
+                    >
+                      <Box sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: 2,
+                      }}>
+                        <Box sx={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          height: 48,
+                          flex: 1,
+                        }}>
+                          {appConfig?.appLogo ? (
+                            <Box
+                              component="img"
+                              src={appConfig.appLogo}
+                              alt={appName}
+                              sx={{
+                                height: 40,
+                                maxWidth: 160,
+                                objectFit: 'contain',
+                              }}
+                            />
+                          ) : (
+                            <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+                              {appName}
+                            </Typography>
+                          )}
+                        </Box>
+                        <Typography variant="caption" sx={{ color: 'inherit' }}>
+                          Dark Theme
+                        </Typography>
+                      </Box>
+                    </Box>
+                  </Box>
+                </Box>
+              </Box>
+
+              <Divider sx={{ my: 3 }} />
+
+              {/* Favicon Section */}
+              <Box>
+                <Typography variant="subtitle1" sx={{ mb: 1 }}>
+                  Browser Favicon
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                  The browser favicon will be displayed in browser tabs and bookmarks.
+                </Typography>
+                <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+                  <FaviconUpload
+                    faviconUrl={appConfig?.favicon || null}
+                    onUploadSuccess={(favicon) => {
+                      if (appConfig) {
+                        setAppConfig({
+                          ...appConfig,
+                          favicon
+                        });
+                      }
+                      setSnackbar({
+                        open: true,
+                        message: 'Favicon uploaded successfully',
+                        severity: 'success'
+                      });
+                    }}
+                    onUploadError={(error) => setSnackbar({
+                      open: true,
+                      message: error,
+                      severity: 'error'
+                    })}
+                    onDelete={() => {
+                      if (appConfig) {
+                        setAppConfig({
+                          ...appConfig,
+                          favicon: null
+                        });
+                      }
+                      setSnackbar({
+                        open: true,
+                        message: 'Favicon removed successfully',
+                        severity: 'success'
+                      });
+                    }}
                   />
                 </Box>
               </Box>
@@ -419,45 +567,6 @@ export default function AppConfigPage() {
                   {saving ? <CircularProgress size={24} /> : 'Save'}
                 </Button>
               </Box>
-            </CardContent>
-          </Card>
-        </Grid>
-
-        {/* Preview Section */}
-        <Grid item xs={12}>
-          <Card>
-            <CardHeader title="Preview" />
-            <Divider />
-            <CardContent>
-              <Box sx={{
-                display: 'flex',
-                alignItems: 'center',
-                p: 2,
-                bgcolor: 'primary.main',
-                color: 'primary.contrastText',
-                borderRadius: 1
-              }}>
-                {appConfig?.appLogo ? (
-                  <Box
-                    component="img"
-                    src={appConfig.appLogo}
-                    alt={appName}
-                    sx={{
-                      height: 40,
-                      maxWidth: 160,
-                      objectFit: 'contain',
-                      mr: 2
-                    }}
-                  />
-                ) : (
-                  <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
-                    {appName}
-                  </Typography>
-                )}
-              </Box>
-              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
-                This is how the app header will appear to users.
-              </Typography>
             </CardContent>
           </Card>
         </Grid>
