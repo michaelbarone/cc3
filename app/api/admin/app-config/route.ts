@@ -16,6 +16,8 @@ export async function GET() {
         data: {
           appName: 'URL Dashboard',
           appLogo: null,
+          loginTheme: 'dark',  // Default to dark theme
+          registrationEnabled: false, // Default to disabled registration
         },
       });
     }
@@ -68,6 +70,8 @@ export async function PATCH(request: NextRequest) {
       create: {
         appName,
         appLogo: null,
+        loginTheme: 'dark',  // Default to dark theme
+        registrationEnabled: false, // Default to disabled registration
       },
     });
 

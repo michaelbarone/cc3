@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import {
@@ -23,7 +23,10 @@ import {
   FormControlLabel,
   Slide,
   Fade,
-  useTheme
+  useTheme,
+  ThemeProvider,
+  CssBaseline,
+  createTheme
 } from '@mui/material';
 import { Visibility, VisibilityOff, ArrowBack } from '@mui/icons-material';
 import { useAuth } from '../lib/auth/auth-context';
@@ -40,6 +43,8 @@ interface UserTile {
 interface AppConfig {
   appName: string;
   appLogo: string | null;
+  loginTheme: string;
+  registrationEnabled: boolean;
 }
 
 export default function LoginPage() {
@@ -50,10 +55,18 @@ export default function LoginPage() {
   const { login, register } = useAuth();
   const theme = useTheme();
 
+  // State for theme configuration
+  const [currentTheme, setCurrentTheme] = useState<'light' | 'dark'>('dark');
+
   // State for users and selected user
   const [users, setUsers] = useState<UserTile[]>([]);
   const [selectedUser, setSelectedUser] = useState<UserTile | null>(null);
-  const [appConfig, setAppConfig] = useState<AppConfig>({ appName: 'URL Dashboard', appLogo: null });
+  const [appConfig, setAppConfig] = useState<AppConfig>({
+    appName: 'URL Dashboard',
+    appLogo: null,
+    loginTheme: 'dark',
+    registrationEnabled: false
+  });
   const passwordInputRef = useRef<HTMLInputElement>(null);
 
   // UI state
@@ -101,6 +114,11 @@ export default function LoginPage() {
         if (configResponse.ok) {
           const configData = await configResponse.json();
           setAppConfig(configData);
+
+          // Set the current theme based on app config
+          if (configData.loginTheme) {
+            setCurrentTheme(configData.loginTheme as 'light' | 'dark');
+          }
         }
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -109,7 +127,7 @@ export default function LoginPage() {
     }
 
     fetchData();
-  }, []);
+  }, [justLoggedOut]);
 
   // Handle login/register submit
   const handleSubmit = async (e: React.FormEvent) => {
@@ -349,14 +367,16 @@ export default function LoginPage() {
           ))}
         </Grid>
 
-        <Button
-          fullWidth
-          variant="text"
-          onClick={handleToggleMode}
-          sx={{ mt: 3 }}
-        >
-          Don&apos;t have an account? Sign Up
-        </Button>
+        {appConfig.registrationEnabled && (
+          <Button
+            fullWidth
+            variant="text"
+            onClick={handleToggleMode}
+            sx={{ mt: 3 }}
+          >
+            Don&apos;t have an account? Sign Up
+          </Button>
+        )}
       </Box>
     </Fade>
   );
@@ -447,86 +467,108 @@ export default function LoginPage() {
     </Slide>
   );
 
-  return (
-    <Container
-      component="main"
-      maxWidth="sm"
-      sx={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        minHeight: '100vh',
-        py: 4
-      }}
-    >
-      {/* App Branding */}
-      <Box
-        mb={4}
-        display="flex"
-        flexDirection="column"
-        alignItems="center"
-      >
-        {appConfig.appLogo ? (
-          <Box mb={2} sx={{ position: 'relative', width: 100, height: 100 }}>
-            <Image
-              src={appConfig.appLogo}
-              alt={appConfig.appName}
-              fill
-              style={{ objectFit: 'contain' }}
-              priority
-            />
-          </Box>
-        ) : null}
-        <Typography
-          component="h1"
-          variant="h4"
-          fontWeight="bold"
-          color="primary"
-          textAlign="center"
-        >
-          {appConfig.appName}
-        </Typography>
-      </Box>
+  // Create a custom theme for the login page based on the app config
+  const loginTheme = useMemo(() => {
+    return currentTheme === 'light' ?
+      createTheme({
+        palette: {
+          mode: 'light',
+          primary: { main: '#1976d2' },
+          background: { default: '#f5f5f5', paper: '#ffffff' }
+        }
+      }) :
+      createTheme({
+        palette: {
+          mode: 'dark',
+          primary: { main: '#90caf9' },
+          background: { default: '#121212', paper: '#1e1e1e' }
+        }
+      });
+  }, [currentTheme]);
 
-      {/* Login/Register Paper */}
-      <Paper
-        elevation={6}
+  return (
+    <ThemeProvider theme={loginTheme}>
+      <CssBaseline />
+      <Container
+        component="main"
+        maxWidth="sm"
         sx={{
-          p: 4,
-          width: '100%',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          borderRadius: 2,
-          overflow: 'hidden',
-          maxWidth: isRegistering ? 'md' : 'lg',
-          transition: theme.transitions.create(['max-width']),
+          justifyContent: 'center',
+          minHeight: '100vh',
+          py: 4
         }}
       >
-        {isRegistering ? renderRegistrationForm() : (
-          <>
-            {selectedUser ? renderPasswordForm() : renderUserSelection()}
-          </>
-        )}
-      </Paper>
-
-      {/* Error Messages */}
-      <Snackbar
-        open={!!error}
-        autoHideDuration={6000}
-        onClose={() => setError('')}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert
-          elevation={6}
-          variant="filled"
-          severity="error"
-          onClose={() => setError('')}
+        {/* App Branding */}
+        <Box
+          mb={4}
+          display="flex"
+          flexDirection="column"
+          alignItems="center"
         >
-          {error}
-        </Alert>
-      </Snackbar>
-    </Container>
+          {appConfig.appLogo ? (
+            <Box mb={2} sx={{ position: 'relative', width: 100, height: 100 }}>
+              <Image
+                src={appConfig.appLogo}
+                alt={appConfig.appName}
+                fill
+                style={{ objectFit: 'contain' }}
+                priority
+              />
+            </Box>
+          ) : null}
+          <Typography
+            component="h1"
+            variant="h4"
+            fontWeight="bold"
+            color="primary"
+            textAlign="center"
+          >
+            {appConfig.appName}
+          </Typography>
+        </Box>
+
+        {/* Login/Register Paper */}
+        <Paper
+          elevation={6}
+          sx={{
+            p: 4,
+            width: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            borderRadius: 2,
+            overflow: 'hidden',
+            maxWidth: isRegistering ? 'md' : 'lg',
+            transition: theme.transitions.create(['max-width']),
+          }}
+        >
+          {isRegistering && appConfig.registrationEnabled ? renderRegistrationForm() : (
+            <>
+              {selectedUser ? renderPasswordForm() : renderUserSelection()}
+            </>
+          )}
+        </Paper>
+
+        {/* Error Messages */}
+        <Snackbar
+          open={!!error}
+          autoHideDuration={6000}
+          onClose={() => setError('')}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        >
+          <Alert
+            elevation={6}
+            variant="filled"
+            severity="error"
+            onClose={() => setError('')}
+          >
+            {error}
+          </Alert>
+        </Snackbar>
+      </Container>
+    </ThemeProvider>
   );
 }

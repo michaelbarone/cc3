@@ -260,7 +260,7 @@ Implementation Plan
   - Enhanced error display with snackbar notifications
   - Improved error message clarity for different failure scenarios
   - Added visual indicators for form validation
-[ ] login page should be controled by themes, and set in the admin panel in the application configuration page
+[X] login page should be controled by themes, and set in the admin panel in the application configuration page
 Ask before doing these:
 [ ] Add password recovery option for users with passwords
 

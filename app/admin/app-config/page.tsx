@@ -13,7 +13,9 @@ import {
   Grid,
   Card,
   CardContent,
-  CardHeader
+  CardHeader,
+  FormControlLabel,
+  Switch
 } from '@mui/material';
 import LogoUpload from '@/app/components/ui/LogoUpload';
 
@@ -21,6 +23,8 @@ interface AppConfig {
   id: string;
   appName: string;
   appLogo: string | null;
+  loginTheme: string;
+  registrationEnabled: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -31,6 +35,8 @@ export default function AppConfigPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [appName, setAppName] = useState('');
+  const [loginTheme, setLoginTheme] = useState('dark');
+  const [registrationEnabled, setRegistrationEnabled] = useState(false);
 
   // Snackbar state
   const [snackbar, setSnackbar] = useState({
@@ -52,6 +58,8 @@ export default function AppConfigPage() {
       const data = await response.json();
       setAppConfig(data);
       setAppName(data.appName);
+      setLoginTheme(data.loginTheme || 'dark');
+      setRegistrationEnabled(data.registrationEnabled || false);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An unknown error occurred');
     } finally {
@@ -142,6 +150,82 @@ export default function AppConfigPage() {
     });
   };
 
+  // Handle login theme change
+  const handleLoginThemeChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setLoginTheme(event.target.value);
+  };
+
+  // Save login theme
+  const handleSaveLoginTheme = async () => {
+    try {
+      setSaving(true);
+      const response = await fetch('/api/admin/app-config/theme', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ loginTheme })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update login theme');
+      }
+
+      const data = await response.json();
+      setAppConfig(data);
+
+      setSnackbar({
+        open: true,
+        message: 'Login theme updated successfully',
+        severity: 'success'
+      });
+    } catch (err) {
+      setSnackbar({
+        open: true,
+        message: err instanceof Error ? err.message : 'An unknown error occurred',
+        severity: 'error'
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Handle registration enabled change
+  const handleRegistrationEnabledChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setRegistrationEnabled(event.target.checked);
+  };
+
+  // Save registration enabled setting
+  const handleSaveRegistrationEnabled = async () => {
+    try {
+      setSaving(true);
+      const response = await fetch('/api/admin/app-config/registration', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ registrationEnabled })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update registration settings');
+      }
+
+      const data = await response.json();
+      setAppConfig(data);
+
+      setSnackbar({
+        open: true,
+        message: 'Registration settings updated successfully',
+        severity: 'success'
+      });
+    } catch (err) {
+      setSnackbar({
+        open: true,
+        message: err instanceof Error ? err.message : 'An unknown error occurred',
+        severity: 'error'
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
   if (loading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
@@ -215,6 +299,125 @@ export default function AppConfigPage() {
                     onDelete={handleLogoDelete}
                   />
                 </Box>
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        {/* Login Theme Configuration */}
+        <Grid item xs={12} md={6}>
+          <Card>
+            <CardHeader title="Login Page Theme" />
+            <Divider />
+            <CardContent>
+              <Box sx={{ mb: 2 }}>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                  Choose the theme for the login page. This affects the appearance of the login page only.
+                </Typography>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mb: 3 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <input
+                      type="radio"
+                      id="theme-light"
+                      name="loginTheme"
+                      value="light"
+                      checked={loginTheme === 'light'}
+                      onChange={handleLoginThemeChange}
+                      style={{ marginRight: 1 }}
+                    />
+                    <Box
+                      component="label"
+                      htmlFor="theme-light"
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        ml: 1,
+                        p: 1.5,
+                        border: 1,
+                        borderColor: 'divider',
+                        borderRadius: 1,
+                        bgcolor: '#ffffff',
+                        color: '#000000',
+                        width: '100%',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      <Typography>Light Theme</Typography>
+                    </Box>
+                  </Box>
+
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <input
+                      type="radio"
+                      id="theme-dark"
+                      name="loginTheme"
+                      value="dark"
+                      checked={loginTheme === 'dark'}
+                      onChange={handleLoginThemeChange}
+                      style={{ marginRight: 1 }}
+                    />
+                    <Box
+                      component="label"
+                      htmlFor="theme-dark"
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        ml: 1,
+                        p: 1.5,
+                        border: 1,
+                        borderColor: 'divider',
+                        borderRadius: 1,
+                        bgcolor: '#121212',
+                        color: '#ffffff',
+                        width: '100%',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      <Typography>Dark Theme</Typography>
+                    </Box>
+                  </Box>
+                </Box>
+                <Button
+                  variant="contained"
+                  onClick={handleSaveLoginTheme}
+                  disabled={saving || loginTheme === appConfig?.loginTheme}
+                >
+                  {saving ? <CircularProgress size={24} /> : 'Save'}
+                </Button>
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        {/* Registration Settings */}
+        <Grid item xs={12} md={6}>
+          <Card>
+            <CardHeader title="User Registration" />
+            <Divider />
+            <CardContent>
+              <Box sx={{ mb: 2 }}>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                  Enable or disable self-registration for new users. When disabled, only administrators can create new user accounts.
+                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={registrationEnabled}
+                        onChange={handleRegistrationEnabledChange}
+                        color="primary"
+                      />
+                    }
+                    label="Allow user self-registration"
+                  />
+                </Box>
+                <Button
+                  variant="contained"
+                  onClick={handleSaveRegistrationEnabled}
+                  disabled={saving || registrationEnabled === appConfig?.registrationEnabled}
+                >
+                  {saving ? <CircularProgress size={24} /> : 'Save'}
+                </Button>
               </Box>
             </CardContent>
           </Card>

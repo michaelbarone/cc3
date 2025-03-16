@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { registerUser, loginUser } from '@/app/lib/auth/auth-service';
 import { verifyToken } from '@/app/lib/auth/jwt';
+import { prisma } from '@/app/lib/db/prisma';
 
 export async function POST(request: NextRequest) {
   try {
@@ -20,6 +21,18 @@ export async function POST(request: NextRequest) {
       if (!user?.isAdmin) {
         return NextResponse.json(
           { error: 'Unauthorized' },
+          { status: 403 }
+        );
+      }
+    } else {
+      // For non-admin registration, check if registration is enabled in app config
+      const appConfig = await prisma.appConfig.findUnique({
+        where: { id: 'app-config' },
+      });
+
+      if (!appConfig?.registrationEnabled) {
+        return NextResponse.json(
+          { error: 'User registration is currently disabled' },
           { status: 403 }
         );
       }

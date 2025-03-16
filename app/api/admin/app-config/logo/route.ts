@@ -133,6 +133,8 @@ export async function POST(request: NextRequest) {
       create: {
         appName: 'URL Dashboard',
         appLogo,
+        loginTheme: 'dark',  // Default to dark theme
+        registrationEnabled: false, // Default to disabled registration
       },
     });
 
