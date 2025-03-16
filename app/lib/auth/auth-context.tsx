@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { cleanupIframes } from '../utils/iframe-utils';
 
 // Define user type
 export interface User {
@@ -97,6 +98,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
       await fetch('/api/auth/logout', {
         method: 'POST',
       });
+
+      // Clean up iframes before clearing user state
+      cleanupIframes();
+
       // Clear user state
       setUser(null);
 
