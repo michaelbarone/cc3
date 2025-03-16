@@ -39,6 +39,11 @@ export interface IframeContainerRef {
 // Create a singleton container for iframes outside of React
 let globalIframeContainer: HTMLDivElement | null = null;
 
+// Function to reset the global container
+export function resetGlobalContainer() {
+  globalIframeContainer = null;
+}
+
 // Function to get or create the global iframe container
 function getGlobalIframeContainer() {
   if (!globalIframeContainer) {
