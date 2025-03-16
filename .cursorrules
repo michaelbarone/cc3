@@ -184,7 +184,7 @@ Implementation Plan
 [X] Fix API errors for JWT token cookies
   - Updated JWT functions to properly use async/await with cookies() API
   - Fixed API route handlers to await verifyToken function
-[ ] remove the scrollbar on the right side of the window
+[X] remove the scrollbar on the right side of the window
 
 7. Admin Configuration
 [X] Build admin dashboard UI with protected route
@@ -209,6 +209,7 @@ Implementation Plan
   - Implemented UI for assigning users to URL groups
   - Added functionality to save user assignments
 [ ] allow uploading an icon for the urls in the url groups
+[ ] create an application config area, where you can name the application and upload an icon.  the name will be visible in the header, the icon can replace the name in the header.
 
 8. User Settings
 [X] create a drop down menu under the username in the header.  it should have links to the admin area (if the user has admin permission) and to the user settings page
@@ -230,13 +231,18 @@ Implementation Plan
 [X] add another item on the user dropdown menu to go back to the iframe content view (dashboard)
   - Added Dashboard menu item to the user dropdown
   - Fixed issues with admin area access by adding debugging
-[ ] allow uploading an image to be the user avatar
+[X] allow uploading an image to be the user avatar
+  - Added avatarUrl field to the User model in the database
+  - Created AvatarUpload component for uploading and displaying avatars
+  - Implemented API endpoints for uploading and deleting avatars
+  - Added profile settings page with avatar management
+[X] add a setting for left side menu bar or top menu bar
 
 9. State Management
-[ ] Implement client-side state management for active iframe tracking
-[ ] Create server-side persistence for user preferences
-[ ] Build efficient state update system for iframe management
-[ ] Implement URL state synchronization with browser history
+[X] Implement client-side state management for active iframe tracking
+[X] Create server-side persistence for user preferences
+[X] Build efficient state update system for iframe management
+[X] Implement URL state synchronization with browser history
 
 10. App initialization
 [ ] for first run, when there is no database, initialize the database and create and admin user with no password
