@@ -2,14 +2,12 @@
 
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import Image from 'next/image';
 import {
   Box,
   Container,
   Typography,
   TextField,
   Button,
-  Paper,
   Snackbar,
   Alert,
   CircularProgress,
@@ -17,18 +15,13 @@ import {
   IconButton,
   Grid,
   Card,
-  CardActionArea,
   Avatar,
-  Checkbox,
-  FormControlLabel,
-  Slide,
-  Fade,
   useTheme,
   ThemeProvider,
   CssBaseline,
   createTheme
 } from '@mui/material';
-import { Visibility, VisibilityOff, ArrowBack } from '@mui/icons-material';
+import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { useAuth } from '../lib/auth/auth-context';
 
 // Types for user tile
@@ -52,7 +45,7 @@ export default function LoginPage() {
   const searchParams = useSearchParams();
   const redirectPath = searchParams.get('redirect') || '/';
   const justLoggedOut = searchParams.get('logout') === 'true';
-  const { login, register } = useAuth();
+  const { login } = useAuth();
   const theme = useTheme();
 
   // State for theme configuration
@@ -69,14 +62,33 @@ export default function LoginPage() {
   });
   const passwordInputRef = useRef<HTMLInputElement>(null);
 
+  // Add click outside handler
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (selectedUser) {
+        const target = event.target as HTMLElement;
+        const isClickInsideCard = target.closest(`[data-user-id="${selectedUser.id}"]`);
+        if (!isClickInsideCard) {
+          setSelectedUser(null);
+          setPassword('');
+          setShowPassword(false);
+          setError('');
+        }
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [selectedUser]);
+
   // UI state
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [isRegistering, setIsRegistering] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
-  const [username, setUsername] = useState('');
 
   // Fetch all users for tiles and app config
   useEffect(() => {
@@ -136,31 +148,13 @@ export default function LoginPage() {
     setError('');
 
     try {
-      // Handle login
-      if (!isRegistering) {
-        if (!selectedUser) {
-          setError('Please select a user');
-          setIsLoading(false);
-          return;
-        }
-
-        await performLogin(selectedUser, password, rememberMe);
+      if (!selectedUser) {
+        setError('Please select a user');
+        setIsLoading(false);
+        return;
       }
-      // Handle registration
-      else {
-        if (!username.trim()) {
-          setError('Username is required');
-          setIsLoading(false);
-          return;
-        }
 
-        const result = await register(username, password);
-        if (result.success) {
-          router.push(redirectPath);
-        } else {
-          setError(result.message || 'Registration failed');
-        }
-      }
+      await performLogin(selectedUser, password, rememberMe);
     } catch (err) {
       console.error('Auth error:', err);
       setError('An unexpected error occurred');
@@ -225,247 +219,10 @@ export default function LoginPage() {
     }
   };
 
-  // Handle back button click
-  const handleBackClick = () => {
-    setSelectedUser(null);
-    setPassword('');
-    setError('');
-  };
-
   // Toggle password visibility
   const handleTogglePasswordVisibility = () => {
     setShowPassword(!showPassword);
   };
-
-  // Toggle registration mode
-  const handleToggleMode = () => {
-    setIsRegistering(!isRegistering);
-    setSelectedUser(null);
-    setUsername('');
-    setPassword('');
-    setError('');
-  };
-
-  // Render registration form
-  const renderRegistrationForm = () => (
-    <Box component="form" onSubmit={handleSubmit} width="100%">
-      <Typography component="h1" variant="h5" sx={{ mb: 3, textAlign: 'center' }}>
-        Create Account
-      </Typography>
-
-      <TextField
-        margin="normal"
-        required
-        fullWidth
-        id="username"
-        label="Username"
-        name="username"
-        autoComplete="username"
-        autoFocus
-        value={username}
-        onChange={(e) => setUsername(e.target.value)}
-      />
-
-      <TextField
-        margin="normal"
-        fullWidth
-        name="password"
-        label="Password (Optional)"
-        type={showPassword ? 'text' : 'password'}
-        id="password"
-        autoComplete="new-password"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-        InputProps={{
-          endAdornment: (
-            <InputAdornment position="end">
-              <IconButton
-                aria-label="toggle password visibility"
-                onClick={handleTogglePasswordVisibility}
-                edge="end"
-              >
-                {showPassword ? <VisibilityOff /> : <Visibility />}
-              </IconButton>
-            </InputAdornment>
-          ),
-        }}
-      />
-
-      <Button
-        type="submit"
-        fullWidth
-        variant="contained"
-        disabled={isLoading}
-        sx={{ mt: 3, mb: 2 }}
-      >
-        {isLoading ? <CircularProgress size={24} /> : 'Sign Up'}
-      </Button>
-
-      <Button
-        fullWidth
-        variant="text"
-        onClick={handleToggleMode}
-        sx={{ mt: 1 }}
-      >
-        Already have an account? Sign In
-      </Button>
-    </Box>
-  );
-
-  // Render user selection grid
-  const renderUserSelection = () => (
-    <Fade in={!selectedUser} timeout={500}>
-      <Box width="100%">
-        <Typography component="h1" variant="h5" sx={{ mb: 3, textAlign: 'center' }}>
-          Select User
-        </Typography>
-
-        <Grid container spacing={2} justifyContent="center">
-          {users.map((user) => (
-            <Grid item xs={6} sm={4} md={3} key={user.id}>
-              <Card
-                elevation={3}
-                sx={{
-                  transition: 'transform 0.2s ease-in-out',
-                  '&:hover': {
-                    transform: 'scale(1.05)',
-                  }
-                }}
-              >
-                <CardActionArea onClick={() => handleUserSelect(user)}>
-                  <Box
-                    display="flex"
-                    flexDirection="column"
-                    alignItems="center"
-                    p={2}
-                    sx={{ height: '120px', justifyContent: 'center' }}
-                  >
-                    <Avatar
-                      src={user.avatarUrl || undefined}
-                      alt={user.username}
-                      sx={{
-                        width: 56,
-                        height: 56,
-                        mb: 1,
-                        bgcolor: user.avatarUrl ? undefined : theme.palette.primary.main
-                      }}
-                    >
-                      {user.username.charAt(0).toUpperCase()}
-                    </Avatar>
-                    <Typography align="center" noWrap>
-                      {user.username}
-                    </Typography>
-                    {user.requiresPassword && (
-                      <Typography variant="caption" color="text.secondary">
-                        Password protected
-                      </Typography>
-                    )}
-                  </Box>
-                </CardActionArea>
-              </Card>
-            </Grid>
-          ))}
-        </Grid>
-
-        {appConfig.registrationEnabled && (
-          <Button
-            fullWidth
-            variant="text"
-            onClick={handleToggleMode}
-            sx={{ mt: 3 }}
-          >
-            Don&apos;t have an account? Sign Up
-          </Button>
-        )}
-      </Box>
-    </Fade>
-  );
-
-  // Render password form for selected user
-  const renderPasswordForm = () => (
-    <Slide direction="up" in={!!selectedUser} mountOnEnter unmountOnExit timeout={400}>
-      <Box component="form" onSubmit={handleSubmit} width="100%">
-        <Box display="flex" alignItems="center" mb={3}>
-          <IconButton
-            onClick={handleBackClick}
-            edge="start"
-            aria-label="back to user selection"
-            sx={{ mr: 1 }}
-          >
-            <ArrowBack />
-          </IconButton>
-
-          <Typography component="h1" variant="h5" sx={{ flex: 1, textAlign: 'center' }}>
-            Login as {selectedUser?.username}
-          </Typography>
-        </Box>
-
-        <Box display="flex" justifyContent="center" mb={3}>
-          <Avatar
-            src={selectedUser?.avatarUrl || undefined}
-            alt={selectedUser?.username || ''}
-            sx={{
-              width: 80,
-              height: 80,
-              bgcolor: selectedUser?.avatarUrl ? undefined : theme.palette.primary.main
-            }}
-          >
-            {selectedUser?.username.charAt(0).toUpperCase()}
-          </Avatar>
-        </Box>
-
-        {selectedUser?.requiresPassword && (
-          <TextField
-            margin="normal"
-            fullWidth
-            name="password"
-            label="Password"
-            type={showPassword ? 'text' : 'password'}
-            id="password"
-            inputRef={passwordInputRef}
-            autoComplete="current-password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            InputProps={{
-              endAdornment: (
-                <InputAdornment position="end">
-                  <IconButton
-                    aria-label="toggle password visibility"
-                    onClick={handleTogglePasswordVisibility}
-                    edge="end"
-                  >
-                    {showPassword ? <VisibilityOff /> : <Visibility />}
-                  </IconButton>
-                </InputAdornment>
-              ),
-            }}
-          />
-        )}
-
-        <FormControlLabel
-          control={
-            <Checkbox
-              checked={rememberMe}
-              onChange={(e) => setRememberMe(e.target.checked)}
-              color="primary"
-            />
-          }
-          label="Remember me"
-          sx={{ mt: 1 }}
-        />
-
-        <Button
-          type="submit"
-          fullWidth
-          variant="contained"
-          disabled={isLoading}
-          sx={{ mt: 2, mb: 2 }}
-        >
-          {isLoading ? <CircularProgress size={24} /> : 'Sign In'}
-        </Button>
-      </Box>
-    </Slide>
-  );
 
   // Create a custom theme for the login page based on the app config
   const loginTheme = useMemo(() => {
@@ -491,31 +248,41 @@ export default function LoginPage() {
       <CssBaseline />
       <Container
         component="main"
-        maxWidth="sm"
+        maxWidth="md"
         sx={{
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          justifyContent: 'center',
           minHeight: '100vh',
-          py: 4
+          py: 8,
         }}
       >
         {/* App Branding */}
         <Box
-          mb={4}
-          display="flex"
-          flexDirection="column"
-          alignItems="center"
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            mb: 6
+          }}
         >
           {appConfig.appLogo ? (
-            <Box mb={2} sx={{ position: 'relative', width: 100, height: 100 }}>
-              <Image
+            <Box
+              sx={{
+                position: 'relative',
+                width: 100,
+                height: 100,
+                mb: 2
+              }}
+            >
+              <img
                 src={appConfig.appLogo}
                 alt={appConfig.appName}
-                fill
-                style={{ objectFit: 'contain' }}
-                priority
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'contain'
+                }}
               />
             </Box>
           ) : null}
@@ -530,27 +297,207 @@ export default function LoginPage() {
           </Typography>
         </Box>
 
-        {/* Login/Register Paper */}
-        <Paper
-          elevation={6}
-          sx={{
-            p: 4,
-            width: '100%',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            borderRadius: 2,
-            overflow: 'hidden',
-            maxWidth: isRegistering ? 'md' : 'lg',
-            transition: theme.transitions.create(['max-width']),
-          }}
-        >
-          {isRegistering && appConfig.registrationEnabled ? renderRegistrationForm() : (
-            <>
-              {selectedUser ? renderPasswordForm() : renderUserSelection()}
-            </>
-          )}
-        </Paper>
+        {/* User Tiles Grid */}
+        <Box sx={{ width: '100%', px: 2 }}>
+          <Grid container spacing={3} justifyContent="center">
+            {users.map((user) => (
+              <Grid item xs={12} sm={6} md={4} key={user.id}>
+                <Box
+                  sx={{
+                    position: 'relative',
+                    height: selectedUser?.id === user.id ? '370px' : '250px',
+                    transition: 'height 0.3s ease-in-out'
+                  }}
+                >
+                  {/* User Tile */}
+                  <Card
+                    elevation={3}
+                    data-user-id={user.id}
+                    sx={{
+                      height: '250px',
+                      position: 'absolute',
+                      width: '100%',
+                      overflow: 'hidden',
+                      bgcolor: 'background.paper',
+                      transition: 'all 0.3s ease-in-out',
+                      '&:hover': {
+                        transform: selectedUser?.id === user.id ? 'none' : 'translateY(-10px)',
+                      }
+                    }}
+                  >
+                    <Box
+                      onClick={() => handleUserSelect(user)}
+                      sx={{
+                        height: '100%',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        position: 'relative',
+                        background: user.avatarUrl ? `linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.4) 40%, rgba(0,0,0,0.1) 100%), url(${user.avatarUrl})` : undefined,
+                        backgroundSize: 'cover',
+                        backgroundPosition: 'center',
+                        transition: 'all 0.3s ease-in-out',
+                        transform: 'none',
+                        '&::before': !user.avatarUrl ? {
+                          content: '""',
+                          position: 'absolute',
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          bottom: 0,
+                          background: `linear-gradient(45deg, ${theme.palette.primary.dark}, ${theme.palette.primary.main})`,
+                          opacity: 0.2,
+                        } : undefined
+                      }}
+                    >
+                      <Box
+                        sx={{
+                          position: 'absolute',
+                          top: selectedUser?.id === user.id ? '5%' : '50%',
+                          left: 0,
+                          right: 0,
+                          transform: selectedUser?.id === user.id ?
+                            'none' :
+                            'translateY(-50%)',
+                          transition: 'all 0.3s ease-in-out',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          width: '100%',
+                          zIndex: 1,
+                          padding: selectedUser?.id === user.id ? '1rem' : 2
+                        }}
+                      >
+                        {!user.avatarUrl && (
+                          <Avatar
+                            src={user.avatarUrl || undefined}
+                            alt={user.username}
+                            sx={{
+                              width: selectedUser?.id === user.id ? 0 : 100,
+                              height: selectedUser?.id === user.id ? 0 : 100,
+                              mb: 2,
+                              transition: 'all 0.3s ease-in-out',
+                              border: '4px solid',
+                              borderColor: 'background.paper',
+                              bgcolor: theme.palette.primary.main,
+                              boxShadow: 3,
+                              opacity: selectedUser?.id === user.id ? 0 : 1,
+                              transform: selectedUser?.id === user.id ? 'scale(0)' : 'scale(1)',
+                              position: 'relative'
+                            }}
+                          >
+                            {user.username.charAt(0).toUpperCase()}
+                          </Avatar>
+                        )}
+                        <Typography
+                          variant="h6"
+                          align="center"
+                          sx={{
+                            color: 'white',
+                            textShadow: '0 2px 4px rgba(0,0,0,0.5)',
+                            fontWeight: 'bold',
+                            mb: selectedUser?.id === user.id ? 0 : 1,
+                            fontSize: selectedUser?.id === user.id ? '1.1rem' : '1.25rem',
+                            transition: 'all 0.3s ease-in-out',
+                            position: 'relative',
+                            width: '100%'
+                          }}
+                        >
+                          {user.username}
+                        </Typography>
+                        {user.requiresPassword && !selectedUser && (
+                          <Typography
+                            variant="caption"
+                            sx={{
+                              color: theme.palette.primary.light,
+                              fontWeight: 'bold',
+                              textShadow: '0 1px 2px rgba(0,0,0,0.8)',
+                              backdropFilter: 'blur(4px)',
+                              px: 2,
+                              py: 0.5,
+                              borderRadius: 1,
+                              bgcolor: 'rgba(0,0,0,0.3)'
+                            }}
+                          >
+                            Account Locked
+                          </Typography>
+                        )}
+                      </Box>
+
+                      {/* Password Form - Inside the card */}
+                      {user.requiresPassword && selectedUser?.id === user.id && (
+                        <Box
+                          component="form"
+                          onSubmit={handleSubmit}
+                          sx={{
+                            position: 'absolute',
+                            bottom: 0,
+                            left: 0,
+                            right: 0,
+                            p: 3,
+                            background: 'rgba(0,0,0,0.3)',
+                            backdropFilter: 'blur(10px)',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: 2,
+                            transition: 'all 0.3s ease-in-out',
+                            zIndex: 0
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <TextField
+                            fullWidth
+                            name="password"
+                            label="Password"
+                            type={showPassword ? 'text' : 'password'}
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            inputRef={passwordInputRef}
+                            InputProps={{
+                              endAdornment: (
+                                <InputAdornment position="end">
+                                  <IconButton
+                                    onClick={handleTogglePasswordVisibility}
+                                    edge="end"
+                                    sx={{ color: 'white' }}
+                                  >
+                                    {showPassword ? <VisibilityOff /> : <Visibility />}
+                                  </IconButton>
+                                </InputAdornment>
+                              ),
+                            }}
+                            sx={{
+                              '& .MuiInputLabel-root': {
+                                color: 'white',
+                              },
+                              '& .MuiInputBase-root': {
+                                color: 'white',
+                                '&:before': {
+                                  borderColor: 'rgba(255,255,255,0.5)',
+                                },
+                                '&:hover:not(.Mui-disabled):before': {
+                                  borderColor: 'rgba(255,255,255,0.7)',
+                                },
+                              }
+                            }}
+                          />
+                          <Button
+                            type="submit"
+                            variant="contained"
+                            fullWidth
+                            disabled={isLoading}
+                          >
+                            {isLoading ? <CircularProgress size={24} /> : 'Log In'}
+                          </Button>
+                        </Box>
+                      )}
+                    </Box>
+                  </Card>
+                </Box>
+              </Grid>
+            ))}
+          </Grid>
+        </Box>
 
         {/* Error Messages */}
         <Snackbar

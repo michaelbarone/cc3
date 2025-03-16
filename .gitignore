@@ -4,6 +4,7 @@
 **/dev.db
 public/icons/*
 public/logos/*
+public/avatars/*
 
 # dependencies
 /node_modules
