@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { CircularProgress, Box } from '@mui/material';
+import { CircularProgress, Box, Snackbar, Alert } from '@mui/material';
 import AppLayout from '@/app/components/layout/AppLayout';
 import MenuBar from '@/app/components/ui/MenuBar';
-import IframeContainer from '@/app/components/iframe/IframeContainer';
+import IframeContainer, { IframeContainerRef } from '@/app/components/iframe/IframeContainer';
 import { useAuth } from '@/app/lib/auth/auth-context';
 
 // Types for URLs and URL groups
@@ -27,11 +27,22 @@ interface UrlGroup {
 export default function DashboardPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
+  const iframeContainerRef = useRef<IframeContainerRef>(null);
 
   const [urlGroups, setUrlGroups] = useState<UrlGroup[]>([]);
   const [activeUrlId, setActiveUrlId] = useState<string | null>(null);
   const [activeUrl, setActiveUrl] = useState<Url | null>(null);
+  const [loadedUrlIds, setLoadedUrlIds] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [notification, setNotification] = useState<{
+    open: boolean;
+    message: string;
+    severity: 'success' | 'info' | 'warning' | 'error';
+  }>({
+    open: false,
+    message: '',
+    severity: 'info'
+  });
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -116,23 +127,163 @@ export default function DashboardPage() {
     fetchUrlGroups();
   }, [user]);
 
+  // Update loaded URL IDs when iframe container reports load status
+  useEffect(() => {
+    // This will poll for loaded iframe IDs every second
+    const interval = setInterval(() => {
+      if (iframeContainerRef.current) {
+        const ids = iframeContainerRef.current.getLoadedUrlIds();
+        setLoadedUrlIds(ids);
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
+
   // Handle URL click
   const handleUrlClick = (url: Url) => {
-    setActiveUrlId(url.id);
-    setActiveUrl(url);
+    const isActive = activeUrlId === url.id;
+    const isLoaded = loadedUrlIds.includes(url.id);
 
-    // Save last active URL in user preferences
-    // In a real app, this would be an API call
-    console.log('Updating last active URL to:', url.id);
+    // Three cases to handle:
+    // 1. URL is not active - make it active
+    // 2. URL is active but unloaded - reload it
+    // 3. URL is active and loaded - optional reload
+
+    if (isActive) {
+      if (!isLoaded) {
+        // Active but not loaded (unloaded) - reload it
+        setNotification({
+          open: true,
+          message: `Reloading ${url.title}...`,
+          severity: 'info'
+        });
+
+        // Force a reload of the unloaded iframe
+        if (iframeContainerRef.current) {
+          iframeContainerRef.current.reloadUnloadedIframe(url.id);
+        }
+      } else {
+        // Active and loaded - optional reload
+        handleUrlReload(url);
+      }
+    } else {
+      // Not active - make it active
+      setActiveUrlId(url.id);
+      setActiveUrl(url);
+
+      // Save last active URL in user preferences via API
+      updateLastActiveUrl(url.id);
+    }
   };
 
-  // Handle long press to reset iframe
-  const handleLongPress = (url: Url) => {
-    if (activeUrlId === url.id) {
-      console.log('Resetting iframe for:', url.title);
-      // The actual reset happens in the IframeContainer component
-      // Here we could trigger an event or use a ref method to reset
+  // Update last active URL in the backend
+  const updateLastActiveUrl = async (urlId: string) => {
+    try {
+      const response = await fetch('/api/users/last-active-url', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ urlId }),
+      });
+
+      if (!response.ok) {
+        console.error('Failed to update last active URL');
+      }
+    } catch (error) {
+      console.error('Error updating last active URL:', error);
     }
+  };
+
+  // Handle long press to unload iframe
+  const handleUrlUnload = (url: Url) => {
+    if (iframeContainerRef.current) {
+      iframeContainerRef.current.unloadIframe(url.id);
+
+      setNotification({
+        open: true,
+        message: `${url.title} has been unloaded to save resources`,
+        severity: 'info'
+      });
+    }
+  };
+
+  // Handle reload active iframe
+  const handleUrlReload = (url: Url) => {
+    if (iframeContainerRef.current) {
+      iframeContainerRef.current.resetIframe(url.id);
+
+      setNotification({
+        open: true,
+        message: `Reloading ${url.title}...`,
+        severity: 'info'
+      });
+    }
+  };
+
+  // Handle iframe load event
+  const handleIframeLoad = (urlId: string) => {
+    // Update loaded URLs list
+    setLoadedUrlIds(prev => {
+      if (!prev.includes(urlId)) {
+        return [...prev, urlId];
+      }
+      return prev;
+    });
+
+    // Find URL title for notification
+    const urlTitle = findUrlTitleById(urlId);
+    if (urlTitle) {
+      setNotification({
+        open: true,
+        message: `${urlTitle} loaded successfully`,
+        severity: 'success'
+      });
+    }
+  };
+
+  // Handle iframe unload event
+  const handleIframeUnload = (urlId: string) => {
+    // Remove from loaded URLs list
+    setLoadedUrlIds(prev => prev.filter(id => id !== urlId));
+  };
+
+  // Handle iframe error event
+  const handleIframeError = (urlId: string, error: string) => {
+    console.error('Iframe error:', urlId, error);
+
+    // Remove from loaded URLs list
+    setLoadedUrlIds(prev => prev.filter(id => id !== urlId));
+
+    // Find URL title for notification
+    const urlTitle = findUrlTitleById(urlId);
+    if (urlTitle) {
+      setNotification({
+        open: true,
+        message: `Failed to load ${urlTitle}: ${error}`,
+        severity: 'error'
+      });
+    }
+  };
+
+  // Helper to find URL title by ID
+  const findUrlTitleById = (urlId: string): string | null => {
+    for (const group of urlGroups) {
+      const url = group.urls.find(url => url.id === urlId);
+      if (url) {
+        return url.title;
+      }
+    }
+    return null;
+  };
+
+  // Close notification
+  const handleCloseNotification = () => {
+    setNotification(prev => ({
+      ...prev,
+      open: false
+    }));
   };
 
   // Show loading state
@@ -150,22 +301,44 @@ export default function DashboardPage() {
   }
 
   return (
-    <AppLayout
-      menuContent={
-        <MenuBar
-          urlGroups={urlGroups}
+    <>
+      <AppLayout
+        menuContent={
+          <MenuBar
+            urlGroups={urlGroups}
+            activeUrlId={activeUrlId}
+            loadedUrlIds={loadedUrlIds}
+            onUrlClick={handleUrlClick}
+            onUrlReload={handleUrlReload}
+            onUrlUnload={handleUrlUnload}
+          />
+        }
+      >
+        <IframeContainer
+          ref={iframeContainerRef}
           activeUrlId={activeUrlId}
-          onUrlClick={handleUrlClick}
-          onLongPress={handleLongPress}
+          activeUrl={activeUrl}
+          onLoad={handleIframeLoad}
+          onError={handleIframeError}
+          onUnload={handleIframeUnload}
         />
-      }
-    >
-      <IframeContainer
-        activeUrlId={activeUrlId}
-        activeUrl={activeUrl}
-        onLoad={(urlId) => console.log('Iframe loaded:', urlId)}
-        onError={(urlId, error) => console.error('Iframe error:', urlId, error)}
-      />
-    </AppLayout>
+      </AppLayout>
+
+      {/* Notification system */}
+      <Snackbar
+        open={notification.open}
+        autoHideDuration={3000}
+        onClose={handleCloseNotification}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert
+          onClose={handleCloseNotification}
+          severity={notification.severity}
+          sx={{ width: '100%' }}
+        >
+          {notification.message}
+        </Alert>
+      </Snackbar>
+    </>
   );
 }

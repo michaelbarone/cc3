@@ -63,6 +63,7 @@ The goal is to help you maintain a big picture as well as the progress of the ta
 
 ### Cursor learned
 
+1. Next.js cookies() API must be awaited - When using the cookies() API in Next.js route handlers, the cookies() function must be awaited before accessing its methods. Example: `const cookieStore = cookies(); await cookieStore.get()` should be updated to access cookies asynchronously. This is particularly important for server components and API routes.
 
 ## Scratchpad
 
@@ -131,17 +132,56 @@ Implementation Plan
   - Implemented long press functionality for iframe reset
 
 5. Menu & URL System
-[ ] Create menu rendering based on user's assigned URL groups
-[ ] Implement URL group management in admin area
-[ ] Add click-and-hold functionality to reset iframe src
-[ ] Create system to track active iframe while maintaining others in background
-[ ] Implement responsive menu collapse for mobile devices
+[X] Create API endpoints for fetching user's assigned URL groups
+  - Built endpoint to get all URL groups for a user
+  - Implemented appropriate error handling and authorization
+[X] Implement API endpoints for URL group management in admin area
+  - Created CRUD operations for URL groups (create, read, update, delete)
+  - Added endpoints for URL management within groups
+  - Implemented display order functionality
+[X] Create API endpoints for assigning URL groups to users
+  - Built endpoints for assigning/removing URL groups for users
+  - Added validation and error handling
+[X] Improve existing user URL groups endpoint with proper typing
+  - Fixed TypeScript issues in existing endpoint
+  - Enhanced error handling
+[X] Add click-and-hold functionality to reset iframe src (client-side)
+  - Implemented long press detection for mouse and touch events
+  - Added explicit reset button for better usability
+  - Exposed reset functionality through ref to allow parent component control
+[X] Add visual indicators for loaded iframes that are not the active menu item
+  - Added badge indicators to show loaded but inactive iframes
+  - Exposed loaded URLs state through ref to synchronize UI
+  - Implemented polling mechanism to keep UI in sync with iframe state
+[X] Implement responsive menu collapse for mobile devices (client-side)
+  - Added automatic menu group collapse based on active URL
+  - Implemented dynamic group open/close based on screen size
+  - Enhanced mobile touch interaction and usability
 
 6. Iframe Management
-[ ] Build iframe container system with state persistence
-[ ] Implement auto-sizing to eliminate scrollbars
-[ ] Create state management for multiple loaded iframes with only one visible
-[ ] Add loading indicators and error handling for iframe content
+[X] Build iframe container system with state persistence
+  - Created system to track and manage iframe states
+  - Implemented proper unloading/reloading of iframes
+  - Added controls for explicitly managing loaded/unloaded states
+[X] Implement auto-sizing to eliminate scrollbars
+  - Added auto-resize functionality for same-origin iframes
+  - Included fallback for cross-origin iframes
+  - Added error handling for resize attempts
+[X] Create state management for multiple loaded iframes with only one visible
+  - Implemented efficient visibility controls for multiple iframes
+  - Added state tracking for loaded/unloaded/error states
+  - Created system for proper cleanup of unused iframes to save resources
+[X] Add loading indicators and error handling for iframe content
+  - Added loading spinners for in-progress iframe loads
+  - Implemented error alerts with retry options
+  - Created user-friendly messages for unloaded content
+[ ] Fix iframe reload issue for unloaded active iframes
+  - Enhanced detection of active but unloaded iframe state
+  - Updated handleUrlClick logic to properly reload unloaded iframes
+  - Added clear visual indicators for unloaded iframes with reload functionality
+[X] Fix API errors for JWT token cookies
+  - Updated JWT functions to properly use async/await with cookies() API
+  - Fixed API route handlers to await verifyToken function
 
 7. Admin Configuration
 [ ] Build admin dashboard UI with protected route
@@ -155,26 +195,31 @@ Implementation Plan
 [ ] Store and restore last active URL for user convenience
 [ ] Design architecture to support future setting expansions
 
-9. Containerization
-[ ] Configure Docker for Next.js application
-[ ] Set up SQLite persistence with Docker volumes
-[ ] Create Docker Compose setup for easy deployment
-[ ] Implement proper environment variable management for configuration
-
-10. State Management
+9. State Management
 [ ] Implement client-side state management for active iframe tracking
 [ ] Create server-side persistence for user preferences
 [ ] Build efficient state update system for iframe management
 [ ] Implement URL state synchronization with browser history
 
-11. Testing & Deployment
+10. App initialization
+[ ] for first run, when there is no database, initialize the database and create and admin user with no password
+
+11. Performance Optimization
+[ ] Optimize iframe loading and switching
+[ ] Implement lazy loading for inactive iframe content
+[ ] Configure proper caching policies
+[ ] Optimize SQLite query performance
+
+12. Containerization
+[ ] Configure Docker for Next.js application
+[ ] Set up SQLite persistence with Docker volumes
+[ ] Create Docker Compose setup for easy deployment
+[ ] Implement proper environment variable management for configuration
+
+13. Testing & Deployment
 [ ] Create automated tests for authentication and core functionality
 [ ] Set up CI/CD pipeline for testing and deployment
 [ ] Document deployment procedures
 [ ] Implement database backup strategy
 
-12. Performance Optimization
-[ ] Optimize iframe loading and switching
-[ ] Implement lazy loading for inactive iframe content
-[ ] Configure proper caching policies
-[ ] Optimize SQLite query performance
+

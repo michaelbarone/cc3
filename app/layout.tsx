@@ -15,8 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Next.js SQLite Docker App",
-  description: "A full-stack app with Next.js, SQLite, and Docker",
+  title: "Control Center",
+  description: "A place for all the things",
 };
 
 export default function RootLayout({

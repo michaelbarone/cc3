@@ -57,7 +57,7 @@ export default function AppLayout({ children, menuContent }: AppLayoutProps) {
             <MenuIcon />
           </IconButton>
           <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
-            Next.js SQLite Docker App
+            Control Center
           </Typography>
           {user && (
             <Typography variant="body1" sx={{ mr: 2 }}>

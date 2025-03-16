@@ -4,7 +4,7 @@ import { prisma } from '@/app/lib/db/prisma';
 
 export async function GET() {
   try {
-    const user = verifyToken();
+    const user = await verifyToken();
 
     if (!user) {
       return NextResponse.json(

@@ -22,7 +22,7 @@ export function generateToken(payload: JwtPayload): string {
 /**
  * Set the JWT token as an HTTP-only cookie
  */
-export function setAuthCookie(token: string): void {
+export async function setAuthCookie(token: string): Promise<void> {
   const cookieStore = cookies();
   cookieStore.set({
     name: COOKIE_NAME,
@@ -38,7 +38,7 @@ export function setAuthCookie(token: string): void {
 /**
  * Remove the authentication cookie
  */
-export function removeAuthCookie(): void {
+export async function removeAuthCookie(): Promise<void> {
   const cookieStore = cookies();
   cookieStore.delete(COOKIE_NAME);
 }
@@ -46,7 +46,7 @@ export function removeAuthCookie(): void {
 /**
  * Verify and decode the JWT token from cookies
  */
-export function verifyToken(): JwtPayload | null {
+export async function verifyToken(): Promise<JwtPayload | null> {
   const cookieStore = cookies();
   const token = cookieStore.get(COOKIE_NAME)?.value;
 
@@ -56,9 +56,9 @@ export function verifyToken(): JwtPayload | null {
 
   try {
     return jwt.verify(token, JWT_SECRET) as JwtPayload;
-  } catch (_error) {
+  } catch {
     // Token is invalid or expired
-    removeAuthCookie();
+    await removeAuthCookie();
     return null;
   }
 }

@@ -1,4 +1,5 @@
 'use strict'
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 const config = require('conventional-changelog-conventionalcommits');
 
 module.exports = config({
