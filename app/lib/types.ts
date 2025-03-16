@@ -5,6 +5,7 @@ export interface Url {
   urlGroupId?: string;
   title: string;
   url: string;
+  urlMobile: string | null;
   iconPath: string | null;
   displayOrder: number;
   idleTimeoutMinutes?: number;
