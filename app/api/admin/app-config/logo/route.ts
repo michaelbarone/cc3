@@ -12,6 +12,35 @@ export const config = {
   },
 };
 
+// GET /api/admin/app-config/logo - Get app logo
+export async function GET() {
+  try {
+    // Get app config from database
+    const appConfig = await prisma.appConfig.findUnique({
+      where: { id: 'app-config' },
+    });
+
+    // If no logo is set, return 404
+    if (!appConfig?.appLogo) {
+      return NextResponse.json(
+        { error: 'No logo found' },
+        { status: 404 }
+      );
+    }
+
+    // Redirect to the logo file in public directory
+    return NextResponse.redirect(new URL(appConfig.appLogo, process.env.NODE_ENV === 'production'
+      ? process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
+      : 'http://localhost:3000'));
+  } catch (error) {
+    console.error('Error getting app logo:', error);
+    return NextResponse.json(
+      { error: 'Error getting app logo' },
+      { status: 500 }
+    );
+  }
+}
+
 // POST /api/admin/app-config/logo - Upload app logo
 export async function POST(request: NextRequest) {
   try {

@@ -96,7 +96,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
       await fetch('/api/auth/logout', {
         method: 'POST',
       });
+      // Clear user state
       setUser(null);
+
+      // Clear the remembered user from localStorage
+      localStorage.removeItem('rememberedUser');
     } catch (error) {
       console.error('Logout error:', error);
     }

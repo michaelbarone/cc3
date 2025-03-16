@@ -46,6 +46,7 @@ export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectPath = searchParams.get('redirect') || '/';
+  const justLoggedOut = searchParams.get('logout') === 'true';
   const { login, register } = useAuth();
   const theme = useTheme();
 
@@ -74,20 +75,23 @@ export default function LoginPage() {
           const usersData = await usersResponse.json();
           setUsers(usersData);
 
-          // Check for remembered user
-          const rememberedUser = localStorage.getItem('rememberedUser');
-          if (rememberedUser) {
-            try {
-              const userObj = JSON.parse(rememberedUser);
-              // Check if the remembered user exists in our user list
-              const matchingUser = usersData.find((u: UserTile) => u.id === userObj.id);
-              if (matchingUser) {
-                setSelectedUser(matchingUser);
-                setRememberMe(true);
+          // Check for remembered user, but only if not just logged out
+          if (!justLoggedOut) {
+            const rememberedUser = localStorage.getItem('rememberedUser');
+            if (rememberedUser) {
+              try {
+                const userObj = JSON.parse(rememberedUser);
+                // Check if the remembered user exists in our user list
+                const matchingUser = usersData.find((u: UserTile) => u.id === userObj.id);
+                if (matchingUser) {
+                  setSelectedUser(matchingUser);
+                  setRememberMe(true);
+                }
+              // eslint-disable-next-line @typescript-eslint/no-unused-vars
+              } catch (_) {
+                // Invalid remembered user data
+                localStorage.removeItem('rememberedUser');
               }
-            } catch (_) {
-              // Invalid remembered user data
-              localStorage.removeItem('rememberedUser');
             }
           }
         }
@@ -107,11 +111,94 @@ export default function LoginPage() {
     fetchData();
   }, []);
 
+  // Handle login/register submit
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError('');
+
+    try {
+      // Handle login
+      if (!isRegistering) {
+        if (!selectedUser) {
+          setError('Please select a user');
+          setIsLoading(false);
+          return;
+        }
+
+        await performLogin(selectedUser, password, rememberMe);
+      }
+      // Handle registration
+      else {
+        if (!username.trim()) {
+          setError('Username is required');
+          setIsLoading(false);
+          return;
+        }
+
+        const result = await register(username, password);
+        if (result.success) {
+          router.push(redirectPath);
+        } else {
+          setError(result.message || 'Registration failed');
+        }
+      }
+    } catch (err) {
+      console.error('Auth error:', err);
+      setError('An unexpected error occurred');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Common login function
+  const performLogin = async (user: UserTile, pwd: string, remember: boolean) => {
+    try {
+      await login(user.username, pwd);
+
+      // Save user to localStorage if remember me is checked
+      if (remember) {
+        localStorage.setItem('rememberedUser', JSON.stringify({
+          id: user.id,
+          username: user.username
+        }));
+      } else {
+        localStorage.removeItem('rememberedUser');
+      }
+
+      // Redirect to dashboard or requested page
+      router.push(redirectPath);
+    } catch (error) {
+      if (error instanceof Error) {
+        setError(error.message || 'Login failed');
+      } else {
+        setError('Login failed');
+      }
+      throw error; // Rethrow to be caught by calling function
+    }
+  };
+
   // Handle user tile selection
-  const handleUserSelect = (user: UserTile) => {
+  const handleUserSelect = async (user: UserTile) => {
     setSelectedUser(user);
     setPassword('');
     setError('');
+
+    // If user doesn't require a password, log them in automatically
+    if (!user.requiresPassword) {
+      setIsLoading(true);
+      setRememberMe(true); // Auto set remember me for passwordless users
+
+      try {
+        await performLogin(user, '', true);
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      } catch (_) {
+        // Error is already set in performLogin
+        setIsLoading(false);
+      }
+      return;
+    }
+
     // Focus on password field if required
     if (user.requiresPassword && passwordInputRef.current) {
       setTimeout(() => {
@@ -139,67 +226,6 @@ export default function LoginPage() {
     setUsername('');
     setPassword('');
     setError('');
-  };
-
-  // Handle login/register submit
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setError('');
-
-    try {
-      // Handle login
-      if (!isRegistering) {
-        if (!selectedUser) {
-          setError('Please select a user');
-          setIsLoading(false);
-          return;
-        }
-
-        try {
-          await login(selectedUser.username, password);
-
-          // Save user to localStorage if remember me is checked
-          if (rememberMe) {
-            localStorage.setItem('rememberedUser', JSON.stringify({
-              id: selectedUser.id,
-              username: selectedUser.username
-            }));
-          } else {
-            localStorage.removeItem('rememberedUser');
-          }
-
-          // Redirect to dashboard or requested page
-          router.push(redirectPath);
-        } catch (error) {
-          if (error instanceof Error) {
-            setError(error.message || 'Login failed');
-          } else {
-            setError('Login failed');
-          }
-        }
-      }
-      // Handle registration
-      else {
-        if (!username.trim()) {
-          setError('Username is required');
-          setIsLoading(false);
-          return;
-        }
-
-        const result = await register(username, password);
-        if (result.success) {
-          router.push(redirectPath);
-        } else {
-          setError(result.message || 'Registration failed');
-        }
-      }
-    } catch (err) {
-      console.error('Auth error:', err);
-      setError('An unexpected error occurred');
-    } finally {
-      setIsLoading(false);
-    }
   };
 
   // Render registration form
@@ -444,7 +470,7 @@ export default function LoginPage() {
         {appConfig.appLogo ? (
           <Box mb={2} sx={{ position: 'relative', width: 100, height: 100 }}>
             <Image
-              src={`/api/admin/app-config/logo?t=${new Date().getTime()}`}
+              src={appConfig.appLogo}
               alt={appConfig.appName}
               fill
               style={{ objectFit: 'contain' }}
