@@ -1,55 +1,51 @@
 'use client';
 
+import { useAuth } from '@/app/lib/auth/auth-context';
 import { useState, useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { CircularProgress, Box, Snackbar, Alert } from '@mui/material';
 import AppLayout from '@/app/components/layout/AppLayout';
 import MenuBar from '@/app/components/ui/MenuBar';
 import IframeContainer, { IframeContainerRef } from '@/app/components/iframe/IframeContainer';
-import { useAuth } from '@/app/lib/auth/auth-context';
+import { Url, UrlGroup } from '@/app/lib/types';
+import { useUserPreferences } from '@/app/lib/hooks/useUserPreferences';
 
-// Types for URLs and URL groups
-interface Url {
-  id: string;
-  title: string;
-  url: string;
-  iconPath?: string;
-  displayOrder: number;
-}
-
-interface UrlGroup {
-  id: string;
-  name: string;
-  description?: string;
-  urls: Url[];
+interface NotificationState {
+  open: boolean;
+  message: string;
+  severity: 'success' | 'info' | 'warning' | 'error';
 }
 
 export default function DashboardPage() {
-  const { user, loading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const router = useRouter();
-  const iframeContainerRef = useRef<IframeContainerRef>(null);
+  const searchParams = useSearchParams();
+  const iframeContainerRef = useRef<IframeContainerRef | null>(null);
+  const { preferences, loading: preferencesLoading } = useUserPreferences();
 
   const [urlGroups, setUrlGroups] = useState<UrlGroup[]>([]);
   const [activeUrlId, setActiveUrlId] = useState<string | null>(null);
   const [activeUrl, setActiveUrl] = useState<Url | null>(null);
   const [loadedUrlIds, setLoadedUrlIds] = useState<string[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [notification, setNotification] = useState<{
-    open: boolean;
-    message: string;
-    severity: 'success' | 'info' | 'warning' | 'error';
-  }>({
+  const [dataLoading, setDataLoading] = useState(true);
+  const [notification, setNotification] = useState<NotificationState>({
     open: false,
     message: '',
     severity: 'info'
   });
 
+  // Combined loading state - true if any loading is happening
+  const isLoading = authLoading || preferencesLoading || dataLoading;
+
+  // Get URL ID from query parameter
+  const urlIdFromQuery = searchParams.get('url');
+
   // Redirect to login if not authenticated
   useEffect(() => {
-    if (!loading && !user) {
+    if (!authLoading && !user) {
       router.push('/login');
     }
-  }, [loading, user, router]);
+  }, [authLoading, router, user]);
 
   // Fetch URL groups for the user
   useEffect(() => {
@@ -57,7 +53,7 @@ export default function DashboardPage() {
       if (!user) return;
 
       try {
-        setIsLoading(true);
+        setDataLoading(true);
 
         // Fetch URL groups from the API
         const response = await fetch('/api/url-groups');
@@ -71,30 +67,35 @@ export default function DashboardPage() {
 
         setUrlGroups(fetchedGroups);
 
-        // Set active URL from user's last active URL if available
-        if (user.lastActiveUrl) {
-          const urlId = user.lastActiveUrl;
+        // First priority: URL from browser query parameter
+        if (urlIdFromQuery) {
+          let foundUrl: Url | null = null;
 
           // Find the URL in the groups
           for (const group of fetchedGroups) {
-            const url = group.urls.find((u: Url) => u.id === urlId);
+            const url = group.urls.find((u: Url) => u.id === urlIdFromQuery);
             if (url) {
-              setActiveUrlId(url.id);
-              setActiveUrl(url);
+              foundUrl = url;
               break;
             }
           }
-        } else if (fetchedGroups.length > 0 && fetchedGroups[0].urls.length > 0) {
-          // If no last active URL, set the first URL as active
-          const firstUrl = fetchedGroups[0].urls[0];
-          setActiveUrlId(firstUrl.id);
-          setActiveUrl(firstUrl);
 
-          // Save this as the last active URL
-          updateLastActiveUrl(firstUrl.id);
+          if (foundUrl) {
+            setActiveUrlId(foundUrl.id);
+            setActiveUrl(foundUrl);
+
+            // Update last active URL in server
+            updateLastActiveUrl(foundUrl.id);
+          } else {
+            // If URL from query not found, fall back to last active URL
+            handleLastActiveUrlFallback(fetchedGroups);
+          }
+        } else {
+          // Second priority: Last active URL from user preferences
+          handleLastActiveUrlFallback(fetchedGroups);
         }
 
-        setIsLoading(false);
+        setDataLoading(false);
       } catch (error) {
         console.error('Error fetching URL groups:', error);
         setNotification({
@@ -102,12 +103,55 @@ export default function DashboardPage() {
           message: 'Failed to load URL groups. Please try again.',
           severity: 'error'
         });
-        setIsLoading(false);
+        setDataLoading(false);
       }
     };
 
     fetchUrlGroups();
-  }, [user]);
+  }, [user, urlIdFromQuery]);
+
+  // Helper function to handle last active URL fallback
+  const handleLastActiveUrlFallback = (fetchedGroups: UrlGroup[]) => {
+    if (user?.lastActiveUrl) {
+      const urlId = user.lastActiveUrl;
+
+      // Find the URL in the groups
+      for (const group of fetchedGroups) {
+        const url = group.urls.find((u: Url) => u.id === urlId);
+        if (url) {
+          setActiveUrlId(url.id);
+          setActiveUrl(url);
+
+          // Update URL in browser without refreshing the page
+          updateBrowserUrl(url.id);
+          return;
+        }
+      }
+    }
+
+    // If no last active URL or not found, set the first URL as active
+    if (fetchedGroups.length > 0 && fetchedGroups[0].urls.length > 0) {
+      const firstUrl = fetchedGroups[0].urls[0];
+      setActiveUrlId(firstUrl.id);
+      setActiveUrl(firstUrl);
+
+      // Save this as the last active URL
+      updateLastActiveUrl(firstUrl.id);
+
+      // Update URL in browser
+      updateBrowserUrl(firstUrl.id);
+    }
+  };
+
+  // Update browser URL with current active URL ID without refreshing the page
+  const updateBrowserUrl = (urlId: string) => {
+    // Create new URL with updated query parameter
+    const newUrl = new URL(window.location.href);
+    newUrl.searchParams.set('url', urlId);
+
+    // Update browser history without refreshing the page
+    window.history.pushState({}, '', newUrl.toString());
+  };
 
   // Update loaded URL IDs when iframe container reports load status
   useEffect(() => {
@@ -121,6 +165,35 @@ export default function DashboardPage() {
 
     return () => clearInterval(interval);
   }, []);
+
+  // Listen for browser navigation events (back/forward buttons)
+  useEffect(() => {
+    const handlePopState = () => {
+      // Get URL ID from current URL after browser navigation
+      const url = new URL(window.location.href);
+      const urlId = url.searchParams.get('url');
+
+      if (urlId && urlId !== activeUrlId) {
+        // Find the URL object
+        for (const group of urlGroups) {
+          const url = group.urls.find(u => u.id === urlId);
+          if (url) {
+            setActiveUrlId(url.id);
+            setActiveUrl(url);
+            break;
+          }
+        }
+      }
+    };
+
+    // Add event listener for browser navigation
+    window.addEventListener('popstate', handlePopState);
+
+    // Clean up
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, [activeUrlId, urlGroups]);
 
   // Handle URL click
   const handleUrlClick = (url: Url) => {
@@ -153,6 +226,9 @@ export default function DashboardPage() {
       // Not active - make it active
       setActiveUrlId(url.id);
       setActiveUrl(url);
+
+      // Update browser URL
+      updateBrowserUrl(url.id);
 
       // Save last active URL in user preferences via API
       updateLastActiveUrl(url.id);
@@ -268,34 +344,29 @@ export default function DashboardPage() {
     }));
   };
 
-  // Show loading state
-  if (loading || isLoading) {
-    return (
-      <Box sx={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        height: '100vh'
-      }}>
-        <CircularProgress />
-      </Box>
-    );
-  }
+  // For debugging
+  console.log('Dashboard using menu position:', preferences.menuPosition);
 
   return (
-    <>
-      <AppLayout
-        menuContent={
-          <MenuBar
-            urlGroups={urlGroups}
-            activeUrlId={activeUrlId}
-            loadedUrlIds={loadedUrlIds}
-            onUrlClick={handleUrlClick}
-            onUrlReload={handleUrlReload}
-            onUrlUnload={handleUrlUnload}
-          />
-        }
-      >
+    <AppLayout
+      menuContent={
+        <MenuBar
+          urlGroups={urlGroups}
+          activeUrlId={activeUrlId}
+          loadedUrlIds={loadedUrlIds}
+          onUrlClick={handleUrlClick}
+          onUrlReload={handleUrlReload}
+          onUrlUnload={handleUrlUnload}
+          menuPosition={preferences.menuPosition}
+        />
+      }
+    >
+      {/* Main content */}
+      {isLoading ? (
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+          <CircularProgress />
+        </Box>
+      ) : (
         <IframeContainer
           ref={iframeContainerRef}
           activeUrlId={activeUrlId}
@@ -304,12 +375,12 @@ export default function DashboardPage() {
           onError={handleIframeError}
           onUnload={handleIframeUnload}
         />
-      </AppLayout>
+      )}
 
-      {/* Notification system */}
+      {/* Notification snackbar */}
       <Snackbar
         open={notification.open}
-        autoHideDuration={3000}
+        autoHideDuration={6000}
         onClose={handleCloseNotification}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
@@ -321,6 +392,6 @@ export default function DashboardPage() {
           {notification.message}
         </Alert>
       </Snackbar>
-    </>
+    </AppLayout>
   );
 }
