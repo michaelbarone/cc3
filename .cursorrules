@@ -11,6 +11,9 @@ When a group of subtasks are done, please commit the changes with a short but de
 Especially when you finished a milestone, it will help to improve your depth of task accomplishment to use the Scratchpad to reflect and plan.
 The goal is to help you maintain a big picture as well as the progress of the task. Always refer to the Scratchpad when you plan the next step.
 
+if you are asked to create a checkpoint, please commit changed files and add a message
+for commit messages, please follow any commitlint config file in the repository and fallback to conventional commit format standards
+
 ## Guidance
   You are an expert in TypeScript, Node.js, Next.js App Router, React, Shadcn UI, Radix UI and Tailwind.
 
@@ -159,7 +162,6 @@ Implementation Plan
   - Enhanced mobile touch interaction and usability
 [X] allow the menu bar to be optionally in the header based on user preferences saved in the user settings
 
-
 6. Iframe Management
 [X] Build iframe container system with state persistence
   - Created system to track and manage iframe states
@@ -177,10 +179,7 @@ Implementation Plan
   - Added loading spinners for in-progress iframe loads
   - Implemented error alerts with retry options
   - Created user-friendly messages for unloaded content
-[ ] Fix iframe reload issue for unloaded active iframes
-  - Enhanced detection of active but unloaded iframe state
-  - Updated handleUrlClick logic to properly reload unloaded iframes
-  - Added clear visual indicators for unloaded iframes with reload functionality
+[ ] Ensure url menu items properly show state of active, loaded, etc. and click, long press functionality works as outlined.  ask questions to clarify.
 [X] Fix API errors for JWT token cookies
   - Updated JWT functions to properly use async/await with cookies() API
   - Fixed API route handlers to await verifyToken function
@@ -261,7 +260,6 @@ Implementation Plan
   - Improved error message clarity for different failure scenarios
   - Added visual indicators for form validation
 [X] login page should be controled by themes, and set in the admin panel in the application configuration page
-Ask before doing these:
 [ ] Add password recovery option for users with passwords
 
 10. State Management
