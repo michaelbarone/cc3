@@ -13,7 +13,7 @@ The goal is to help you maintain a big picture as well as the progress of the ta
 Add new planned items to the scratchpad when they are out of scope of our current task and we want to revisit them later.
 after completing all work, always remember to review the scratchpad and update any completed items in addition to addting any items for future consideration
 
-if you are asked to create a checkpoint, please commit changed files and add a message
+if you are asked to "create a checkpoint" or "commit changes", please commit changed files and add a message
 for commit messages, please follow any commitlint config file in the repository and fallback to conventional commit format standards
 
 ## Guidance
