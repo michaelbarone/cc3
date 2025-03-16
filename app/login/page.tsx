@@ -305,8 +305,8 @@ export default function LoginPage() {
                 <Box
                   sx={{
                     position: 'relative',
-                    height: selectedUser?.id === user.id ? '370px' : '250px',
-                    transition: 'height 0.3s ease-in-out'
+                    height: '250px',
+                    transition: 'all 0.3s ease-in-out'
                   }}
                 >
                   {/* User Tile */}
@@ -319,6 +319,7 @@ export default function LoginPage() {
                       width: '100%',
                       overflow: 'hidden',
                       bgcolor: 'background.paper',
+                      borderRadius: 3,
                       transition: 'all 0.3s ease-in-out',
                       '&:hover': {
                         transform: selectedUser?.id === user.id ? 'none' : 'translateY(-10px)',
@@ -329,25 +330,41 @@ export default function LoginPage() {
                       onClick={() => handleUserSelect(user)}
                       sx={{
                         height: '100%',
+                        width: '100%',
                         display: 'flex',
                         flexDirection: 'column',
                         alignItems: 'center',
                         position: 'relative',
-                        background: user.avatarUrl ? `linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.4) 40%, rgba(0,0,0,0.1) 100%), url(${user.avatarUrl})` : undefined,
-                        backgroundSize: 'cover',
-                        backgroundPosition: 'center',
                         transition: 'all 0.3s ease-in-out',
                         transform: 'none',
-                        '&::before': !user.avatarUrl ? {
+                        cursor: 'pointer',
+                        ...(user.avatarUrl && {
+                          '&::after': {
+                            content: '""',
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            bottom: 0,
+                            background: `url(${user.avatarUrl})`,
+                            backgroundSize: 'cover',
+                            backgroundPosition: 'center',
+                            zIndex: 0,
+                          }
+                        }),
+                        '&::before': {
                           content: '""',
                           position: 'absolute',
                           top: 0,
                           left: 0,
                           right: 0,
                           bottom: 0,
-                          background: `linear-gradient(45deg, ${theme.palette.primary.dark}, ${theme.palette.primary.main})`,
-                          opacity: 0.2,
-                        } : undefined
+                          background: user.avatarUrl ?
+                            'linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.4) 40%, rgba(0,0,0,0.1) 100%)' :
+                            `linear-gradient(45deg, ${theme.palette.primary.dark}, ${theme.palette.primary.main})`,
+                          opacity: user.avatarUrl ? 1 : 0.2,
+                          zIndex: 1
+                        }
                       }}
                     >
                       <Box
@@ -425,72 +442,85 @@ export default function LoginPage() {
                       </Box>
 
                       {/* Password Form - Inside the card */}
-                      {user.requiresPassword && selectedUser?.id === user.id && (
-                        <Box
-                          component="form"
-                          onSubmit={handleSubmit}
-                          sx={{
-                            position: 'absolute',
-                            bottom: 0,
-                            left: 0,
-                            right: 0,
-                            p: 3,
-                            background: 'rgba(0,0,0,0.3)',
-                            backdropFilter: 'blur(10px)',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: 2,
-                            transition: 'all 0.3s ease-in-out',
-                            zIndex: 0
+                      <Box
+                        component="form"
+                        onSubmit={handleSubmit}
+                        sx={{
+                          position: 'absolute',
+                          bottom: 0,
+                          left: 0,
+                          right: 0,
+                          p: 3,
+                          background: 'rgba(0,0,0,0.3)',
+                          backdropFilter: 'blur(10px)',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: 2,
+                          transition: 'transform 0.3s ease-in-out, opacity 0.3s ease-in-out',
+                          transform: user.requiresPassword && selectedUser?.id === user.id ?
+                            'translateY(0)' :
+                            'translateY(100%)',
+                          opacity: user.requiresPassword && selectedUser?.id === user.id ? 1 : 0,
+                          pointerEvents: user.requiresPassword && selectedUser?.id === user.id ?
+                            'auto' :
+                            'none',
+                          zIndex: 2
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <TextField
+                          fullWidth
+                          name="password"
+                          label="Password"
+                          type={showPassword ? 'text' : 'password'}
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          inputRef={passwordInputRef}
+                          InputProps={{
+                            endAdornment: (
+                              <InputAdornment position="end">
+                                <IconButton
+                                  onClick={handleTogglePasswordVisibility}
+                                  edge="end"
+                                  sx={{ color: 'white' }}
+                                >
+                                  {showPassword ? <VisibilityOff /> : <Visibility />}
+                                </IconButton>
+                              </InputAdornment>
+                            ),
                           }}
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <TextField
-                            fullWidth
-                            name="password"
-                            label="Password"
-                            type={showPassword ? 'text' : 'password'}
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            inputRef={passwordInputRef}
-                            InputProps={{
-                              endAdornment: (
-                                <InputAdornment position="end">
-                                  <IconButton
-                                    onClick={handleTogglePasswordVisibility}
-                                    edge="end"
-                                    sx={{ color: 'white' }}
-                                  >
-                                    {showPassword ? <VisibilityOff /> : <Visibility />}
-                                  </IconButton>
-                                </InputAdornment>
-                              ),
-                            }}
-                            sx={{
-                              '& .MuiInputLabel-root': {
-                                color: 'white',
+                          sx={{
+                            '& .MuiInputLabel-root': {
+                              color: 'white',
+                              transition: 'all 0.3s ease-in-out',
+                            },
+                            '& .MuiInputBase-root': {
+                              color: 'white',
+                              transition: 'all 0.3s ease-in-out',
+                              '&:before': {
+                                borderColor: 'rgba(255,255,255,0.5)',
+                                transition: 'all 0.3s ease-in-out',
                               },
-                              '& .MuiInputBase-root': {
-                                color: 'white',
-                                '&:before': {
-                                  borderColor: 'rgba(255,255,255,0.5)',
-                                },
-                                '&:hover:not(.Mui-disabled):before': {
-                                  borderColor: 'rgba(255,255,255,0.7)',
-                                },
+                              '&:hover:not(.Mui-disabled):before': {
+                                borderColor: 'rgba(255,255,255,0.7)',
+                              },
+                              '& .MuiInputAdornment-root': {
+                                '& .MuiIconButton-root': {
+                                  transition: 'all 0.3s ease-in-out',
+                                }
                               }
-                            }}
-                          />
-                          <Button
-                            type="submit"
-                            variant="contained"
-                            fullWidth
-                            disabled={isLoading}
-                          >
-                            {isLoading ? <CircularProgress size={24} /> : 'Log In'}
-                          </Button>
-                        </Box>
-                      )}
+                            }
+                          }}
+                        />
+                        <Button
+                          type="submit"
+                          variant="contained"
+                          fullWidth
+                          disabled={isLoading}
+                        >
+                          {isLoading ? <CircularProgress size={24} /> : 'Log In'}
+                        </Button>
+                      </Box>
                     </Box>
                   </Card>
                 </Box>
