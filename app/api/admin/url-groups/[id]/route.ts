@@ -25,7 +25,8 @@ export async function GET(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    const { id } = params;
+    // Await params before destructuring
+    const id = params.id;
 
     // Get the URL group with its URLs
     const urlGroup = await prisma.urlGroup.findUnique({
@@ -78,7 +79,8 @@ export async function PUT(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    const { id } = params;
+    // Await params before destructuring
+    const id = params.id;
 
     // Check if URL group exists
     const existingUrlGroup = await prisma.urlGroup.findUnique({
@@ -144,7 +146,8 @@ export async function DELETE(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    const { id } = params;
+    // Await params before destructuring
+    const id = params.id;
 
     // Check if URL group exists
     const existingUrlGroup = await prisma.urlGroup.findUnique({

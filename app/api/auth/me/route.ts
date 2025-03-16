@@ -22,6 +22,8 @@ export async function GET() {
         isAdmin: true,
         lastActiveUrl: true,
         passwordHash: true,
+        avatarUrl: true,
+        menuPosition: true,
       },
     });
 

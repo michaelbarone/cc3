@@ -20,7 +20,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    const { id } = params;
+    // Await params before destructuring
+    const id = params.id;
 
     // Check if the URL group exists
     const urlGroup = await prisma.urlGroup.findUnique({
@@ -77,7 +78,8 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    const { id } = params;
+    // Await params before destructuring
+    const id = params.id;
     const { userIds } = await request.json();
 
     if (!Array.isArray(userIds)) {

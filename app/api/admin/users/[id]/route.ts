@@ -32,7 +32,8 @@ export async function PUT(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    const { id } = params;
+    // Await params before destructuring
+    const id = params.id;
 
     // Check if user exists
     const existingUser = await prisma.user.findUnique({
@@ -125,7 +126,8 @@ export async function DELETE(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    const { id } = params;
+    // Await params before destructuring
+    const id = params.id;
 
     // Check if user exists
     const existingUser = await prisma.user.findUnique({
