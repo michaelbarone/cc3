@@ -24,6 +24,7 @@ export async function GET() {
         passwordHash: true,
         avatarUrl: true,
         menuPosition: true,
+        themeMode: true,
       },
     });
 

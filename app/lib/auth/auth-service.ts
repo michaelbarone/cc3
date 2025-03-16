@@ -14,6 +14,7 @@ interface LoginResult {
     lastActiveUrl?: string;
     avatarUrl?: string;
     menuPosition?: string;
+    themeMode?: string;
   };
 }
 
@@ -42,6 +43,7 @@ export async function loginUser(username: string, password?: string): Promise<Lo
         lastActiveUrl: true,
         avatarUrl: true,
         menuPosition: true,
+        themeMode: true,
       },
     });
 
@@ -101,6 +103,7 @@ export async function loginUser(username: string, password?: string): Promise<Lo
         lastActiveUrl: user.lastActiveUrl || undefined,
         avatarUrl: user.avatarUrl || undefined,
         menuPosition: user.menuPosition || 'side',
+        themeMode: user.themeMode || 'light',
       },
     };
   } catch (error) {

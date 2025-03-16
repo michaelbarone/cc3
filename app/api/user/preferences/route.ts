@@ -123,6 +123,7 @@ export async function POST(request: NextRequest) {
         themeMode: updatedUser.themeMode || 'light',
       },
       rawPreferences: updatedUser, // Include raw data for debugging
+      success: true, // Add explicit success flag
     });
   } catch (error) {
     console.error('Error updating user preferences:', error);

@@ -57,20 +57,22 @@ export default function AppearanceSettingsPage() {
     console.log(`Changing theme mode from ${preferences.themeMode} to ${newMode}`);
 
     try {
-      // Try to update the preference in the database first
+      // First update the database preference
       await updateThemeMode(newMode);
 
-      // Then manually toggle the theme context if needed
+      // Then toggle the theme in the UI via ThemeContext
+      // Only toggle if needed (current mode is different from target)
       if (themeContext && themeContext.mode !== newMode) {
         themeContext.toggleColorMode();
       }
 
       setNotification({
         open: true,
-        message: 'Theme mode updated successfully.',
+        message: 'Theme mode updated successfully. This change will persist between sessions.',
         severity: 'success',
       });
     } catch (error) {
+      console.error('Error updating theme:', error);
       setNotification({
         open: true,
         message: `Failed to update theme mode: ${error instanceof Error ? error.message : 'Unknown error'}`,

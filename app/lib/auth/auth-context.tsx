@@ -11,6 +11,7 @@ export interface User {
   hasPassword?: boolean;
   avatarUrl?: string;
   menuPosition?: 'side' | 'top';
+  themeMode?: 'light' | 'dark';
 }
 
 // Define context type
