@@ -36,31 +36,179 @@ export interface IframeContainerRef {
   getLoadedUrlIds: () => string[];
 }
 
+// Create a singleton container for iframes outside of React
+let globalIframeContainer: HTMLDivElement | null = null;
+
+// Function to get or create the global iframe container
+function getGlobalIframeContainer() {
+  if (!globalIframeContainer) {
+    globalIframeContainer = document.createElement('div');
+    globalIframeContainer.id = 'global-iframe-container';
+    globalIframeContainer.style.position = 'fixed';
+    globalIframeContainer.style.top = '0';
+    globalIframeContainer.style.left = '0';
+    globalIframeContainer.style.width = '100%';
+    globalIframeContainer.style.height = '100%';
+    globalIframeContainer.style.pointerEvents = 'none';
+    globalIframeContainer.style.zIndex = '1000';
+    document.body.appendChild(globalIframeContainer);
+  }
+  return globalIframeContainer;
+}
+
 const IframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
   function IframeContainer({ activeUrlId, activeUrl, onLoad, onError, onUnload, urlGroups = [] }, ref) {
     const [iframeStates, setIframeStates] = useState<Record<string, IframeState>>({});
     const iframeRefs = useRef<Record<string, HTMLIFrameElement | null>>({});
     const previousActiveUrlIdRef = useRef<string | null>(null);
+    const containerRef = useRef<HTMLDivElement | null>(null);
+    const eventListeners = useRef<Record<string, { load: () => void; error: () => void }>>({});
 
     // Track all available URLs
-    const allUrls = useRef<Record<string, string>>({});
+    const [allUrlsMap, setAllUrlsMap] = useState<Record<string, string>>({});
 
     // Reference for idle timeout checking interval
     const idleCheckIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-    // Convert the ref to a stable state value to prevent memo dependency issues
-    const [allUrlsMap, setAllUrlsMap] = useState<Record<string, string>>({});
-
-    // Track active URL ID in a ref to avoid re-renders
-    const activeUrlIdRef = useRef<string | null>(null);
-
-    // Container ref for iframes
-    const iframeContainerRef = useRef<HTMLDivElement | null>(null);
-
-    // Update ref whenever the prop changes
+    // Initialize the global container and move iframes there
     useEffect(() => {
-      activeUrlIdRef.current = activeUrlId;
-    }, [activeUrlId]);
+      const globalContainer = getGlobalIframeContainer();
+
+      // Create all iframes in the global container
+      Object.entries(allUrlsMap).forEach(([urlId, url]) => {
+        if (!document.querySelector(`[data-iframe-id="${urlId}"]`)) {
+          const wrapper = document.createElement('div');
+          wrapper.setAttribute('data-iframe-container', urlId);
+          wrapper.style.position = 'absolute';
+          wrapper.style.top = '0';
+          wrapper.style.left = '0';
+          wrapper.style.width = '100%';
+          wrapper.style.height = '100%';
+          wrapper.style.overflow = 'hidden';
+          wrapper.style.pointerEvents = 'auto';
+          wrapper.style.display = urlId === activeUrlId ? 'block' : 'none';
+          wrapper.style.zIndex = urlId === activeUrlId ? '1' : '0';
+
+          const iframe = document.createElement('iframe');
+          iframe.setAttribute('data-iframe-id', urlId);
+          iframe.setAttribute('data-url', url);
+          iframe.title = `iframe-${urlId}`;
+          iframe.style.width = '100%';
+          iframe.style.height = '100%';
+          iframe.style.border = 'none';
+          iframe.style.background = '#fff';
+          iframe.style.overflow = 'hidden';
+          iframe.setAttribute('sandbox', 'allow-same-origin allow-scripts allow-forms allow-popups');
+          iframe.setAttribute('allow', 'accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture');
+
+          const loadListener = () => {
+            if (iframe.src && iframe.src !== 'about:blank' && iframe.src !== '') {
+              handleIframeLoad(urlId);
+            }
+          };
+          const errorListener = () => handleIframeError(urlId);
+
+          eventListeners.current[urlId] = {
+            load: loadListener,
+            error: errorListener
+          };
+
+          iframe.addEventListener('load', loadListener);
+          iframe.addEventListener('error', errorListener);
+
+          iframeRefs.current[urlId] = iframe;
+          iframe.src = url;
+
+          wrapper.appendChild(iframe);
+          globalContainer.appendChild(wrapper);
+        }
+      });
+
+      // Update container position when our local container moves
+      const observer = new ResizeObserver(() => {
+        if (containerRef.current) {
+          const rect = containerRef.current.getBoundingClientRect();
+          Object.values(iframeRefs.current).forEach(iframe => {
+            if (iframe?.parentElement) {
+              iframe.parentElement.style.position = 'fixed';
+              iframe.parentElement.style.top = `${rect.top}px`;
+              iframe.parentElement.style.left = `${rect.left}px`;
+              iframe.parentElement.style.width = `${rect.width}px`;
+              iframe.parentElement.style.height = `${rect.height}px`;
+            }
+          });
+        }
+      });
+
+      if (containerRef.current) {
+        observer.observe(containerRef.current);
+      }
+
+      return () => {
+        observer.disconnect();
+        // Don't remove iframes on unmount, they should persist
+        Object.entries(eventListeners.current).forEach(([urlId, listeners]) => {
+          const iframe = iframeRefs.current[urlId];
+          if (iframe) {
+            iframe.removeEventListener('load', listeners.load);
+            iframe.removeEventListener('error', listeners.error);
+          }
+        });
+      };
+    }, [allUrlsMap, activeUrlId]);
+
+    // Update iframe visibility when active URL changes
+    useEffect(() => {
+      if (!activeUrlId) return;
+
+      Object.keys(allUrlsMap).forEach(urlId => {
+        const wrapper = document.querySelector(`[data-iframe-container="${urlId}"]`);
+        if (wrapper) {
+          const isActive = urlId === activeUrlId;
+          (wrapper as HTMLElement).style.display = isActive ? 'block' : 'none';
+          (wrapper as HTMLElement).style.zIndex = isActive ? '1' : '0';
+
+          if (isActive) {
+            const iframe = iframeRefs.current[urlId];
+            if (iframe) {
+              const isContentLoaded = iframe.src === allUrlsMap[urlId];
+              if (!isContentLoaded || iframeStates[urlId]?.isUnloaded) {
+                updateIframeSrc(urlId, allUrlsMap[urlId]);
+              } else {
+                // Ensure loading state is false for already loaded iframes
+                setIframeStates(prev => ({
+                  ...prev,
+                  [urlId]: {
+                    ...prev[urlId] || {
+                      id: urlId,
+                      url: allUrlsMap[urlId],
+                      idleTimeoutMinutes: 10
+                    },
+                    loading: false,
+                    error: null,
+                    isUnloaded: false,
+                    lastActivityTime: Date.now()
+                  }
+                }));
+              }
+            }
+          }
+        }
+      });
+
+      previousActiveUrlIdRef.current = activeUrlId;
+    }, [activeUrlId, allUrlsMap]);
+
+    // Collect URLs from groups
+    useEffect(() => {
+      const urls: Record<string, string> = {};
+      urlGroups.forEach(group => {
+        group.urls.forEach(url => {
+          urls[url.id] = url.url;
+        });
+      });
+      setAllUrlsMap(urls);
+    }, [urlGroups]);
 
     // Set up idle check interval
     useEffect(() => {
@@ -101,26 +249,6 @@ const IframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
       };
     }, [iframeStates, activeUrlId]);
 
-    // Collect all URLs from URL groups and store in state instead of ref
-    useEffect(() => {
-      const urls: Record<string, string> = {};
-
-      // Extract all URLs from urlGroups
-      urlGroups.forEach(group => {
-        group.urls.forEach(url => {
-          urls[url.id] = url.url;
-        });
-      });
-
-      // Update state instead of ref
-      setAllUrlsMap(urls);
-
-      // Keep ref for backwards compatibility with existing code
-      allUrls.current = urls;
-
-      console.log('Available URLs:', Object.keys(urls).length);
-    }, [urlGroups]);
-
     // Expose methods via ref
     useImperativeHandle(ref, () => ({
       resetIframe: (urlId: string) => {
@@ -151,6 +279,8 @@ const IframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
         if (prevDisplay !== newDisplay) {
           console.log(`Changing visibility for iframe ${urlId}: ${prevDisplay} -> ${newDisplay}`);
           (container as HTMLElement).style.display = newDisplay;
+          // Update z-index to ensure active iframe is on top
+          (container as HTMLElement).style.zIndex = isActive ? '1' : '0';
         }
       }
     };
@@ -176,22 +306,55 @@ const IframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
         } else {
           console.log(`Skipped clearing src for iframe ${urlId} - just switching tabs`);
         }
-      } else {
-        // Update src with the provided value
+      } else if (iframe.src !== src) {
+        // Only update src if it's different from current src
         console.log(`Setting src for iframe ${urlId}: ${prevSrc.substring(0, 30)}... -> ${src.substring(0, 30)}...`);
-        iframe.src = src;
+        // Only set loading state when actually changing the src to a non-empty value
+        if (src !== '') {
+          setIframeStates(prev => ({
+            ...prev,
+            [urlId]: {
+              ...prev[urlId] || {
+                id: urlId,
+                url: src,
+                idleTimeoutMinutes: 10
+              },
+              loading: true,
+              error: null,
+              isUnloaded: false,
+              lastActivityTime: Date.now()
+            }
+          }));
+          iframe.src = src;
+        }
+      } else {
+        // If src is the same, ensure loading state is false
+        setIframeStates(prev => ({
+          ...prev,
+          [urlId]: {
+            ...prev[urlId] || {
+              id: urlId,
+              url: src,
+              idleTimeoutMinutes: 10
+            },
+            loading: false,
+            error: null,
+            isUnloaded: false,
+            lastActivityTime: Date.now()
+          }
+        }));
       }
     };
 
     // Handle iframe creation and management entirely through DOM
     useEffect(() => {
       // Only run once when the URL map is populated
-      if (Object.keys(allUrlsMap).length === 0 || !iframeContainerRef.current) {
+      if (Object.keys(allUrlsMap).length === 0 || !containerRef.current) {
         return;
       }
 
       console.log('Creating iframe DOM elements imperatively (once only)');
-      const container = iframeContainerRef.current;
+      const container = containerRef.current;
 
       // Create all iframe elements
       Object.entries(allUrlsMap).forEach(([urlId, url]) => {
@@ -225,24 +388,31 @@ const IframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
         iframe.setAttribute('sandbox', 'allow-same-origin allow-scripts allow-forms allow-popups');
         iframe.setAttribute('allow', 'accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture');
 
-        // Set src for all iframes right away to prevent unnecessary reloads
-        // This ensures we don't lose iframe content when switching between tabs
-        iframe.src = url;
-
-        // Add event listeners
-        iframe.addEventListener('load', () => {
+        // Create stable event listener references
+        const loadListener = () => {
           // Only trigger load event for non-empty src
           if (iframe.src && iframe.src !== 'about:blank' && iframe.src !== '') {
             handleIframeLoad(urlId);
           }
-        });
+        };
+        const errorListener = () => handleIframeError(urlId);
 
-        iframe.addEventListener('error', () => {
-          handleIframeError(urlId);
-        });
+        // Store listeners for cleanup
+        eventListeners.current[urlId] = {
+          load: loadListener,
+          error: errorListener
+        };
+
+        // Add event listeners
+        iframe.addEventListener('load', loadListener);
+        iframe.addEventListener('error', errorListener);
 
         // Store ref to the iframe
         iframeRefs.current[urlId] = iframe;
+
+        // Set src for all iframes right away to prevent unnecessary reloads
+        // This ensures we don't lose iframe content when switching between tabs
+        iframe.src = url;
 
         // Add iframe to wrapper and wrapper to container
         wrapperDiv.appendChild(iframe);
@@ -253,6 +423,18 @@ const IframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
       if (activeUrlId) {
         updateIframeVisibility(activeUrlId, true);
       }
+
+      // Cleanup function to remove event listeners
+      return () => {
+        Object.entries(eventListeners.current).forEach(([urlId, listeners]) => {
+          const iframe = iframeRefs.current[urlId];
+          if (iframe) {
+            iframe.removeEventListener('load', listeners.load);
+            iframe.removeEventListener('error', listeners.error);
+          }
+        });
+        eventListeners.current = {};
+      };
     }, [allUrlsMap]);
 
     // Update iframe visibility when active URL changes
@@ -283,30 +465,14 @@ const IframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
         // Check if the iframe exists
         const iframe = iframeRefs.current[activeUrlId];
         if (iframe) {
-          // Check if the iframe is already loaded
-          const isContentLoaded = iframe.src && iframe.src !== '' && iframe.src !== 'about:blank';
+          // Check if the iframe is already loaded with the correct URL
+          const isContentLoaded = iframe.src === targetUrl;
 
-          // Only load content if the iframe has no content or if it's marked as unloaded
+          // Only load content if the iframe has no content, wrong URL, or if it's marked as unloaded
           if (!isContentLoaded || iframeStates[activeUrlId]?.isUnloaded) {
             console.log(`Loading iframe content for ${activeUrlId} with URL: ${targetUrl}`);
 
-            // Set loading state first
-            setIframeStates(prev => ({
-              ...prev,
-              [activeUrlId]: {
-                ...prev[activeUrlId] || {
-                  id: activeUrlId,
-                  url: targetUrl,
-                  idleTimeoutMinutes: activeUrl?.idleTimeoutMinutes || 10
-                },
-                loading: true,
-                error: null,
-                isUnloaded: false,
-                lastActivityTime: Date.now()
-              }
-            }));
-
-            // Update the iframe src directly - ONLY set, never clear
+            // Update the iframe src directly - ONLY set if different
             updateIframeSrc(activeUrlId, targetUrl);
           } else {
             // Just update activity time when iframe is already loaded
@@ -537,13 +703,13 @@ const IframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
       ).length;
 
       console.log(`Active iframe count: ${activeCount}`);
-      console.log(`Current active URL: ${activeUrlIdRef.current}`);
+      console.log(`Current active URL: ${activeUrlId}`);
 
       // Only log details if there are states to log
       if (Object.keys(iframeStates).length > 0) {
         console.log('Iframe states:', Object.keys(iframeStates).map(id => ({
           id,
-          isActive: id === activeUrlIdRef.current,
+          isActive: id === activeUrlId,
           isUnloaded: iframeStates[id].isUnloaded,
           isLoading: iframeStates[id].loading,
           hasError: !!iframeStates[id].error,
@@ -572,12 +738,16 @@ const IframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
     const currentIframeState = iframeStates[activeUrlId];
 
     return (
-      <Box sx={{
-        position: 'relative',
-        height: '100%',
-        width: '100%',
-        overflow: 'hidden'
-      }}>
+      <Box
+        ref={containerRef}
+        sx={{
+          position: 'relative',
+          height: '100%',
+          width: '100%',
+          overflow: 'hidden',
+          zIndex: 0
+        }}
+      >
         {/* Loading indicator */}
         {currentIframeState?.loading && (
           <Box
@@ -591,7 +761,7 @@ const IframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
               alignItems: 'center',
               justifyContent: 'center',
               bgcolor: 'rgba(0, 0, 0, 0.1)',
-              zIndex: 10
+              zIndex: 2000
             }}
           >
             <CircularProgress />
@@ -607,7 +777,7 @@ const IframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
               left: 0,
               right: 0,
               padding: 2,
-              zIndex: 10
+              zIndex: 2000
             }}
           >
             <Alert
@@ -651,7 +821,7 @@ const IframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
               alignItems: 'center',
               justifyContent: 'center',
               bgcolor: 'background.paper',
-              zIndex: 10
+              zIndex: 2000
             }}
           >
             <Alert
@@ -681,17 +851,6 @@ const IframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
             </Alert>
           </Box>
         )}
-
-        {/* Container div for imperatively created iframes */}
-        <div
-          ref={iframeContainerRef}
-          style={{
-            position: 'relative',
-            height: '100%',
-            width: '100%',
-            overflow: 'hidden'
-          }}
-        />
       </Box>
     );
   }
