@@ -452,13 +452,17 @@ export default function AppConfigPage() {
           </Card>
         </Grid>
 
-        {/* Login Theme Configuration */}
+        {/* Login Page Settings */}
         <Grid item xs={12} md={6}>
           <Card>
-            <CardHeader title="Login Page Theme" />
+            <CardHeader title="Login Page Settings" />
             <Divider />
             <CardContent>
-              <Box sx={{ mb: 2 }}>
+              {/* Theme Selection */}
+              <Box sx={{ mb: 4 }}>
+                <Typography variant="subtitle1" sx={{ mb: 1 }}>
+                  Login Page Theme
+                </Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                   Choose the theme for the login page. This affects the appearance of the login page only.
                 </Typography>
@@ -530,20 +534,17 @@ export default function AppConfigPage() {
                   onClick={handleSaveLoginTheme}
                   disabled={saving || loginTheme === appConfig?.loginTheme}
                 >
-                  {saving ? <CircularProgress size={24} /> : 'Save'}
+                  {saving ? <CircularProgress size={24} /> : 'Save Theme'}
                 </Button>
               </Box>
-            </CardContent>
-          </Card>
-        </Grid>
 
-        {/* Registration Settings */}
-        <Grid item xs={12} md={6}>
-          <Card>
-            <CardHeader title="User Registration" />
-            <Divider />
-            <CardContent>
-              <Box sx={{ mb: 2 }}>
+              <Divider sx={{ my: 3 }} />
+
+              {/* Registration Settings */}
+              <Box>
+                <Typography variant="subtitle1" sx={{ mb: 1 }}>
+                  User Registration
+                </Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                   Enable or disable self-registration for new users. When disabled, only administrators can create new user accounts.
                 </Typography>
@@ -564,7 +565,7 @@ export default function AppConfigPage() {
                   onClick={handleSaveRegistrationEnabled}
                   disabled={saving || registrationEnabled === appConfig?.registrationEnabled}
                 >
-                  {saving ? <CircularProgress size={24} /> : 'Save'}
+                  {saving ? <CircularProgress size={24} /> : 'Save Registration Setting'}
                 </Button>
               </Box>
             </CardContent>
