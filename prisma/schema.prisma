@@ -52,3 +52,11 @@ model UserUrlGroup {
 
   @@id([userId, urlGroupId])
 }
+
+model AppConfig {
+  id        String   @id @default("app-config")
+  appName   String   @default("URL Dashboard")
+  appLogo   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

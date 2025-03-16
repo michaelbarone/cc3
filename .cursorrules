@@ -157,8 +157,8 @@ Implementation Plan
   - Added automatic menu group collapse based on active URL
   - Implemented dynamic group open/close based on screen size
   - Enhanced mobile touch interaction and usability
-[ ] allow the menu bar to be optionally in the header based on user preferences saved in the user settings
-[ ] when the iframe menu bar is in the header, only show 1 group at a time.  when hovering over the group name, display the other groups to select
+[X] allow the menu bar to be optionally in the header based on user preferences saved in the user settings
+[ ] when the iframe menu bar is in the header, only show 1 group at a time.  when hovering over the group name, display the other groups to select and show all urls in addition to the group names.
 
 6. Iframe Management
 [X] Build iframe container system with state persistence
@@ -208,8 +208,8 @@ Implementation Plan
   - Created API endpoints for managing users in URL groups
   - Implemented UI for assigning users to URL groups
   - Added functionality to save user assignments
-[ ] allow uploading an icon for the urls in the url groups
-[ ] create an application config area, where you can name the application and upload an icon.  the name will be visible in the header, the icon can replace the name in the header.
+[X] allow uploading an icon for the urls in the url groups
+[X] create an application config area, where you can name the application and upload an icon.  the name will be visible in the header, the icon can replace the name in the header.
 
 8. User Settings
 [X] create a drop down menu under the username in the header.  it should have links to the admin area (if the user has admin permission) and to the user settings page

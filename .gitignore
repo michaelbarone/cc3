@@ -2,6 +2,8 @@
 
 #project
 **/dev.db
+public/icons/*
+public/logos/*
 
 # dependencies
 /node_modules

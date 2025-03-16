@@ -39,6 +39,7 @@ import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
 import GroupIcon from '@mui/icons-material/Group';
 import VisibilityIcon from '@mui/icons-material/Visibility';
+import IconUpload from '@/app/components/ui/IconUpload';
 
 interface Url {
   id: string;
@@ -396,6 +397,42 @@ export default function UrlGroupManagement() {
     }
   };
 
+  // Handle icon upload
+  const handleIconUpload = (iconUrl: string) => {
+    setUrlFormValues({
+      ...urlFormValues,
+      iconPath: iconUrl
+    });
+  };
+
+  // Handle icon deletion
+  const handleIconDelete = async () => {
+    if (!urlFormValues.iconPath) return;
+
+    try {
+      const response = await fetch(`/api/admin/icons?iconPath=${encodeURIComponent(urlFormValues.iconPath)}`, {
+        method: 'DELETE'
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete icon');
+      }
+
+      // Clear icon path
+      setUrlFormValues({
+        ...urlFormValues,
+        iconPath: ''
+      });
+    } catch (error) {
+      console.error('Error deleting icon:', error);
+      setSnackbar({
+        open: true,
+        message: 'Failed to delete icon',
+        severity: 'error'
+      });
+    }
+  };
+
   if (loading && urlGroups.length === 0) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
@@ -653,37 +690,43 @@ export default function UrlGroupManagement() {
           {dialogType === 'createUrl' ? 'Add New URL' : 'Edit URL'}
         </DialogTitle>
         <DialogContent>
-          <TextField
-            autoFocus
-            margin="dense"
-            name="title"
-            label="Title"
-            fullWidth
-            variant="outlined"
-            value={urlFormValues.title}
-            onChange={handleUrlFormChange}
-            sx={{ mb: 2 }}
-          />
-          <TextField
-            margin="dense"
-            name="url"
-            label="URL"
-            fullWidth
-            variant="outlined"
-            value={urlFormValues.url}
-            onChange={handleUrlFormChange}
-            sx={{ mb: 2 }}
-          />
-          <TextField
-            margin="dense"
-            name="iconPath"
-            label="Icon Path (optional)"
-            fullWidth
-            variant="outlined"
-            value={urlFormValues.iconPath}
-            onChange={handleUrlFormChange}
-            helperText="Path to the icon image file (leave empty for default icon)"
-          />
+          <Grid container spacing={2} sx={{ mt: 1 }}>
+            <Grid item xs={12} sm={9}>
+              <TextField
+                autoFocus
+                margin="dense"
+                name="title"
+                label="Title"
+                fullWidth
+                variant="outlined"
+                value={urlFormValues.title}
+                onChange={handleUrlFormChange}
+              />
+            </Grid>
+            <Grid item xs={12} sm={3} sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+              <IconUpload
+                iconUrl={urlFormValues.iconPath || null}
+                onUploadSuccess={handleIconUpload}
+                onUploadError={(error) => setSnackbar({
+                  open: true,
+                  message: error,
+                  severity: 'error'
+                })}
+                onDelete={handleIconDelete}
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <TextField
+                margin="dense"
+                name="url"
+                label="URL"
+                fullWidth
+                variant="outlined"
+                value={urlFormValues.url}
+                onChange={handleUrlFormChange}
+              />
+            </Grid>
+          </Grid>
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseDialog}>Cancel</Button>
