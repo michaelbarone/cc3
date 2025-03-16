@@ -238,28 +238,54 @@ Implementation Plan
   - Added profile settings page with avatar management
 [X] add a setting for left side menu bar or top menu bar
 
-9. State Management
+9. Login Page
+[X] create user tiles instead of needing to type in user names.  for users with passwords, after clicking on their tile, the password field and submit button slides into the tile.
+  - Created new API endpoint to fetch all users for login page
+  - Implemented user tile grid UI with proper spacing and styling
+  - Added animations for tile selection and password field appearance
+  - Implemented back button to return to user selection
+[X] Create visually appealing login page with application branding
+  - Added app logo and name at the top of login page
+  - Improved overall design with elevation, spacing, and typography
+  - Enhanced visual feedback with animations and transitions
+[X] Add smooth transitions and animations for login process
+  - Added slide and fade animations for UI transitions
+  - Implemented focus management for better user experience
+  - Created responsive design for different screen sizes
+[X] Implement "remember me" functionality for user convenience
+  - Added remember me checkbox that persists user selection
+  - Implemented secure localStorage storage for remembered user
+  - Added logic to auto-select remembered user on page load
+[X] Create clear error messages for authentication failures
+  - Enhanced error display with snackbar notifications
+  - Improved error message clarity for different failure scenarios
+  - Added visual indicators for form validation
+Ask before doing these:
+[ ] Add password recovery option for users with passwords
+
+
+10. State Management
 [X] Implement client-side state management for active iframe tracking
 [X] Create server-side persistence for user preferences
 [X] Build efficient state update system for iframe management
 [X] Implement URL state synchronization with browser history
 
-10. App initialization
+11. App initialization
 [ ] for first run, when there is no database, initialize the database and create and admin user with no password
 
-11. Performance Optimization
+12. Performance Optimization
 [ ] Optimize iframe loading and switching
 [ ] Implement lazy loading for inactive iframe content
 [ ] Configure proper caching policies
 [ ] Optimize SQLite query performance
 
-12. Containerization
+13. Containerization
 [ ] Configure Docker for Next.js application
 [ ] Set up SQLite persistence with Docker volumes
 [ ] Create Docker Compose setup for easy deployment
 [ ] Implement proper environment variable management for configuration
 
-13. Testing & Deployment
+14. Testing & Deployment
 [ ] Create automated tests for authentication and core functionality
 [ ] Set up CI/CD pipeline for testing and deployment
 [ ] Document deployment procedures
