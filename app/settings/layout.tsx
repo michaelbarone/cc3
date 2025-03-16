@@ -88,15 +88,31 @@ export default function SettingsLayout({ children }: SettingsLayoutProps) {
         sx={{
           display: 'flex',
           height: '100%',
-          overflow: 'hidden'
+          overflow: 'hidden',
+          position: 'relative',
+          zIndex: 1100,
+          bgcolor: 'background.default'
         }}
       >
+        <Box
+          sx={{
+            position: 'fixed',
+            top: 64, // AppBar height
+            left: 0,
+            right: 0,
+            bottom: 0,
+            bgcolor: 'background.default',
+            zIndex: 1050
+          }}
+        />
         <Box
           sx={{
             flexGrow: 1,
             p: 3,
             height: '100%',
-            overflow: 'auto'
+            overflow: 'auto',
+            position: 'relative',
+            zIndex: 1100
           }}
         >
           {children}

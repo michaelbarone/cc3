@@ -74,6 +74,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         sx={{
           width: { sm: `calc(100% - ${drawerWidth}px)` },
           ml: { sm: `${drawerWidth}px` },
+          zIndex: 1200
         }}
       >
         <Toolbar sx={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -102,7 +103,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       </AppBar>
       <Box
         component="nav"
-        sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 } }}
+        sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 }, zIndex: 1200 }}
         aria-label="admin navigation"
       >
         <Drawer
@@ -136,10 +137,27 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           flexGrow: 1,
           p: 3,
           width: { sm: `calc(100% - ${drawerWidth}px)` },
-          mt: '64px' // Adjust for AppBar height
+          mt: '64px',
+          position: 'relative',
+          zIndex: 1100,
+          bgcolor: 'background.default',
+          minHeight: '100vh'
         }}
       >
-        {children}
+        <Box
+          sx={{
+            position: 'fixed',
+            top: 64,
+            left: { xs: 0, sm: drawerWidth },
+            right: 0,
+            bottom: 0,
+            bgcolor: 'background.default',
+            zIndex: 1050
+          }}
+        />
+        <Box sx={{ position: 'relative', zIndex: 1100 }}>
+          {children}
+        </Box>
       </Box>
     </Box>
   );
