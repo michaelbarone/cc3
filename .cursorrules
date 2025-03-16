@@ -182,18 +182,51 @@ Implementation Plan
 [X] Fix API errors for JWT token cookies
   - Updated JWT functions to properly use async/await with cookies() API
   - Fixed API route handlers to await verifyToken function
+[ ] remove the scrollbar on the right side of the window
 
 7. Admin Configuration
-[ ] Build admin dashboard UI with protected route
-[ ] Implement user management (create, edit, delete users)
-[ ] Create password optional toggle for user accounts
-[ ] Develop URL group creation and management
-[ ] Build interface for assigning URL groups to users
+[X] Build admin dashboard UI with protected route
+  - Created admin layout with sidebar navigation
+  - Implemented admin dashboard with stats overview
+[X] Implement user management (create, edit, delete users)
+  - Built user management page with CRUD operations
+  - Added password optional toggle for user accounts
+  - Implemented admin role toggle
+[X] Create password optional toggle for user accounts
+  - Added switch in user form to enable/disable password requirement
+  - Implemented backend support for users with or without passwords
+[X] Develop URL group creation and management
+  - Created URL group management interface with accordion view
+  - Implemented CRUD operations for URL groups
+  - Added URL management within groups with ordering capabilities
+[X] Build interface for assigning URL groups to users
+  - Added UI for user assignment to URL groups with checkboxes
+  - Implemented API endpoints for managing user-group assignments
+[X] add users to url groups
+  - Created API endpoints for managing users in URL groups
+  - Implemented UI for assigning users to URL groups
+  - Added functionality to save user assignments
 
 8. User Settings
-[ ] Create user settings page for password management
-[ ] Store and restore last active URL for user convenience
-[ ] Design architecture to support future setting expansions
+[X] create a drop down menu under the username in the header.  it should have links to the admin area (if the user has admin permission) and to the user settings page
+  - Added dropdown menu with user avatar and username
+  - Included links to settings and admin area (if user is admin)
+  - Added logout option to the dropdown menu
+[X] Create user settings page for password management
+  - Created settings layout with sidebar navigation
+  - Implemented password management page with toggle for password protection
+  - Added form validation and API endpoint for password updates
+[X] Store and restore last active URL for user convenience
+  - Updated dashboard page to use the real API endpoint for fetching URL groups
+  - Implemented logic to restore the last active URL when loading the page
+  - Added fallback to select the first URL if no last active URL is available
+[X] Design architecture to support future setting expansions
+  - Created a flexible settings type system with support for various setting types
+  - Implemented a settings service with CRUD operations for user settings
+  - Designed the architecture to be easily extendable for future setting types
+[X] add another item on the user dropdown menu to go back to the iframe content view (dashboard)
+  - Added Dashboard menu item to the user dropdown
+  - Fixed issues with admin area access by adding debugging
 
 9. State Management
 [ ] Implement client-side state management for active iframe tracking
