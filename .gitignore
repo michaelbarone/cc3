@@ -2,6 +2,7 @@
 
 #project
 **/dev.db
+**/dev.db*
 public/icons/*
 public/logos/*
 public/avatars/*
