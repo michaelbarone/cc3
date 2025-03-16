@@ -7,6 +7,7 @@ export interface Url {
   url: string;
   iconPath: string | null;
   displayOrder: number;
+  idleTimeoutMinutes?: number;
   createdAt?: string;
   updatedAt?: string;
 }

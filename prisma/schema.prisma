@@ -32,15 +32,16 @@ model UrlGroup {
 }
 
 model Url {
-  id           String   @id @default(uuid())
-  urlGroupId   String
-  title        String
-  url          String
-  iconPath     String?
-  displayOrder Int      @default(0)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  urlGroup     UrlGroup @relation(fields: [urlGroupId], references: [id], onDelete: Cascade)
+  id                 String   @id @default(uuid())
+  urlGroupId         String
+  title              String
+  url                String
+  iconPath           String?
+  displayOrder       Int      @default(0)
+  idleTimeoutMinutes Int      @default(10)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  urlGroup           UrlGroup @relation(fields: [urlGroupId], references: [id], onDelete: Cascade)
 }
 
 model UserUrlGroup {

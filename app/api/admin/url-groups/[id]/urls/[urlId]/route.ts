@@ -5,10 +5,10 @@ import { cookies } from 'next/headers';
 
 const prisma = new PrismaClient();
 
-// POST - Create a new URL within a URL group
-export async function POST(
+// PATCH - Update a URL
+export async function PATCH(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: { id: string; urlId: string } }
 ) {
   try {
     // Verify admin access
@@ -25,7 +25,7 @@ export async function POST(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    const { id: urlGroupId } = params;
+    const { id: urlGroupId, urlId } = params;
 
     // Check if URL group exists
     const urlGroup = await prisma.urlGroup.findUnique({
@@ -39,10 +39,25 @@ export async function POST(
       );
     }
 
+    // Check if URL exists in the group
+    const existingUrl = await prisma.url.findFirst({
+      where: {
+        id: urlId,
+        urlGroupId
+      }
+    });
+
+    if (!existingUrl) {
+      return NextResponse.json(
+        { error: 'URL not found in this group' },
+        { status: 404 }
+      );
+    }
+
     // Parse request body
     const { title, url, iconPath, displayOrder, idleTimeoutMinutes } = await request.json();
 
-    // Validate input
+    // Validate required input
     if (!title || title.trim().length === 0) {
       return NextResponse.json(
         { error: 'Title is required' },
@@ -69,33 +84,75 @@ export async function POST(
       }
     }
 
-    // Determine display order if not provided
-    let finalDisplayOrder = displayOrder;
-    if (finalDisplayOrder === undefined) {
-      // Get highest existing display order
-      const highestOrderUrl = await prisma.url.findFirst({
-        where: { urlGroupId },
-        orderBy: { displayOrder: 'desc' }
-      });
-
-      finalDisplayOrder = highestOrderUrl ? highestOrderUrl.displayOrder + 1 : 0;
-    }
-
-    // Create new URL
-    const newUrl = await prisma.url.create({
+    // Update URL
+    const updatedUrl = await prisma.url.update({
+      where: { id: urlId },
       data: {
-        urlGroupId,
         title,
         url,
         iconPath: iconPath || null,
-        displayOrder: finalDisplayOrder,
+        displayOrder: displayOrder !== undefined ? displayOrder : existingUrl.displayOrder,
         idleTimeoutMinutes: timeoutMinutes
       }
     });
 
-    return NextResponse.json(newUrl, { status: 201 });
+    return NextResponse.json(updatedUrl);
   } catch (error) {
-    console.error('Error creating URL:', error);
+    console.error('Error updating URL:', error);
+    return NextResponse.json(
+      { error: 'Internal Server Error' },
+      { status: 500 }
+    );
+  } finally {
+    await prisma.$disconnect();
+  }
+}
+
+// DELETE - Remove a URL
+export async function DELETE(
+  request: Request,
+  { params }: { params: { id: string; urlId: string } }
+) {
+  try {
+    // Verify admin access
+    const cookieStore = await cookies();
+    const token = cookieStore.get('auth_token')?.value;
+
+    if (!token) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const userData = await verifyToken();
+
+    if (!userData || !userData.isAdmin) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    const { id: urlGroupId, urlId } = params;
+
+    // Check if URL exists in the specified group
+    const existingUrl = await prisma.url.findFirst({
+      where: {
+        id: urlId,
+        urlGroupId
+      }
+    });
+
+    if (!existingUrl) {
+      return NextResponse.json(
+        { error: 'URL not found in this group' },
+        { status: 404 }
+      );
+    }
+
+    // Delete URL
+    await prisma.url.delete({
+      where: { id: urlId }
+    });
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('Error deleting URL:', error);
     return NextResponse.json(
       { error: 'Internal Server Error' },
       { status: 500 }

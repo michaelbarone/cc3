@@ -159,7 +159,28 @@ export default function DashboardPage() {
     const interval = setInterval(() => {
       if (iframeContainerRef.current) {
         const ids = iframeContainerRef.current.getLoadedUrlIds();
-        setLoadedUrlIds(ids);
+
+        // Only update state if the loaded URLs have actually changed
+        // This prevents unnecessary renders that could trigger iframe reloads
+        setLoadedUrlIds(prev => {
+          // Quick check if arrays are same length
+          if (prev.length !== ids.length) {
+            return ids;
+          }
+
+          // Check if arrays have same elements
+          const prevSorted = [...prev].sort();
+          const idsSorted = [...ids].sort();
+
+          for (let i = 0; i < prevSorted.length; i++) {
+            if (prevSorted[i] !== idsSorted[i]) {
+              return ids;
+            }
+          }
+
+          // If we get here, arrays are identical so keep previous state reference
+          return prev;
+        });
       }
     }, 1000);
 
@@ -200,10 +221,11 @@ export default function DashboardPage() {
     const isActive = activeUrlId === url.id;
     const isLoaded = loadedUrlIds.includes(url.id);
 
-    // Three cases to handle:
-    // 1. URL is not active - make it active
+    // Four cases to handle:
+    // 1. URL is active and loaded - optional reload
     // 2. URL is active but unloaded - reload it
-    // 3. URL is active and loaded - optional reload
+    // 3. URL is not active but loaded - just switch to it without reloading
+    // 4. URL is not active and not loaded - make it active and ensure it loads
 
     if (isActive) {
       if (!isLoaded) {
@@ -223,15 +245,34 @@ export default function DashboardPage() {
         handleUrlReload(url);
       }
     } else {
-      // Not active - make it active
+      // Update state
       setActiveUrlId(url.id);
       setActiveUrl(url);
 
-      // Update browser URL
+      // Update browser URL without refreshing the page
       updateBrowserUrl(url.id);
 
       // Save last active URL in user preferences via API
       updateLastActiveUrl(url.id);
+
+      // Check if the iframe needs to be loaded (was previously unloaded)
+      if (!isLoaded && iframeContainerRef.current) {
+        setNotification({
+          open: true,
+          message: `Loading ${url.title}...`,
+          severity: 'info'
+        });
+
+        // Force a reload of the unloaded iframe
+        iframeContainerRef.current.reloadUnloadedIframe(url.id);
+      } else if (isLoaded) {
+        // Already loaded, just switched to it
+        setNotification({
+          open: true,
+          message: `Switched to ${url.title}`,
+          severity: 'success'
+        });
+      }
     }
   };
 
@@ -265,6 +306,15 @@ export default function DashboardPage() {
         severity: 'info'
       });
     }
+  };
+
+  // Handle long press on unloaded url
+  const handleUrlLongPressUnloaded = (url: Url) => {
+    setNotification({
+      open: true,
+      message: `Navigation to ${url.title} was prevented by long press`,
+      severity: 'info'
+    });
   };
 
   // Handle reload active iframe
@@ -357,6 +407,7 @@ export default function DashboardPage() {
           onUrlClick={handleUrlClick}
           onUrlReload={handleUrlReload}
           onUrlUnload={handleUrlUnload}
+          onUrlLongPressUnloaded={handleUrlLongPressUnloaded}
           menuPosition={preferences.menuPosition}
         />
       }
@@ -374,6 +425,7 @@ export default function DashboardPage() {
           onLoad={handleIframeLoad}
           onError={handleIframeError}
           onUnload={handleIframeUnload}
+          urlGroups={urlGroups}
         />
       )}
 

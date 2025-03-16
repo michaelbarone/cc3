@@ -47,6 +47,7 @@ interface Url {
   url: string;
   iconPath: string | null;
   displayOrder: number;
+  idleTimeoutMinutes: number;
 }
 
 interface UrlGroup {
@@ -85,7 +86,8 @@ export default function UrlGroupManagement() {
     title: '',
     url: '',
     iconPath: '',
-    displayOrder: 0
+    displayOrder: 0,
+    idleTimeoutMinutes: 10
   });
 
   // Snackbar state
@@ -149,7 +151,8 @@ export default function UrlGroupManagement() {
           title: '',
           url: '',
           iconPath: '',
-          displayOrder: maxOrder + 1
+          displayOrder: maxOrder + 1,
+          idleTimeoutMinutes: 10
         });
       }
     } else {
@@ -171,7 +174,8 @@ export default function UrlGroupManagement() {
           title: url.title,
           url: url.url,
           iconPath: url.iconPath || '',
-          displayOrder: url.displayOrder
+          displayOrder: url.displayOrder,
+          idleTimeoutMinutes: url.idleTimeoutMinutes
         });
       }
     } else {
@@ -723,6 +727,20 @@ export default function UrlGroupManagement() {
                 fullWidth
                 variant="outlined"
                 value={urlFormValues.url}
+                onChange={handleUrlFormChange}
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <TextField
+                margin="dense"
+                name="idleTimeoutMinutes"
+                label="Idle Timeout (minutes)"
+                type="number"
+                inputProps={{ min: 0 }}
+                helperText="Minutes before iframe is unloaded when inactive. Set to 0 to disable auto-unloading."
+                fullWidth
+                variant="outlined"
+                value={urlFormValues.idleTimeoutMinutes}
                 onChange={handleUrlFormChange}
               />
             </Grid>

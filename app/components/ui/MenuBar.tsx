@@ -33,6 +33,7 @@ interface MenuBarProps {
   onUrlClick: (url: Url) => void;
   onUrlReload?: (url: Url) => void;
   onUrlUnload?: (url: Url) => void;
+  onUrlLongPressUnloaded?: (url: Url) => void;
   menuPosition?: 'side' | 'top';
 }
 
@@ -63,6 +64,7 @@ export default function MenuBar({
   onUrlClick,
   onUrlReload,
   onUrlUnload,
+  onUrlLongPressUnloaded,
   menuPosition: propMenuPosition = 'side'
 }: MenuBarProps) {
   const theme = useTheme();
@@ -81,6 +83,9 @@ export default function MenuBar({
 
   // Track all known URL IDs (used to determine if a URL has been loaded before)
   const [knownUrlIds, setKnownUrlIds] = useState<Set<string>>(new Set());
+
+  // Add state to track if a long press is in progress
+  const [isLongPressInProgress, setIsLongPressInProgress] = useState(false);
 
   // Mark initial render as complete after first render cycle
   useEffect(() => {
@@ -216,6 +221,11 @@ export default function MenuBar({
   // - If not active, make it active (regardless of loaded state)
   // - If already active, reload it
   const handleUrlClick = (url: Url) => {
+    // Skip if a long press operation just completed
+    if (isLongPressInProgress) {
+      return;
+    }
+
     if (activeUrlId === url.id) {
       // If already active, reload it
       if (onUrlReload) onUrlReload(url);
@@ -240,46 +250,116 @@ export default function MenuBar({
   const handleUrlLongPress = (url: Url) => {
     if (!onUrlUnload) return;
 
-    // Only allow unloading if the URL is loaded
-    if (loadedUrlIds.includes(url.id)) {
-      onUrlUnload(url);
+    // Set long press flag to prevent navigation regardless of URL state
+    setIsLongPressInProgress(true);
+
+    // Handle based on URL state:
+    if (url.id !== activeUrlId) {
+      if (loadedUrlIds.includes(url.id)) {
+        // For loaded URLs: Unload them
+        onUrlUnload(url);
+      } else {
+        // For unloaded URLs: Provide feedback that navigation was prevented
+        if (onUrlLongPressUnloaded) {
+          onUrlLongPressUnloaded(url);
+        }
+      }
     }
+
+    // Reset the flag after a longer delay to ensure click event doesn't fire
+    setTimeout(() => {
+      setIsLongPressInProgress(false);
+    }, 500);
   };
 
   // Handle mouse down for long press detection
   const handleMouseDown = (url: Url) => {
     if (!onUrlUnload) return;
 
-    const timer = setTimeout(() => {
-      handleUrlLongPress(url);
-    }, 800); // 800ms long press
+    // Only setup long press for inactive items (regardless of loaded state)
+    if (url.id !== activeUrlId) {
+      let longPressTriggered = false;
 
-    // Clear the timeout if mouse is released
-    const handleMouseUp = () => {
-      clearTimeout(timer);
-      document.removeEventListener('mouseup', handleMouseUp);
-    };
+      const timer = setTimeout(() => {
+        longPressTriggered = true;
+        handleUrlLongPress(url);
+      }, 800); // 800ms long press
 
-    document.addEventListener('mouseup', handleMouseUp);
+      // Clear the timeout if mouse is released
+      const handleMouseUp = (e: MouseEvent) => {
+        clearTimeout(timer);
+        document.removeEventListener('mouseup', handleMouseUp);
+
+        // If this was a long press, prevent the click event
+        if (longPressTriggered) {
+          e.preventDefault();
+          e.stopPropagation();
+
+          // Also listen for click events to prevent them
+          const preventClick = (e: MouseEvent) => {
+            e.preventDefault();
+            e.stopPropagation();
+            document.removeEventListener('click', preventClick, true);
+          };
+
+          // Capture the next click event and prevent it
+          document.addEventListener('click', preventClick, true);
+        }
+      };
+
+      document.addEventListener('mouseup', handleMouseUp);
+    }
   };
 
   // Handle touch events for mobile devices
   const handleTouchStart = (url: Url) => {
     if (!onUrlUnload) return;
 
-    const timer = setTimeout(() => {
-      handleUrlLongPress(url);
-    }, 800);
+    // Only setup long press for inactive items (regardless of loaded state)
+    if (url.id !== activeUrlId) {
+      let longPressTriggered = false;
 
-    // Function to clear the timeout on touch end
-    const handleTouchEnd = () => {
-      clearTimeout(timer);
-      document.removeEventListener('touchend', handleTouchEnd);
-      document.removeEventListener('touchcancel', handleTouchEnd);
-    };
+      const timer = setTimeout(() => {
+        longPressTriggered = true;
+        handleUrlLongPress(url);
+      }, 800);
 
-    document.addEventListener('touchend', handleTouchEnd);
-    document.addEventListener('touchcancel', handleTouchEnd);
+      // Function to clear the timeout on touch end
+      const handleTouchEnd = (e: TouchEvent) => {
+        clearTimeout(timer);
+        document.removeEventListener('touchend', handleTouchEnd);
+        document.removeEventListener('touchcancel', handleTouchEnd);
+
+        // If this was a long press, prevent the subsequent click event
+        if (longPressTriggered) {
+          e.preventDefault();
+
+          // Also listen for click events to prevent them
+          const preventClick = (e: Event) => {
+            e.preventDefault();
+            e.stopPropagation();
+            document.removeEventListener('click', preventClick, true);
+          };
+
+          // Capture the next click event and prevent it
+          document.addEventListener('click', preventClick, true);
+        }
+      };
+
+      document.addEventListener('touchend', handleTouchEnd);
+      document.addEventListener('touchcancel', handleTouchEnd);
+    }
+  };
+
+  // Wrap handleUrlClick with a check for long press
+  const safeHandleUrlClick = (url: Url, extraAction?: () => void) => {
+    if (isLongPressInProgress) {
+      console.log('Click prevented due to long press');
+      return;
+    }
+
+    handleUrlClick(url);
+    if (extraAction) extraAction();
   };
 
   // For top menu: handle group menu open
@@ -334,16 +414,97 @@ export default function MenuBar({
             anchorEl={groupMenuAnchorEl}
             open={Boolean(groupMenuAnchorEl)}
             onClose={handleGroupMenuClose}
+            PaperProps={{
+              sx: {
+                maxWidth: '80vw',
+                maxHeight: '60vh',
+                overflowX: 'hidden'
+              }
+            }}
           >
-            {urlGroups.map(group => (
-              <MenuItem
-                key={group.id}
-                onClick={() => handleGroupSelect(group.id)}
-                selected={group.id === activeGroupId}
-              >
-                {group.name}
-              </MenuItem>
-            ))}
+            {urlGroups
+              .filter(group => group.id !== activeGroupId) // Filter out the currently selected group
+              .map(group => (
+                <Box key={group.id} sx={{ p: 1 }}>
+                  <Box sx={{
+                    display: 'flex',
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    flexWrap: 'wrap'
+                  }}>
+                    <MenuItem
+                      onClick={() => handleGroupSelect(group.id)}
+                      sx={{
+                        fontWeight: 'bold',
+                        pl: 1,
+                        pr: 2,
+                        mr: 1,
+                        borderRight: `1px solid ${theme.palette.divider}`
+                      }}
+                    >
+                      <FolderIcon sx={{ mr: 1 }} />
+                      {group.name}
+                    </MenuItem>
+
+                    {group.urls.map(url => {
+                      const urlStatus = getUrlStatus(url.id, activeUrlId, loadedUrlIds, knownUrlIds);
+                      const isActive = urlStatus.startsWith('active');
+                      const isLoaded = urlStatus.includes('loaded');
+                      const isUnloaded = urlStatus.includes('unloaded');
+
+                      // Determine tooltip text based on status
+                      let tooltipText = '';
+                      if (isActive && isLoaded) tooltipText = 'Currently active (click to reload)';
+                      else if (isActive && isUnloaded) tooltipText = 'Currently active but unloaded (click to reload)';
+                      else if (isLoaded) tooltipText = 'Loaded in background (click to view, long press to unload)';
+                      else if (isUnloaded) tooltipText = 'Currently unloaded (click to load and view, long press to prevent navigation)';
+                      else tooltipText = 'Click to view';
+
+                      return (
+                        <Tooltip key={url.id} title={tooltipText}>
+                          <Button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              safeHandleUrlClick(url, handleGroupMenuClose);
+                            }}
+                            onMouseDown={() => handleMouseDown(url)}
+                            onTouchStart={() => handleTouchStart(url)}
+                            size="small"
+                            sx={{
+                              m: 0.5,
+                              textTransform: 'none',
+                              fontSize: '0.875rem',
+                              color: isActive ? theme.palette.primary.main : theme.palette.text.primary,
+                              fontWeight: isActive ? 'bold' : 'normal',
+                              '&:hover': {
+                                backgroundColor: theme.palette.action.hover,
+                              }
+                            }}
+                          >
+                            {isLoaded && !isActive ? (
+                              <Badge
+                                color="success"
+                                variant="dot"
+                                overlap="circular"
+                                sx={{ mr: 1 }}
+                              >
+                                <WebIcon fontSize="small" />
+                              </Badge>
+                            ) : (
+                              <WebIcon fontSize="small" sx={{ mr: 1 }} />
+                            )}
+                            {url.title}
+                          </Button>
+                        </Tooltip>
+                      );
+                    })}
+                  </Box>
+
+                  {group.id !== urlGroups.filter(g => g.id !== activeGroupId).slice(-1)[0].id && (
+                    <Box sx={{ my: 1, borderBottom: `1px solid ${theme.palette.divider}` }} />
+                  )}
+                </Box>
+              ))}
           </Menu>
         </Box>
 
@@ -364,14 +525,17 @@ export default function MenuBar({
             let tooltipText = '';
             if (isActive && isLoaded) tooltipText = 'Currently active (click to reload)';
             else if (isActive && isUnloaded) tooltipText = 'Currently active but unloaded (click to reload)';
-            else if (isLoaded) tooltipText = 'Loaded in background (click to view)';
-            else if (isUnloaded) tooltipText = 'Currently unloaded (click to reload)';
+            else if (isLoaded) tooltipText = 'Loaded in background (click to view, long press to unload)';
+            else if (isUnloaded) tooltipText = 'Currently unloaded (click to load and view, long press to prevent navigation)';
             else tooltipText = 'Click to view';
 
             return (
               <Tooltip key={url.id} title={tooltipText}>
                 <Button
-                  onClick={() => handleUrlClick(url)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    safeHandleUrlClick(url);
+                  }}
                   onMouseDown={() => handleMouseDown(url)}
                   onTouchStart={() => handleTouchStart(url)}
                   sx={{
@@ -455,8 +619,8 @@ export default function MenuBar({
                   let tooltipText = '';
                   if (isActive && isLoaded) tooltipText = 'Currently active (click to reload)';
                   else if (isActive && isUnloaded) tooltipText = 'Currently active but unloaded (click to reload)';
-                  else if (isLoaded) tooltipText = 'Loaded in background (click to view)';
-                  else if (isUnloaded) tooltipText = 'Currently unloaded (click to reload)';
+                  else if (isLoaded) tooltipText = 'Loaded in background (click to view, long press to unload)';
+                  else if (isUnloaded) tooltipText = 'Currently unloaded (click to load and view, long press to prevent navigation)';
                   else tooltipText = 'Click to view';
 
                   return (
@@ -472,7 +636,10 @@ export default function MenuBar({
                             'inherit',
                           position: 'relative',
                         }}
-                        onClick={() => handleUrlClick(url)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          safeHandleUrlClick(url);
+                        }}
                         onMouseDown={() => handleMouseDown(url)}
                         onTouchStart={() => handleTouchStart(url)}
                       >

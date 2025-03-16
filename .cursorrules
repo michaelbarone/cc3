@@ -158,7 +158,7 @@ Implementation Plan
   - Implemented dynamic group open/close based on screen size
   - Enhanced mobile touch interaction and usability
 [X] allow the menu bar to be optionally in the header based on user preferences saved in the user settings
-[ ] when the iframe menu bar is in the header, only show 1 group at a time.  when hovering over the group name, display the other groups to select and show all urls in addition to the group names.
+
 
 6. Iframe Management
 [X] Build iframe container system with state persistence
@@ -277,6 +277,7 @@ Ask before doing these:
 12. Performance Optimization
 [ ] Optimize iframe loading and switching
 [ ] Implement lazy loading for inactive iframe content
+ask before doing these thigns
 [ ] Configure proper caching policies
 [ ] Optimize SQLite query performance
 
