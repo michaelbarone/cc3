@@ -1,0 +1,95 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+---
+description: Best practices for React development in the project
+globs: "**/*.{tsx,jsx}"
+alwaysApply: true
+---
+
+# React Best Practices
+
+Rule for ensuring consistent and efficient React development.
+
+<rule>
+name: react_best_practices
+description: Ensures React code follows best practices and conventions for components and hooks
+filters:
+  - type: file_extension
+    pattern: "\\.(tsx|jsx)$"
+  - type: content
+    pattern: "react"
+
+actions:
+  - type: validate
+    conditions:
+      # Check for proper component naming
+      - pattern: "^(function|const)\\s+[A-Z][a-zA-Z]*"
+        message: "Component names must be PascalCase"
+
+      # Check for proper hook naming
+      - pattern: "^(function|const)\\s+use[A-Z][a-zA-Z]*"
+        message: "Hook names must start with 'use' and be camelCase"
+
+      # Check for proper prop types
+      - pattern: "type\\s+Props\\s*="
+        message: "Props interface/type must be defined for components"
+
+  - type: suggest
+    message: |
+      Follow these React best practices:
+
+      1. Component Structure:
+         - Keep components small and focused
+         - Use proper prop typing
+         - Implement proper error boundaries
+         - Use proper component composition
+
+      2. Hooks:
+         - Follow hooks rules (only call at top level)
+         - Create custom hooks for reusable logic
+         - Use proper dependency arrays
+         - Implement proper cleanup in useEffect
+
+      3. Performance:
+         - Use proper memoization (useMemo, useCallback)
+         - Implement proper key props for lists
+         - Avoid unnecessary re-renders
+         - Use proper lazy loading
+
+      4. State Management:
+         - Keep state as local as possible
+         - Use proper state initialization
+         - Implement proper state updates
+         - Use proper context structure
+
+examples:
+  - input: |
+      type Props = {
+        title: string;
+        onClick: () => void;
+      }
+      
+      export function Button({ title, onClick }: Props) {
+        return <button onClick={onClick}>{title}</button>
+      }
+    output: "Invalid: Component name should be PascalCase"
+
+  - input: |
+      type Props = {
+        title: string;
+        onClick: () => void;
+      }
+      
+      export function useCustomHook() {
+        const [state, setState] = useState(false)
+        return { state, setState }
+      }
+    output: "Valid React hook"
+
+metadata:
+  priority: high
+  version: 1.0.0
+</rule>

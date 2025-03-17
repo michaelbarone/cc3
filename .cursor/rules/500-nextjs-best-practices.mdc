@@ -1,0 +1,96 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+---
+description: Best practices for Next.js development in the project
+globs: "**/*.{ts,tsx,js,jsx}"
+alwaysApply: true
+---
+
+# Next.js Best Practices
+
+Rule for ensuring consistent and efficient Next.js development.
+
+<rule>
+name: nextjs_best_practices
+description: Ensures Next.js code follows best practices and conventions for App Router and React Server Components
+filters:
+  - type: file_extension
+    pattern: "\\.(ts|tsx|js|jsx)$"
+  - type: content
+    pattern: "next"
+
+actions:
+  - type: validate
+    conditions:
+      # Check for proper use of 'use client' directive
+      - pattern: "^'use client'"
+        message: "'use client' directive must be at the top of the file when needed"
+
+      # Check for proper component naming
+      - pattern: "^(function|const)\\s+[A-Z][a-zA-Z]*"
+        message: "Component names must be PascalCase"
+
+      # Check for proper route handlers
+      - pattern: "export\\s+(async\\s+)?function\\s+(GET|POST|PUT|DELETE|PATCH)"
+        message: "Route handlers must follow Next.js naming conventions"
+
+  - type: suggest
+    message: |
+      Follow these Next.js best practices:
+
+      1. Server Components:
+         - Use React Server Components by default
+         - Add 'use client' only when needed
+         - Keep client components small and focused
+         - Use proper data fetching patterns
+
+      2. Performance:
+         - Implement proper caching strategies
+         - Use Image component for optimized images
+         - Implement proper loading states
+         - Use proper error boundaries
+
+      3. Routing:
+         - Use proper route grouping
+         - Implement proper loading and error pages
+         - Use proper parallel routes when needed
+         - Implement proper intercepting routes
+
+      4. Data Fetching:
+         - Use proper caching strategies
+         - Implement proper revalidation
+         - Use proper error handling
+         - Optimize data fetching patterns
+
+examples:
+  - input: |
+      // page.tsx
+      async function getData() {
+        const res = await fetch('https://api.example.com')
+        return res.json()
+      }
+      
+      export default async function Page() {
+        const data = await getData()
+        return <div>{data.title}</div>
+      }
+    output: "Valid Next.js server component"
+
+  - input: |
+      'use client'
+      
+      import { useState } from 'react'
+      
+      export function counter() {
+        const [count, setCount] = useState(0)
+        return <button onClick={() => setCount(count + 1)}>{count}</button>
+      }
+    output: "Invalid: Component name should be PascalCase"
+
+metadata:
+  priority: high
+  version: 1.0.0
+</rule>
