@@ -10,7 +10,7 @@ services:
       - "3000:3000"
     environment:
       - NODE_ENV=production
-      - DATABASE_URL=file:/app/data/sqlite.db
+      - DATABASE_URL=file:/app/data/app.db
     volumes:
       - sqlite-data:/app/data
       - sqlite-backup:/app/backup

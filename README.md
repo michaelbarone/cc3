@@ -131,7 +131,7 @@ The system automatically:
 
 ```bash
 # Create a backup
-docker exec next-sqlite-app /bin/sh -c 'cp /app/data/sqlite.db "/app/backup/sqlite_$(date +%Y%m%d_%H%M%S).db"'
+docker exec next-sqlite-app /bin/sh -c 'cp /app/data/app.db "/app/backup/app_$(date +%Y%m%d_%H%M%S).db"'
 ```
 
 ### Restore from Backup
@@ -141,7 +141,7 @@ docker exec next-sqlite-app /bin/sh -c 'cp /app/data/sqlite.db "/app/backup/sqli
 docker exec next-sqlite-app ls -l /app/backup
 
 # Restore from specific backup
-docker exec next-sqlite-app /bin/sh -c 'cp /app/backup/sqlite_YYYYMMDD_HHMMSS.db /app/data/sqlite.db'
+docker exec next-sqlite-app /bin/sh -c 'cp /app/backup/app_YYYYMMDD_HHMMSS.db /app/data/app.db'
 ```
 
 ## Troubleshooting
@@ -154,7 +154,7 @@ docker exec next-sqlite-app /bin/sh -c 'cp /app/backup/sqlite_YYYYMMDD_HHMMSS.db
    - Ensure ports are available
 
 2. **Database Issues**
-   - Check database integrity: `docker exec next-sqlite-app /bin/sh -c 'sqlite3 /app/data/sqlite.db "PRAGMA integrity_check;"'`
+   - Check database integrity: `docker exec next-sqlite-app /bin/sh -c 'sqlite3 /app/data/app.db "PRAGMA integrity_check;"'`
    - Verify permissions on data directory
    - Check migration logs
 
@@ -234,7 +234,7 @@ Container resources are constrained to:
 
 | Variable | Description | Default | Required |
 |----------|-------------|---------|----------|
-| DATABASE_URL | SQLite database path | file:/app/data/sqlite.db | Yes |
+| DATABASE_URL | SQLite database path | file:/app/data/app.db | Yes |
 | NODE_ENV | Environment mode | production | Yes |
 | JWT_SECRET | Authentication secret | - | Yes |
 | PORT | Application port | 3000 | No |

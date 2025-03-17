@@ -7,7 +7,7 @@ mkdir -p /app/backup
 
 # Function to check database health
 check_database() {
-    if [ ! -f "/app/data/sqlite.db" ]; then
+    if [ ! -f "/app/data/app.db" ]; then
         echo "Database file not found. Creating new database..."
         return 1
     fi
@@ -23,11 +23,11 @@ check_database() {
 
 # Function to backup database
 backup_database() {
-    if [ -f "/app/data/sqlite.db" ]; then
+    if [ -f "/app/data/app.db" ]; then
         echo "Creating database backup..."
-        cp /app/data/sqlite.db "/app/backup/sqlite_$(date +%Y%m%d_%H%M%S).db"
+        cp /app/data/app.db "/app/backup/app_$(date +%Y%m%d_%H%M%S).db"
         # Keep only last 5 backups
-        ls -t /app/backup/sqlite_*.db | tail -n +6 | xargs -r rm
+        ls -t /app/backup/app_*.db | tail -n +6 | xargs -r rm
     fi
 }
 
