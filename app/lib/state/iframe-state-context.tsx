@@ -24,6 +24,12 @@ interface IframeStateContextType {
   removeLoadedUrlId: (urlId: string) => void;
   updateBrowserHistory: (urlId: string) => void;
   saveToPersistence: (urlId: string) => Promise<void>;
+  isLongPressing: boolean;
+  longPressProgress: number;
+  longPressUrlId: string | null;
+  startLongPress: (urlId: string) => void;
+  endLongPress: () => void;
+  updateLongPressProgress: (progress: number) => void;
 }
 
 const IframeStateContext = createContext<IframeStateContextType | undefined>(undefined);
@@ -72,6 +78,11 @@ export function IframeStateProvider({ children }: IframeStateProviderProps) {
     const stored = localStorage.getItem(STORAGE_KEYS.KNOWN_URL_IDS);
     return new Set(stored ? JSON.parse(stored) : []);
   });
+
+  // Add long press state
+  const [isLongPressing, setIsLongPressing] = useState(false);
+  const [longPressProgress, setLongPressProgress] = useState(0);
+  const [longPressUrlId, setLongPressUrlId] = useState<string | null>(null);
 
   // Ensure active URL is loaded when initialized from storage/params
   useEffect(() => {
@@ -221,6 +232,23 @@ export function IframeStateProvider({ children }: IframeStateProviderProps) {
     setLoadedUrlIds(prev => prev.filter(id => id !== urlId));
   };
 
+  // Long press methods
+  const startLongPress = (urlId: string) => {
+    setIsLongPressing(true);
+    setLongPressUrlId(urlId);
+    setLongPressProgress(0);
+  };
+
+  const endLongPress = () => {
+    setIsLongPressing(false);
+    setLongPressUrlId(null);
+    setLongPressProgress(0);
+  };
+
+  const updateLongPressProgress = (progress: number) => {
+    setLongPressProgress(progress);
+  };
+
   const value = {
     activeUrlId,
     activeUrl,
@@ -233,7 +261,13 @@ export function IframeStateProvider({ children }: IframeStateProviderProps) {
     addLoadedUrlId,
     removeLoadedUrlId,
     updateBrowserHistory,
-    saveToPersistence
+    saveToPersistence,
+    isLongPressing,
+    longPressProgress,
+    longPressUrlId,
+    startLongPress,
+    endLongPress,
+    updateLongPressProgress
   };
 
   return (

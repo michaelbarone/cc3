@@ -24,6 +24,8 @@ import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import { Url, UrlGroup } from '@/app/lib/types';
 import { useUserPreferences } from '@/app/lib/hooks/useUserPreferences';
 import { Theme } from '@mui/material/styles';
+import { useIframeState } from '@/app/lib/state/iframe-state-context';
+import { LongPressProgress } from './LongPressProgress';
 
 interface MenuBarProps {
   urlGroups: UrlGroup[];
@@ -74,6 +76,9 @@ function UrlItem({
   menuPosition: 'side' | 'top';
   theme: Theme;
 }) {
+  const { isLongPressing, longPressProgress, longPressUrlId } = useIframeState();
+  const isLongPressingThis = isLongPressing && longPressUrlId === url.id;
+
   const commonIconStyles = {
     width: 24,
     height: 24,
@@ -106,6 +111,7 @@ function UrlItem({
           onClick={onUrlClick}
           onMouseDown={onMouseDown}
           onTouchStart={onTouchStart}
+          data-url-id={url.id}
           sx={{
             mx: 0.5,
             textTransform: 'none',
@@ -114,6 +120,8 @@ function UrlItem({
             color: isActive ? theme.palette.primary.main : theme.palette.text.primary,
             fontWeight: isActive ? 'bold' : 'normal',
             backgroundColor: isActive ? theme.palette.action.selected : 'transparent',
+            position: 'relative',
+            overflow: 'hidden',
             '&:hover': {
               backgroundColor: isActive ? theme.palette.action.selected : theme.palette.action.hover,
               opacity: 0.8,
@@ -140,6 +148,10 @@ function UrlItem({
               />
             )}
           </Box>
+          <LongPressProgress
+            isActive={isLongPressingThis}
+            progress={longPressProgress}
+          />
         </Button>
       </Tooltip>
     );
@@ -161,10 +173,12 @@ function UrlItem({
             backgroundColor: isActive ? theme.palette.action.selected : theme.palette.action.hover,
           },
           position: 'relative',
+          overflow: 'hidden',
         }}
         onClick={onUrlClick}
         onMouseDown={onMouseDown}
         onTouchStart={onTouchStart}
+        data-url-id={url.id}
       >
         <ListItemIcon sx={{ minWidth: 36 }}>
           <Box sx={commonBoxStyles}>
@@ -192,6 +206,10 @@ function UrlItem({
             color: isActive ? 'primary' : 'inherit',
             fontWeight: isActive ? 'bold' : 'normal'
           }}
+        />
+        <LongPressProgress
+          isActive={isLongPressingThis}
+          progress={longPressProgress}
         />
       </ListItemButton>
     </Tooltip>
