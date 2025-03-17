@@ -41,13 +41,9 @@ const getUrlStatus = (
   urlId: string,
   activeUrlId: string | null,
   loadedUrlIds: string[],
-  knownUrlIds: Set<string>
-): 'active-loaded' | 'active-unloaded' | 'inactive-loaded' | 'inactive-unloaded' | 'new' => {
+): 'active-loaded' | 'active-unloaded' | 'inactive-loaded' | 'inactive-unloaded' => {
   const isActive = urlId === activeUrlId;
   const isLoaded = loadedUrlIds.includes(urlId);
-  const isKnown = knownUrlIds.has(urlId);
-
-  if (!isKnown) return 'new';
 
   if (isActive) {
     return isLoaded ? 'active-loaded' : 'active-unloaded';
@@ -88,6 +84,13 @@ function UrlItem({
     position: 'absolute' as const,
     top: -2,
     right: -2,
+    '& .MuiBadge-badge': {
+      backgroundColor: theme.palette.success.main,
+      width: 8,
+      height: 8,
+      minWidth: 8,
+      borderRadius: '50%'
+    }
   };
 
   const commonBoxStyles = {
@@ -110,8 +113,9 @@ function UrlItem({
             borderRadius: 0,
             color: isActive ? theme.palette.primary.main : theme.palette.text.primary,
             fontWeight: isActive ? 'bold' : 'normal',
+            backgroundColor: isActive ? theme.palette.action.selected : 'transparent',
             '&:hover': {
-              backgroundColor: 'transparent',
+              backgroundColor: isActive ? theme.palette.action.selected : theme.palette.action.hover,
               opacity: 0.8,
             }
           }}
@@ -153,6 +157,9 @@ function UrlItem({
           bgcolor: isActive ?
             theme.palette.action.selected :
             'inherit',
+          '&:hover': {
+            backgroundColor: isActive ? theme.palette.action.selected : theme.palette.action.hover,
+          },
           position: 'relative',
         }}
         onClick={onUrlClick}
@@ -179,7 +186,13 @@ function UrlItem({
             )}
           </Box>
         </ListItemIcon>
-        <ListItemText primary={url.title} />
+        <ListItemText
+          primary={url.title}
+          primaryTypographyProps={{
+            color: isActive ? 'primary' : 'inherit',
+            fontWeight: isActive ? 'bold' : 'normal'
+          }}
+        />
       </ListItemButton>
     </Tooltip>
   );
@@ -554,7 +567,7 @@ export default function MenuBar({
 
   // In the render section for both top and side menu, replace the URL rendering with:
   const renderUrlItem = (url: Url) => {
-    const urlStatus = getUrlStatus(url.id, activeUrlId, loadedUrlIds, knownUrlIds);
+    const urlStatus = getUrlStatus(url.id, activeUrlId, loadedUrlIds);
     const isActive = urlStatus.startsWith('active');
     const isLoaded = urlStatus.includes('loaded');
     const isUnloaded = urlStatus.includes('unloaded');

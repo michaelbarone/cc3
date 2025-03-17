@@ -44,6 +44,13 @@ export function IframeStateProvider({ children }: IframeStateProviderProps) {
   // Initialize state from localStorage if available
   const [activeUrlId, setActiveUrlId] = useState<string | null>(() => {
     if (typeof window === 'undefined') return null;
+
+    // First check URL params
+    const url = new URL(window.location.href);
+    const urlParam = url.searchParams.get('url');
+    if (urlParam) return urlParam;
+
+    // Then check localStorage
     const stored = localStorage.getItem(STORAGE_KEYS.ACTIVE_URL_ID);
     return stored ? stored : null;
   });
@@ -65,6 +72,21 @@ export function IframeStateProvider({ children }: IframeStateProviderProps) {
     const stored = localStorage.getItem(STORAGE_KEYS.KNOWN_URL_IDS);
     return new Set(stored ? JSON.parse(stored) : []);
   });
+
+  // Ensure active URL is loaded when initialized from storage/params
+  useEffect(() => {
+    if (activeUrlId && activeUrl) {
+      // Update browser history if needed
+      const url = new URL(window.location.href);
+      const urlParam = url.searchParams.get('url');
+      if (urlParam !== activeUrlId) {
+        updateBrowserHistory(activeUrlId);
+      }
+
+      // Save to server
+      saveToPersistence(activeUrlId);
+    }
+  }, []);
 
   // Persist state changes to localStorage
   useEffect(() => {
