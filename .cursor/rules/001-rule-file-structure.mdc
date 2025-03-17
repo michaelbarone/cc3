@@ -1,15 +1,22 @@
 ---
 description: 
-globs: 
+globs: "**/*.mdc"
 alwaysApply: false
 ---
- # Cursor Rule File Structure
+---
+description: Standards for cursor rule file naming conventions and categories
+globs: "**/*.mdc"
+alwaysApply: true
+---
+
+# Cursor Rule File Structure
 
 Rule for ensuring consistent structure in cursor rule files.
 
 <rule>
 name: rule_file_structure
-description: Ensures cursor rule files follow a consistent structure and contain all required sections
+description: Ensures cursor rule files follow a consistent structure and contain all required sections with proper formatting
+
 filters:
   - type: file_extension
     pattern: "\\.mdc$"
@@ -21,24 +28,45 @@ filters:
 actions:
   - type: validate
     conditions:
-      - pattern: "^# .*\\n\\n.*\\n\\n<rule>"
-        message: "Rule file must start with a title and description"
-      - pattern: "<rule>\\s*name: [^\\n]+\\s*description: [^\\n]+"
-        message: "Rule must have name and description fields"
-      - pattern: "filters:"
-        message: "Rule must have filters section"
-      - pattern: "actions:"
-        message: "Rule must have actions section"
-      - pattern: "examples:"
-        message: "Rule must have examples section"
-      - pattern: "metadata:"
-        message: "Rule must have metadata section"
+      # Check front matter
+      - pattern: "^---\\s*\\ndescription:\\s*[^\\n]+\\s*\\nglobs:\\s*[^\\n]+\\s*\\nalwaysApply:\\s*(true|false)\\s*\\n---\\s*\\n"
+        message: "File must start with front matter containing description, globs, and alwaysApply fields"
+
+      # Check title and description
+      - pattern: "^---.*?---\\s*\\n\\s*# [^\\n]+\\n\\n[^\\n]+\\n"
+        message: "File must have a title (H1) followed by a description after the front matter"
+
+      # Check rule block structure
+      - pattern: "<rule>\\s*\\nname:\\s*[a-z][a-z0-9_]*\\s*\\ndescription:\\s*[^\\n]+"
+        message: "Rule must have name (in snake_case) and description fields"
+
+      # Check filters section
+      - pattern: "filters:\\s*\\n\\s*-\\s*type:\\s*[^\\n]+\\s*\\n\\s*pattern:\\s*[\"'].*[\"']"
+        message: "Rule must have filters section with at least one filter containing type and pattern"
+
+      # Check actions section
+      - pattern: "actions:\\s*\\n\\s*-\\s*type:\\s*(validate|suggest)\\s*\\n"
+        message: "Rule must have actions section with at least one action of type validate or suggest"
+
+      # Check examples section
+      - pattern: "examples:\\s*\\n\\s*-\\s*input:\\s*\\|\\n.*?\\s*output:\\s*[\"'].*[\"']"
+        message: "Rule must have examples section with at least one example containing input and output"
+
+      # Check metadata section
+      - pattern: "metadata:\\s*\\n\\s*priority:\\s*(high|medium|low)\\s*\\n\\s*version:\\s*\\d+\\.\\d+\\.\\d+"
+        message: "Rule must have metadata section with priority and semantic version number"
 
   - type: suggest
     message: |
       Rule files should follow this structure:
 
       ```markdown
+      ---
+      description: Brief description of the rule's purpose
+      globs: "**/*.extension"
+      alwaysApply: true|false
+      ---
+
       # Rule Title
 
       Brief description of what this rule does.
@@ -48,19 +76,21 @@ actions:
       description: Detailed description of the rule's purpose
 
       filters:
-        - type: filter_type
-          pattern: pattern_to_match
+        - type: file_extension|content|event
+          pattern: "pattern_to_match"
 
       actions:
-        - type: action_type
+        - type: validate|suggest
           conditions:
-            - pattern: pattern_to_validate
-              message: Error message if validation fails
+            - pattern: "pattern_to_validate"
+              message: "Error message if validation fails"
+          message: |
+            Suggestion message for suggest type actions
 
       examples:
         - input: |
-            Example input
-          output: Expected output
+            Example input code or content
+          output: "Expected output or validation result"
 
       metadata:
         priority: high|medium|low
@@ -68,37 +98,66 @@ actions:
       </rule>
       ```
 
+      Key requirements:
+      1. Front matter must be present with required fields
+      2. Title must be H1 and followed by description
+      3. Rule name must be snake_case
+      4. All sections must be properly indented
+      5. Patterns should use proper escaping
+      6. Examples should be realistic and helpful
+      7. Version should follow semantic versioning
+
 examples:
   - input: |
-      # My Rule
-      
-      This rule does something important.
-      
+      ---
+      description: Example rule for code style
+      globs: "**/*.ts"
+      alwaysApply: true
+      ---
+
+      # TypeScript Style Guide
+
+      Enforces consistent TypeScript code style.
+
       <rule>
-      name: my_rule
-      description: Detailed description
-      
+      name: typescript_style
+      description: Ensures TypeScript code follows project style guidelines
+
       filters:
         - type: file_extension
           pattern: "\\.ts$"
-      
+        - type: content
+          pattern: "typescript|interface|type"
+
       actions:
         - type: validate
           conditions:
-            - pattern: "export"
-              message: "File must export something"
-      
+            - pattern: "^interface\\s+[A-Z]"
+              message: "Interfaces must start with capital letter"
+
       examples:
-        - input: "export const x = 1;"
-          output: "Valid"
-      
+        - input: |
+            interface UserData {
+              name: string;
+            }
+          output: "Valid interface definition"
+
       metadata:
         priority: high
         version: 1.0.0
       </rule>
-    output: "Valid rule file structure"
+    output: "Valid rule file structure with all required sections"
+
+  - input: |
+      # Bad Rule
+
+      <rule>
+      name: badRule
+      description: Missing sections
+      </rule>
+    output: "Invalid: Missing front matter, improper name format, and missing required sections"
 
 metadata:
   priority: high
-  version: 1.0.0
+  version: 1.1.0
 </rule>

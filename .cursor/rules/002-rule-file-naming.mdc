@@ -1,7 +1,7 @@
 ---
-description: Standards for cursor rule file naming conventions and categories
+description: 
 globs: "**/*.mdc"
-alwaysApply: true
+alwaysApply: false
 ---
 ---
 description: Standards for cursor rule file naming conventions and categories

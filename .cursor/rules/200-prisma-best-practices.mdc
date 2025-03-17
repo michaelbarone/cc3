@@ -1,6 +1,6 @@
 ---
 description: 
-globs: 
+globs: **/*.prisma
 alwaysApply: false
 ---
 ---
