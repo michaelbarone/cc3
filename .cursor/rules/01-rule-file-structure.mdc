@@ -1,0 +1,104 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+ # Cursor Rule File Structure
+
+Rule for ensuring consistent structure in cursor rule files.
+
+<rule>
+name: rule_file_structure
+description: Ensures cursor rule files follow a consistent structure and contain all required sections
+filters:
+  - type: file_extension
+    pattern: "\\.mdc$"
+  - type: content
+    pattern: "(?s)<rule>.*?</rule>"
+  - type: event
+    pattern: "file_create|file_modify"
+
+actions:
+  - type: validate
+    conditions:
+      - pattern: "^# .*\\n\\n.*\\n\\n<rule>"
+        message: "Rule file must start with a title and description"
+      - pattern: "<rule>\\s*name: [^\\n]+\\s*description: [^\\n]+"
+        message: "Rule must have name and description fields"
+      - pattern: "filters:"
+        message: "Rule must have filters section"
+      - pattern: "actions:"
+        message: "Rule must have actions section"
+      - pattern: "examples:"
+        message: "Rule must have examples section"
+      - pattern: "metadata:"
+        message: "Rule must have metadata section"
+
+  - type: suggest
+    message: |
+      Rule files should follow this structure:
+
+      ```markdown
+      # Rule Title
+
+      Brief description of what this rule does.
+
+      <rule>
+      name: rule_name
+      description: Detailed description of the rule's purpose
+
+      filters:
+        - type: filter_type
+          pattern: pattern_to_match
+
+      actions:
+        - type: action_type
+          conditions:
+            - pattern: pattern_to_validate
+              message: Error message if validation fails
+
+      examples:
+        - input: |
+            Example input
+          output: Expected output
+
+      metadata:
+        priority: high|medium|low
+        version: x.y.z
+      </rule>
+      ```
+
+examples:
+  - input: |
+      # My Rule
+      
+      This rule does something important.
+      
+      <rule>
+      name: my_rule
+      description: Detailed description
+      
+      filters:
+        - type: file_extension
+          pattern: "\\.ts$"
+      
+      actions:
+        - type: validate
+          conditions:
+            - pattern: "export"
+              message: "File must export something"
+      
+      examples:
+        - input: "export const x = 1;"
+          output: "Valid"
+      
+      metadata:
+        priority: high
+        version: 1.0.0
+      </rule>
+    output: "Valid rule file structure"
+
+metadata:
+  priority: high
+  version: 1.0.0
+</rule>

@@ -1,0 +1,133 @@
+---
+description:
+globs:
+alwaysApply: true
+---
+# Git Conventional Commits
+
+Rule for automatically committing changes made by CursorAI using conventional commits format.
+
+<rule>
+name: conventional_commits
+description: Automatically commit changes made by CursorAI using conventional commits format with support for breaking changes, multiple scopes, and detailed descriptions
+filters:
+  - type: event
+    pattern: "build_success"
+  - type: file_change
+    pattern: "*"
+
+actions:
+  - type: execute
+    command: |
+      # Extract the change type and scope from the changes
+      CHANGE_TYPE=""
+      case "$CHANGE_DESCRIPTION" in
+        *"add"*|*"create"*|*"implement"*) CHANGE_TYPE="feat";;
+        *"fix"*|*"correct"*|*"resolve"*) CHANGE_TYPE="fix";;
+        *"refactor"*|*"restructure"*) CHANGE_TYPE="refactor";;
+        *"test"*) CHANGE_TYPE="test";;
+        *"doc"*|*"comment"*) CHANGE_TYPE="docs";;
+        *"style"*|*"format"*) CHANGE_TYPE="style";;
+        *"perf"*|*"optimize"*) CHANGE_TYPE="perf";;
+        *) CHANGE_TYPE="chore";;
+      esac
+
+      # Extract scopes from file path and content
+      SCOPES=()
+      # Add directory-based scope
+      DIR_SCOPE=$(dirname "$FILE" | tr '/' '-')
+      if [ ! -z "$DIR_SCOPE" ] && [ "$DIR_SCOPE" != "." ]; then
+        SCOPES+=("$DIR_SCOPE")
+      fi
+
+      # Add content-based scopes (e.g., from comments or file content)
+      if grep -q "BREAKING CHANGE:" "$FILE"; then
+        SCOPES+=("breaking")
+      fi
+
+      # Combine scopes if multiple exist
+      if [ ${#SCOPES[@]} -gt 0 ]; then
+        SCOPE=$(printf "%s," "${SCOPES[@]}" | sed 's/,$//')
+      else
+        SCOPE=""
+      fi
+
+      # Check for breaking changes
+      BREAKING=""
+      if grep -q "BREAKING CHANGE:" "$FILE"; then
+        BREAKING="BREAKING CHANGE: "
+      fi
+
+      # Extract detailed description if available
+      BODY=""
+      if [ -n "$CHANGE_DESCRIPTION" ]; then
+        BODY="\n\n$CHANGE_DESCRIPTION"
+      fi
+
+      # Extract references and breaking changes for footer
+      FOOTER=""
+      if grep -q "Closes #" "$FILE"; then
+        FOOTER="\n\nCloses $(grep -o "Closes #[0-9]*" "$FILE" | tr '\n' ' ')"
+      fi
+
+      # Commit the changes
+      git add "$FILE"
+      git commit -m "$CHANGE_TYPE${SCOPE:+($SCOPE)}: $BREAKING$CHANGE_DESCRIPTION$BODY$FOOTER"
+
+  - type: suggest
+    message: |
+      Changes should be committed using conventional commits format:
+
+      Format: <type>(<scope>): <description>
+             [BREAKING CHANGE: <breaking change description>]
+             [<body>]
+             [<footer>]
+
+      Types:
+      - feat: A new feature
+      - fix: A bug fix
+      - docs: Documentation only changes
+      - style: Changes that do not affect the meaning of the code
+      - refactor: A code change that neither fixes a bug nor adds a feature
+      - perf: A code change that improves performance
+      - test: Adding missing tests or correcting existing tests
+      - chore: Changes to the build process or auxiliary tools
+
+      Scope:
+      - Can be multiple, comma-separated
+      - Derived from file path and content
+      - Optional if no specific scope applies
+
+      Breaking Changes:
+      - Add "BREAKING CHANGE:" in the description
+      - Will be automatically detected and formatted
+
+      Body and Footer:
+      - Body: Detailed description of the change
+      - Footer: References to issues (e.g., "Closes #123")
+
+examples:
+  - input: |
+      # After adding a new feature
+      CHANGE_DESCRIPTION="add user authentication function"
+      FILE="src/auth/login.ts"
+    output: "feat(src-auth): add user authentication function"
+
+  - input: |
+      # After fixing a bug with breaking change
+      CHANGE_DESCRIPTION="fix incorrect date parsing"
+      FILE="lib/utils/date.js"
+      # BREAKING CHANGE: Date format changed from ISO to Unix timestamp
+    output: "fix(lib-utils,breaking): fix incorrect date parsing\n\nBREAKING CHANGE: Date format changed from ISO to Unix timestamp"
+
+  - input: |
+      # After adding feature with issue reference
+      CHANGE_DESCRIPTION="add dark mode support"
+      FILE="src/theme/dark-mode.ts"
+      # Closes #123
+    output: "feat(src-theme): add dark mode support\n\nCloses #123"
+
+metadata:
+  priority: high
+  version: 1.1.0
+</rule>

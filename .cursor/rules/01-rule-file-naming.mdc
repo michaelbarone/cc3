@@ -1,0 +1,70 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+ # Cursor Rule File Naming
+
+Rule for ensuring consistent naming conventions for cursor rule files.
+
+<rule>
+name: rule_file_naming
+description: Ensures cursor rule files follow consistent naming conventions with proper numbering and kebab-case format
+filters:
+  - type: file_extension
+    pattern: "\\.mdc$"
+  - type: event
+    pattern: "file_create"
+
+actions:
+  - type: validate
+    conditions:
+      - pattern: "^[0-9]{2}-[a-z0-9-]+\\.mdc$"
+        message: "Rule file must start with two digits followed by a hyphen and use kebab-case"
+      - pattern: "^[0-9]{2}-[a-z0-9-]+\\.mdc$"
+        message: "Rule file must use only lowercase letters, numbers, and hyphens"
+      - pattern: "^[0-9]{2}-[a-z0-9-]+\\.mdc$"
+        message: "Rule file must not contain consecutive hyphens"
+
+  - type: suggest
+    message: |
+      Rule files should follow these naming conventions:
+
+      1. Start with two digits (00-99) for ordering
+      2. Follow with a hyphen
+      3. Use kebab-case for the rest of the name
+      4. End with .mdc extension
+
+      Examples:
+      - 00-cursor-rules-location.mdc
+      - 01-conventional-commits.mdc
+      - 02-rule-file-structure.mdc
+      - 03-rule-file-naming.mdc
+
+      Bad examples:
+      - cursorRules.mdc (no numbering, camelCase)
+      - 1-rule.mdc (single digit)
+      - 001-rule.mdc (three digits)
+      - rule-file.mdc (no numbering)
+      - 01--rule.mdc (consecutive hyphens)
+
+examples:
+  - input: "00-cursor-rules-location.mdc"
+    output: "Valid rule file name"
+
+  - input: "01-conventional-commits.mdc"
+    output: "Valid rule file name"
+
+  - input: "cursorRules.mdc"
+    output: "Invalid: Missing numbering and using camelCase"
+
+  - input: "1-rule.mdc"
+    output: "Invalid: Single digit numbering"
+
+  - input: "01--rule.mdc"
+    output: "Invalid: Consecutive hyphens"
+
+metadata:
+  priority: high
+  version: 1.0.0
+</rule>
