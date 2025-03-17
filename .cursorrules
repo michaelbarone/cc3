@@ -162,12 +162,19 @@ Step 2: Iframe Management
 [X] Ensure proper iframe src management (empty vs data-src)
 [X] Implement content caching for inactive-loaded state
 [X] Verify proper state sync between button and iframe
-
-Step 3: Testing
-[X] Test all state transitions
-[X] Verify proper content caching behavior
-[X] Test initial load state
-[X] Validate visual indicators
+[X] Create unified long press handler using custom hook
+[X] Move long press state management to IframeStateContext
+[X] Add visual feedback during long press (progress indicator)
+[ ] Test visual feedback implementation:
+    - Verify progress bar appears during long press
+    - Check progress bar styling and transparency
+    - Test progress updates are smooth (no stuttering)
+    - Verify proper cleanup after long press
+[ ] Improve tooltips for long press actions
+[ ] Add haptic feedback for mobile devices
+[ ] Implement proper cleanup of event listeners
+[ ] Test edge cases (rapid clicks, interrupted long press)
+[ ] Verify menu button click, long press are managed properly and result in the correct state being set
 
 ### Progress
 [X] Defined clear requirements for each state
@@ -177,6 +184,9 @@ Step 3: Testing
 [X] Synchronized button states with iframe loading states
 [X] Fixed timing issues with iframe content loading
 [X] Implemented proper state management for URL activation
+[X] Created and implemented useLongPress hook with proper TypeScript types and event handling
+[X] Integrated long press state management with IframeStateContext
+[X] Added visual progress indicator for long press actions
 
 ### Future Plans
 
