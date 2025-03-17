@@ -2,6 +2,7 @@ import { PrismaClient } from '@prisma/client'
 import { execSync } from 'child_process'
 import fs from 'fs'
 import path from 'path'
+import { main as seedDatabase } from '../../prisma/seed'
 
 const prisma = new PrismaClient()
 
@@ -16,7 +17,8 @@ function createRequiredDirectories() {
     'public/uploads',
     'public/icons',
     'public/avatars',
-    'public/logos'
+    'public/logos',
+    'public/favicons'
   ]
 
   directories.forEach(dir => {
@@ -62,49 +64,6 @@ export async function initializeDatabase() {
   } finally {
     isInitializing = false
     await prisma.$disconnect()
-  }
-}
-
-async function seedDatabase() {
-  try {
-    // Create default admin user
-    const admin = await prisma.user.create({
-      data: {
-        username: 'admin',
-        isAdmin: true,
-        // No password by default as per requirements
-      },
-    })
-
-    // Create default URL group
-    const defaultGroup = await prisma.urlGroup.create({
-      data: {
-        name: 'Default Group',
-        description: 'Default URL group created during initialization',
-      },
-    })
-
-    // Assign admin to the default group
-    await prisma.userUrlGroup.create({
-      data: {
-        userId: admin.id,
-        urlGroupId: defaultGroup.id,
-      },
-    })
-
-    // Create default app config
-    await prisma.appConfig.create({
-      data: {
-        id: 'app-config',
-        appName: 'Control Center',
-        loginTheme: 'dark',
-      },
-    })
-
-    console.log('Initial seed completed successfully')
-  } catch (error) {
-    console.error('Seed error:', error)
-    throw error
   }
 }
 

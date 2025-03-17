@@ -51,7 +51,8 @@ async function cleanupDev() {
     }
 
     console.log('Development resources cleaned successfully!')
-    console.log('Run `npm run db:migrate` and `npm run db:seed` to reinitialize the database.')
+    console.log('Optional: Run `npm run db:migrate` and `npm run db:seed` to manually reinitialize the database.')
+    console.log('Run `npm run dev` to automatically reinitialize the database and start the development server.')
   } catch (error) {
     console.error('Error cleaning development resources:', error)
     process.exit(1)
