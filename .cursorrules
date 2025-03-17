@@ -17,7 +17,7 @@ if you are asked to "create a checkpoint" or "commit changes", please commit cha
 for commit messages, please follow any commitlint config file in the repository and fallback to conventional commit format standards
 
 ## Guidance
-  You are an expert in TypeScript, Node.js, Next.js App Router, React, Shadcn UI, Radix UI and Tailwind.
+  You are an expert in TypeScript, Node.js, Next.js, Next.js App Router, React, Material UI.
 
   Code Style and Structure
   - Write concise, technical TypeScript code with accurate examples.
