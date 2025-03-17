@@ -581,6 +581,12 @@ export default function AppConfigPage() {
               subheader="Backup and restore your database and uploaded files"
             />
             <CardContent>
+              {/* TODO [Reset App Feature] Add a reset application button here that will:
+                  1. Show a confirmation dialog warning about data loss
+                  2. Recommend creating a backup before proceeding
+                  3. Call the cleanup script to remove all data
+                  4. Reinitialize the application to first-run state
+                  5. Log out all users and redirect to login page */}
               <DatabaseManagement />
             </CardContent>
           </Card>
