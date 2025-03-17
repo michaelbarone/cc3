@@ -686,6 +686,10 @@ export default function MenuBar({
                 secondary={group.description}
                 primaryTypographyProps={{
                   fontWeight: 'medium',
+                  component: 'div'
+                }}
+                secondaryTypographyProps={{
+                  component: 'div'
                 }}
               />
               {openGroups[group.id] ? <ExpandLess /> : <ExpandMore />}
@@ -767,6 +771,7 @@ export default function MenuBar({
                           primaryTypographyProps={{
                             variant: 'body2',
                             fontWeight: isActive ? 'bold' : 'normal',
+                            component: 'div'
                           }}
                         />
                         {isActive && isUnloaded && (

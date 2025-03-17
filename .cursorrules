@@ -208,8 +208,8 @@ Implementation Plan
 [X] add users to url groups
 [X] allow uploading an icon for the urls in the url groups
 [X] create an application config area
-[ ] in the admin area for app configuration, add a way to upload a browser favicon
-[ ] Create independent URL management system
+[X] in the admin area for app configuration, add a way to upload a browser favicon
+[X] Create independent URL management system
     - Create new database schema for URLs and URL-Group mappings
     - Write migration script for existing data
     - Create URL management page in admin area
