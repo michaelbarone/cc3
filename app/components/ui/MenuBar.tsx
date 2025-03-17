@@ -683,12 +683,8 @@ export default function MenuBar({
               </ListItemIcon>
               <ListItemText
                 primary={group.name}
-                secondary={group.description}
                 primaryTypographyProps={{
                   fontWeight: 'medium',
-                  component: 'div'
-                }}
-                secondaryTypographyProps={{
                   component: 'div'
                 }}
               />
@@ -715,7 +711,8 @@ export default function MenuBar({
                       <ListItemButton
                         sx={{
                           pl: 4,
-                          borderLeft: isActive ?
+                          borderLeft: 'none',
+                          borderRight: isActive ?
                             `4px solid ${theme.palette.primary.main}` :
                             'none',
                           bgcolor: isActive ?
