@@ -4,7 +4,7 @@ import "./globals.css";
 import { ThemeProvider } from "./theme/theme-provider";
 import { AuthProvider } from "./lib/auth/auth-context";
 import { Providers } from './providers';
-import { prisma } from './lib/db/prisma';
+import { getPrismaClient } from '@/lib/db/provider';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -17,6 +17,7 @@ const geistMono = Geist_Mono({
 });
 
 async function getAppConfig() {
+  const prisma = await getPrismaClient();
   return await prisma.appConfig.findUnique({
     where: { id: 'app-config' },
   });
