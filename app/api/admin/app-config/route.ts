@@ -14,7 +14,7 @@ export async function GET() {
     if (!appConfig) {
       appConfig = await prisma.appConfig.create({
         data: {
-          appName: 'URL Dashboard',
+          appName: 'Control Center',
           appLogo: null,
           loginTheme: 'dark',  // Default to dark theme
           registrationEnabled: false, // Default to disabled registration

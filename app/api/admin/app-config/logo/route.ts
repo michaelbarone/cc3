@@ -131,7 +131,7 @@ export async function POST(request: NextRequest) {
       where: { id: 'app-config' },
       update: { appLogo },
       create: {
-        appName: 'URL Dashboard',
+        appName: 'Control Center',
         appLogo,
         loginTheme: 'dark',  // Default to dark theme
         registrationEnabled: false, // Default to disabled registration

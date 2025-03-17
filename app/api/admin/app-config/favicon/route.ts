@@ -91,7 +91,7 @@ export async function POST(request: NextRequest) {
       where: { id: 'app-config' },
       update: { favicon },
       create: {
-        appName: 'URL Dashboard',
+        appName: 'Control Center',
         favicon,
         loginTheme: 'dark',
         registrationEnabled: false,

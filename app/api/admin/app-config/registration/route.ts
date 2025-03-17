@@ -38,7 +38,7 @@ export async function PATCH(request: NextRequest) {
       where: { id: 'app-config' },
       update: { registrationEnabled },
       create: {
-        appName: 'URL Dashboard',
+        appName: 'Control Center',
         appLogo: null,
         loginTheme: 'dark',
         registrationEnabled,

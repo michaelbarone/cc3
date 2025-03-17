@@ -1,4 +1,4 @@
-# URL Dashboard
+# Control Center
 
 A containerized Next.js application for managing and displaying URLs in iframes with user management and admin configuration.
 

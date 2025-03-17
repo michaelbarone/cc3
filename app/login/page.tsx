@@ -55,7 +55,7 @@ export default function LoginPage() {
   const [users, setUsers] = useState<UserTile[]>([]);
   const [selectedUser, setSelectedUser] = useState<UserTile | null>(null);
   const [appConfig, setAppConfig] = useState<AppConfig>({
-    appName: 'URL Dashboard',
+    appName: 'Control Center',
     appLogo: null,
     loginTheme: 'dark',
     registrationEnabled: false

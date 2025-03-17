@@ -3,7 +3,7 @@ PRAGMA defer_foreign_keys=ON;
 PRAGMA foreign_keys=OFF;
 CREATE TABLE "new_AppConfig" (
     "id" TEXT NOT NULL PRIMARY KEY DEFAULT 'app-config',
-    "appName" TEXT NOT NULL DEFAULT 'URL Dashboard',
+    "appName" TEXT NOT NULL DEFAULT 'Control Center',
     "appLogo" TEXT,
     "loginTheme" TEXT NOT NULL DEFAULT 'dark',
     "registrationEnabled" BOOLEAN NOT NULL DEFAULT false,
