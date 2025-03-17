@@ -220,6 +220,9 @@ Implementation Plan
     - Move idle timeout setting to URL level
 
 Future Enhancements (Optional):
+[ ] create a way to export and import the database to allow backup and restore through the interface
+
+Future Enhancements (Optional):
 - Add URL usage statistics (access counts, active users)
 - Add audit logging for URL-group relationship changes
 - Add warning system when removing URLs from active groups
