@@ -20,10 +20,10 @@ import {
 import ExpandLess from '@mui/icons-material/ExpandLess';
 import ExpandMore from '@mui/icons-material/ExpandMore';
 import FolderIcon from '@mui/icons-material/Folder';
-import PowerSettingsNewIcon from '@mui/icons-material/PowerSettingsNew';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import { Url, UrlGroup } from '@/app/lib/types';
 import { useUserPreferences } from '@/app/lib/hooks/useUserPreferences';
+import { Theme } from '@mui/material/styles';
 
 interface MenuBarProps {
   urlGroups: UrlGroup[];
@@ -55,6 +55,135 @@ const getUrlStatus = (
     return isLoaded ? 'inactive-loaded' : 'inactive-unloaded';
   }
 };
+
+// Common URL item component that works for both side and top menu layouts
+function UrlItem({
+  url,
+  isActive,
+  isLoaded,
+  tooltipText,
+  onUrlClick,
+  onMouseDown,
+  onTouchStart,
+  menuPosition,
+  theme
+}: {
+  url: Url;
+  isActive: boolean;
+  isLoaded: boolean;
+  tooltipText: string;
+  onUrlClick: (e: React.MouseEvent) => void;
+  onMouseDown: () => void;
+  onTouchStart: () => void;
+  menuPosition: 'side' | 'top';
+  theme: Theme;
+}) {
+  const commonIconStyles = {
+    width: 24,
+    height: 24,
+    objectFit: 'contain' as const
+  };
+
+  const commonBadgeStyles = {
+    position: 'absolute' as const,
+    top: -2,
+    right: -2,
+  };
+
+  const commonBoxStyles = {
+    position: 'relative' as const,
+    display: 'flex',
+    alignItems: 'center'
+  };
+
+  if (menuPosition === 'top') {
+    return (
+      <Tooltip title={tooltipText}>
+        <Button
+          onClick={onUrlClick}
+          onMouseDown={onMouseDown}
+          onTouchStart={onTouchStart}
+          sx={{
+            mx: 0.5,
+            textTransform: 'none',
+            borderBottom: isActive ? `2px solid ${theme.palette.primary.main}` : 'none',
+            borderRadius: 0,
+            color: isActive ? theme.palette.primary.main : theme.palette.text.primary,
+            fontWeight: isActive ? 'bold' : 'normal',
+            '&:hover': {
+              backgroundColor: 'transparent',
+              opacity: 0.8,
+            }
+          }}
+        >
+          <Box sx={commonBoxStyles}>
+            {url.iconPath ? (
+              <Box
+                component="img"
+                src={url.iconPath}
+                alt={url.title}
+                sx={commonIconStyles}
+              />
+            ) : (
+              url.title
+            )}
+            {isLoaded && (
+              <Badge
+                color="success"
+                variant="dot"
+                overlap="circular"
+                sx={commonBadgeStyles}
+              />
+            )}
+          </Box>
+        </Button>
+      </Tooltip>
+    );
+  }
+
+  return (
+    <Tooltip title={tooltipText} placement="right">
+      <ListItemButton
+        sx={{
+          pl: 4,
+          borderLeft: 'none',
+          borderRight: isActive ?
+            `4px solid ${theme.palette.primary.main}` :
+            'none',
+          bgcolor: isActive ?
+            theme.palette.action.selected :
+            'inherit',
+          position: 'relative',
+        }}
+        onClick={onUrlClick}
+        onMouseDown={onMouseDown}
+        onTouchStart={onTouchStart}
+      >
+        <ListItemIcon sx={{ minWidth: 36 }}>
+          <Box sx={commonBoxStyles}>
+            {url.iconPath ? (
+              <Box
+                component="img"
+                src={url.iconPath}
+                alt={url.title}
+                sx={commonIconStyles}
+              />
+            ) : null}
+            {isLoaded && (
+              <Badge
+                color="success"
+                variant="dot"
+                overlap="circular"
+                sx={commonBadgeStyles}
+              />
+            )}
+          </Box>
+        </ListItemIcon>
+        <ListItemText primary={url.title} />
+      </ListItemButton>
+    </Tooltip>
+  );
+}
 
 export default function MenuBar({
   urlGroups,
@@ -423,6 +552,40 @@ export default function MenuBar({
     handleGroupMenuClose();
   };
 
+  // In the render section for both top and side menu, replace the URL rendering with:
+  const renderUrlItem = (url: Url) => {
+    const urlStatus = getUrlStatus(url.id, activeUrlId, loadedUrlIds, knownUrlIds);
+    const isActive = urlStatus.startsWith('active');
+    const isLoaded = urlStatus.includes('loaded');
+    const isUnloaded = urlStatus.includes('unloaded');
+
+    // Determine tooltip text based on status
+    let tooltipText = '';
+    if (isActive && isLoaded) tooltipText = 'Currently active (click to reload)';
+    else if (isActive && isUnloaded) tooltipText = 'Currently active but unloaded (click to reload)';
+    else if (isLoaded) tooltipText = 'Loaded in background (click to view, long press to unload)';
+    else if (isUnloaded) tooltipText = 'Currently unloaded (click to load and view, long press to prevent navigation)';
+    else tooltipText = 'Click to view';
+
+    return (
+      <UrlItem
+        key={url.id}
+        url={url}
+        isActive={isActive}
+        isLoaded={isLoaded}
+        tooltipText={tooltipText}
+        onUrlClick={(e) => {
+          e.stopPropagation();
+          safeHandleUrlClick(url);
+        }}
+        onMouseDown={() => handleMouseDown(url)}
+        onTouchStart={() => handleTouchStart(url)}
+        menuPosition={menuPosition}
+        theme={theme}
+      />
+    );
+  };
+
   // Render top menu layout
   if (menuPosition === 'top') {
     // Find group containing active URL first (prioritize it)
@@ -491,77 +654,7 @@ export default function MenuBar({
                       {group.name}
                     </MenuItem>
 
-                    {group.urls.map(url => {
-                      const urlStatus = getUrlStatus(url.id, activeUrlId, loadedUrlIds, knownUrlIds);
-                      const isActive = urlStatus.startsWith('active');
-                      const isLoaded = urlStatus.includes('loaded');
-                      const isUnloaded = urlStatus.includes('unloaded');
-
-                      // Determine tooltip text based on status
-                      let tooltipText = '';
-                      if (isActive && isLoaded) tooltipText = 'Currently active (click to reload)';
-                      else if (isActive && isUnloaded) tooltipText = 'Currently active but unloaded (click to reload)';
-                      else if (isLoaded) tooltipText = 'Loaded in background (click to view, long press to unload)';
-                      else if (isUnloaded) tooltipText = 'Currently unloaded (click to load and view, long press to prevent navigation)';
-                      else tooltipText = 'Click to view';
-
-                      return (
-                        <Tooltip key={url.id} title={tooltipText}>
-                          <Button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              safeHandleUrlClick(url, handleGroupMenuClose);
-                            }}
-                            onMouseDown={() => handleMouseDown(url)}
-                            onTouchStart={() => handleTouchStart(url)}
-                            size="small"
-                            sx={{
-                              m: 0.5,
-                              textTransform: 'none',
-                              fontSize: '0.875rem',
-                              color: isActive ? theme.palette.primary.main : theme.palette.text.primary,
-                              fontWeight: isActive ? 'bold' : 'normal',
-                              '&:hover': {
-                                backgroundColor: theme.palette.action.hover,
-                              }
-                            }}
-                          >
-                            <Box sx={{
-                              position: 'relative',
-                              display: 'flex',
-                              alignItems: 'center'
-                            }}>
-                              {url.iconPath ? (
-                                <Box
-                                  component="img"
-                                  src={url.iconPath}
-                                  alt={url.title}
-                                  sx={{
-                                    width: 24,
-                                    height: 24,
-                                    objectFit: 'contain'
-                                  }}
-                                />
-                              ) : (
-                                url.title
-                              )}
-                              {isLoaded && (
-                                <Badge
-                                  color="success"
-                                  variant="dot"
-                                  overlap="circular"
-                                  sx={{
-                                    position: 'absolute',
-                                    top: -2,
-                                    right: -2,
-                                  }}
-                                />
-                              )}
-                            </Box>
-                          </Button>
-                        </Tooltip>
-                      );
-                    })}
+                    {group.urls.map(url => renderUrlItem(url))}
                   </Box>
 
                   {group.id !== urlGroups.filter(g => g.id !== activeGroupId).slice(-1)[0].id && (
@@ -579,78 +672,7 @@ export default function MenuBar({
           overflow: 'auto',
           whiteSpace: 'nowrap'
         }}>
-          {activeGroup?.urls.map(url => {
-            const urlStatus = getUrlStatus(url.id, activeUrlId, loadedUrlIds, knownUrlIds);
-            const isActive = urlStatus.startsWith('active');
-            const isLoaded = urlStatus.includes('loaded');
-            const isUnloaded = urlStatus.includes('unloaded');
-
-            // Determine tooltip text based on status
-            let tooltipText = '';
-            if (isActive && isLoaded) tooltipText = 'Currently active (click to reload)';
-            else if (isActive && isUnloaded) tooltipText = 'Currently active but unloaded (click to reload)';
-            else if (isLoaded) tooltipText = 'Loaded in background (click to view, long press to unload)';
-            else if (isUnloaded) tooltipText = 'Currently unloaded (click to load and view, long press to prevent navigation)';
-            else tooltipText = 'Click to view';
-
-            return (
-              <Tooltip key={url.id} title={tooltipText}>
-                <Button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    safeHandleUrlClick(url);
-                  }}
-                  onMouseDown={() => handleMouseDown(url)}
-                  onTouchStart={() => handleTouchStart(url)}
-                  sx={{
-                    mx: 0.5,
-                    textTransform: 'none',
-                    borderBottom: isActive ? `2px solid ${theme.palette.primary.main}` : 'none',
-                    borderRadius: 0,
-                    color: isActive ? theme.palette.primary.main : theme.palette.text.primary,
-                    fontWeight: isActive ? 'bold' : 'normal',
-                    '&:hover': {
-                      backgroundColor: 'transparent',
-                      opacity: 0.8,
-                    }
-                  }}
-                >
-                  <Box sx={{
-                    position: 'relative',
-                    display: 'flex',
-                    alignItems: 'center'
-                  }}>
-                    {url.iconPath ? (
-                      <Box
-                        component="img"
-                        src={url.iconPath}
-                        alt={url.title}
-                        sx={{
-                          width: 24,
-                          height: 24,
-                          objectFit: 'contain'
-                        }}
-                      />
-                    ) : (
-                      url.title
-                    )}
-                    {isLoaded && (
-                      <Badge
-                        color="success"
-                        variant="dot"
-                        overlap="circular"
-                        sx={{
-                          position: 'absolute',
-                          top: -2,
-                          right: -2,
-                        }}
-                      />
-                    )}
-                  </Box>
-                </Button>
-              </Tooltip>
-            );
-          })}
+          {activeGroup?.urls.map(url => renderUrlItem(url))}
         </Box>
       </Box>
     );
@@ -692,96 +714,7 @@ export default function MenuBar({
             </ListItemButton>
             <Collapse in={openGroups[group.id] ?? false} timeout="auto" unmountOnExit>
               <List component="div" disablePadding>
-                {group.urls.map((url) => {
-                  const urlStatus = getUrlStatus(url.id, activeUrlId, loadedUrlIds, knownUrlIds);
-                  const isActive = urlStatus.startsWith('active');
-                  const isLoaded = urlStatus.includes('loaded');
-                  const isUnloaded = urlStatus.includes('unloaded');
-
-                  // Determine tooltip text based on status
-                  let tooltipText = '';
-                  if (isActive && isLoaded) tooltipText = 'Currently active (click to reload)';
-                  else if (isActive && isUnloaded) tooltipText = 'Currently active but unloaded (click to reload)';
-                  else if (isLoaded) tooltipText = 'Loaded in background (click to view, long press to unload)';
-                  else if (isUnloaded) tooltipText = 'Currently unloaded (click to load and view, long press to prevent navigation)';
-                  else tooltipText = 'Click to view';
-
-                  return (
-                    <Tooltip title={tooltipText} key={url.id} placement="right">
-                      <ListItemButton
-                        sx={{
-                          pl: 4,
-                          borderLeft: 'none',
-                          borderRight: isActive ?
-                            `4px solid ${theme.palette.primary.main}` :
-                            'none',
-                          bgcolor: isActive ?
-                            theme.palette.action.selected :
-                            'inherit',
-                          position: 'relative',
-                        }}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          safeHandleUrlClick(url);
-                        }}
-                        onMouseDown={() => handleMouseDown(url)}
-                        onTouchStart={() => handleTouchStart(url)}
-                      >
-                        <ListItemIcon sx={{ minWidth: 36 }}>
-                          <Box sx={{ position: 'relative' }}>
-                            {url.iconPath ? (
-                              <Box
-                                component="img"
-                                src={url.iconPath}
-                                alt={url.title}
-                                sx={{
-                                  width: 24,
-                                  height: 24,
-                                  objectFit: 'contain'
-                                }}
-                              />
-                            ) : null}
-                          </Box>
-                        </ListItemIcon>
-                        <ListItemText
-                          primary={
-                            <Box sx={{
-                              position: 'relative',
-                              display: 'flex',
-                              alignItems: 'center'
-                            }}>
-                              {url.title}
-                              {isLoaded && (
-                                <Badge
-                                  color="success"
-                                  variant="dot"
-                                  overlap="circular"
-                                  sx={{
-                                    position: 'absolute',
-                                    top: -2,
-                                    right: -2,
-                                  }}
-                                />
-                              )}
-                            </Box>
-                          }
-                          primaryTypographyProps={{
-                            variant: 'body2',
-                            fontWeight: isActive ? 'bold' : 'normal',
-                            component: 'div'
-                          }}
-                        />
-                        {isActive && isUnloaded && (
-                          <PowerSettingsNewIcon
-                            color="error"
-                            fontSize="small"
-                            sx={{ ml: 1 }}
-                          />
-                        )}
-                      </ListItemButton>
-                    </Tooltip>
-                  );
-                })}
+                {group.urls.map(url => renderUrlItem(url))}
               </List>
             </Collapse>
           </Box>
