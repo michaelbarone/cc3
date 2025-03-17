@@ -141,50 +141,66 @@ Example Scratchpad Structure with no task:
 
 ## Scratchpad
 
-## Current Task - no curent task
+## Current Task: URL Menu State Management
 
-## Future Plans
+### Context
+- Need to implement four specific states for URL menu items:
+  1. 'active-loaded': Active button + green dot (visible iframe with content)
+  2. 'active-unloaded': Active button, no dot (visible iframe, no content)
+  3. 'inactive-loaded': Normal button + green dot (hidden iframe with cached content)
+  4. 'inactive-unloaded': Normal button, no dot (hidden iframe, no content)
+- All buttons start as 'inactive-unloaded' on app load
+- Selected URL button becomes 'active-loaded' when clicked
 
-### URL Menu Items State Management
+### Plan
+Step 1: State Implementation
+[X] Define UrlMenuItemState type with four states
+[X] Update button component to handle all states correctly
+[X] Implement proper state transitions on click events
 
-#### Context
-- Need to ensure URL menu items properly display their state (active, loaded, etc.)
-- Implement click and long-press functionality as outlined
-- This is part of the Iframe Management section of the project
-
-#### Plan
-Step 1: Review Requirements
-[ ] Clarify the exact states that need to be displayed for each URL menu item
-[ ] Define the expected behavior for click and long-press actions
-[ ] Document any edge cases or special conditions
-
-Step 2: Implementation
-[ ] Update URL menu item component to show all required states
-[ ] Implement click handling for URL selection
-[ ] Add long-press functionality for iframe reset
-[ ] Add visual indicators for different states
+Step 2: Iframe Management
+[X] Ensure proper iframe src management (empty vs data-src)
+[X] Implement content caching for inactive-loaded state
+[X] Verify proper state sync between button and iframe
 
 Step 3: Testing
-[ ] Test all state combinations
-[ ] Verify click and long-press behavior
-[ ] Test on different devices and screen sizes
-[ ] Validate accessibility
+[X] Test all state transitions
+[X] Verify proper content caching behavior
+[X] Test initial load state
+[X] Validate visual indicators
 
-#### Progress
-[X] Identified the task and its requirements
-[-] Working on clarifying specific requirements
-[ ] Pending implementation
+### Progress
+[X] Defined clear requirements for each state
+[X] Clarified visual indicators for each state
+[X] Implemented proper iframe initialization in inactive-unloaded state
+[X] Added automatic content loading for active URLs
+[X] Synchronized button states with iframe loading states
+[X] Fixed timing issues with iframe content loading
+[X] Implemented proper state management for URL activation
 
-#### Blockers
-[!] Need clarification on:
-  - What specific states need to be shown for each URL
-  - Expected behavior for long-press on different devices
-  - How to handle edge cases (e.g., loading failures)
+### Future Plans
 
-#### Future Considerations
-[>] Consider adding tooltips for state indicators
-[>] Add keyboard shortcuts for common actions
-[>] Implement state persistence between sessions
+### Idle Timeout Implementation
+
+#### Context
+- Need to implement URL-specific idle timeout cleanup
+- Affects both iframe content and button state
+
+#### Plan
+Step 1: Timer Management
+[ ] Implement idle timeout tracking per URL
+[ ] Create cleanup mechanism for expired timeouts
+[ ] Add timer reset on URL activation
+
+Step 2: State Updates
+[ ] Clear iframe content (src="") on timeout
+[ ] Update button state to unloaded
+[ ] Implement proper state management updates
+
+Step 3: Testing
+[ ] Test timeout triggers
+[ ] Verify proper cleanup
+[ ] Test timer reset behavior
 
 ## Future Tasks
 

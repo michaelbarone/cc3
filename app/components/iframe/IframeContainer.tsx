@@ -83,44 +83,35 @@ const IframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
       if (!isInitialMount.current) return;
       isInitialMount.current = false;
 
-      const storedLoadedUrlIds = localStorage.getItem('iframe-state-loaded-url-ids');
-      if (storedLoadedUrlIds) {
-        try {
-          const loadedIds = JSON.parse(storedLoadedUrlIds);
+      // Initialize all URLs in inactive-unloaded state
+      const initialStates: Record<string, IframeState> = {};
+      Object.entries(allUrlsMap).forEach(([urlId, url]) => {
+        const isActive = urlId === activeUrlId;
+        initialStates[urlId] = {
+          id: urlId,
+          url: url,
+          loading: isActive, // Set loading to true for active URL
+          error: null,
+          isUnloaded: true,
+          lastActivityTime: Date.now(),
+          idleTimeoutMinutes: 10
+        };
 
-          // Initialize states for loaded URLs
-          const initialStates: Record<string, IframeState> = {};
-          loadedIds.forEach((urlId: string) => {
-            if (allUrlsMap[urlId]) {
-              initialStates[urlId] = {
-                id: urlId,
-                url: allUrlsMap[urlId],
-                loading: false,
-                error: null,
-                isUnloaded: false,
-                lastActivityTime: Date.now(),
-                idleTimeoutMinutes: 10
-              };
-            }
-          });
-
-          // Set initial states
-          setIframeStates(initialStates);
-
-          // Notify parent about loaded URLs
-          loadedIds.forEach((urlId: string) => {
-            if (onLoad) onLoad(urlId);
-          });
-
-          console.log('Restored iframe states:', {
-            loadedIds,
-            initialStates: Object.keys(initialStates)
-          });
-        } catch (error) {
-          console.error('Error restoring iframe states:', error);
+        // If this is the active URL, load its content
+        if (isActive) {
+          const iframe = iframeRefs.current[urlId];
+          if (iframe) {
+            console.log(`Loading content for initial active URL ${urlId}`);
+            updateIframeSrc(urlId, url);
+          }
         }
-      }
-    }, [allUrlsMap, onLoad]);
+      });
+
+      // Set initial states
+      setIframeStates(initialStates);
+
+      console.log('Initialized iframes with active URL:', activeUrlId);
+    }, [allUrlsMap, activeUrlId]);
 
     // Sync iframeStates with localStorage
     useEffect(() => {
@@ -176,11 +167,34 @@ const IframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
           iframe.addEventListener('load', loadListener);
           iframe.addEventListener('error', errorListener);
 
+          // Store ref to the iframe
           iframeRefs.current[urlId] = iframe;
-          iframe.src = url;
+
+          // Initialize in inactive-unloaded state
+          iframe.src = '';
+          setIframeStates(prev => ({
+            ...prev,
+            [urlId]: {
+              id: urlId,
+              url: url,
+              loading: urlId === activeUrlId, // Set loading state for active URL
+              error: null,
+              isUnloaded: true,
+              lastActivityTime: Date.now(),
+              idleTimeoutMinutes: 10
+            }
+          }));
 
           wrapper.appendChild(iframe);
           globalContainer.appendChild(wrapper);
+
+          // If this is the active URL, load its content after a short delay
+          if (urlId === activeUrlId) {
+            setTimeout(() => {
+              console.log(`Loading content for active URL ${urlId} after iframe creation`);
+              updateIframeSrc(urlId, url);
+            }, 100);
+          }
         }
       });
 
@@ -219,45 +233,31 @@ const IframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
 
     // Update iframe visibility when active URL changes
     useEffect(() => {
-      if (!activeUrlId) return;
+      if (!activeUrlId || Object.keys(allUrlsMap).length === 0) {
+        return;
+      }
 
+      console.log(`Active URL changed to: ${activeUrlId}`);
+
+      // Update visibility for all iframes
       Object.keys(allUrlsMap).forEach(urlId => {
-        const wrapper = document.querySelector(`[data-iframe-container="${urlId}"]`);
-        if (wrapper) {
-          const isActive = urlId === activeUrlId;
-          (wrapper as HTMLElement).style.display = isActive ? 'block' : 'none';
-          (wrapper as HTMLElement).style.zIndex = isActive ? '1' : '0';
+        const isActive = urlId === activeUrlId;
+        updateIframeVisibility(urlId, isActive);
 
-          if (isActive) {
-            const iframe = iframeRefs.current[urlId];
-            if (iframe) {
-              const isContentLoaded = iframe.src === allUrlsMap[urlId];
-              if (!isContentLoaded || iframeStates[urlId]?.isUnloaded) {
-                updateIframeSrc(urlId, allUrlsMap[urlId]);
-              } else {
-                // Ensure loading state is false for already loaded iframes
-                setIframeStates(prev => ({
-                  ...prev,
-                  [urlId]: {
-                    ...prev[urlId] || {
-                      id: urlId,
-                      url: allUrlsMap[urlId],
-                      idleTimeoutMinutes: 10
-                    },
-                    loading: false,
-                    error: null,
-                    isUnloaded: false,
-                    lastActivityTime: Date.now()
-                  }
-                }));
-              }
-            }
+        // If this is the active URL and it's unloaded, load it
+        if (isActive && iframeStates[urlId]?.isUnloaded) {
+          const iframe = iframeRefs.current[urlId];
+          if (iframe) {
+            const targetUrl = allUrlsMap[urlId];
+            console.log(`Loading content for active URL ${urlId}`);
+            updateIframeSrc(urlId, targetUrl);
           }
         }
       });
 
+      // Update previous URL reference
       previousActiveUrlIdRef.current = activeUrlId;
-    }, [activeUrlId, allUrlsMap]);
+    }, [activeUrlId, allUrlsMap, iframeStates]);
 
     // Collect URLs from groups
     useEffect(() => {
@@ -351,44 +351,60 @@ const IframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
       if (!iframe) return;
 
       const prevSrc = iframe.src;
+      const isActive = urlId === activeUrlId;
 
       if (src === null || src === '') {
-        // If explicitly unloading, save current URL to data-url attribute
+        // If explicitly unloading, save current URL to data-src attribute
         if (iframe.src && iframe.src !== 'about:blank' && iframe.src !== '') {
-          iframe.setAttribute('data-url', iframe.src);
-          console.log(`Saved URL to data-url for iframe ${urlId}: ${iframe.src}`);
+          iframe.setAttribute('data-src', iframe.src);
+          console.log(`Saved URL to data-src for iframe ${urlId}: ${iframe.src}`);
         }
 
         // Only clear src if this is an EXPLICIT unload operation (not just switching tabs)
         if (src === null) { // null indicates explicit unload request
           iframe.src = '';
           console.log(`Explicitly unloaded iframe ${urlId}: ${prevSrc} -> ""`);
-        } else {
-          console.log(`Skipped clearing src for iframe ${urlId} - just switching tabs`);
-        }
-      } else if (iframe.src !== src) {
-        // Only update src if it's different from current src
-        console.log(`Setting src for iframe ${urlId}: ${prevSrc.substring(0, 30)}... -> ${src.substring(0, 30)}...`);
-        // Only set loading state when actually changing the src to a non-empty value
-        if (src !== '') {
+
+          // Update state to inactive-unloaded
           setIframeStates(prev => ({
             ...prev,
             [urlId]: {
               ...prev[urlId] || {
                 id: urlId,
-                url: src,
+                url: iframe.getAttribute('data-src') || '',
                 idleTimeoutMinutes: 10
               },
-              loading: true,
+              loading: false,
               error: null,
-              isUnloaded: false,
+              isUnloaded: true,
               lastActivityTime: Date.now()
             }
           }));
-          iframe.src = src;
         }
+      } else if (src !== prevSrc) {
+        // Loading new content
+        console.log(`Setting src for iframe ${urlId}: ${prevSrc.substring(0, 30)}... -> ${src.substring(0, 30)}...`);
+
+        // Update state to active-unloaded or inactive-unloaded while loading
+        setIframeStates(prev => ({
+          ...prev,
+          [urlId]: {
+            ...prev[urlId] || {
+              id: urlId,
+              url: src,
+              idleTimeoutMinutes: 10
+            },
+            loading: true,
+            error: null,
+            isUnloaded: true, // Start as unloaded until content loads
+            lastActivityTime: Date.now()
+          }
+        }));
+
+        // Set the src to load content
+        iframe.src = src;
       } else {
-        // If src is the same, ensure loading state is false
+        // Same URL, just update activity time and ensure proper loaded state
         setIframeStates(prev => ({
           ...prev,
           [urlId]: {
@@ -404,6 +420,9 @@ const IframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
           }
         }));
       }
+
+      // Update visibility based on active state
+      updateIframeVisibility(urlId, isActive);
     };
 
     // Handle iframe creation and management entirely through DOM
@@ -470,9 +489,20 @@ const IframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
         // Store ref to the iframe
         iframeRefs.current[urlId] = iframe;
 
-        // Set src for all iframes right away to prevent unnecessary reloads
-        // This ensures we don't lose iframe content when switching between tabs
-        iframe.src = url;
+        // Initialize in inactive-unloaded state
+        iframe.src = '';
+        setIframeStates(prev => ({
+          ...prev,
+          [urlId]: {
+            id: urlId,
+            url: url,
+            loading: false,
+            error: null,
+            isUnloaded: true,
+            lastActivityTime: Date.now(),
+            idleTimeoutMinutes: 10
+          }
+        }));
 
         // Add iframe to wrapper and wrapper to container
         wrapperDiv.appendChild(iframe);
@@ -497,79 +527,6 @@ const IframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
       };
     }, [allUrlsMap]);
 
-    // Update iframe visibility when active URL changes
-    useEffect(() => {
-      if (!activeUrlId || Object.keys(allUrlsMap).length === 0) {
-        return;
-      }
-
-      console.log(`Active URL changed to: ${activeUrlId}`);
-
-      // ONLY update visibility for all iframes - never mess with src attributes when just switching tabs
-      Object.keys(allUrlsMap).forEach(urlId => {
-        updateIframeVisibility(urlId, urlId === activeUrlId);
-      });
-
-      // Handle change in active URL
-      const newUrlSelected = activeUrlId !== previousActiveUrlIdRef.current;
-      const previousUrlId = previousActiveUrlIdRef.current;
-
-      if (newUrlSelected) {
-        // Update previous URL reference
-        previousActiveUrlIdRef.current = activeUrlId;
-
-        // Get URL from the data attribute, URL mapping, or the activeUrl prop
-        const targetUrl = allUrlsMap[activeUrlId];
-        if (!targetUrl) return;
-
-        // Check if the iframe exists
-        const iframe = iframeRefs.current[activeUrlId];
-        if (iframe) {
-          // Check if the iframe is already loaded with the correct URL
-          const isContentLoaded = iframe.src === targetUrl;
-
-          // Only load content if the iframe has no content, wrong URL, or if it's marked as unloaded
-          if (!isContentLoaded || iframeStates[activeUrlId]?.isUnloaded) {
-            console.log(`Loading iframe content for ${activeUrlId} with URL: ${targetUrl}`);
-
-            // Update the iframe src directly - ONLY set if different
-            updateIframeSrc(activeUrlId, targetUrl);
-          } else {
-            // Just update activity time when iframe is already loaded
-            updateIframeActivity(activeUrlId);
-          }
-        }
-
-        // ** IMPORTANT: Never clear the previous iframe's src, just hide it **
-        if (previousUrlId) {
-          // Update last activity time for the previous URL
-          updateIframeActivity(previousUrlId);
-        }
-      }
-    }, [activeUrlId, allUrlsMap, activeUrl]);
-
-    // Function to update the activity time for an iframe
-    const updateIframeActivity = (urlId: string) => {
-      setIframeStates(prev => {
-        if (!prev[urlId]) return prev;
-
-        // If nothing has changed other than lastActivityTime, return the same object
-        // to prevent unnecessary rerenders
-        const currentTime = Date.now();
-        if (Math.abs(currentTime - prev[urlId].lastActivityTime) < 1000) {
-          return prev; // Skip update if less than 1 second difference
-        }
-
-        return {
-          ...prev,
-          [urlId]: {
-            ...prev[urlId],
-            lastActivityTime: currentTime
-          }
-        };
-      });
-    };
-
     // Handle iframe load event
     const handleIframeLoad = (urlId: string) => {
       // Check if the iframe is actually loaded with content (not empty src)
@@ -579,6 +536,9 @@ const IframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
         return;
       }
 
+      const isActive = urlId === activeUrlId;
+
+      // Update state to active-loaded or inactive-loaded
       setIframeStates(prev => ({
         ...prev,
         [urlId]: {
@@ -589,7 +549,7 @@ const IframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
           },
           loading: false,
           error: null,
-          isUnloaded: false,
+          isUnloaded: false, // Content is now loaded
           lastActivityTime: Date.now() // Reset activity time on load
         }
       }));
@@ -605,6 +565,10 @@ const IframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
         }
       }
 
+      // Update visibility based on active state
+      updateIframeVisibility(urlId, isActive);
+
+      // Notify parent component
       if (onLoad) onLoad(urlId);
     };
 
