@@ -8,6 +8,7 @@ public/icons/*
 public/logos/*
 public/avatars/*
 public/favicon*
+data/*
 
 # dependencies
 /node_modules
@@ -41,6 +42,7 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.example
 
 # vercel
 .vercel

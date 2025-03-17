@@ -19,6 +19,7 @@ import {
 } from '@mui/material';
 import LogoUpload from '@/app/components/ui/LogoUpload';
 import FaviconUpload from '@/app/components/ui/FaviconUpload';
+import DatabaseManagement from '@/app/components/admin/DatabaseManagement';
 
 interface AppConfig {
   id: string;
@@ -568,6 +569,19 @@ export default function AppConfigPage() {
                   {saving ? <CircularProgress size={24} /> : 'Save Registration Setting'}
                 </Button>
               </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        {/* Database Management Section */}
+        <Grid item xs={12}>
+          <Card>
+            <CardHeader
+              title="Database Management"
+              subheader="Backup and restore your database and uploaded files"
+            />
+            <CardContent>
+              <DatabaseManagement />
             </CardContent>
           </Card>
         </Grid>

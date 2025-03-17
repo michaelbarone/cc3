@@ -14,7 +14,7 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const id = await params.id;
+    const { id } = params;
 
     // Get the URL
     const url = await prisma.url.findUnique({
@@ -50,7 +50,18 @@ export async function PUT(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    const id = await params.id;
+    const { id } = params;
+
+    // Parse request body with error handling
+    let requestData;
+    try {
+      requestData = await request.json();
+    } catch (error) {
+      return NextResponse.json(
+        { error: 'Invalid JSON in request body' },
+        { status: 400 }
+      );
+    }
 
     // Check if URL exists
     const existingUrl = await prisma.url.findUnique({
@@ -64,8 +75,7 @@ export async function PUT(
       );
     }
 
-    // Parse request body
-    const { title, url, urlMobile, iconPath, idleTimeout } = await request.json();
+    const { title, url, urlMobile, iconPath, idleTimeout } = requestData;
 
     // Validate input
     if (!title || title.trim().length === 0) {
@@ -116,7 +126,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    const id = await params.id;
+    const { id } = params;
 
     // Check if URL exists
     const existingUrl = await prisma.url.findUnique({

@@ -9,7 +9,7 @@ src/_generated
 
 # remove *.md from .markdownlintignore and add .*
 *.md
-.*
+# .*
 
 # any local project ignores should go here
 src/hooks/gql/_generated/**/*

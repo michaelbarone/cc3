@@ -8,6 +8,26 @@ const prisma = new PrismaClient()
 // Flag to ensure we only try to initialize once per process
 let isInitializing = false
 
+// Create required directories if they don't exist
+function createRequiredDirectories() {
+  const directories = [
+    'data',
+    'data/backups',
+    'public/uploads',
+    'public/icons',
+    'public/avatars',
+    'public/logos'
+  ]
+
+  directories.forEach(dir => {
+    const dirPath = path.join(process.cwd(), dir)
+    if (!fs.existsSync(dirPath)) {
+      fs.mkdirSync(dirPath, { recursive: true })
+      console.log(`Created directory: ${dirPath}`)
+    }
+  })
+}
+
 export async function initializeDatabase() {
   // Prevent concurrent initialization attempts
   if (isInitializing) {
@@ -17,11 +37,8 @@ export async function initializeDatabase() {
   isInitializing = true
 
   try {
-    // Ensure the data directory exists
-    const dbDir = path.join(process.cwd(), 'data')
-    if (!fs.existsSync(dbDir)) {
-      fs.mkdirSync(dbDir, { recursive: true })
-    }
+    // Create all required directories
+    createRequiredDirectories()
 
     // Run migrations first
     console.log('Running database migrations...')

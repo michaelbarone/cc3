@@ -21,7 +21,7 @@ src/hooks/gql/_generated/**/*
 
 # remove *.md from .markdownlintignore
 *.md
-.*
+# .*
 
 # file exclusions -- these will over-ride any above allowed directories
 package.json

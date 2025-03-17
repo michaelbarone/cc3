@@ -54,8 +54,18 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    // Parse request body
-    const { title, url, urlMobile, iconPath, idleTimeout } = await request.json();
+    // Parse request body with error handling
+    let requestData;
+    try {
+      requestData = await request.json();
+    } catch (error) {
+      return NextResponse.json(
+        { error: 'Invalid JSON in request body' },
+        { status: 400 }
+      );
+    }
+
+    const { title, url, urlMobile, iconPath, idleTimeout } = requestData;
 
     // Validate input
     if (!title || title.trim().length === 0) {

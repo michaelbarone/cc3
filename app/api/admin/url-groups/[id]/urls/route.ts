@@ -18,7 +18,7 @@ export async function POST(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    const urlGroupId = await params.id;
+    const { id: urlGroupId } = params;
 
     // Check if URL group exists
     const urlGroup = await prismaClient.urlGroup.findUnique({
@@ -32,8 +32,18 @@ export async function POST(
       );
     }
 
-    // Parse request body
-    const { title, url, iconPath, displayOrder, idleTimeoutMinutes } = await request.json();
+    // Parse request body with error handling
+    let requestData;
+    try {
+      requestData = await request.json();
+    } catch (error) {
+      return NextResponse.json(
+        { error: 'Invalid JSON in request body' },
+        { status: 400 }
+      );
+    }
+
+    const { title, url, iconPath, displayOrder, idleTimeoutMinutes } = requestData;
 
     // Validate input
     if (!title || title.trim().length === 0) {
