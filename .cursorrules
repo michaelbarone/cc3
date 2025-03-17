@@ -133,7 +133,74 @@ Step 2:
 
 ## Scratchpad
 
-### Current Task: URL Menu Items State Management
+### Current Task: Database Export/Import System
+
+### Context
+- Need to implement database and uploads backup/restore functionality
+- Will be integrated into admin application configuration area
+- Leveraging existing backup system with new UI controls
+- Single zip file containing database and uploads directory
+- Admin-only access with simple progress indicators
+
+### Plan
+Step 1: Dependencies and Utilities
+[ ] Install required packages (archiver, extract-zip)
+[ ] Create archive utility functions in lib/archive.ts
+[ ] Update backup utility in lib/backup.ts to handle restores
+[ ] Add type definitions for new utilities
+
+Step 2: API Implementation
+[ ] Create database export API endpoint
+    - Verify admin access
+    - Create database backup
+    - Package with uploads directory
+    - Stream zip file download
+[ ] Create database import API endpoint
+    - Handle file upload
+    - Verify zip contents
+    - Manage application state during restore
+    - Implement rollback on failure
+
+Step 3: UI Components
+[ ] Create DatabaseManagement component
+    - Export functionality with progress
+    - Import file selection and upload
+    - Error handling and user feedback
+[ ] Add component to application configuration page
+[ ] Style components using existing design system
+[ ] Add loading states and progress indicators
+
+Step 4: Testing and Validation
+[ ] Test export functionality
+    - Verify zip contents
+    - Check file permissions
+    - Validate download process
+[ ] Test import functionality
+    - Verify restore process
+    - Test rollback on failure
+    - Validate file cleanup
+[ ] Test error scenarios
+[ ] Verify admin-only access
+
+### Progress
+[X] Identified requirements and constraints
+[-] Planning implementation approach
+[ ] Implementation pending
+
+### Blockers
+[!] Need to determine:
+  - Application stop/start mechanism for your deployment
+  - Specific file paths for database and uploads in production
+
+### Future Considerations
+[>] Add detailed progress tracking for large databases
+[>] Implement backup rotation/cleanup
+[>] Add backup scheduling capabilities
+[>] Consider partial backup/restore options
+
+## Future Plans
+
+### URL Menu Items State Management
 
 #### Context
 - Need to ensure URL menu items properly display their state (active, loaded, etc.)
@@ -173,7 +240,6 @@ Step 3: Testing
 [>] Consider adding tooltips for state indicators
 [>] Add keyboard shortcuts for common actions
 [>] Implement state persistence between sessions
-
 
 ## Future Tasks
 

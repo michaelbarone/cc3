@@ -1,0 +1,141 @@
+---
+description: Standards for cursor rule file naming conventions and categories
+globs: "**/*.mdc"
+alwaysApply: true
+---
+
+# Cursor Rule File Naming
+
+Rule for ensuring consistent naming conventions for cursor rule files.
+
+<rule>
+name: rule_file_naming
+description: Ensures cursor rule files follow consistent naming conventions with proper numbering and kebab-case format
+filters:
+  - type: file_extension
+    pattern: "\\.mdc$"
+  - type: event
+    pattern: "file_create"
+
+actions:
+  - type: validate
+    conditions:
+      # Check for proper numbering format
+      - pattern: "^[0-9]{3}-[a-z0-9-]+\\.mdc$"
+        message: "Rule file must start with three digits followed by a hyphen and use kebab-case"
+
+      # Check for proper case and characters
+      - pattern: "^[0-9]{3}-[a-z0-9-]+\\.mdc$"
+        message: "Rule file must use only lowercase letters, numbers, and hyphens"
+
+      # Check for consecutive hyphens
+      - pattern: "^[0-9]{3}-[a-z0-9-]+\\.mdc$"
+        message: "Rule file must not contain consecutive hyphens"
+
+      # Check for global rules (00-99)
+      - pattern: "^0[0-9]-[a-z0-9-]+\\.mdc$"
+        message: "Global rules must start with 00-99"
+
+      # Check for build rules (100-199)
+      - pattern: "^1[0-9]{2}-[a-z0-9-]+\\.mdc$"
+        message: "Build rules must start with 100-199"
+
+      # Check for infrastructure rules (200-299)
+      - pattern: "^2[0-9]{2}-[a-z0-9-]+\\.mdc$"
+        message: "Infrastructure rules must start with 200-299"
+
+      # Check for frontend rules (500-699)
+      - pattern: "^[5-6][0-9]{2}-[a-z0-9-]+\\.mdc$"
+        message: "Frontend rules must start with 500-699"
+
+      # Check for miscellaneous tools and rules (900-999)
+      - pattern: "^9[0-9]{2}-[a-z0-9-]+\\.mdc$"
+        message: "Miscellaneous tools and rules must start with 900-999"
+
+  - type: suggest
+    message: |
+      Rule files should follow these naming conventions:
+
+      1. Numbering Categories:
+         - 00-99: Global rules (cursor rules structure, location, git commits)
+         - 100-199: Build, CI/CD, and deployment rules
+         - 200-299: Infrastructure and backend rules
+         - 500-699: Frontend application rules
+         - 900-999: Miscellaneous tools and rules
+
+      2. Format:
+         - Start with three digits (000-999) for category and ordering
+         - Follow with a hyphen
+         - Use kebab-case for the rest of the name
+         - End with .mdc extension
+
+      Examples by category:
+      Global Rules (00-99):
+      - 00-cursor-rules-location.mdc
+      - 01-conventional-commits.mdc
+      - 02-rule-file-structure.mdc
+      - 03-rule-file-naming.mdc
+
+      Build Rules (100-199):
+      - 100-docker-best-practices.mdc
+      - 101-ci-cd-workflow.mdc
+      - 102-deployment-strategy.mdc
+
+      Infrastructure Rules (200-299):
+      - 200-prisma-best-practices.mdc
+      - 201-database-schema.mdc
+      - 202-api-design.mdc
+
+      Frontend Rules (500-699):
+      - 500-nextjs-best-practices.mdc
+      - 501-react-best-practices.mdc
+      - 502-material-ui-best-practices.mdc
+
+      Miscellaneous Tools and Rules (900-999):
+      - 900-date-fns-best-practices.mdc
+      - 901-utility-functions.mdc
+      - 902-third-party-tools.mdc
+
+      Bad examples:
+      - cursorRules.mdc (no numbering, camelCase)
+      - 1-rule.mdc (single digit)
+      - 001-rule.mdc (wrong category)
+      - rule-file.mdc (no numbering)
+      - 01--rule.mdc (consecutive hyphens)
+      - 300-rule.mdc (invalid category)
+
+examples:
+  - input: "00-cursor-rules-location.mdc"
+    output: "Valid global rule file name"
+
+  - input: "100-docker-best-practices.mdc"
+    output: "Valid build rule file name"
+
+  - input: "200-prisma-best-practices.mdc"
+    output: "Valid infrastructure rule file name"
+
+  - input: "500-nextjs-best-practices.mdc"
+    output: "Valid frontend rule file name"
+
+  - input: "900-date-fns-best-practices.mdc"
+    output: "Valid miscellaneous rule file name"
+
+  - input: "cursorRules.mdc"
+    output: "Invalid: Missing numbering and using camelCase"
+
+  - input: "1-rule.mdc"
+    output: "Invalid: Single digit numbering"
+
+  - input: "001-rule.mdc"
+    output: "Invalid: Wrong category (should be 00-99 for global rules)"
+
+  - input: "300-rule.mdc"
+    output: "Invalid: Invalid category (should be 00-99, 100-199, 200-299, 500-699, or 900-999)"
+
+  - input: "01--rule.mdc"
+    output: "Invalid: Consecutive hyphens"
+
+metadata:
+  priority: high
+  version: 1.2.0
+</rule>
