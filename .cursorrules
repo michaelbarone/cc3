@@ -240,6 +240,8 @@ Step 3: Testing
 [ ] Add password recovery option
 [ ] Add user activity monitoring
 [ ] Create user preferences sync
+[ ] set dark mode as user default
+[ ] move theme toggle into user menu
 
 
 ## Completed Work

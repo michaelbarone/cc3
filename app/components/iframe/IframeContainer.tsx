@@ -314,39 +314,38 @@ const IframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
         reloadUnloadedIframe(urlId);
       },
       getLoadedUrlIds: () => {
-        return Object.entries(iframeStates)
-          .filter(([urlId]) => {
-            const state = iframeStates[urlId];
+        // Get loaded URLs based on iframe state
+        const loadedIds = Object.entries(iframeStates)
+          .filter(([urlId, state]) => {
             const iframe = iframeRefs.current[urlId];
+            if (!iframe) return false;
 
-            // Helper function to normalize URLs for comparison
-            const normalizeUrl = (url: string) => {
-              try {
-                // Remove trailing slashes and normalize protocol
-                return url.replace(/\/$/, '')
-                         .replace(/^https?:\/\//, '')
-                         .toLowerCase();
-              } catch {
-                return url;
-              }
-            };
+            // An iframe is considered loaded if:
+            // 1. It has a valid src attribute that matches its data-url
+            // 2. It's not in a loading state
+            // 3. It has no errors
+            // 4. It's not explicitly unloaded
+            const currentSrc = iframe.src;
+            const targetUrl = iframe.getAttribute('data-url');
 
-            const currentSrc = iframe?.src || '';
-            const expectedUrl = iframe?.getAttribute('data-url') || '';
-            const srcMatches = currentSrc && expectedUrl &&
-                             normalizeUrl(currentSrc) === normalizeUrl(expectedUrl);
+            const hasValidSrc = currentSrc &&
+                               currentSrc !== 'about:blank' &&
+                               currentSrc !== '' &&
+                               currentSrc === targetUrl;
 
             const isLoaded = !state.loading &&
-                           !state.error &&
-                           !state.isUnloaded &&
-                           iframe?.src &&
-                           iframe.src !== 'about:blank' &&
-                           iframe.src !== '' &&
-                           srcMatches;
+                            !state.error &&
+                            !state.isUnloaded &&
+                            hasValidSrc;
 
             return isLoaded;
           })
           .map(([urlId]) => urlId);
+
+        // Update localStorage to ensure persistence
+        localStorage.setItem('iframe-state-loaded-url-ids', JSON.stringify(loadedIds));
+
+        return loadedIds;
       }
     }));
 
@@ -373,38 +372,37 @@ const IframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
       const prevSrc = iframe.src;
       const isActive = urlId === activeUrlId;
 
+      // Store the URL we're trying to load as the data-url attribute
+      if (src && src !== 'about:blank') {
+        iframe.setAttribute('data-url', src);
+      }
+
       if (src === null || src === '') {
-        // If explicitly unloading, save current URL to data-src attribute
+        // Explicit unload operation
         if (iframe.src && iframe.src !== 'about:blank' && iframe.src !== '') {
           iframe.setAttribute('data-src', iframe.src);
         }
+        iframe.src = '';
 
-        // Only clear src if this is an EXPLICIT unload operation (not just switching tabs)
-        if (src === null) { // null indicates explicit unload request
-          iframe.src = '';
-          console.log(`Explicitly unloaded iframe ${urlId}: ${prevSrc} -> ""`);
+        setIframeStates(prev => ({
+          ...prev,
+          [urlId]: {
+            ...prev[urlId] || {
+              id: urlId,
+              url: iframe.getAttribute('data-src') || '',
+              idleTimeoutMinutes: 10
+            },
+            loading: false,
+            error: null,
+            isUnloaded: true,
+            lastActivityTime: Date.now()
+          }
+        }));
 
-          // Update state to inactive-unloaded
-          setIframeStates(prev => ({
-            ...prev,
-            [urlId]: {
-              ...prev[urlId] || {
-                id: urlId,
-                url: iframe.getAttribute('data-src') || '',
-                idleTimeoutMinutes: 10
-              },
-              loading: false,
-              error: null,
-              isUnloaded: true,
-              lastActivityTime: Date.now()
-            }
-          }));
-        }
+        // Notify parent of unload
+        if (onUnload) onUnload(urlId);
       } else if (src !== prevSrc) {
         // Loading new content
-        // console.log(`Setting src for iframe ${urlId}: ${prevSrc.substring(0, 30)}... -> ${src.substring(0, 30)}...`);
-
-        // Update state to active-unloaded or inactive-unloaded while loading
         setIframeStates(prev => ({
           ...prev,
           [urlId]: {
@@ -415,29 +413,13 @@ const IframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
             },
             loading: true,
             error: null,
-            isUnloaded: true, // Start as unloaded until content loads
+            isUnloaded: true,
             lastActivityTime: Date.now()
           }
         }));
 
         // Set the src to load content
         iframe.src = src;
-      } else {
-        // Same URL, just update activity time and ensure proper loaded state
-        setIframeStates(prev => ({
-          ...prev,
-          [urlId]: {
-            ...prev[urlId] || {
-              id: urlId,
-              url: src,
-              idleTimeoutMinutes: 10
-            },
-            loading: false,
-            error: null,
-            isUnloaded: false,
-            lastActivityTime: Date.now()
-          }
-        }));
       }
 
       // Update visibility based on active state
@@ -548,47 +530,49 @@ const IframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
 
     // Handle iframe load event
     const handleIframeLoad = (urlId: string) => {
-      // Check if the iframe is actually loaded with content (not empty src)
       const iframe = iframeRefs.current[urlId];
-      if (iframe && (!iframe.src || iframe.src === 'about:blank' || iframe.src === '')) {
-        // Don't mark empty iframes as loaded
+      if (!iframe) return;
+
+      // Only process load event if the iframe has valid content
+      if (!iframe.src || iframe.src === 'about:blank' || iframe.src === '') {
         return;
       }
 
       const isActive = urlId === activeUrlId;
+      const currentSrc = iframe.src;
+      const targetUrl = iframe.getAttribute('data-url');
 
-      // Update state to active-loaded or inactive-loaded
-      setIframeStates(prev => ({
-        ...prev,
-        [urlId]: {
-          ...prev[urlId] || {
-            id: urlId,
-            url: iframe?.src || allUrlsMap[urlId] || '',
-            idleTimeoutMinutes: 10
-          },
-          loading: false,
-          error: null,
-          isUnloaded: false, // Content is now loaded
-          lastActivityTime: Date.now() // Reset activity time on load
-        }
-      }));
+      // Verify the loaded URL matches what we expected
+      if (currentSrc === targetUrl) {
+        setIframeStates(prev => ({
+          ...prev,
+          [urlId]: {
+            ...prev[urlId] || {
+              id: urlId,
+              url: currentSrc,
+              idleTimeoutMinutes: 10
+            },
+            loading: false,
+            error: null,
+            isUnloaded: false,
+            lastActivityTime: Date.now()
+          }
+        }));
 
-      // Auto-resize the iframe to avoid scrollbars
-      if (iframe) {
+        // Update visibility and notify parent
+        updateIframeVisibility(urlId, isActive);
+        if (onLoad) onLoad(urlId);
+
+        // Try to adjust iframe size
         try {
-          // Try to adjust content to fit without scrollbars
           adjustIframeSize(iframe);
-        } catch {
-          // Silently fail if cross-origin
-          console.warn('Cross-origin iframe resize not allowed');
+        } catch (error) {
+          console.warn('Failed to adjust iframe size:', error);
         }
+      } else {
+        // If loaded URL doesn't match expected URL, treat as error
+        handleIframeError(urlId);
       }
-
-      // Update visibility based on active state
-      updateIframeVisibility(urlId, isActive);
-
-      // Notify parent component
-      if (onLoad) onLoad(urlId);
     };
 
     // Helper function to adjust iframe size

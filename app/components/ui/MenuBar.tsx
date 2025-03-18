@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   List,
   ListItemButton,
@@ -260,59 +260,72 @@ export default function MenuBar({
   const [activeGroupId, setActiveGroupId] = useState<string | null>(null);
   const isInitialMount = useRef(true);
   const [isLongPressInProgress, setIsLongPressInProgress] = useState(false);
-  const knownUrlIds = useRef(new Set<string>());
   const [menuPosition, setMenuPosition] = useState<'side' | 'top'>(propMenuPosition);
+  const previousActiveUrlId = useRef<string | null>(null);
 
-  // Menu position effect
+  // Consolidated menu position and group management effect
   useEffect(() => {
-    if (isMobile) {
-      setMenuPosition('side');
-    } else if (propMenuPosition === 'top' || propMenuPosition === 'side') {
-      setMenuPosition(propMenuPosition);
-    } else if (!preferencesLoading && preferences.menuPosition) {
-      setMenuPosition(preferences.menuPosition);
-    } else {
-      setMenuPosition('side');
+    const determineMenuPosition = () => {
+      if (isMobile) {
+        return 'side';
+      }
+      if (propMenuPosition === 'top' || propMenuPosition === 'side') {
+        return propMenuPosition;
+      }
+      if (!preferencesLoading && preferences.menuPosition) {
+        return preferences.menuPosition;
+      }
+      return 'side';
+    };
+
+    const newMenuPosition = determineMenuPosition();
+    if (menuPosition !== newMenuPosition) {
+      setMenuPosition(newMenuPosition);
     }
-  }, [isMobile, propMenuPosition, preferencesLoading, preferences.menuPosition]);
 
-  // URL state tracking effect
-  useEffect(() => {
-    urlGroups.forEach(group => {
-      group.urls.forEach(url => {
-        knownUrlIds.current.add(url.id);
-      });
-    });
+    // Handle active URL group management
+    if (activeUrlId && activeUrlId !== previousActiveUrlId.current) {
+      previousActiveUrlId.current = activeUrlId;
 
-    if (activeUrlId) {
-      urlGroups.forEach(group => {
-        if (group.urls.some(url => url.id === activeUrlId)) {
+      const activeGroup = urlGroups.find(group =>
+        group.urls.some(url => url.id === activeUrlId)
+      );
+
+      if (activeGroup) {
+        if (newMenuPosition === 'side') {
           setOpenGroups(prev => ({
             ...prev,
-            [group.id]: true
+            [activeGroup.id]: true
           }));
+        } else {
+          setActiveGroupId(activeGroup.id);
         }
-      });
+      }
     }
-  }, [urlGroups, activeUrlId]);
+  }, [
+    isMobile,
+    propMenuPosition,
+    preferencesLoading,
+    preferences.menuPosition,
+    activeUrlId,
+    urlGroups,
+    menuPosition
+  ]);
 
-  // Initial state restoration effect
+  // Initialize state only once
   useEffect(() => {
-    const initializeState = () => {
-      if (!isInitialMount.current) return;
-      isInitialMount.current = false;
+    if (!isInitialMount.current) return;
+    isInitialMount.current = false;
 
+    try {
       // Restore open groups state
       const storedOpenGroups = localStorage.getItem('menu-bar-open-groups');
       if (storedOpenGroups) {
-        try {
-          setOpenGroups(JSON.parse(storedOpenGroups));
-        } catch (error) {
-          console.error('Error restoring open groups state:', error);
-        }
+        const parsedGroups = JSON.parse(storedOpenGroups);
+        setOpenGroups(parsedGroups);
       }
 
-      // If we have an active URL, ensure its group is open
+      // Handle initial active URL group
       if (activeUrlId) {
         const activeGroup = urlGroups.find(group =>
           group.urls.some(url => url.id === activeUrlId)
@@ -324,65 +337,57 @@ export default function MenuBar({
           }));
         }
       }
-    };
+    } catch (error) {
+      console.error('Error initializing menu state:', error);
+    }
+  }, []); // Empty dependency array as this should only run once
 
-    initializeState();
-  }, [urlGroups, activeUrlId]);
-
-  // Persist open groups effect
+  // Persist open groups state
   useEffect(() => {
-    localStorage.setItem('menu-bar-open-groups', JSON.stringify(openGroups));
+    if (!isInitialMount.current) {
+      localStorage.setItem('menu-bar-open-groups', JSON.stringify(openGroups));
+    }
   }, [openGroups]);
 
-  // Persist known URL IDs effect
-  useEffect(() => {
-    localStorage.setItem('iframe-state-known-url-ids', JSON.stringify(Array.from(knownUrlIds.current)));
-  }, []);
+  // Memoize URL click handler
+  const handleUrlClick = useCallback((url: Url) => {
+    if (isLongPressInProgress) {
+      return;
+    }
 
-  // Update known URL IDs effect
-  useEffect(() => {
-    knownUrlIds.current = new Set(loadedUrlIds);
-  }, [loadedUrlIds]);
+    if (activeUrlId === url.id) {
+      if (onUrlReload) onUrlReload(url);
+    } else {
+      onUrlClick(url);
 
-  // Active URL group effect
-  useEffect(() => {
-    if (activeUrlId) {
-      const activeGroup = urlGroups.find(group =>
-        group.urls.some(url => url.id === activeUrlId)
-      );
-      if (activeGroup) {
-        if (menuPosition === 'side') {
-          setOpenGroups(prev => ({
-            ...prev,
-            [activeGroup.id]: true
-          }));
-        } else if (menuPosition === 'top') {
-          setActiveGroupId(activeGroup.id);
+      if (menuPosition === 'top') {
+        const groupContainingUrl = urlGroups.find(group =>
+          group.urls.some(groupUrl => groupUrl.id === url.id)
+        );
+        if (groupContainingUrl) {
+          setActiveGroupId(groupContainingUrl.id);
         }
       }
     }
-  }, [urlGroups, activeGroupId, menuPosition, activeUrlId]);
+  }, [activeUrlId, isLongPressInProgress, menuPosition, onUrlClick, onUrlReload, urlGroups]);
 
-  // Handle long press for URL unload
-  const handleUrlLongPress = (url: Url) => {
+  // Memoize long press handler
+  const handleUrlLongPress = useCallback((url: Url) => {
     if (!onUrlUnload) return;
 
-    // Set long press flag to prevent navigation
     setIsLongPressInProgress(true);
 
-    // Only handle long press for loaded URLs (regardless of active state)
     if (loadedUrlIds.includes(url.id)) {
       onUrlUnload(url);
     }
 
-    // Reset the flag after a delay to ensure click event doesn't fire
     setTimeout(() => {
       setIsLongPressInProgress(false);
     }, 500);
-  };
+  }, [loadedUrlIds, onUrlUnload]);
 
   // Handle mouse down for long press detection
-  const handleMouseDown = (url: Url) => {
+  const handleMouseDown = useCallback((url: Url) => {
     if (!onUrlUnload) return;
 
     // Only setup long press for loaded items
@@ -418,10 +423,10 @@ export default function MenuBar({
 
       document.addEventListener('mouseup', handleMouseUp);
     }
-  };
+  }, [loadedUrlIds, onUrlUnload, handleUrlLongPress]);
 
   // Handle touch events for mobile devices
-  const handleTouchStart = (url: Url) => {
+  const handleTouchStart = useCallback((url: Url) => {
     if (!onUrlUnload) return;
 
     // Only setup long press for loaded items
@@ -458,7 +463,38 @@ export default function MenuBar({
       document.addEventListener('touchend', handleTouchEnd);
       document.addEventListener('touchcancel', handleTouchEnd);
     }
-  };
+  }, [loadedUrlIds, onUrlUnload, handleUrlLongPress]);
+
+  // Memoize URL item renderer
+  const renderUrlItem = useCallback((url: Url) => {
+    const urlStatus = getUrlStatus(url.id, activeUrlId, loadedUrlIds);
+    const isActive = urlStatus.startsWith('active');
+    const isLoaded = urlStatus === 'active-loaded' || urlStatus === 'inactive-loaded';
+
+    let tooltipText = '';
+    if (isActive && isLoaded) tooltipText = 'Currently active (click to reload, long press to unload)';
+    else if (isActive && !isLoaded) tooltipText = 'Currently active but unloaded (click to reload)';
+    else if (!isActive && isLoaded) tooltipText = 'Loaded in background (click to view, long press to unload)';
+    else tooltipText = 'Currently unloaded (click to load and view)';
+
+    return (
+      <UrlItem
+        key={url.id}
+        url={url}
+        isActive={isActive}
+        isLoaded={isLoaded}
+        tooltipText={tooltipText}
+        onUrlClick={(e) => {
+          e.stopPropagation();
+          handleUrlClick(url);
+        }}
+        onMouseDown={() => handleMouseDown(url)}
+        onTouchStart={() => handleTouchStart(url)}
+        menuPosition={menuPosition}
+        theme={theme}
+      />
+    );
+  }, [activeUrlId, loadedUrlIds, menuPosition, theme, handleUrlClick, handleMouseDown, handleTouchStart]);
 
   // Handle group menu
   const handleGroupMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
@@ -472,35 +508,6 @@ export default function MenuBar({
   const handleGroupSelect = (groupId: string) => {
     setActiveGroupId(groupId);
     handleGroupMenuClose();
-  };
-
-  // Handle URL click:
-  // - If not active, make it active (regardless of loaded state)
-  // - If already active, reload it
-  const handleUrlClick = (url: Url) => {
-    // Skip if a long press operation just completed
-    if (isLongPressInProgress) {
-      return;
-    }
-
-    if (activeUrlId === url.id) {
-      // If already active, reload it
-      if (onUrlReload) onUrlReload(url);
-    } else {
-      // If not active, make it active (this will trigger reload if unloaded)
-      onUrlClick(url);
-
-      // For top menu: immediately find and set the active group containing this URL
-      if (menuPosition === 'top') {
-        const groupContainingUrl = urlGroups.find(group =>
-          group.urls.some(groupUrl => groupUrl.id === url.id)
-        );
-
-        if (groupContainingUrl) {
-          setActiveGroupId(groupContainingUrl.id);
-        }
-      }
-    }
   };
 
   // Loading state check
@@ -519,49 +526,6 @@ export default function MenuBar({
       </Box>
     );
   }
-
-  // Wrap handleUrlClick with a check for long press
-  const safeHandleUrlClick = (url: Url, extraAction?: () => void) => {
-    if (isLongPressInProgress) {
-      console.log('Click prevented due to long press');
-      return;
-    }
-
-    handleUrlClick(url);
-    if (extraAction) extraAction();
-  };
-
-  // In the render section for both top and side menu, replace the URL rendering with:
-  const renderUrlItem = (url: Url) => {
-    const urlStatus = getUrlStatus(url.id, activeUrlId, loadedUrlIds);
-    const isActive = urlStatus.startsWith('active');
-    const isLoaded = urlStatus === 'active-loaded' || urlStatus === 'inactive-loaded';
-
-    // Determine tooltip text based on status
-    let tooltipText = '';
-    if (isActive && isLoaded) tooltipText = 'Currently active (click to reload, long press to unload)';
-    else if (isActive && !isLoaded) tooltipText = 'Currently active but unloaded (click to reload)';
-    else if (!isActive && isLoaded) tooltipText = 'Loaded in background (click to view, long press to unload)';
-    else tooltipText = 'Currently unloaded (click to load and view)';
-
-    return (
-      <UrlItem
-        key={url.id}
-        url={url}
-        isActive={isActive}
-        isLoaded={isLoaded}
-        tooltipText={tooltipText}
-        onUrlClick={(e) => {
-          e.stopPropagation();
-          safeHandleUrlClick(url);
-        }}
-        onMouseDown={() => handleMouseDown(url)}
-        onTouchStart={() => handleTouchStart(url)}
-        menuPosition={menuPosition}
-        theme={theme}
-      />
-    );
-  };
 
   // Render top menu layout
   if (menuPosition === 'top') {
