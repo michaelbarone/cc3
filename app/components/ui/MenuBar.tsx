@@ -34,18 +34,57 @@ interface MenuBarProps {
   onUrlClick: (url: Url) => void;
   onUrlReload?: (url: Url) => void;
   onUrlUnload?: (url: Url) => void;
-  onUrlLongPressUnloaded?: (url: Url) => void;
   menuPosition?: 'side' | 'top';
 }
 
-// Helper to determine if a URL is loaded, unloaded, or inactive
+/**
+ * URL Button States and Behaviors
+ *
+ * There are four possible states for URL buttons:
+ *
+ * 1. active-loaded:
+ *    - Conditions: Currently selected URL with loaded content
+ *    - Visual: Primary color text, bold, border indicator, green dot
+ *    - Behavior:
+ *      * Click: Reloads the content
+ *      * Long press: Unloads the iframe content, changes state to active-unloaded
+ *
+ * 2. active-unloaded:
+ *    - Conditions: Currently selected URL with no loaded content
+ *    - Visual: Primary color text, bold, border indicator, no green dot
+ *    - Behavior:
+ *      * Click: Loads the content (sets iframe src), changes state to active-loaded
+ *      * Long press: Not applicable (already unloaded)
+ *
+ * 3. inactive-loaded:
+ *    - Conditions: Not selected URL but content is loaded in background
+ *    - Visual: Normal text color, green dot
+ *    - Behavior:
+ *      * Click: Makes URL active and shows its content
+ *      * Long press: Unloads the content (sets iframe src=""), changes state to inactive-unloaded
+ *
+ * 4. inactive-unloaded:
+ *    - Conditions: Not selected URL and no loaded content
+ *    - Visual: Normal text color, no indicators
+ *    - Behavior:
+ *      * Click: Makes URL active, loads content, changes state to active-loaded
+ *      * Long press: Not applicable (already unloaded)
+ */
 const getUrlStatus = (
   urlId: string,
   activeUrlId: string | null,
   loadedUrlIds: string[],
 ): 'active-loaded' | 'active-unloaded' | 'inactive-loaded' | 'inactive-unloaded' => {
   const isActive = urlId === activeUrlId;
-  const isLoaded = loadedUrlIds.includes(urlId);
+  // Explicitly check if the URL is in the loadedUrlIds array
+  const isLoaded = Array.isArray(loadedUrlIds) && loadedUrlIds.includes(urlId);
+
+  // Log for debugging
+  console.log(`URL ${urlId} status:`, {
+    isActive,
+    isLoaded,
+    loadedUrlIds
+  });
 
   if (isActive) {
     return isLoaded ? 'active-loaded' : 'active-unloaded';
@@ -94,7 +133,8 @@ function UrlItem({
       width: 8,
       height: 8,
       minWidth: 8,
-      borderRadius: '50%'
+      borderRadius: '50%',
+      opacity: 0.8
     }
   };
 
@@ -119,11 +159,10 @@ function UrlItem({
             borderRadius: 0,
             color: isActive ? theme.palette.primary.main : theme.palette.text.primary,
             fontWeight: isActive ? 'bold' : 'normal',
-            backgroundColor: isActive ? theme.palette.action.selected : 'transparent',
+            backgroundColor: 'transparent',
             position: 'relative',
             overflow: 'hidden',
             '&:hover': {
-              backgroundColor: isActive ? theme.palette.action.selected : theme.palette.action.hover,
               opacity: 0.8,
             }
           }}
@@ -166,12 +205,7 @@ function UrlItem({
           borderRight: isActive ?
             `4px solid ${theme.palette.primary.main}` :
             'none',
-          bgcolor: isActive ?
-            theme.palette.action.selected :
-            'inherit',
-          '&:hover': {
-            backgroundColor: isActive ? theme.palette.action.selected : theme.palette.action.hover,
-          },
+          bgcolor: 'inherit',
           position: 'relative',
           overflow: 'hidden',
         }}
@@ -223,7 +257,6 @@ export default function MenuBar({
   onUrlClick,
   onUrlReload,
   onUrlUnload,
-  onUrlLongPressUnloaded,
   menuPosition: propMenuPosition = 'side'
 }: MenuBarProps) {
   const theme = useTheme();
@@ -455,23 +488,15 @@ export default function MenuBar({
   const handleUrlLongPress = (url: Url) => {
     if (!onUrlUnload) return;
 
-    // Set long press flag to prevent navigation regardless of URL state
+    // Set long press flag to prevent navigation
     setIsLongPressInProgress(true);
 
-    // Handle based on URL state:
-    if (url.id !== activeUrlId) {
-      if (loadedUrlIds.includes(url.id)) {
-        // For loaded URLs: Unload them
-        onUrlUnload(url);
-      } else {
-        // For unloaded URLs: Provide feedback that navigation was prevented
-        if (onUrlLongPressUnloaded) {
-          onUrlLongPressUnloaded(url);
-        }
-      }
+    // Only handle long press for loaded URLs (regardless of active state)
+    if (loadedUrlIds.includes(url.id)) {
+      onUrlUnload(url);
     }
 
-    // Reset the flag after a longer delay to ensure click event doesn't fire
+    // Reset the flag after a delay to ensure click event doesn't fire
     setTimeout(() => {
       setIsLongPressInProgress(false);
     }, 500);
@@ -481,8 +506,8 @@ export default function MenuBar({
   const handleMouseDown = (url: Url) => {
     if (!onUrlUnload) return;
 
-    // Only setup long press for inactive items (regardless of loaded state)
-    if (url.id !== activeUrlId) {
+    // Only setup long press for loaded items
+    if (loadedUrlIds.includes(url.id)) {
       let longPressTriggered = false;
 
       const timer = setTimeout(() => {
@@ -520,8 +545,8 @@ export default function MenuBar({
   const handleTouchStart = (url: Url) => {
     if (!onUrlUnload) return;
 
-    // Only setup long press for inactive items (regardless of loaded state)
-    if (url.id !== activeUrlId) {
+    // Only setup long press for loaded items
+    if (loadedUrlIds.includes(url.id)) {
       let longPressTriggered = false;
 
       const timer = setTimeout(() => {
@@ -587,16 +612,14 @@ export default function MenuBar({
   const renderUrlItem = (url: Url) => {
     const urlStatus = getUrlStatus(url.id, activeUrlId, loadedUrlIds);
     const isActive = urlStatus.startsWith('active');
-    const isLoaded = urlStatus.includes('loaded');
-    const isUnloaded = urlStatus.includes('unloaded');
+    const isLoaded = urlStatus === 'active-loaded' || urlStatus === 'inactive-loaded';
 
     // Determine tooltip text based on status
     let tooltipText = '';
-    if (isActive && isLoaded) tooltipText = 'Currently active (click to reload)';
-    else if (isActive && isUnloaded) tooltipText = 'Currently active but unloaded (click to reload)';
-    else if (isLoaded) tooltipText = 'Loaded in background (click to view, long press to unload)';
-    else if (isUnloaded) tooltipText = 'Currently unloaded (click to load and view, long press to prevent navigation)';
-    else tooltipText = 'Click to view';
+    if (isActive && isLoaded) tooltipText = 'Currently active (click to reload, long press to unload)';
+    else if (isActive && !isLoaded) tooltipText = 'Currently active but unloaded (click to reload)';
+    else if (!isActive && isLoaded) tooltipText = 'Loaded in background (click to view, long press to unload)';
+    else tooltipText = 'Currently unloaded (click to load and view)';
 
     return (
       <UrlItem
