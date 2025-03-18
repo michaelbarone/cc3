@@ -1,0 +1,25 @@
+
+echo "running pre-commit"
+
+# Check if package.json is staged
+if git diff --cached --name-only | grep -q "package.json"; then
+  # Check if only dependency-related changes were made in package.json
+  if git diff --cached package.json | grep -q "^\+.*\"dependencies\"\|^\+.*\"devDependencies\""; then
+    # Dependencies changed, so package-lock.json must also be staged
+    if ! git diff --cached --name-only | grep -q "package-lock.json"; then
+      echo "Error: Dependencies changed in package.json but package-lock.json is not staged"
+      exit 1
+    fi
+  else
+    echo "package.json changes don't affect dependencies, continuing..."
+  fi
+fi
+
+# Check if package-lock.json is being committed without package.json
+if git diff --cached --name-only | grep -q "package-lock.json"; then
+  if ! git diff --cached --name-only | grep -q "package.json"; then
+    echo "Warning: package-lock.json committed without package.json"
+  fi
+fi
+
+npx lint-staged
