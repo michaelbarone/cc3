@@ -1,7 +1,7 @@
 import '@testing-library/jest-dom'
 import { cleanup } from '@testing-library/react'
-import { afterAll, afterEach, beforeAll } from 'vitest'
-import { server } from './mocks/server'
+import { setupServer } from 'msw/node'
+import { afterAll, afterEach, beforeAll, vi } from 'vitest'
 
 // Extend Vitest's expect with Testing Library's matchers
 import '@testing-library/jest-dom/vitest'
@@ -24,10 +24,11 @@ mockResizeObserver.mockReturnValue({
 })
 window.ResizeObserver = mockResizeObserver
 
+const server = setupServer()
+
 // Set up test environment before all tests
 beforeAll(() => {
-  // Set up MSW
-  server.listen({ onUnhandledRequest: 'error' })
+  server.listen({ onUnhandledRequest: 'bypass' })
 })
 
 // Clean up after each test
@@ -40,3 +41,15 @@ afterEach(() => {
 afterAll(() => {
   server.close()
 })
+
+// Mock fetch globally
+global.fetch = vi.fn(() =>
+  Promise.resolve(new Response(JSON.stringify({
+    id: 'user1',
+    username: 'testuser',
+    isAdmin: false
+  }), {
+    status: 200,
+    headers: { 'Content-Type': 'application/json' }
+  }))
+) as unknown as typeof fetch

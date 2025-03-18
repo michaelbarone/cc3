@@ -21,5 +21,20 @@ export const urlHandlers = [
         }
       ]
     })
-  })
+  }),
+  // Add a catch-all handler for iframe URLs
+  http.get('https://example.com/*', () => {
+    return new HttpResponse('<html><body>Mock iframe content</body></html>', {
+      headers: {
+        'Content-Type': 'text/html',
+      },
+    })
+  }),
+  http.get('https://m.example.com/*', () => {
+    return new HttpResponse('<html><body>Mock mobile iframe content</body></html>', {
+      headers: {
+        'Content-Type': 'text/html',
+      },
+    })
+  }),
 ]
