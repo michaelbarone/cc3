@@ -1,8 +1,9 @@
-'use client';
+"use client";
 
-import { useState, useRef, useEffect, useImperativeHandle, forwardRef } from 'react';
-import { Box, CircularProgress, Alert, useTheme, useMediaQuery } from '@mui/material';
-import { Url } from '@/app/lib/types';
+import { useState, useRef, useEffect, useImperativeHandle, forwardRef } from "react";
+import { Box, CircularProgress, Alert, useTheme, useMediaQuery } from "@mui/material";
+import { Url } from "@/app/lib/types";
+import { useIframeContext } from "./state/IframeContext";
 
 // Types for iframe states
 interface IframeState {
@@ -47,22 +48,25 @@ export function resetGlobalContainer() {
 // Function to get or create the global iframe container
 function getGlobalIframeContainer() {
   if (!globalIframeContainer) {
-    globalIframeContainer = document.createElement('div');
-    globalIframeContainer.id = 'global-iframe-container';
-    globalIframeContainer.style.position = 'fixed';
-    globalIframeContainer.style.top = '0';
-    globalIframeContainer.style.left = '0';
-    globalIframeContainer.style.width = '100%';
-    globalIframeContainer.style.height = '100%';
-    globalIframeContainer.style.pointerEvents = 'none';
-    globalIframeContainer.style.zIndex = '1000';
+    globalIframeContainer = document.createElement("div");
+    globalIframeContainer.id = "global-iframe-container";
+    globalIframeContainer.style.position = "fixed";
+    globalIframeContainer.style.top = "0";
+    globalIframeContainer.style.left = "0";
+    globalIframeContainer.style.width = "100%";
+    globalIframeContainer.style.height = "100%";
+    globalIframeContainer.style.pointerEvents = "none";
+    globalIframeContainer.style.zIndex = "1000";
     document.body.appendChild(globalIframeContainer);
   }
   return globalIframeContainer;
 }
 
-const IframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
-  function IframeContainer({ activeUrlId, activeUrl, onLoad, onError, onUnload, urlGroups = [] }, ref) {
+const OriginalIframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
+  function OriginalIframeContainer(
+    { activeUrlId, activeUrl, onLoad, onError, onUnload, urlGroups = [] },
+    ref,
+  ) {
     const [iframeStates, setIframeStates] = useState<Record<string, IframeState>>({});
     const iframeRefs = useRef<Record<string, HTMLIFrameElement | null>>({});
     const previousActiveUrlIdRef = useRef<string | null>(null);
@@ -70,7 +74,7 @@ const IframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
     const eventListeners = useRef<Record<string, { load: () => void; error: () => void }>>({});
     const isInitialMount = useRef(true);
     const theme = useTheme();
-    const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+    const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
     // Track all available URLs
     const [allUrlsMap, setAllUrlsMap] = useState<Record<string, string>>({});
@@ -94,7 +98,7 @@ const IframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
           error: null,
           isUnloaded: true,
           lastActivityTime: Date.now(),
-          idleTimeoutMinutes: 10
+          idleTimeoutMinutes: 10,
         };
 
         // If this is the active URL, load its content
@@ -113,9 +117,10 @@ const IframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
     // Sync iframeStates with localStorage
     useEffect(() => {
       const loadedIds = Object.keys(iframeStates).filter(
-        id => !iframeStates[id].isUnloaded && !iframeStates[id].loading && !iframeStates[id].error
+        (id) =>
+          !iframeStates[id].isUnloaded && !iframeStates[id].loading && !iframeStates[id].error,
       );
-      localStorage.setItem('iframe-state-loaded-url-ids', JSON.stringify(loadedIds));
+      localStorage.setItem("iframe-state-loaded-url-ids", JSON.stringify(loadedIds));
     }, [iframeStates]);
 
     // Initialize the global container and move iframes there
@@ -125,32 +130,38 @@ const IframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
       // Create all iframes in the global container
       Object.entries(allUrlsMap).forEach(([urlId, url]) => {
         if (!document.querySelector(`[data-iframe-id="${urlId}"]`)) {
-          const wrapper = document.createElement('div');
-          wrapper.setAttribute('data-iframe-container', urlId);
-          wrapper.style.position = 'absolute';
-          wrapper.style.top = '0';
-          wrapper.style.left = '0';
-          wrapper.style.width = '100%';
-          wrapper.style.height = '100%';
-          wrapper.style.overflow = 'hidden';
-          wrapper.style.pointerEvents = 'auto';
-          wrapper.style.display = urlId === activeUrlId ? 'block' : 'none';
-          wrapper.style.zIndex = urlId === activeUrlId ? '1' : '0';
+          const wrapper = document.createElement("div");
+          wrapper.setAttribute("data-iframe-container", urlId);
+          wrapper.style.position = "absolute";
+          wrapper.style.top = "0";
+          wrapper.style.left = "0";
+          wrapper.style.width = "100%";
+          wrapper.style.height = "100%";
+          wrapper.style.overflow = "hidden";
+          wrapper.style.pointerEvents = "auto";
+          wrapper.style.display = urlId === activeUrlId ? "block" : "none";
+          wrapper.style.zIndex = urlId === activeUrlId ? "1" : "0";
 
-          const iframe = document.createElement('iframe');
-          iframe.setAttribute('data-iframe-id', urlId);
-          iframe.setAttribute('data-url', url);
+          const iframe = document.createElement("iframe");
+          iframe.setAttribute("data-iframe-id", urlId);
+          iframe.setAttribute("data-url", url);
           iframe.title = `iframe-${urlId}`;
-          iframe.style.width = '100%';
-          iframe.style.height = '100%';
-          iframe.style.border = 'none';
-          iframe.style.background = '#fff';
-          iframe.style.overflow = 'hidden';
-          iframe.setAttribute('sandbox', 'allow-same-origin allow-scripts allow-forms allow-popups');
-          iframe.setAttribute('allow', 'accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture');
+          iframe.style.width = "100%";
+          iframe.style.height = "100%";
+          iframe.style.border = "none";
+          iframe.style.background = "#fff";
+          iframe.style.overflow = "hidden";
+          iframe.setAttribute(
+            "sandbox",
+            "allow-same-origin allow-scripts allow-forms allow-popups",
+          );
+          iframe.setAttribute(
+            "allow",
+            "accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture",
+          );
 
           const loadListener = () => {
-            if (iframe.src && iframe.src !== 'about:blank' && iframe.src !== '') {
+            if (iframe.src && iframe.src !== "about:blank" && iframe.src !== "") {
               handleIframeLoad(urlId);
             }
           };
@@ -158,18 +169,18 @@ const IframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
 
           eventListeners.current[urlId] = {
             load: loadListener,
-            error: errorListener
+            error: errorListener,
           };
 
-          iframe.addEventListener('load', loadListener);
-          iframe.addEventListener('error', errorListener);
+          iframe.addEventListener("load", loadListener);
+          iframe.addEventListener("error", errorListener);
 
           // Store ref to the iframe
           iframeRefs.current[urlId] = iframe;
 
           // Initialize in inactive-unloaded state
-          iframe.src = '';
-          setIframeStates(prev => ({
+          iframe.src = "";
+          setIframeStates((prev) => ({
             ...prev,
             [urlId]: {
               id: urlId,
@@ -178,8 +189,8 @@ const IframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
               error: null,
               isUnloaded: true,
               lastActivityTime: Date.now(),
-              idleTimeoutMinutes: 10
-            }
+              idleTimeoutMinutes: 10,
+            },
           }));
 
           wrapper.appendChild(iframe);
@@ -198,9 +209,9 @@ const IframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
       const observer = new ResizeObserver(() => {
         if (containerRef.current) {
           const rect = containerRef.current.getBoundingClientRect();
-          Object.values(iframeRefs.current).forEach(iframe => {
+          Object.values(iframeRefs.current).forEach((iframe) => {
             if (iframe?.parentElement) {
-              iframe.parentElement.style.position = 'fixed';
+              iframe.parentElement.style.position = "fixed";
               iframe.parentElement.style.top = `${rect.top}px`;
               iframe.parentElement.style.left = `${rect.left}px`;
               iframe.parentElement.style.width = `${rect.width}px`;
@@ -220,8 +231,8 @@ const IframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
         Object.entries(eventListeners.current).forEach(([urlId, listeners]) => {
           const iframe = iframeRefs.current[urlId];
           if (iframe) {
-            iframe.removeEventListener('load', listeners.load);
-            iframe.removeEventListener('error', listeners.error);
+            iframe.removeEventListener("load", listeners.load);
+            iframe.removeEventListener("error", listeners.error);
           }
         });
       };
@@ -234,7 +245,7 @@ const IframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
       }
 
       // Update visibility for all iframes
-      Object.keys(allUrlsMap).forEach(urlId => {
+      Object.keys(allUrlsMap).forEach((urlId) => {
         const isActive = urlId === activeUrlId;
         updateIframeVisibility(urlId, isActive);
 
@@ -255,8 +266,8 @@ const IframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
     // Collect URLs from groups
     useEffect(() => {
       const urls: Record<string, string> = {};
-      urlGroups.forEach(group => {
-        group.urls.forEach(url => {
+      urlGroups.forEach((group) => {
+        group.urls.forEach((url) => {
           urls[url.id] = url.url;
         });
       });
@@ -270,7 +281,7 @@ const IframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
         idleCheckIntervalRef.current = setInterval(() => {
           const now = Date.now();
           const activeIframes = Object.entries(iframeStates).filter(
-            ([, state]) => !state.loading && !state.error && !state.isUnloaded
+            ([, state]) => !state.loading && !state.error && !state.isUnloaded,
           );
 
           // Check each loaded iframe for idle timeout
@@ -286,7 +297,9 @@ const IframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
 
             // Unload iframe if it's been idle too long
             if (timeSinceLastActivity > idleTimeMs) {
-              console.log(`Unloading iframe ${urlId} due to ${state.idleTimeoutMinutes} minutes of inactivity`);
+              console.log(
+                `Unloading iframe ${urlId} due to ${state.idleTimeoutMinutes} minutes of inactivity`,
+              );
               unloadIframe(urlId);
             }
           });
@@ -326,27 +339,25 @@ const IframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
             // 3. It has no errors
             // 4. It's not explicitly unloaded
             const currentSrc = iframe.src;
-            const targetUrl = iframe.getAttribute('data-url');
+            const targetUrl = iframe.getAttribute("data-url");
 
-            const hasValidSrc = currentSrc &&
-                               currentSrc !== 'about:blank' &&
-                               currentSrc !== '' &&
-                               currentSrc === targetUrl;
+            const hasValidSrc =
+              currentSrc &&
+              currentSrc !== "about:blank" &&
+              currentSrc !== "" &&
+              currentSrc === targetUrl;
 
-            const isLoaded = !state.loading &&
-                            !state.error &&
-                            !state.isUnloaded &&
-                            hasValidSrc;
+            const isLoaded = !state.loading && !state.error && !state.isUnloaded && hasValidSrc;
 
             return isLoaded;
           })
           .map(([urlId]) => urlId);
 
         // Update localStorage to ensure persistence
-        localStorage.setItem('iframe-state-loaded-url-ids', JSON.stringify(loadedIds));
+        localStorage.setItem("iframe-state-loaded-url-ids", JSON.stringify(loadedIds));
 
         return loadedIds;
-      }
+      },
     }));
 
     // Function to toggle iframe visibility based on active URL
@@ -354,12 +365,12 @@ const IframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
       const container = document.querySelector(`[data-iframe-container="${urlId}"]`);
       if (container) {
         const prevDisplay = (container as HTMLElement).style.display;
-        const newDisplay = isActive ? 'block' : 'none';
+        const newDisplay = isActive ? "block" : "none";
 
         if (prevDisplay !== newDisplay) {
           (container as HTMLElement).style.display = newDisplay;
           // Update z-index to ensure active iframe is on top
-          (container as HTMLElement).style.zIndex = isActive ? '1' : '0';
+          (container as HTMLElement).style.zIndex = isActive ? "1" : "0";
         }
       }
     };
@@ -373,49 +384,49 @@ const IframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
       const isActive = urlId === activeUrlId;
 
       // Store the URL we're trying to load as the data-url attribute
-      if (src && src !== 'about:blank') {
-        iframe.setAttribute('data-url', src);
+      if (src && src !== "about:blank") {
+        iframe.setAttribute("data-url", src);
       }
 
-      if (src === null || src === '') {
+      if (src === null || src === "") {
         // Explicit unload operation
-        if (iframe.src && iframe.src !== 'about:blank' && iframe.src !== '') {
-          iframe.setAttribute('data-src', iframe.src);
+        if (iframe.src && iframe.src !== "about:blank" && iframe.src !== "") {
+          iframe.setAttribute("data-src", iframe.src);
         }
-        iframe.src = '';
+        iframe.src = "";
 
-        setIframeStates(prev => ({
+        setIframeStates((prev) => ({
           ...prev,
           [urlId]: {
-            ...prev[urlId] || {
+            ...(prev[urlId] || {
               id: urlId,
-              url: iframe.getAttribute('data-src') || '',
-              idleTimeoutMinutes: 10
-            },
+              url: iframe.getAttribute("data-src") || "",
+              idleTimeoutMinutes: 10,
+            }),
             loading: false,
             error: null,
             isUnloaded: true,
-            lastActivityTime: Date.now()
-          }
+            lastActivityTime: Date.now(),
+          },
         }));
 
         // Notify parent of unload
         if (onUnload) onUnload(urlId);
       } else if (src !== prevSrc) {
         // Loading new content
-        setIframeStates(prev => ({
+        setIframeStates((prev) => ({
           ...prev,
           [urlId]: {
-            ...prev[urlId] || {
+            ...(prev[urlId] || {
               id: urlId,
               url: src,
-              idleTimeoutMinutes: 10
-            },
+              idleTimeoutMinutes: 10,
+            }),
             loading: true,
             error: null,
             isUnloaded: true,
-            lastActivityTime: Date.now()
-          }
+            lastActivityTime: Date.now(),
+          },
         }));
 
         // Set the src to load content
@@ -433,7 +444,7 @@ const IframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
         return;
       }
 
-      console.log('Creating iframe DOM elements imperatively (once only)');
+      console.log("Creating iframe DOM elements imperatively (once only)");
       const container = containerRef.current;
 
       // Create all iframe elements
@@ -444,34 +455,37 @@ const IframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
         }
 
         // Create iframe wrapper
-        const wrapperDiv = document.createElement('div');
-        wrapperDiv.setAttribute('data-iframe-container', urlId);
-        wrapperDiv.style.position = 'absolute';
-        wrapperDiv.style.top = '0';
-        wrapperDiv.style.left = '0';
-        wrapperDiv.style.width = '100%';
-        wrapperDiv.style.height = '100%';
-        wrapperDiv.style.overflow = 'hidden';
-        wrapperDiv.style.display = urlId === activeUrlId ? 'block' : 'none';
-        wrapperDiv.style.zIndex = urlId === activeUrlId ? '1' : '0';
+        const wrapperDiv = document.createElement("div");
+        wrapperDiv.setAttribute("data-iframe-container", urlId);
+        wrapperDiv.style.position = "absolute";
+        wrapperDiv.style.top = "0";
+        wrapperDiv.style.left = "0";
+        wrapperDiv.style.width = "100%";
+        wrapperDiv.style.height = "100%";
+        wrapperDiv.style.overflow = "hidden";
+        wrapperDiv.style.display = urlId === activeUrlId ? "block" : "none";
+        wrapperDiv.style.zIndex = urlId === activeUrlId ? "1" : "0";
 
         // Create iframe element
-        const iframe = document.createElement('iframe');
-        iframe.setAttribute('data-iframe-id', urlId);
-        iframe.setAttribute('data-url', url);
+        const iframe = document.createElement("iframe");
+        iframe.setAttribute("data-iframe-id", urlId);
+        iframe.setAttribute("data-url", url);
         iframe.title = `iframe-${urlId}`;
-        iframe.style.width = '100%';
-        iframe.style.height = '100%';
-        iframe.style.border = 'none';
-        iframe.style.background = '#fff';
-        iframe.style.overflow = 'hidden';
-        iframe.setAttribute('sandbox', 'allow-same-origin allow-scripts allow-forms allow-popups');
-        iframe.setAttribute('allow', 'accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture');
+        iframe.style.width = "100%";
+        iframe.style.height = "100%";
+        iframe.style.border = "none";
+        iframe.style.background = "#fff";
+        iframe.style.overflow = "hidden";
+        iframe.setAttribute("sandbox", "allow-same-origin allow-scripts allow-forms allow-popups");
+        iframe.setAttribute(
+          "allow",
+          "accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture",
+        );
 
         // Create stable event listener references
         const loadListener = () => {
           // Only trigger load event for non-empty src
-          if (iframe.src && iframe.src !== 'about:blank' && iframe.src !== '') {
+          if (iframe.src && iframe.src !== "about:blank" && iframe.src !== "") {
             handleIframeLoad(urlId);
           }
         };
@@ -480,19 +494,19 @@ const IframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
         // Store listeners for cleanup
         eventListeners.current[urlId] = {
           load: loadListener,
-          error: errorListener
+          error: errorListener,
         };
 
         // Add event listeners
-        iframe.addEventListener('load', loadListener);
-        iframe.addEventListener('error', errorListener);
+        iframe.addEventListener("load", loadListener);
+        iframe.addEventListener("error", errorListener);
 
         // Store ref to the iframe
         iframeRefs.current[urlId] = iframe;
 
         // Initialize in inactive-unloaded state
-        iframe.src = '';
-        setIframeStates(prev => ({
+        iframe.src = "";
+        setIframeStates((prev) => ({
           ...prev,
           [urlId]: {
             id: urlId,
@@ -501,8 +515,8 @@ const IframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
             error: null,
             isUnloaded: true,
             lastActivityTime: Date.now(),
-            idleTimeoutMinutes: 10
-          }
+            idleTimeoutMinutes: 10,
+          },
         }));
 
         // Add iframe to wrapper and wrapper to container
@@ -520,8 +534,8 @@ const IframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
         Object.entries(eventListeners.current).forEach(([urlId, listeners]) => {
           const iframe = iframeRefs.current[urlId];
           if (iframe) {
-            iframe.removeEventListener('load', listeners.load);
-            iframe.removeEventListener('error', listeners.error);
+            iframe.removeEventListener("load", listeners.load);
+            iframe.removeEventListener("error", listeners.error);
           }
         });
         eventListeners.current = {};
@@ -534,29 +548,29 @@ const IframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
       if (!iframe) return;
 
       // Only process load event if the iframe has valid content
-      if (!iframe.src || iframe.src === 'about:blank' || iframe.src === '') {
+      if (!iframe.src || iframe.src === "about:blank" || iframe.src === "") {
         return;
       }
 
       const isActive = urlId === activeUrlId;
       const currentSrc = iframe.src;
-      const targetUrl = iframe.getAttribute('data-url');
+      const targetUrl = iframe.getAttribute("data-url");
 
       // Verify the loaded URL matches what we expected
       if (currentSrc === targetUrl) {
-        setIframeStates(prev => ({
+        setIframeStates((prev) => ({
           ...prev,
           [urlId]: {
-            ...prev[urlId] || {
+            ...(prev[urlId] || {
               id: urlId,
               url: currentSrc,
-              idleTimeoutMinutes: 10
-            },
+              idleTimeoutMinutes: 10,
+            }),
             loading: false,
             error: null,
             isUnloaded: false,
-            lastActivityTime: Date.now()
-          }
+            lastActivityTime: Date.now(),
+          },
         }));
 
         // Update visibility and notify parent
@@ -567,7 +581,7 @@ const IframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
         try {
           adjustIframeSize(iframe);
         } catch (error) {
-          console.warn('Failed to adjust iframe size:', error);
+          console.warn("Failed to adjust iframe size:", error);
         }
       } else {
         // If loaded URL doesn't match expected URL, treat as error
@@ -591,12 +605,12 @@ const IframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
 
           // Ensure no scrollbars appear in the iframe content
           if (iframe.contentDocument.body) {
-            iframe.contentDocument.body.style.overflow = 'hidden';
+            iframe.contentDocument.body.style.overflow = "hidden";
           }
         }
       } catch {
         // Silently fail if cross-origin
-        console.warn('Cross-origin iframe resize not allowed');
+        console.warn("Cross-origin iframe resize not allowed");
       }
     };
 
@@ -604,18 +618,18 @@ const IframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
     const handleIframeError = (urlId: string) => {
       const errorMessage = "Failed to load the page";
 
-      setIframeStates(prev => ({
+      setIframeStates((prev) => ({
         ...prev,
         [urlId]: {
-          ...prev[urlId] || {
+          ...(prev[urlId] || {
             id: urlId,
-            url: allUrlsMap[urlId] || '',
-            idleTimeoutMinutes: 10
-          },
+            url: allUrlsMap[urlId] || "",
+            idleTimeoutMinutes: 10,
+          }),
           loading: false,
           error: errorMessage,
-          isUnloaded: false
-        }
+          isUnloaded: false,
+        },
       }));
 
       if (onError) onError(urlId, errorMessage);
@@ -625,29 +639,29 @@ const IframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
     const resetIframe = (urlId: string) => {
       const iframe = iframeRefs.current[urlId];
       if (iframe) {
-        const url = iframe.getAttribute('data-url') || iframe.src || allUrlsMap[urlId];
+        const url = iframe.getAttribute("data-url") || iframe.src || allUrlsMap[urlId];
         if (!url) return;
 
         // Use our imperative update function
-        updateIframeSrc(urlId, 'about:blank');
+        updateIframeSrc(urlId, "about:blank");
 
         // Force a reflow
         setTimeout(() => {
           updateIframeSrc(urlId, url);
         }, 100);
 
-        setIframeStates(prev => ({
+        setIframeStates((prev) => ({
           ...prev,
           [urlId]: {
-            ...prev[urlId] || {
+            ...(prev[urlId] || {
               id: urlId,
               url,
-              idleTimeoutMinutes: 10
-            },
+              idleTimeoutMinutes: 10,
+            }),
             loading: true,
             error: null,
-            isUnloaded: false
-          }
+            isUnloaded: false,
+          },
         }));
       }
     };
@@ -658,20 +672,20 @@ const IframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
       const iframe = iframeRefs.current[urlId];
       if (iframe) {
         // Use our imperative update function to clear src - pass null to indicate explicit unload
-        updateIframeSrc(urlId, null);  // null means explicitly unload it
+        updateIframeSrc(urlId, null); // null means explicitly unload it
 
-        setIframeStates(prev => ({
+        setIframeStates((prev) => ({
           ...prev,
           [urlId]: {
-            ...prev[urlId] || {
+            ...(prev[urlId] || {
               id: urlId,
-              url: iframe.getAttribute('data-url') || allUrlsMap[urlId] || '',
-              idleTimeoutMinutes: 10
-            },
+              url: iframe.getAttribute("data-url") || allUrlsMap[urlId] || "",
+              idleTimeoutMinutes: 10,
+            }),
             loading: false,
             error: null,
-            isUnloaded: true
-          }
+            isUnloaded: true,
+          },
         }));
 
         if (onUnload) onUnload(urlId);
@@ -690,10 +704,11 @@ const IframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
       }
 
       // Get URL from data attribute, state, or allUrls
-      const url = iframe.getAttribute('data-url') ||
-                (iframeStates[urlId]?.url) ||
-                allUrlsMap[urlId] ||
-                (activeUrl?.id === urlId ? activeUrl.url : null);
+      const url =
+        iframe.getAttribute("data-url") ||
+        iframeStates[urlId]?.url ||
+        allUrlsMap[urlId] ||
+        (activeUrl?.id === urlId ? activeUrl.url : null);
 
       // If we can't determine the URL, we can't reload
       if (!url) {
@@ -702,19 +717,19 @@ const IframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
       }
 
       // Update state first
-      setIframeStates(prev => ({
+      setIframeStates((prev) => ({
         ...prev,
         [urlId]: {
-          ...prev[urlId] || {
+          ...(prev[urlId] || {
             id: urlId,
             url,
-            idleTimeoutMinutes: 10
-          },
+            idleTimeoutMinutes: 10,
+          }),
           loading: true,
           error: null,
           isUnloaded: false,
-          lastActivityTime: Date.now() // Reset activity time on reload
-        }
+          lastActivityTime: Date.now(), // Reset activity time on reload
+        },
       }));
 
       // Then load the URL using our imperative update function
@@ -725,7 +740,7 @@ const IframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
 
     // Get the appropriate URL based on device type
     const getUrlForDevice = (url: Url | null) => {
-      if (!url) return '';
+      if (!url) return "";
       return isMobile && url.urlMobile ? url.urlMobile : url.url;
     };
 
@@ -733,12 +748,12 @@ const IframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
       return (
         <Box
           sx={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            height: '100%',
-            width: '100%',
-            bgcolor: 'background.paper'
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            height: "100%",
+            width: "100%",
+            bgcolor: "background.paper",
           }}
         >
           <Alert severity="info">Select a URL from the menu to display content</Alert>
@@ -752,27 +767,27 @@ const IframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
       <Box
         ref={containerRef}
         sx={{
-          position: 'relative',
-          height: '100%',
-          width: '100%',
-          overflow: 'hidden',
-          zIndex: 0
+          position: "relative",
+          height: "100%",
+          width: "100%",
+          overflow: "hidden",
+          zIndex: 0,
         }}
       >
         {/* Loading indicator */}
         {currentIframeState?.loading && (
           <Box
             sx={{
-              position: 'absolute',
+              position: "absolute",
               top: 0,
               left: 0,
               right: 0,
               bottom: 0,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              bgcolor: 'rgba(0, 0, 0, 0.1)',
-              zIndex: 2000
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              bgcolor: "rgba(0, 0, 0, 0.1)",
+              zIndex: 2000,
             }}
           >
             <CircularProgress />
@@ -783,12 +798,12 @@ const IframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
         {currentIframeState?.error && (
           <Box
             sx={{
-              position: 'absolute',
+              position: "absolute",
               top: 0,
               left: 0,
               right: 0,
               padding: 2,
-              zIndex: 2000
+              zIndex: 2000,
             }}
           >
             <Alert
@@ -799,15 +814,15 @@ const IframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
                   component="button"
                   onClick={() => resetIframe(activeUrlId)}
                   sx={{
-                    border: 'none',
-                    bgcolor: 'transparent',
-                    color: 'primary.main',
-                    cursor: 'pointer',
-                    fontWeight: 'bold',
-                    padding: '4px 8px',
-                    '&:hover': {
-                      textDecoration: 'underline'
-                    }
+                    border: "none",
+                    bgcolor: "transparent",
+                    color: "primary.main",
+                    cursor: "pointer",
+                    fontWeight: "bold",
+                    padding: "4px 8px",
+                    "&:hover": {
+                      textDecoration: "underline",
+                    },
                   }}
                 >
                   Retry
@@ -823,16 +838,16 @@ const IframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
         {currentIframeState?.isUnloaded && (
           <Box
             sx={{
-              position: 'absolute',
+              position: "absolute",
               top: 0,
               left: 0,
               right: 0,
               bottom: 0,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              bgcolor: 'background.paper',
-              zIndex: 2000
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              bgcolor: "background.paper",
+              zIndex: 2000,
             }}
           >
             <Alert
@@ -843,15 +858,15 @@ const IframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
                   component="button"
                   onClick={() => reloadUnloadedIframe(activeUrlId)}
                   sx={{
-                    border: 'none',
-                    bgcolor: 'transparent',
-                    color: 'primary.main',
-                    cursor: 'pointer',
-                    fontWeight: 'bold',
-                    padding: '4px 8px',
-                    '&:hover': {
-                      textDecoration: 'underline'
-                    }
+                    border: "none",
+                    bgcolor: "transparent",
+                    color: "primary.main",
+                    cursor: "pointer",
+                    fontWeight: "bold",
+                    padding: "4px 8px",
+                    "&:hover": {
+                      textDecoration: "underline",
+                    },
                   }}
                 >
                   Reload
@@ -868,17 +883,49 @@ const IframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
             key={activeUrlId}
             src={getUrlForDevice(activeUrl)}
             style={{
-              width: '100%',
-              height: '100%',
-              border: 'none'
+              width: "100%",
+              height: "100%",
+              border: "none",
             }}
             onLoad={() => activeUrlId && onLoad?.(activeUrlId)}
-            onError={() => activeUrlId && onError?.(activeUrlId, 'Failed to load URL')}
+            onError={() => activeUrlId && onError?.(activeUrlId, "Failed to load URL")}
           />
         )}
       </Box>
     );
-  }
+  },
 );
 
-export default IframeContainer;
+// Create a new wrapper that uses context and adapts to the old component
+const ContextAwareIframeContainer = forwardRef<IframeContainerRef, Partial<IframeContainerProps>>(
+  function ContextAwareIframeContainer(props, ref) {
+    const { activeUrlId, states } = useIframeContext();
+
+    // Find active URL object from context state
+    const activeUrl = activeUrlId
+      ? {
+          id: activeUrlId,
+          url: states[activeUrlId]?.url || "",
+          title: `URL ${activeUrlId}`,
+          // Add any other required Url properties with defaults
+          iconPath: "",
+          displayOrder: 0,
+          urlGroupId: "",
+        }
+      : null;
+
+    // For now, adapt the context to the old props format
+    // Later we can refactor the entire component
+    return (
+      <OriginalIframeContainer
+        ref={ref}
+        activeUrlId={activeUrlId}
+        activeUrl={activeUrl as Url}
+        {...props}
+      />
+    );
+  },
+);
+
+// Export the context-aware component as default
+export default ContextAwareIframeContainer;

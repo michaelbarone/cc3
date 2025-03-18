@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback } from "react";
 import {
   List,
   ListItemButton,
@@ -15,17 +15,17 @@ import {
   Tooltip,
   Menu,
   MenuItem,
-  Button
-} from '@mui/material';
-import ExpandLess from '@mui/icons-material/ExpandLess';
-import ExpandMore from '@mui/icons-material/ExpandMore';
-import FolderIcon from '@mui/icons-material/Folder';
-import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
-import { Url, UrlGroup } from '@/app/lib/types';
-import { useUserPreferences } from '@/app/lib/hooks/useUserPreferences';
-import { Theme } from '@mui/material/styles';
-import { useIframeState } from '@/app/lib/state/iframe-state-context';
-import { LongPressProgress } from './LongPressProgress';
+  Button,
+} from "@mui/material";
+import ExpandLess from "@mui/icons-material/ExpandLess";
+import ExpandMore from "@mui/icons-material/ExpandMore";
+import FolderIcon from "@mui/icons-material/Folder";
+import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
+import { Url, UrlGroup } from "@/app/lib/types";
+import { useUserPreferences } from "@/app/lib/hooks/useUserPreferences";
+import { Theme } from "@mui/material/styles";
+import { useIframeState } from "@/app/lib/state/iframe-state-context";
+import { LongPressProgress } from "./LongPressProgress";
 
 interface MenuBarProps {
   urlGroups: UrlGroup[];
@@ -34,7 +34,7 @@ interface MenuBarProps {
   onUrlClick: (url: Url) => void;
   onUrlReload?: (url: Url) => void;
   onUrlUnload?: (url: Url) => void;
-  menuPosition?: 'side' | 'top';
+  menuPosition?: "side" | "top";
 }
 
 /**
@@ -74,15 +74,15 @@ const getUrlStatus = (
   urlId: string,
   activeUrlId: string | null,
   loadedUrlIds: string[],
-): 'active-loaded' | 'active-unloaded' | 'inactive-loaded' | 'inactive-unloaded' => {
+): "active-loaded" | "active-unloaded" | "inactive-loaded" | "inactive-unloaded" => {
   const isActive = urlId === activeUrlId;
   // Explicitly check if the URL is in the loadedUrlIds array
   const isLoaded = Array.isArray(loadedUrlIds) && loadedUrlIds.includes(urlId);
 
   if (isActive) {
-    return isLoaded ? 'active-loaded' : 'active-unloaded';
+    return isLoaded ? "active-loaded" : "active-unloaded";
   } else {
-    return isLoaded ? 'inactive-loaded' : 'inactive-unloaded';
+    return isLoaded ? "inactive-loaded" : "inactive-unloaded";
   }
 };
 
@@ -96,7 +96,7 @@ function UrlItem({
   onMouseDown,
   onTouchStart,
   menuPosition,
-  theme
+  theme,
 }: {
   url: Url;
   isActive: boolean;
@@ -105,7 +105,7 @@ function UrlItem({
   onUrlClick: (e: React.MouseEvent) => void;
   onMouseDown: () => void;
   onTouchStart: () => void;
-  menuPosition: 'side' | 'top';
+  menuPosition: "side" | "top";
   theme: Theme;
 }) {
   const { isLongPressing, longPressProgress, longPressUrlId } = useIframeState();
@@ -114,30 +114,30 @@ function UrlItem({
   const commonIconStyles = {
     width: 24,
     height: 24,
-    objectFit: 'contain' as const
+    objectFit: "contain" as const,
   };
 
   const commonBadgeStyles = {
-    position: 'absolute' as const,
+    position: "absolute" as const,
     top: -2,
     right: -2,
-    '& .MuiBadge-badge': {
+    "& .MuiBadge-badge": {
       backgroundColor: theme.palette.success.main,
       width: 8,
       height: 8,
       minWidth: 8,
-      borderRadius: '50%',
-      opacity: 0.8
-    }
+      borderRadius: "50%",
+      opacity: 0.8,
+    },
   };
 
   const commonBoxStyles = {
-    position: 'relative' as const,
-    display: 'flex',
-    alignItems: 'center'
+    position: "relative" as const,
+    display: "flex",
+    alignItems: "center",
   };
 
-  if (menuPosition === 'top') {
+  if (menuPosition === "top") {
     return (
       <Tooltip title={tooltipText}>
         <Button
@@ -147,43 +147,30 @@ function UrlItem({
           data-url-id={url.id}
           sx={{
             mx: 0.5,
-            textTransform: 'none',
-            borderBottom: isActive ? `2px solid ${theme.palette.primary.main}` : 'none',
+            textTransform: "none",
+            borderBottom: isActive ? `2px solid ${theme.palette.primary.main}` : "none",
             borderRadius: 0,
             color: isActive ? theme.palette.primary.main : theme.palette.text.primary,
-            fontWeight: isActive ? 'bold' : 'normal',
-            backgroundColor: 'transparent',
-            position: 'relative',
-            overflow: 'hidden',
-            '&:hover': {
+            fontWeight: isActive ? "bold" : "normal",
+            backgroundColor: "transparent",
+            position: "relative",
+            overflow: "hidden",
+            "&:hover": {
               opacity: 0.8,
-            }
+            },
           }}
         >
           <Box sx={commonBoxStyles}>
             {url.iconPath ? (
-              <Box
-                component="img"
-                src={url.iconPath}
-                alt={url.title}
-                sx={commonIconStyles}
-              />
+              <Box component="img" src={url.iconPath} alt={url.title} sx={commonIconStyles} />
             ) : (
               url.title
             )}
             {isLoaded && (
-              <Badge
-                color="success"
-                variant="dot"
-                overlap="circular"
-                sx={commonBadgeStyles}
-              />
+              <Badge color="success" variant="dot" overlap="circular" sx={commonBadgeStyles} />
             )}
           </Box>
-          <LongPressProgress
-            isActive={isLongPressingThis}
-            progress={longPressProgress}
-          />
+          <LongPressProgress isActive={isLongPressingThis} progress={longPressProgress} />
         </Button>
       </Tooltip>
     );
@@ -194,13 +181,11 @@ function UrlItem({
       <ListItemButton
         sx={{
           pl: 4,
-          borderLeft: 'none',
-          borderRight: isActive ?
-            `4px solid ${theme.palette.primary.main}` :
-            'none',
-          bgcolor: 'inherit',
-          position: 'relative',
-          overflow: 'hidden',
+          borderLeft: "none",
+          borderRight: isActive ? `4px solid ${theme.palette.primary.main}` : "none",
+          bgcolor: "inherit",
+          position: "relative",
+          overflow: "hidden",
         }}
         onClick={onUrlClick}
         onMouseDown={onMouseDown}
@@ -210,34 +195,21 @@ function UrlItem({
         <ListItemIcon sx={{ minWidth: 36 }}>
           <Box sx={commonBoxStyles}>
             {url.iconPath ? (
-              <Box
-                component="img"
-                src={url.iconPath}
-                alt={url.title}
-                sx={commonIconStyles}
-              />
+              <Box component="img" src={url.iconPath} alt={url.title} sx={commonIconStyles} />
             ) : null}
             {isLoaded && (
-              <Badge
-                color="success"
-                variant="dot"
-                overlap="circular"
-                sx={commonBadgeStyles}
-              />
+              <Badge color="success" variant="dot" overlap="circular" sx={commonBadgeStyles} />
             )}
           </Box>
         </ListItemIcon>
         <ListItemText
           primary={url.title}
           primaryTypographyProps={{
-            color: isActive ? 'primary' : 'inherit',
-            fontWeight: isActive ? 'bold' : 'normal'
+            color: isActive ? "primary" : "inherit",
+            fontWeight: isActive ? "bold" : "normal",
           }}
         />
-        <LongPressProgress
-          isActive={isLongPressingThis}
-          progress={longPressProgress}
-        />
+        <LongPressProgress isActive={isLongPressingThis} progress={longPressProgress} />
       </ListItemButton>
     </Tooltip>
   );
@@ -250,32 +222,32 @@ export default function MenuBar({
   onUrlClick,
   onUrlReload,
   onUrlUnload,
-  menuPosition: propMenuPosition = 'side'
+  menuPosition: propMenuPosition = "side",
 }: MenuBarProps) {
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const { preferences, loading: preferencesLoading } = useUserPreferences();
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
   const [groupMenuAnchorEl, setGroupMenuAnchorEl] = useState<null | HTMLElement>(null);
   const [activeGroupId, setActiveGroupId] = useState<string | null>(null);
   const isInitialMount = useRef(true);
   const [isLongPressInProgress, setIsLongPressInProgress] = useState(false);
-  const [menuPosition, setMenuPosition] = useState<'side' | 'top'>(propMenuPosition);
+  const [menuPosition, setMenuPosition] = useState<"side" | "top">(propMenuPosition);
   const previousActiveUrlId = useRef<string | null>(null);
 
   // Consolidated menu position and group management effect
   useEffect(() => {
     const determineMenuPosition = () => {
       if (isMobile) {
-        return 'side';
+        return "side";
       }
-      if (propMenuPosition === 'top' || propMenuPosition === 'side') {
+      if (propMenuPosition === "top" || propMenuPosition === "side") {
         return propMenuPosition;
       }
       if (!preferencesLoading && preferences.menuPosition) {
         return preferences.menuPosition;
       }
-      return 'side';
+      return "side";
     };
 
     const newMenuPosition = determineMenuPosition();
@@ -287,15 +259,15 @@ export default function MenuBar({
     if (activeUrlId && activeUrlId !== previousActiveUrlId.current) {
       previousActiveUrlId.current = activeUrlId;
 
-      const activeGroup = urlGroups.find(group =>
-        group.urls.some(url => url.id === activeUrlId)
+      const activeGroup = urlGroups.find((group) =>
+        group.urls.some((url) => url.id === activeUrlId),
       );
 
       if (activeGroup) {
-        if (newMenuPosition === 'side') {
-          setOpenGroups(prev => ({
+        if (newMenuPosition === "side") {
+          setOpenGroups((prev) => ({
             ...prev,
-            [activeGroup.id]: true
+            [activeGroup.id]: true,
           }));
         } else {
           setActiveGroupId(activeGroup.id);
@@ -309,7 +281,7 @@ export default function MenuBar({
     preferences.menuPosition,
     activeUrlId,
     urlGroups,
-    menuPosition
+    menuPosition,
   ]);
 
   // Initialize state only once
@@ -319,7 +291,7 @@ export default function MenuBar({
 
     try {
       // Restore open groups state
-      const storedOpenGroups = localStorage.getItem('menu-bar-open-groups');
+      const storedOpenGroups = localStorage.getItem("menu-bar-open-groups");
       if (storedOpenGroups) {
         const parsedGroups = JSON.parse(storedOpenGroups);
         setOpenGroups(parsedGroups);
@@ -327,174 +299,201 @@ export default function MenuBar({
 
       // Handle initial active URL group
       if (activeUrlId) {
-        const activeGroup = urlGroups.find(group =>
-          group.urls.some(url => url.id === activeUrlId)
+        const activeGroup = urlGroups.find((group) =>
+          group.urls.some((url) => url.id === activeUrlId),
         );
         if (activeGroup) {
-          setOpenGroups(prev => ({
+          setOpenGroups((prev) => ({
             ...prev,
-            [activeGroup.id]: true
+            [activeGroup.id]: true,
           }));
         }
       }
     } catch (error) {
-      console.error('Error initializing menu state:', error);
+      console.error("Error initializing menu state:", error);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Empty dependency array as this should only run once
 
   // Persist open groups state
   useEffect(() => {
     if (!isInitialMount.current) {
-      localStorage.setItem('menu-bar-open-groups', JSON.stringify(openGroups));
+      localStorage.setItem("menu-bar-open-groups", JSON.stringify(openGroups));
     }
   }, [openGroups]);
 
   // Memoize URL click handler
-  const handleUrlClick = useCallback((url: Url) => {
-    if (isLongPressInProgress) {
-      return;
-    }
+  const handleUrlClick = useCallback(
+    (url: Url) => {
+      if (isLongPressInProgress) {
+        return;
+      }
 
-    if (activeUrlId === url.id) {
-      if (onUrlReload) onUrlReload(url);
-    } else {
-      onUrlClick(url);
+      if (activeUrlId === url.id) {
+        if (onUrlReload) onUrlReload(url);
+      } else {
+        onUrlClick(url);
 
-      if (menuPosition === 'top') {
-        const groupContainingUrl = urlGroups.find(group =>
-          group.urls.some(groupUrl => groupUrl.id === url.id)
-        );
-        if (groupContainingUrl) {
-          setActiveGroupId(groupContainingUrl.id);
+        if (menuPosition === "top") {
+          const groupContainingUrl = urlGroups.find((group) =>
+            group.urls.some((groupUrl) => groupUrl.id === url.id),
+          );
+          if (groupContainingUrl) {
+            setActiveGroupId(groupContainingUrl.id);
+          }
         }
       }
-    }
-  }, [activeUrlId, isLongPressInProgress, menuPosition, onUrlClick, onUrlReload, urlGroups]);
+    },
+    [activeUrlId, isLongPressInProgress, menuPosition, onUrlClick, onUrlReload, urlGroups],
+  );
 
   // Memoize long press handler
-  const handleUrlLongPress = useCallback((url: Url) => {
-    if (!onUrlUnload) return;
+  const handleUrlLongPress = useCallback(
+    (url: Url) => {
+      if (!onUrlUnload) return;
 
-    setIsLongPressInProgress(true);
+      setIsLongPressInProgress(true);
 
-    if (loadedUrlIds.includes(url.id)) {
-      onUrlUnload(url);
-    }
+      if (loadedUrlIds.includes(url.id)) {
+        onUrlUnload(url);
+      }
 
-    setTimeout(() => {
-      setIsLongPressInProgress(false);
-    }, 500);
-  }, [loadedUrlIds, onUrlUnload]);
+      setTimeout(() => {
+        setIsLongPressInProgress(false);
+      }, 500);
+    },
+    [loadedUrlIds, onUrlUnload],
+  );
 
   // Handle mouse down for long press detection
-  const handleMouseDown = useCallback((url: Url) => {
-    if (!onUrlUnload) return;
+  const handleMouseDown = useCallback(
+    (url: Url) => {
+      if (!onUrlUnload) return;
 
-    // Only setup long press for loaded items
-    if (loadedUrlIds.includes(url.id)) {
-      let longPressTriggered = false;
+      // Only setup long press for loaded items
+      if (loadedUrlIds.includes(url.id)) {
+        let longPressTriggered = false;
 
-      const timer = setTimeout(() => {
-        longPressTriggered = true;
-        handleUrlLongPress(url);
-      }, 800); // 800ms long press
+        const timer = setTimeout(() => {
+          longPressTriggered = true;
+          handleUrlLongPress(url);
+        }, 800); // 800ms long press
 
-      // Clear the timeout if mouse is released
-      const handleMouseUp = (e: MouseEvent) => {
-        clearTimeout(timer);
-        document.removeEventListener('mouseup', handleMouseUp);
+        // Clear the timeout if mouse is released
+        const handleMouseUp = (e: MouseEvent) => {
+          clearTimeout(timer);
+          document.removeEventListener("mouseup", handleMouseUp);
 
-        // If this was a long press, prevent the click event
-        if (longPressTriggered) {
-          e.preventDefault();
-          e.stopPropagation();
-
-          // Also listen for click events to prevent them
-          const preventClick = (e: MouseEvent) => {
+          // If this was a long press, prevent the click event
+          if (longPressTriggered) {
             e.preventDefault();
             e.stopPropagation();
-            document.removeEventListener('click', preventClick, true);
-          };
 
-          // Capture the next click event and prevent it
-          document.addEventListener('click', preventClick, true);
-        }
-      };
+            // Also listen for click events to prevent them
+            const preventClick = (e: MouseEvent) => {
+              e.preventDefault();
+              e.stopPropagation();
+              document.removeEventListener("click", preventClick, true);
+            };
 
-      document.addEventListener('mouseup', handleMouseUp);
-    }
-  }, [loadedUrlIds, onUrlUnload, handleUrlLongPress]);
+            // Capture the next click event and prevent it
+            document.addEventListener("click", preventClick, true);
+          }
+        };
+
+        document.addEventListener("mouseup", handleMouseUp);
+      }
+    },
+    [loadedUrlIds, onUrlUnload, handleUrlLongPress],
+  );
 
   // Handle touch events for mobile devices
-  const handleTouchStart = useCallback((url: Url) => {
-    if (!onUrlUnload) return;
+  const handleTouchStart = useCallback(
+    (url: Url) => {
+      if (!onUrlUnload) return;
 
-    // Only setup long press for loaded items
-    if (loadedUrlIds.includes(url.id)) {
-      let longPressTriggered = false;
+      // Only setup long press for loaded items
+      if (loadedUrlIds.includes(url.id)) {
+        let longPressTriggered = false;
 
-      const timer = setTimeout(() => {
-        longPressTriggered = true;
-        handleUrlLongPress(url);
-      }, 800);
+        const timer = setTimeout(() => {
+          longPressTriggered = true;
+          handleUrlLongPress(url);
+        }, 800);
 
-      // Function to clear the timeout on touch end
-      const handleTouchEnd = (e: TouchEvent) => {
-        clearTimeout(timer);
-        document.removeEventListener('touchend', handleTouchEnd);
-        document.removeEventListener('touchcancel', handleTouchEnd);
+        // Function to clear the timeout on touch end
+        const handleTouchEnd = (e: TouchEvent) => {
+          clearTimeout(timer);
+          document.removeEventListener("touchend", handleTouchEnd);
+          document.removeEventListener("touchcancel", handleTouchEnd);
 
-        // If this was a long press, prevent the subsequent click event
-        if (longPressTriggered) {
-          e.preventDefault();
-
-          // Also listen for click events to prevent them
-          const preventClick = (e: Event) => {
+          // If this was a long press, prevent the subsequent click event
+          if (longPressTriggered) {
             e.preventDefault();
-            e.stopPropagation();
-            document.removeEventListener('click', preventClick, true);
-          };
 
-          // Capture the next click event and prevent it
-          document.addEventListener('click', preventClick, true);
-        }
-      };
+            // Also listen for click events to prevent them
+            const preventClick = (e: Event) => {
+              e.preventDefault();
+              e.stopPropagation();
+              document.removeEventListener("click", preventClick, true);
+            };
 
-      document.addEventListener('touchend', handleTouchEnd);
-      document.addEventListener('touchcancel', handleTouchEnd);
-    }
-  }, [loadedUrlIds, onUrlUnload, handleUrlLongPress]);
+            // Capture the next click event and prevent it
+            document.addEventListener("click", preventClick, true);
+          }
+        };
+
+        document.addEventListener("touchend", handleTouchEnd);
+        document.addEventListener("touchcancel", handleTouchEnd);
+      }
+    },
+    [loadedUrlIds, onUrlUnload, handleUrlLongPress],
+  );
 
   // Memoize URL item renderer
-  const renderUrlItem = useCallback((url: Url) => {
-    const urlStatus = getUrlStatus(url.id, activeUrlId, loadedUrlIds);
-    const isActive = urlStatus.startsWith('active');
-    const isLoaded = urlStatus === 'active-loaded' || urlStatus === 'inactive-loaded';
+  const renderUrlItem = useCallback(
+    (url: Url) => {
+      const urlStatus = getUrlStatus(url.id, activeUrlId, loadedUrlIds);
+      const isActive = urlStatus.startsWith("active");
+      const isLoaded = urlStatus === "active-loaded" || urlStatus === "inactive-loaded";
 
-    let tooltipText = '';
-    if (isActive && isLoaded) tooltipText = 'Currently active (click to reload, long press to unload)';
-    else if (isActive && !isLoaded) tooltipText = 'Currently active but unloaded (click to reload)';
-    else if (!isActive && isLoaded) tooltipText = 'Loaded in background (click to view, long press to unload)';
-    else tooltipText = 'Currently unloaded (click to load and view)';
+      let tooltipText = "";
+      if (isActive && isLoaded)
+        tooltipText = "Currently active (click to reload, long press to unload)";
+      else if (isActive && !isLoaded)
+        tooltipText = "Currently active but unloaded (click to reload)";
+      else if (!isActive && isLoaded)
+        tooltipText = "Loaded in background (click to view, long press to unload)";
+      else tooltipText = "Currently unloaded (click to load and view)";
 
-    return (
-      <UrlItem
-        key={url.id}
-        url={url}
-        isActive={isActive}
-        isLoaded={isLoaded}
-        tooltipText={tooltipText}
-        onUrlClick={(e) => {
-          e.stopPropagation();
-          handleUrlClick(url);
-        }}
-        onMouseDown={() => handleMouseDown(url)}
-        onTouchStart={() => handleTouchStart(url)}
-        menuPosition={menuPosition}
-        theme={theme}
-      />
-    );
-  }, [activeUrlId, loadedUrlIds, menuPosition, theme, handleUrlClick, handleMouseDown, handleTouchStart]);
+      return (
+        <UrlItem
+          key={url.id}
+          url={url}
+          isActive={isActive}
+          isLoaded={isLoaded}
+          tooltipText={tooltipText}
+          onUrlClick={(e) => {
+            e.stopPropagation();
+            handleUrlClick(url);
+          }}
+          onMouseDown={() => handleMouseDown(url)}
+          onTouchStart={() => handleTouchStart(url)}
+          menuPosition={menuPosition}
+          theme={theme}
+        />
+      );
+    },
+    [
+      activeUrlId,
+      loadedUrlIds,
+      menuPosition,
+      theme,
+      handleUrlClick,
+      handleMouseDown,
+      handleTouchStart,
+    ],
+  );
 
   // Handle group menu
   const handleGroupMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
@@ -511,15 +510,17 @@ export default function MenuBar({
   };
 
   // Loading state check
-  if (preferencesLoading && propMenuPosition !== 'top' && propMenuPosition !== 'side') {
+  if (preferencesLoading && propMenuPosition !== "top" && propMenuPosition !== "side") {
     return (
-      <Box sx={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        height: propMenuPosition === 'top' ? 'auto' : '100%',
-        width: '100%'
-      }}>
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          height: propMenuPosition === "top" ? "auto" : "100%",
+          width: "100%",
+        }}
+      >
         <Typography variant="body2" color="text.secondary">
           Loading menu...
         </Typography>
@@ -528,26 +529,26 @@ export default function MenuBar({
   }
 
   // Render top menu layout
-  if (menuPosition === 'top') {
+  if (menuPosition === "top") {
     // Find group containing active URL first (prioritize it)
     const activeUrlGroup = activeUrlId
-      ? urlGroups.find(group => group.urls.some(url => url.id === activeUrlId))
+      ? urlGroups.find((group) => group.urls.some((url) => url.id === activeUrlId))
       : null;
 
     // Use the group containing the active URL, or fall back to activeGroupId selection
-    const activeGroup = activeUrlGroup || urlGroups.find(group => group.id === activeGroupId);
+    const activeGroup = activeUrlGroup || urlGroups.find((group) => group.id === activeGroupId);
 
     return (
-      <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', width: '100%' }}>
+      <Box sx={{ display: "flex", flexDirection: "row", alignItems: "center", width: "100%" }}>
         {/* Group selector */}
-        <Box sx={{ display: 'flex', alignItems: 'center', mr: 2 }}>
+        <Box sx={{ display: "flex", alignItems: "center", mr: 2 }}>
           <Button
             onClick={handleGroupMenuOpen}
             endIcon={<ArrowDropDownIcon />}
-            sx={{ textTransform: 'none' }}
+            sx={{ textTransform: "none" }}
           >
             <FolderIcon sx={{ mr: 1 }} />
-            {activeGroup?.name || 'Select Group'}
+            {activeGroup?.name || "Select Group"}
           </Button>
           <Menu
             anchorEl={groupMenuAnchorEl}
@@ -555,40 +556,42 @@ export default function MenuBar({
             onClose={handleGroupMenuClose}
             PaperProps={{
               sx: {
-                maxWidth: '80vw',
-                maxHeight: '60vh',
-                overflowX: 'hidden'
-              }
+                maxWidth: "80vw",
+                maxHeight: "60vh",
+                overflowX: "hidden",
+              },
             }}
           >
             {urlGroups
-              .filter(group => group.id !== activeGroupId) // Filter out the currently selected group
-              .map(group => (
+              .filter((group) => group.id !== activeGroupId) // Filter out the currently selected group
+              .map((group) => (
                 <Box key={group.id} sx={{ p: 1 }}>
-                  <Box sx={{
-                    display: 'flex',
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    flexWrap: 'wrap'
-                  }}>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      flexDirection: "row",
+                      alignItems: "center",
+                      flexWrap: "wrap",
+                    }}
+                  >
                     <MenuItem
                       onClick={() => handleGroupSelect(group.id)}
                       sx={{
-                        fontWeight: 'bold',
+                        fontWeight: "bold",
                         pl: 1,
                         pr: 2,
                         mr: 1,
-                        borderRight: `1px solid ${theme.palette.divider}`
+                        borderRight: `1px solid ${theme.palette.divider}`,
                       }}
                     >
                       <FolderIcon sx={{ mr: 1 }} />
                       {group.name}
                     </MenuItem>
 
-                    {group.urls.map(url => renderUrlItem(url))}
+                    {group.urls.map((url) => renderUrlItem(url))}
                   </Box>
 
-                  {group.id !== urlGroups.filter(g => g.id !== activeGroupId).slice(-1)[0].id && (
+                  {group.id !== urlGroups.filter((g) => g.id !== activeGroupId).slice(-1)[0].id && (
                     <Box sx={{ my: 1, borderBottom: `1px solid ${theme.palette.divider}` }} />
                   )}
                 </Box>
@@ -597,13 +600,15 @@ export default function MenuBar({
         </Box>
 
         {/* URLs in active group */}
-        <Box sx={{
-          display: 'flex',
-          flexGrow: 1,
-          overflow: 'auto',
-          whiteSpace: 'nowrap'
-        }}>
-          {activeGroup?.urls.map(url => renderUrlItem(url))}
+        <Box
+          sx={{
+            display: "flex",
+            flexGrow: 1,
+            overflow: "auto",
+            whiteSpace: "nowrap",
+          }}
+        >
+          {activeGroup?.urls.map((url) => renderUrlItem(url))}
         </Box>
       </Box>
     );
@@ -613,16 +618,16 @@ export default function MenuBar({
   return (
     <List
       sx={{
-        width: '100%',
-        bgcolor: 'background.default',
+        width: "100%",
+        bgcolor: "background.default",
         p: 1,
-        height: '100%',
-        overflow: 'auto'
+        height: "100%",
+        overflow: "auto",
       }}
       component="nav"
     >
       {urlGroups.length === 0 ? (
-        <Box sx={{ p: 2, textAlign: 'center' }}>
+        <Box sx={{ p: 2, textAlign: "center" }}>
           <Typography variant="body2" color="text.secondary">
             No URL groups available
           </Typography>
@@ -630,25 +635,29 @@ export default function MenuBar({
       ) : (
         urlGroups.map((group) => (
           <Box key={group.id}>
-            <ListItemButton onClick={() => setOpenGroups(prev => ({
-              ...prev,
-              [group.id]: !prev[group.id]
-            }))}>
+            <ListItemButton
+              onClick={() =>
+                setOpenGroups((prev) => ({
+                  ...prev,
+                  [group.id]: !prev[group.id],
+                }))
+              }
+            >
               <ListItemIcon>
                 <FolderIcon />
               </ListItemIcon>
               <ListItemText
                 primary={group.name}
                 primaryTypographyProps={{
-                  fontWeight: 'medium',
-                  component: 'div'
+                  fontWeight: "medium",
+                  component: "div",
                 }}
               />
               {openGroups[group.id] ? <ExpandLess /> : <ExpandMore />}
             </ListItemButton>
             <Collapse in={openGroups[group.id] ?? false} timeout="auto" unmountOnExit>
               <List component="div" disablePadding>
-                {group.urls.map(url => renderUrlItem(url))}
+                {group.urls.map((url) => renderUrlItem(url))}
               </List>
             </Collapse>
           </Box>
