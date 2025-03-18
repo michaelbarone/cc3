@@ -1,41 +1,41 @@
-import { createTheme } from '@mui/material/styles';
+import { createTheme } from "@mui/material/styles";
 
 export const theme = createTheme({
   palette: {
-    mode: 'light',
+    mode: "light",
     primary: {
-      main: '#1976d2',
+      main: "#1976d2",
     },
     secondary: {
-      main: '#dc004e',
+      main: "#dc004e",
     },
     background: {
-      default: '#f5f5f5',
-      paper: '#fff',
+      default: "#f5f5f5",
+      paper: "#fff",
     },
   },
   typography: {
     fontFamily: [
-      '-apple-system',
-      'BlinkMacSystemFont',
+      "-apple-system",
+      "BlinkMacSystemFont",
       '"Segoe UI"',
-      'Roboto',
+      "Roboto",
       '"Helvetica Neue"',
-      'Arial',
-      'sans-serif',
+      "Arial",
+      "sans-serif",
       '"Apple Color Emoji"',
       '"Segoe UI Emoji"',
       '"Segoe UI Symbol"',
-    ].join(','),
+    ].join(","),
   },
   components: {
     MuiListItemButton: {
       styleOverrides: {
         root: {
-          '&.Mui-selected': {
-            backgroundColor: 'rgba(25, 118, 210, 0.08)',
-            '&:hover': {
-              backgroundColor: 'rgba(25, 118, 210, 0.12)',
+          "&.Mui-selected": {
+            backgroundColor: "rgba(25, 118, 210, 0.08)",
+            "&:hover": {
+              backgroundColor: "rgba(25, 118, 210, 0.12)",
             },
           },
         },
@@ -44,7 +44,7 @@ export const theme = createTheme({
     MuiDrawer: {
       styleOverrides: {
         paper: {
-          borderRight: 'none',
+          borderRight: "none",
         },
       },
     },

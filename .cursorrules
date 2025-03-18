@@ -10,50 +10,58 @@ for commit messages, please follow any commitlint config file in the repository 
 You will propose and try the most simple solution for any problem, then increase complexity when issues arise or are guided by the user.
 
 ## Guidance
-  You are an expert in TypeScript, Node.js, Next.js, Next.js App Router, React, Material UI.
 
-  You are pair programming with a subject matter expert, please ask clarifying questions and confirm which choice when there are valid options.
+You are an expert in TypeScript, Node.js, Next.js, Next.js App Router, React, Material UI.
 
-  Code Style and Structure
-  - Write concise, technical TypeScript code with accurate examples.
-  - Use functional and declarative programming patterns; avoid classes.
-  - Prefer iteration and modularization over code duplication.
-  - Use descriptive variable names with auxiliary verbs (e.g., isLoading, hasError).
-  - Structure files: exported component, subcomponents, helpers, static content, types.
+You are pair programming with a subject matter expert, please ask clarifying questions and confirm which choice when there are valid options.
 
-  Naming Conventions
-  - Use lowercase with dashes for directories (e.g., components/auth-wizard).
-  - Favor named exports for components.
+Code Style and Structure
 
-  TypeScript Usage
-  - Use TypeScript for all code; prefer interfaces over types.
-  - Avoid enums; use maps instead.
-  - Use functional components with TypeScript interfaces.
+- Write concise, technical TypeScript code with accurate examples.
+- Use functional and declarative programming patterns; avoid classes.
+- Prefer iteration and modularization over code duplication.
+- Use descriptive variable names with auxiliary verbs (e.g., isLoading, hasError).
+- Structure files: exported component, subcomponents, helpers, static content, types.
 
-  Syntax and Formatting
-  - Use the "function" keyword for pure functions.
-  - Avoid unnecessary curly braces in conditionals; use concise syntax for simple statements.
-  - Use declarative JSX.
+Naming Conventions
 
-  UI and Styling
-  - Use Shadcn UI, Radix, and Tailwind for components and styling.
-  - Implement responsive design with Tailwind CSS; use a mobile-first approach.
+- Use lowercase with dashes for directories (e.g., components/auth-wizard).
+- Favor named exports for components.
 
-  Performance Optimization
-  - Minimize 'use client', 'useEffect', and 'setState'; favor React Server Components (RSC).
-  - Wrap client components in Suspense with fallback.
-  - Use dynamic loading for non-critical components.
-  - Optimize images: use WebP format, include size data, implement lazy loading.
+TypeScript Usage
 
-  Key Conventions
-  - Use 'nuqs' for URL search parameter state management.
-  - Optimize Web Vitals (LCP, CLS, FID).
-  - Limit 'use client':
-    - Favor server components and Next.js SSR.
-    - Use only for Web API access in small components.
-    - Avoid for data fetching or state management.
+- Use TypeScript for all code; prefer interfaces over types.
+- Avoid enums; use maps instead.
+- Use functional components with TypeScript interfaces.
 
-  Follow Next.js docs for Data Fetching, Rendering, and Routing.
+Syntax and Formatting
+
+- Use the "function" keyword for pure functions.
+- Avoid unnecessary curly braces in conditionals; use concise syntax for simple statements.
+- Use declarative JSX.
+
+UI and Styling
+
+- Use Shadcn UI, Radix, and Tailwind for components and styling.
+- Implement responsive design with Tailwind CSS; use a mobile-first approach.
+
+Performance Optimization
+
+- Minimize 'use client', 'useEffect', and 'setState'; favor React Server Components (RSC).
+- Wrap client components in Suspense with fallback.
+- Use dynamic loading for non-critical components.
+- Optimize images: use WebP format, include size data, implement lazy loading.
+
+Key Conventions
+
+- Use 'nuqs' for URL search parameter state management.
+- Optimize Web Vitals (LCP, CLS, FID).
+- Limit 'use client':
+  - Favor server components and Next.js SSR.
+  - Use only for Web API access in small components.
+  - Avoid for data fetching or state management.
+
+Follow Next.js docs for Data Fetching, Rendering, and Routing.
 
 ## Lessons
 
@@ -63,7 +71,6 @@ You will propose and try the most simple solution for any problem, then increase
 
 1. Next.js cookies() API must be awaited - When using the cookies() API in Next.js route handlers, the cookies() function must be awaited before accessing its methods. Example: `const cookieStore = cookies(); await cookieStore.get()` should be updated to access cookies asynchronously. This is particularly important for server components and API routes.
 
-
 ## Scratchpad Guidelines
 
 The goal is to help you maintain a big picture as well as the progress of the task at hand. Always refer to the Scratchpad when you plan the next step.
@@ -71,47 +78,56 @@ Add new planned items to the scratchpad when they are out of scope of our curren
 after completing all work, always remember to review the scratchpad and update any completed items in addition to addting any items for future consideration
 
 1. Task Organization:
+
    - Update the Current Task section when starting a new task
    - Add a clear task description at the top
    - Break down complex tasks into subtasks
    - Use consistent formatting for task tracking
 
 2. Progress Tracking:
+
    - Use [X] for completed tasks
    - Use [ ] for pending tasks
    - Use [-] for in-progress tasks
    - Use [!] for blocked tasks with reasons
 
 3. Task Documentation:
+
    - Add relevant context and requirements
    - Note any dependencies or prerequisites
    - Document important decisions and their rationale
    - Track any blockers or issues encountered
 
 4. Future Planning:
+
    - Add items for future consideration with [>]
    - Note potential improvements or optimizations
    - Track technical debt items
    - Document ideas for future enhancements
 
 5. Previous work in scratchpad:
-   - as we completed items in the scratchpad, we can move them to a new "Complete Work" section below the scratchpad to archive completed work records and keep the current scratchpad section focused.
-   - when we have completed the entirety of the current task, we can summarize the current task and move it to the "Complete Work" section, do not move anything new to the current task section until instructed.  We can leave a placeholder for Current Task as "no current task" to keep us focused and aware.
 
-6.  Also update the progress of the task in the Scratchpad when you finish a subtask as outlined in 2. Progress Tracking above:
-   - When a group of subtasks are done, please commit the changes with a short but descriptive message following the commitlint.config.cjs file rules
-   - Especially when you finished a milestone, it will help to improve your depth of task accomplishment to use the Scratchpad to reflect and plan
+   - as we completed items in the scratchpad, we can move them to a new "Complete Work" section below the scratchpad to archive completed work records and keep the current scratchpad section focused.
+   - when we have completed the entirety of the current task, we can summarize the current task and move it to the "Complete Work" section, do not move anything new to the current task section until instructed. We can leave a placeholder for Current Task as "no current task" to keep us focused and aware.
+
+6. Also update the progress of the task in the Scratchpad when you finish a subtask as outlined in 2. Progress Tracking above:
+
+- When a group of subtasks are done, please commit the changes with a short but descriptive message following the commitlint.config.cjs file rules
+- Especially when you finished a milestone, it will help to improve your depth of task accomplishment to use the Scratchpad to reflect and plan
 
 Example Scratchpad Structure with current task:
+
 ```markdown
 ## Current Task: [Task Name]
 
 ### Context
+
 - Brief description of the task
 - Key requirements and constraints
 - Any relevant background information
 
 ### Plan
+
 Step 1:
 [ ] task 1: Initial setup and requirements gathering
 [ ] task 2: Implementation planning
@@ -124,142 +140,259 @@ Step 2:
 [ ] task 2: 2nd task for step 2
 
 ### Progress
+
 [X] Completed setup phase
 [-] Working on core implementation
 [ ] Pending testing
 
 ### Blockers
+
 [!] Blocked by dependency issue (waiting for API update)
 
 ### Future Considerations
+
 [>] Consider adding performance monitoring
 [>] Potential optimization for large datasets
 ```
 
 Example Scratchpad Structure with no task:
+
 ```markdown
 ## Current Task: no current task
 ```
 
 ## Scratchpad
 
-## Current Task: IframeContainer Refactor
+## Current Task: Testing Framework Implementation
 
 ### Context
-- Need to refactor IframeContainer for better state management and component organization
-- Must maintain global iframe container outside React for proper functionality
-- Need to integrate with menu items for state synchronization
-- Support both mobile and desktop URLs
-- Support cross-origin iframes with fallbacks
-- Maintain reset/reload functionality
-- Support URL-specific idle timeouts
 
-### Plan
-Step 1: Core Types and Infrastructure
-[X] task 1: Create base types in types/iframe.ts
-    - IframeStatus enum ('active-loaded' | 'active-unloaded' | 'inactive-loaded' | 'inactive-unloaded')
-    - IframeState interface (id, url, urlMobile, status, error, lastActivity, idleTimeout)
-    - IframeAction type for reducer actions
-    - IframeContextValue interface for context
-[X] task 2: Create action creators in state/actions.ts
-    - setIframeStatus action
-    - setIframeError action
-    - updateIframeActivity action
-    - resetIframe action
-[X] task 3: Create state reducer in state/reducer.ts
-    - Handle all action types
-    - Implement state transitions
-    - Add activity tracking
-[X] task 4: Create context structure
-    - IframeContext.tsx with provider
-    - Initial state setup
-    - Context consumer hook
+- Implementing testing framework with Vitest + Testing Library for unit/integration tests
+- Using Playwright for E2E testing
+- Focus on crucial and complicated parts of the codebase
+- No specific coverage requirements, but emphasis on critical paths
+- Following Next.js conventions with **tests** directory naming
 
-Step 2: Core Hooks Implementation
-[X] task 1: Create useGlobalIframeContainer hook
-    - Implement container creation/management
-    - Add position syncing with ResizeObserver
-    - Handle cleanup
-[X] task 2: Create useIframeLifecycle hook
-    - Handle iframe creation/destruction
-    - Manage load/error events
-    - Track activity state
-[X] task 3: Create useIframeVisibility hook
-    - Handle show/hide logic
-    - Manage z-index
-    - Handle transitions
-[X] task 4: Create useIdleTimeout hook
-    - Implement per-URL timeout tracking
-    - Add activity reset
-    - Handle cleanup
-[X] task 5: Create useIframeEvents hook
-    - Handle load events
-    - Handle error events
-    - Manage cross-origin fallbacks
+### Selected Stack
 
-Step 3: Component Implementation
-[X] task 1: Create overlay components
-    - LoadingOverlay with progress indicator
-    - ErrorOverlay with retry button
-    - UnloadedOverlay with reload button
-[X] task 2: Create IframeWrapper component
-    - Handle iframe rendering
-    - Manage ref forwarding
-    - Handle mobile/desktop URLs
-[X] task 3: Refactor main IframeContainer
-    - Use new hooks and components
-    - Implement proper state management
-    - Add error boundaries
+1. Unit & Integration Testing:
 
-Step 4: Menu Integration
-[X] task 0: check the current implementation of the menu, and assess further steps
-[X] task 1: Identify shared state interface
-    - Confirmed using existing IframeState interface
-    - Already includes all required states (active-loaded, active-unloaded, inactive-loaded, inactive-unloaded)
-    - Contains error handling and activity tracking
-[X] task 2: Ensure existing Menu components work with the new state system
-    - Created MenuBarAdapter component to bridge between systems
-    - Transforms IframeContext state to MenuBar props
-    - Handles URL click, reload, and unload events
-[X] task 2.1: fix top menu format, it is not the same as the left menu structure.
-[X] task 2.2: the iframes are no longer showing
-[ ] task 3: Improve state transitions
-    - Add smooth animations between states
-    - Enhance loading feedback
-    - Implement error recovery UI
+- Vitest
+- React Testing Library
+- MSW for API mocking
+- Testing Library User Event for interactions
 
-Step 5: Testing and Validation
-[ ] task 1: Create test suite
-    - Add state transition tests
-    - Test menu integration
-    - Validate mobile support
-[ ] task 2: Test error scenarios
-    - Test cross-origin handling
-    - Validate timeout behavior
-    - Check cleanup
+2. E2E Testing:
 
-### Progress
-[X] Initial analysis complete
-[X] Core types and infrastructure implementation complete
-[X] Hooks implementation complete
-[X] Component implementation complete
-[-] Menu integration in progress
-[ ] Testing pending
+- Playwright
+- Built-in test recorder
+- Cross-browser testing
+- Mobile viewport testing
 
-### Blockers
-[!] Need to verify cross-origin iframe behavior in production environment
+### Implementation Plan
 
-### Dependencies
-- Material UI for components
-- React context for state management
-- ResizeObserver for container management
-- URL-specific idle timeouts from database
+Step 1: Vitest + Testing Library Setup
+[X] Install dependencies (vitest, @testing-library/react, @testing-library/user-event, msw)
+[X] Configure Vitest for TypeScript and React
+[X] Set up test environment with happy-dom
+[X] Create test utilities and common mocks
+[X] Add basic smoke test to verify setup
+[X] Standardize test directory structure using **tests** prefix
+
+Step 2: Critical Path Testing Setup
+[X] Set up test structure for core features
+[-] Create test database configuration (Decided to use MSW instead)
+[X] Implement MSW handlers for API mocking
+[X] Add common test utilities and fixtures
+[-] Set up coverage reporting
+
+Step 3: Initial Test Implementation
+[ ] Test IframeContainer state management
+[ ] Test URL menu state transitions
+[ ] Test authentication flows
+[ ] Test API route handlers
+
+Step 4: Playwright Setup
+[ ] Install and configure Playwright
+[ ] Set up E2E test environment
+[ ] Create test database seeding utilities
+[ ] Add authentication test helpers
+[ ] Configure cross-browser testing
+
+### Step 2 Detailed Proposal: Critical Path Testing Setup
+
+#### 1. Test Structure Organization
+
+- Create standardized directory structure:
+  ```
+  __tests__/
+  ├── setup.ts
+  ├── utils/
+  │   ├── test-utils.tsx        # Common test utilities and wrappers
+  │   └── test-database.ts      # Test database utilities
+  ├── mocks/
+  │   ├── handlers/             # MSW API route handlers
+  │   │   ├── auth.ts          # Authentication route mocks
+  │   │   ├── urls.ts          # URL management route mocks
+  │   │   └── users.ts         # User management route mocks
+  │   ├── data/                # Mock data fixtures
+  │   │   ├── users.ts
+  │   │   ├── urls.ts
+  │   │   └── groups.ts
+  │   └── server.ts            # MSW server setup
+  └── __snapshots__/           # Jest snapshots if needed
+  ```
+
+#### 2. Test Database Configuration
+
+- Create isolated test database setup:
+  - Implement test database initialization
+  - Add data seeding utilities
+  - Create cleanup mechanisms
+  - Add transaction wrapping for test isolation
+  - Implement Prisma test helpers
+
+#### 3. MSW Handler Implementation
+
+- Create mock handlers for critical API routes:
+  ```typescript
+  // Example structure for auth handlers
+  export const authHandlers = [
+    http.post("/api/auth/login", async () => {
+      return HttpResponse.json({
+        /* mock response */
+      });
+    }),
+    http.get("/api/auth/session", async () => {
+      return HttpResponse.json({
+        /* mock session */
+      });
+    }),
+  ];
+  ```
+
+````
+
+- Organize by feature domain:
+  - Authentication handlers
+  - URL management handlers
+  - User management handlers
+  - Settings handlers
+
+#### 4. Test Utilities & Fixtures
+
+- Create common test utilities:
+  ```typescript
+  // Example test wrapper
+  export function renderWithProviders(ui: React.ReactElement) {
+    return render(
+      <ThemeProvider>
+        <AuthProvider>
+          {ui}
+        </AuthProvider>
+      </ThemeProvider>
+    )
+  }
+  ```
+- Implement shared fixtures:
+  - User scenarios (admin, regular user, etc.)
+  - URL group configurations
+  - IFrame states
+  - Common test data
+
+#### 5. Coverage Configuration
+
+- Set up coverage reporting:
+  - Configure threshold requirements
+  - Set up coverage collection
+  - Add coverage reporting to CI pipeline
+  - Create coverage exclusion patterns
+
+### Implementation Steps
+
+1. Test Structure Setup
+   [ ] Create directory structure
+   [ ] Set up test utilities folder
+   [ ] Configure test database helpers
+   [ ] Add documentation for test organization
+
+2. Database Configuration
+   [ ] Create test database initialization script
+   [ ] Implement data seeding utilities
+   [ ] Add database cleanup mechanisms
+   [ ] Create transaction wrapper utility
+
+3. MSW Implementation
+   [ ] Set up base MSW configuration
+   [ ] Create auth route handlers
+   [ ] Add URL management handlers
+   [ ] Implement user management handlers
+
+4. Test Utilities
+   [ ] Create provider wrapper
+   [ ] Add common test helpers
+   [ ] Set up fixture data
+   [ ] Implement custom matchers
+
+5. Coverage Setup
+   [ ] Configure coverage thresholds
+   [ ] Set up coverage reporting
+   [ ] Add coverage to CI pipeline
+   [ ] Create coverage documentation
+
+### Key Considerations
+
+1. Test Isolation
+
+- Each test should run in isolation
+- Database state should be reset between tests
+- MSW handlers should be reset after each test
+- Provider state should be cleaned up
+
+2. Performance
+
+- Use fast matchers when possible
+- Minimize database operations
+- Cache test fixtures when appropriate
+- Use efficient setup/teardown patterns
+
+3. Maintainability
+
+- Keep test files close to source code
+- Use descriptive test names
+- Follow AAA pattern (Arrange, Act, Assert)
+- Document complex test scenarios
+
+4. Developer Experience
+
+- Provide clear error messages
+- Add helpful test utilities
+- Maintain good test documentation
+- Create example test cases
+
+### Dependencies Required
+
+- @testing-library/react
+- @testing-library/user-event
+- @testing-library/jest-dom
+- msw
+- @prisma/client (test config)
+- happy-dom
+- vitest
+
+### Next Actions
+
+1. Review and approve this proposal
+2. Begin implementation of directory structure
+3. Set up initial test utilities
+4. Create first set of MSW handlers
 
 ## Future Plans
 
 URL Menu State Management
 
 ### Context
+
 - Need to implement four specific states for URL menu items:
   1. 'active-loaded': Active button + green dot (visible iframe with content)
   2. 'active-unloaded': Active button, no dot (visible iframe, no content)
@@ -269,6 +402,7 @@ URL Menu State Management
 - Selected URL button becomes 'active-loaded' when clicked
 
 ### Plan
+
 Step 1: State Implementation
 [X] Define UrlMenuItemState type with four states
 [X] Update button component to handle all states correctly
@@ -281,11 +415,7 @@ Step 2: Iframe Management
 [X] Create unified long press handler using custom hook
 [X] Move long press state management to IframeStateContext
 [X] Add visual feedback during long press (progress indicator)
-[ ] Test visual feedback implementation:
-    - Verify progress bar appears during long press
-    - Check progress bar styling and transparency
-    - Test progress updates are smooth (no stuttering)
-    - Verify proper cleanup after long press
+[ ] Test visual feedback implementation: - Verify progress bar appears during long press - Check progress bar styling and transparency - Test progress updates are smooth (no stuttering) - Verify proper cleanup after long press
 [ ] Improve tooltips for long press actions
 [ ] Add haptic feedback for mobile devices
 [ ] Implement proper cleanup of event listeners
@@ -293,6 +423,7 @@ Step 2: Iframe Management
 [ ] Verify menu button click, long press are managed properly and result in the correct state being set
 
 ### Progress
+
 [X] Defined clear requirements for each state
 [X] Clarified visual indicators for each state
 [X] Implemented proper iframe initialization in inactive-unloaded state
@@ -304,15 +435,15 @@ Step 2: Iframe Management
 [X] Integrated long press state management with IframeStateContext
 [X] Added visual progress indicator for long press actions
 
-
-
 ### Idle Timeout Implementation
 
 #### Context
+
 - Need to implement URL-specific idle timeout cleanup
 - Affects both iframe content and button state
 
 #### Plan
+
 Step 1: Timer Management
 [ ] Implement idle timeout tracking per URL
 [ ] Create cleanup mechanism for expired timeouts
@@ -331,12 +462,14 @@ Step 3: Testing
 ## Future Tasks
 
 ### Performance Optimization
+
 [ ] Optimize iframe loading and switching
 [ ] Implement lazy loading for inactive iframes
 [ ] Configure caching policies
 [ ] Optimize SQLite queries
 
 ### Security & Monitoring
+
 [ ] Implement container security measures
 [ ] Add security scanning
 [ ] Configure file permissions
@@ -347,278 +480,329 @@ Step 3: Testing
 [ ] Implement alerting
 
 ### Testing & Deployment
+
 [ ] Create automated tests
 [ ] Set up CI/CD pipeline
 [ ] Document deployment
 [ ] Implement backup strategy
 
 ### User Features
+
 [ ] Add password recovery option
 [ ] Add user activity monitoring
 [ ] Create user preferences sync
 [ ] set dark mode as user default
 [ ] move theme toggle into user menu
 
-
 ## Completed Work
 
+### IframeContainer Refactor
+
+[X] Completed comprehensive refactor of IframeContainer system
+
+Core Achievements:
+
+- Implemented robust state management with TypeScript types and interfaces
+- Created modular hook system for iframe lifecycle management
+- Built flexible component architecture with proper error boundaries
+- Integrated menu system with state synchronization
+- Added support for mobile/desktop URLs and cross-origin handling
+- Implemented URL-specific idle timeout system
+
+Implementation Details:
+
+- Created core types and infrastructure (IframeStatus, IframeState, actions, reducer)
+- Developed specialized hooks (useGlobalIframeContainer, useIframeLifecycle, useIframeVisibility)
+- Built overlay components for various iframe states
+- Implemented proper state synchronization between menu and iframes
+- Added visual indicators for iframe states
+- Created unified long press handler for iframe reset
+- Fixed menu format issues and iframe visibility problems
+
 ### Database Export/Import System
+
 [X] Implemented database and uploads backup/restore functionality
-  - Created archive utility functions for zip file handling
-  - Added backup/restore functionality with proper error handling
-  - Integrated into admin application configuration area
-  - Implemented single zip file containing database and uploads
-  - Added admin-only access with progress indicators
-  - Fixed Windows-specific permission issues
-  - Added proper cleanup of temporary files
-  - Improved error handling and logging
-  - Implemented recursive directory copying for reliable restores
-  - Added support for public files (icons, avatars, logos, favicons)
+
+- Created archive utility functions for zip file handling
+- Added backup/restore functionality with proper error handling
+- Integrated into admin application configuration area
+- Implemented single zip file containing database and uploads
+- Added admin-only access with progress indicators
+- Fixed Windows-specific permission issues
+- Added proper cleanup of temporary files
+- Improved error handling and logging
+- Implemented recursive directory copying for reliable restores
+- Added support for public files (icons, avatars, logos, favicons)
 
 ### Project Setup & Architecture
+
 [X] Set up Next.js 14+ project with App Router
-  - Next.js 15.2.2 project initialized with TypeScript and ESLint
-  - Using App Router structure
-[X] Install and configure Material UI
-  - Installed Material UI packages and dependencies
-  - Set up theme provider with light/dark mode support
-[X] Configure TypeScript for type safety
-  - TypeScript is configured with the project setup
-[X] Set up SQLite with Prisma ORM
-  - Prisma installed and configured with SQLite
-  - Created database schema with User, UrlGroup, Url, and UserUrlGroup models
-[X] Create Docker configuration for development and production
-  - Created Dockerfile with multi-stage build
-  - Set up docker-compose.yml for easier deployment
-  - Added entrypoint script for database migration and server startup
-[X] Implement folder structure following Next.js best practices
-  - Organized components by feature domain
-  - Created necessary directories for app structure
+
+- Next.js 15.2.2 project initialized with TypeScript and ESLint
+- Using App Router structure
+  [X] Install and configure Material UI
+- Installed Material UI packages and dependencies
+- Set up theme provider with light/dark mode support
+  [X] Configure TypeScript for type safety
+- TypeScript is configured with the project setup
+  [X] Set up SQLite with Prisma ORM
+- Prisma installed and configured with SQLite
+- Created database schema with User, UrlGroup, Url, and UserUrlGroup models
+  [X] Create Docker configuration for development and production
+- Created Dockerfile with multi-stage build
+- Set up docker-compose.yml for easier deployment
+- Added entrypoint script for database migration and server startup
+  [X] Implement folder structure following Next.js best practices
+- Organized components by feature domain
+- Created necessary directories for app structure
 
 ### Database Design
+
 [X] User table (id, username, password_hash (nullable), is_admin, last_active_url, created_at, updated_at)
 [X] URL Groups table (id, name, description, created_at, updated_at)
 [X] URLs table (id, url_group_id, title, url, icon_path, display_order, created_at, updated_at)
 [X] User-URL Group mapping table (user_id, url_group_id, created_at)
 
 ### Authentication System
+
 [X] Create simplified login page with username selection (no password if not set)
-  - Built responsive login page with Material UI components
-  - Implemented conditional password field that only appears when needed
-[X] Implement conditional password field that appears only when user has password set
-  - Created dynamic password field that shows based on user requirements
-  - Added password visibility toggle for better UX
-[X] Set up session management with JWT stored in HTTP-only cookies
-  - Implemented JWT token generation and verification
-  - Created secure HTTP-only cookie storage for tokens
-  - Added user session persistence
-[X] Create protected routes with middleware for authenticated users and admin-only areas
-  - Set up Next.js middleware for route protection
-  - Added special handling for admin-only routes
-  - Created redirect mechanism for unauthenticated users
+
+- Built responsive login page with Material UI components
+- Implemented conditional password field that only appears when needed
+  [X] Implement conditional password field that appears only when user has password set
+- Created dynamic password field that shows based on user requirements
+- Added password visibility toggle for better UX
+  [X] Set up session management with JWT stored in HTTP-only cookies
+- Implemented JWT token generation and verification
+- Created secure HTTP-only cookie storage for tokens
+- Added user session persistence
+  [X] Create protected routes with middleware for authenticated users and admin-only areas
+- Set up Next.js middleware for route protection
+- Added special handling for admin-only routes
+- Created redirect mechanism for unauthenticated users
 
 ### Core UI Components
+
 [X] Design responsive layout with collapsible menu bar for mobile
-  - Created app layout with collapsible side navigation for mobile
-  - Implemented theme toggle and logout buttons in app bar
-[X] Create primary layout component with menu bar and iframe container area
-  - Developed AppLayout component with flexible content area
-  - Added responsive drawer that collapses on mobile
-[X] Implement iframe component with state management and visibility controls
-  - Built IframeContainer with loading and error states
-  - Implemented hidden iframe caching for multiple URLs
-  - Added iframe reset capability for troubleshooting
-[X] Build responsive menu bar with active state indicators (underline for active iframe)
-  - Created MenuBar component with collapsible URL group sections
-  - Added active state indicators for selected URLs
-  - Implemented long press functionality for iframe reset
+
+- Created app layout with collapsible side navigation for mobile
+- Implemented theme toggle and logout buttons in app bar
+  [X] Create primary layout component with menu bar and iframe container area
+- Developed AppLayout component with flexible content area
+- Added responsive drawer that collapses on mobile
+  [X] Implement iframe component with state management and visibility controls
+- Built IframeContainer with loading and error states
+- Implemented hidden iframe caching for multiple URLs
+- Added iframe reset capability for troubleshooting
+  [X] Build responsive menu bar with active state indicators (underline for active iframe)
+- Created MenuBar component with collapsible URL group sections
+- Added active state indicators for selected URLs
+- Implemented long press functionality for iframe reset
 
 ### Menu & URL System
+
 [X] Create API endpoints for fetching user's assigned URL groups
-  - Built endpoint to get all URL groups for a user
-  - Implemented appropriate error handling and authorization
-[X] Implement API endpoints for URL group management in admin area
-  - Created CRUD operations for URL groups (create, read, update, delete)
-  - Added endpoints for URL management within groups
-  - Implemented display order functionality
-[X] Create API endpoints for assigning URL groups to users
-  - Built endpoints for assigning/removing URL groups for users
-  - Added validation and error handling
-[X] Improve existing user URL groups endpoint with proper typing
-  - Fixed TypeScript issues in existing endpoint
-  - Enhanced error handling
-[X] Add click-and-hold functionality to reset iframe src (client-side)
-  - Implemented long press detection for mouse and touch events
-  - Added explicit reset button for better usability
-  - Exposed reset functionality through ref to allow parent component control
-[X] Add visual indicators for loaded iframes that are not the active menu item
-  - Added badge indicators to show loaded but inactive iframes
-  - Exposed loaded URLs state through ref to synchronize UI
-  - Implemented polling mechanism to keep UI in sync with iframe state
-[X] Implement responsive menu collapse for mobile devices (client-side)
-  - Added automatic menu group collapse based on active URL
-  - Implemented dynamic group open/close based on screen size
-  - Enhanced mobile touch interaction and usability
-[X] allow the menu bar to be optionally in the header based on user preferences saved in the user settings
+
+- Built endpoint to get all URL groups for a user
+- Implemented appropriate error handling and authorization
+  [X] Implement API endpoints for URL group management in admin area
+- Created CRUD operations for URL groups (create, read, update, delete)
+- Added endpoints for URL management within groups
+- Implemented display order functionality
+  [X] Create API endpoints for assigning URL groups to users
+- Built endpoints for assigning/removing URL groups for users
+- Added validation and error handling
+  [X] Improve existing user URL groups endpoint with proper typing
+- Fixed TypeScript issues in existing endpoint
+- Enhanced error handling
+  [X] Add click-and-hold functionality to reset iframe src (client-side)
+- Implemented long press detection for mouse and touch events
+- Added explicit reset button for better usability
+- Exposed reset functionality through ref to allow parent component control
+  [X] Add visual indicators for loaded iframes that are not the active menu item
+- Added badge indicators to show loaded but inactive iframes
+- Exposed loaded URLs state through ref to synchronize UI
+- Implemented polling mechanism to keep UI in sync with iframe state
+  [X] Implement responsive menu collapse for mobile devices (client-side)
+- Added automatic menu group collapse based on active URL
+- Implemented dynamic group open/close based on screen size
+- Enhanced mobile touch interaction and usability
+  [X] allow the menu bar to be optionally in the header based on user preferences saved in the user settings
 
 ### Iframe Management
+
 [X] Build iframe container system with state persistence
-  - Created system to track and manage iframe states
-  - Implemented proper unloading/reloading of iframes
-  - Added controls for explicitly managing loaded/unloaded states
-[X] Implement auto-sizing to eliminate scrollbars
-  - Added auto-resize functionality for same-origin iframes
-  - Included fallback for cross-origin iframes
-  - Added error handling for resize attempts
-[X] Create state management for multiple loaded iframes with only one visible
-  - Implemented efficient visibility controls for multiple iframes
-  - Added state tracking for loaded/unloaded/error states
-  - Created system for proper cleanup of unused iframes to save resources
-[X] Add loading indicators and error handling for iframe content
-  - Added loading spinners for in-progress iframe loads
-  - Implemented error alerts with retry options
-  - Created user-friendly messages for unloaded content
-[X] Fix API errors for JWT token cookies
-  - Updated JWT functions to properly use async/await with cookies() API
-  - Fixed API route handlers to await verifyToken function
-[X] remove the scrollbar on the right side of the window
+
+- Created system to track and manage iframe states
+- Implemented proper unloading/reloading of iframes
+- Added controls for explicitly managing loaded/unloaded states
+  [X] Implement auto-sizing to eliminate scrollbars
+- Added auto-resize functionality for same-origin iframes
+- Included fallback for cross-origin iframes
+- Added error handling for resize attempts
+  [X] Create state management for multiple loaded iframes with only one visible
+- Implemented efficient visibility controls for multiple iframes
+- Added state tracking for loaded/unloaded/error states
+- Created system for proper cleanup of unused iframes to save resources
+  [X] Add loading indicators and error handling for iframe content
+- Added loading spinners for in-progress iframe loads
+- Implemented error alerts with retry options
+- Created user-friendly messages for unloaded content
+  [X] Fix API errors for JWT token cookies
+- Updated JWT functions to properly use async/await with cookies() API
+- Fixed API route handlers to await verifyToken function
+  [X] remove the scrollbar on the right side of the window
 
 ### Admin Configuration
+
 [X] Build admin dashboard UI with protected route
-  - Created admin layout with sidebar navigation
-  - Implemented admin dashboard with stats overview
-[X] Implement user management (create, edit, delete users)
-  - Built user management page with CRUD operations
-  - Added password optional toggle for user accounts
-  - Implemented admin role toggle
-[X] Create password optional toggle for user accounts
-  - Added switch in user form to enable/disable password requirement
-  - Implemented backend support for users with or without passwords
-[X] Develop URL group creation and management
-  - Created URL group management interface with accordion view
-  - Implemented CRUD operations for URL groups
-  - Added URL management within groups with ordering capabilities
-[X] Build interface for assigning URL groups to users
-  - Added UI for user assignment to URL groups with checkboxes
-  - Implemented API endpoints for managing user-group assignments
-[X] add users to url groups
-[X] allow uploading an icon for the urls in the url groups
-[X] create an application config area
-[X] in the admin area for app configuration, add a way to upload a browser favicon
-[X] Create independent URL management system
-    - Create new database schema for URLs and URL-Group mappings
-    - Write migration script for existing data
-    - Create URL management page in admin area
-    - Update URL Groups page to use new relationship model
-    - Add searchable URL selector with checkboxes for groups
-    - Implement URL ordering within groups
-    - Add mobile URL support with isMobile detection
-    - Move idle timeout setting to URL level
+
+- Created admin layout with sidebar navigation
+- Implemented admin dashboard with stats overview
+  [X] Implement user management (create, edit, delete users)
+- Built user management page with CRUD operations
+- Added password optional toggle for user accounts
+- Implemented admin role toggle
+  [X] Create password optional toggle for user accounts
+- Added switch in user form to enable/disable password requirement
+- Implemented backend support for users with or without passwords
+  [X] Develop URL group creation and management
+- Created URL group management interface with accordion view
+- Implemented CRUD operations for URL groups
+- Added URL management within groups with ordering capabilities
+  [X] Build interface for assigning URL groups to users
+- Added UI for user assignment to URL groups with checkboxes
+- Implemented API endpoints for managing user-group assignments
+  [X] add users to url groups
+  [X] allow uploading an icon for the urls in the url groups
+  [X] create an application config area
+  [X] in the admin area for app configuration, add a way to upload a browser favicon
+  [X] Create independent URL management system - Create new database schema for URLs and URL-Group mappings - Write migration script for existing data - Create URL management page in admin area - Update URL Groups page to use new relationship model - Add searchable URL selector with checkboxes for groups - Implement URL ordering within groups - Add mobile URL support with isMobile detection - Move idle timeout setting to URL level
 
 ### User Settings
-[X] create a drop down menu under the username in the header.  it should have links to the admin area (if the user has admin permission) and to the user settings page
-  - Added dropdown menu with user avatar and username
-  - Included links to settings and admin area (if user is admin)
-  - Added logout option to the dropdown menu
-[X] Create user settings page for password management
-  - Created settings layout with sidebar navigation
-  - Implemented password management page with toggle for password protection
-  - Added form validation and API endpoint for password updates
-[X] Store and restore last active URL for user convenience
-  - Updated dashboard page to use the real API endpoint for fetching URL groups
-  - Implemented logic to restore the last active URL when loading the page
-  - Added fallback to select the first URL if no last active URL is available
-[X] Design architecture to support future setting expansions
-  - Created a flexible settings type system with support for various setting types
-  - Implemented a settings service with CRUD operations for user settings
-  - Designed the architecture to be easily extendable for future setting types
-[X] add another item on the user dropdown menu to go back to the iframe content view (dashboard)
-  - Added Dashboard menu item to the user dropdown
-  - Fixed issues with admin area access by adding debugging
-[X] allow uploading an image to be the user avatar
-  - Added avatarUrl field to the User model in the database
-  - Created AvatarUpload component for uploading and displaying avatars
-  - Implemented API endpoints for uploading and deleting avatars
-  - Added profile settings page with avatar management
-[X] add a setting for left side menu bar or top menu bar
+
+[X] create a drop down menu under the username in the header. it should have links to the admin area (if the user has admin permission) and to the user settings page
+
+- Added dropdown menu with user avatar and username
+- Included links to settings and admin area (if user is admin)
+- Added logout option to the dropdown menu
+  [X] Create user settings page for password management
+- Created settings layout with sidebar navigation
+- Implemented password management page with toggle for password protection
+- Added form validation and API endpoint for password updates
+  [X] Store and restore last active URL for user convenience
+- Updated dashboard page to use the real API endpoint for fetching URL groups
+- Implemented logic to restore the last active URL when loading the page
+- Added fallback to select the first URL if no last active URL is available
+  [X] Design architecture to support future setting expansions
+- Created a flexible settings type system with support for various setting types
+- Implemented a settings service with CRUD operations for user settings
+- Designed the architecture to be easily extendable for future setting types
+  [X] add another item on the user dropdown menu to go back to the iframe content view (dashboard)
+- Added Dashboard menu item to the user dropdown
+- Fixed issues with admin area access by adding debugging
+  [X] allow uploading an image to be the user avatar
+- Added avatarUrl field to the User model in the database
+- Created AvatarUpload component for uploading and displaying avatars
+- Implemented API endpoints for uploading and deleting avatars
+- Added profile settings page with avatar management
+  [X] add a setting for left side menu bar or top menu bar
 
 ### Login Page
-[X] create user tiles instead of needing to type in user names.  for users with passwords, after clicking on their tile, the password field and submit button slides into the tile.
-  - Created new API endpoint to fetch all users for login page
-  - Implemented user tile grid UI with proper spacing and styling
-  - Added animations for tile selection and password field appearance
-  - Implemented back button to return to user selection
-[X] Create visually appealing login page with application branding
-  - Added app logo and name at the top of login page
-  - Improved overall design with elevation, spacing, and typography
-  - Enhanced visual feedback with animations and transitions
-[X] Add smooth transitions and animations for login process
-  - Added slide and fade animations for UI transitions
-  - Implemented focus management for better user experience
-  - Created responsive design for different screen sizes
-[X] Implement "remember me" functionality for user convenience
-  - Added remember me checkbox that persists user selection
-  - Implemented secure localStorage storage for remembered user
-  - Added logic to auto-select remembered user on page load
-[X] Create clear error messages for authentication failures
-  - Enhanced error display with snackbar notifications
-  - Improved error message clarity for different failure scenarios
-  - Added visual indicators for form validation
-[X] login page should be controled by themes, and set in the admin panel in the application configuration page
+
+[X] create user tiles instead of needing to type in user names. for users with passwords, after clicking on their tile, the password field and submit button slides into the tile.
+
+- Created new API endpoint to fetch all users for login page
+- Implemented user tile grid UI with proper spacing and styling
+- Added animations for tile selection and password field appearance
+- Implemented back button to return to user selection
+  [X] Create visually appealing login page with application branding
+- Added app logo and name at the top of login page
+- Improved overall design with elevation, spacing, and typography
+- Enhanced visual feedback with animations and transitions
+  [X] Add smooth transitions and animations for login process
+- Added slide and fade animations for UI transitions
+- Implemented focus management for better user experience
+- Created responsive design for different screen sizes
+  [X] Implement "remember me" functionality for user convenience
+- Added remember me checkbox that persists user selection
+- Implemented secure localStorage storage for remembered user
+- Added logic to auto-select remembered user on page load
+  [X] Create clear error messages for authentication failures
+- Enhanced error display with snackbar notifications
+- Improved error message clarity for different failure scenarios
+- Added visual indicators for form validation
+  [X] login page should be controled by themes, and set in the admin panel in the application configuration page
 
 ### State Management
+
 [X] Implement client-side state management for active iframe tracking
 [X] Create server-side persistence for user preferences
 [X] Build efficient state update system for iframe management
 [X] Implement URL state synchronization with browser history
 
 ### App initialization
+
 [X] for first run, when there is no database, initialize the database and create and admin user with no password
-  - Created database initialization utility in lib/db/init.ts
-  - Implemented safe concurrent initialization with flags
-  - Added automatic migration running on first access
-  - Created initial seed with admin user and default URL group
-  - Added default app configuration during initialization
-  - Created async database provider to ensure initialization
-  - Updated root layout to use async database access
+
+- Created database initialization utility in lib/db/init.ts
+- Implemented safe concurrent initialization with flags
+- Added automatic migration running on first access
+- Created initial seed with admin user and default URL group
+- Added default app configuration during initialization
+- Created async database provider to ensure initialization
+- Updated root layout to use async database access
 
 ### Containerization
+
 [X] Configure Docker for Next.js application
-  - Added health checks for the Next.js application container
-  - Implemented proper Node.js production optimizations in Dockerfile
-  - Added multi-stage build optimizations for smaller production image
-  - Configured proper file permissions and non-root user security
+
+- Added health checks for the Next.js application container
+- Implemented proper Node.js production optimizations in Dockerfile
+- Added multi-stage build optimizations for smaller production image
+- Configured proper file permissions and non-root user security
 
 [X] Set up SQLite persistence with Docker volumes
-  - Set up named volume for SQLite database file
-  - Configured backup volume for database snapshots
-  - Implemented proper file permissions for SQLite data directory
-  - Added volume health checks and validation
+
+- Set up named volume for SQLite database file
+- Configured backup volume for database snapshots
+- Implemented proper file permissions for SQLite data directory
+- Added volume health checks and validation
 
 [X] Create Docker Compose setup for easy deployment
-  - Added development configuration with proper settings
-  - Configured production-specific optimizations (CPU/Memory limits)
-  - Set up proper networking with bridge network
-  - Added logging configuration with rotation
-  - Configured restart policies for reliability
+
+- Added development configuration with proper settings
+- Configured production-specific optimizations (CPU/Memory limits)
+- Set up proper networking with bridge network
+- Added logging configuration with rotation
+- Configured restart policies for reliability
 
 [X] Implement proper environment variable management for configuration
-  - Created .env.example with all required variables
-  - Documented all environment variables and their purposes
-  - Implemented environment variable validation in health checks
-  - Set up secrets management through environment variables
-  - Configured different env settings for production
+
+- Created .env.example with all required variables
+- Documented all environment variables and their purposes
+- Implemented environment variable validation in health checks
+- Set up secrets management through environment variables
+- Configured different env settings for production
 
 [X] Create build and deploy scripts
-  - Created enhanced entrypoint script with health checks
-  - Added database backup functionality with rotation
-  - Implemented container startup validation
-  - Added database migration automation
-  - Created container cleanup for backups
+
+- Created enhanced entrypoint script with health checks
+- Added database backup functionality with rotation
+- Implemented container startup validation
+- Added database migration automation
+- Created container cleanup for backups
 
 [X] Add comprehensive documentation
-  - Added container architecture documentation
-  - Created deployment guide with setup instructions
-  - Added troubleshooting section with common issues
-  - Documented backup/restore procedures
-  - Added development setup instructions
+
+- Added container architecture documentation
+- Created deployment guide with setup instructions
+- Added troubleshooting section with common issues
+- Documented backup/restore procedures
+- Added development setup instructions
+
+### Lessons
+
+1. Test Directory Convention - Using **tests** directory prefix is a common convention in Next.js and React projects, helping to distinguish test files from source files and maintain consistency with other special directories.
+2. MSW Over Database - For component and integration tests, prefer MSW for API mocking over actual database setup. This makes tests faster, more reliable, and independent of database state. Save database testing for specific database-focused test suites.
+````
