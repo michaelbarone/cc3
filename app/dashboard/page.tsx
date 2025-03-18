@@ -102,10 +102,10 @@ export default function Dashboard() {
     // Load user preferences
     const fetchUserPreferences = async () => {
       try {
-        const response = await fetch("/api/users/preferences");
+        const response = await fetch("/api/user/preferences");
         if (response.ok) {
           const data = await response.json();
-          setPreferences(data);
+          setPreferences(data.preferences);
         }
       } catch (error) {
         console.error("Error fetching user preferences:", error);
@@ -135,7 +135,7 @@ export default function Dashboard() {
             <MenuBarAdapter urlGroups={urlGroups} menuPosition={preferences.menuPosition} />
           }
         >
-          <IframeContainer />
+          <IframeContainer urlGroups={urlGroups} />
         </AppLayout>
       )}
 
