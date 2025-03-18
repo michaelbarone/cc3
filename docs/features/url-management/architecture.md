@@ -1,0 +1,279 @@
+# URL Management & IFrame Container Architecture
+
+## System Design
+
+### Component Architecture
+```
+/app/
+├── components/
+│   ├── url/                  # URL management components
+│   │   ├── menu/            # URL menu components
+│   │   │   ├── group.tsx    # URL group component
+│   │   │   └── item.tsx     # URL menu item
+│   │   └── iframe/          # IFrame components
+│   │       ├── container.tsx # IFrame container
+│   │       └── overlay.tsx   # Loading/error overlay
+│   └── common/              # Shared components
+└── hooks/                   # Custom hooks
+    ├── useIframeState.ts   # IFrame state management
+    ├── useLongPress.ts     # Long press detection
+    └── useUrlMenu.ts       # Menu state management
+```
+
+### State Management Flow
+```mermaid
+stateDiagram-v2
+    [*] --> inactive_unloaded: Initial State
+    inactive_unloaded --> active_loaded: Click URL
+    active_loaded --> inactive_loaded: Select Different URL
+    inactive_loaded --> active_loaded: Reselect URL
+    inactive_loaded --> inactive_unloaded: Timeout/Reset
+    active_loaded --> active_unloaded: Load Error
+    active_unloaded --> active_loaded: Retry Load
+    active_loaded --> inactive_unloaded: Long Press Reset
+```
+
+### Data Models
+
+```typescript
+interface UrlGroup {
+  id: string;
+  name: string;
+  description?: string;
+  display_order: number;
+  created_at: Date;
+  updated_at: Date;
+}
+
+interface Url {
+  id: string;
+  group_id: string;
+  title: string;
+  url: string;
+  mobile_url?: string;
+  icon_path?: string;
+  display_order: number;
+  idle_timeout?: number;
+  created_at: Date;
+  updated_at: Date;
+}
+
+interface IframeState {
+  url: string;
+  isLoaded: boolean;
+  isVisible: boolean;
+  error?: string;
+  lastActive: Date;
+}
+
+interface MenuState {
+  activeUrl: string | null;
+  loadedUrls: Set<string>;
+  expandedGroups: Set<string>;
+}
+```
+
+## Technical Decisions
+
+### IFrame State Management
+- Custom React context for state
+- Reducer pattern for actions
+- URL-specific state tracking
+- Efficient state updates
+- Memory leak prevention
+
+### URL Menu Organization
+- Collapsible group structure
+- State-based rendering
+- Efficient updates
+- Mobile responsiveness
+- Keyboard accessibility
+
+### IFrame Loading Strategy
+- Lazy loading by default
+- State-based visibility
+- Error boundary protection
+- Resource cleanup
+- Performance optimization
+
+## Performance Considerations
+
+### IFrame Management
+```typescript
+const iframeConfig = {
+  // Memory management settings
+  maxCachedFrames: 5,
+  cleanupInterval: 300000, // 5 minutes
+  
+  // Loading settings
+  loadTimeout: 30000,
+  retryAttempts: 3,
+  retryDelay: 1000,
+  
+  // Resource settings
+  preloadThreshold: 2,
+  unloadThreshold: 10
+};
+```
+
+### State Updates
+```typescript
+// Batch update optimization
+const batchedStateUpdate = (updates: Partial<IframeState>[]) => {
+  return {
+    type: 'BATCH_UPDATE',
+    payload: updates
+  };
+};
+
+// Selective re-rendering
+const shouldComponentUpdate = (
+  prevProps: IframeProps,
+  nextProps: IframeProps
+) => {
+  return (
+    prevProps.url !== nextProps.url ||
+    prevProps.isVisible !== nextProps.isVisible ||
+    prevProps.isLoaded !== nextProps.isLoaded
+  );
+};
+```
+
+## Error Handling
+
+### IFrame Error Boundary
+```typescript
+class IframeErrorBoundary extends React.Component<
+  PropsWithChildren<{
+    onError: (error: Error) => void;
+  }>
+> {
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, info: ErrorInfo) {
+    this.props.onError(error);
+    // Log error details
+  }
+}
+```
+
+### Error Recovery Strategy
+1. Automatic retry for transient errors
+2. Manual reset option via long press
+3. Error state persistence
+4. User feedback
+5. Logging and monitoring
+
+## State Synchronization
+
+### URL Menu and IFrame Sync
+```typescript
+interface SyncState {
+  activeUrl: string | null;
+  loadedUrls: Set<string>;
+  errors: Map<string, string>;
+}
+
+const syncManager = {
+  // State updates
+  updateMenuState: (state: Partial<SyncState>) => void;
+  updateIframeState: (state: Partial<SyncState>) => void;
+  
+  // Event handlers
+  onUrlActivated: (url: string) => void;
+  onIframeLoaded: (url: string) => void;
+  onIframeError: (url: string, error: string) => void;
+  
+  // Cleanup
+  cleanup: () => void;
+};
+```
+
+## Initialization Process
+
+1. URL Group Setup
+   - Load URL group configuration
+   - Initialize menu state
+   - Set up event listeners
+   - Configure error boundaries
+
+2. IFrame Container Setup
+   - Initialize state management
+   - Set up visibility tracking
+   - Configure error handling
+   - Initialize cleanup routines
+
+3. State Management Setup
+   - Create state context
+   - Initialize reducers
+   - Set up synchronization
+   - Configure persistence
+
+## Configuration Requirements
+
+### Environment Variables
+```env
+MAX_CACHED_FRAMES=5
+CLEANUP_INTERVAL=300000
+LOAD_TIMEOUT=30000
+RETRY_ATTEMPTS=3
+PRELOAD_THRESHOLD=2
+```
+
+### Feature Flags
+```typescript
+const featureFlags = {
+  enableDragAndDrop: false,
+  enableAutoValidation: false,
+  enableCrossOrigin: false,
+  enableAutoMobileDetection: true
+};
+```
+
+## Security Considerations
+
+1. IFrame Security
+   - Sandbox attributes
+   - CSP configuration
+   - Cross-origin handling
+   - Script injection prevention
+
+2. URL Validation
+   - Input sanitization
+   - Protocol validation
+   - Domain whitelisting
+   - XSS prevention
+
+3. Resource Management
+   - Memory limits
+   - CPU usage monitoring
+   - Network throttling
+   - Error rate tracking
+
+## Monitoring and Logging
+
+### Metrics Collection
+```typescript
+interface IframeMetrics {
+  loadTime: number;
+  errorRate: number;
+  memoryUsage: number;
+  activeTime: number;
+}
+
+const metricsCollector = {
+  trackLoadTime: (url: string, duration: number) => void;
+  trackError: (url: string, error: string) => void;
+  trackMemoryUsage: (usage: number) => void;
+  trackActiveTime: (url: string, duration: number) => void;
+};
+```
+
+### Performance Monitoring
+1. Load time tracking
+2. Error rate monitoring
+3. Memory usage tracking
+4. CPU utilization
+5. Network requests 
