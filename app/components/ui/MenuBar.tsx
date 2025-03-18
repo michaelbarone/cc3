@@ -79,13 +79,6 @@ const getUrlStatus = (
   // Explicitly check if the URL is in the loadedUrlIds array
   const isLoaded = Array.isArray(loadedUrlIds) && loadedUrlIds.includes(urlId);
 
-  // Log for debugging
-  console.log(`URL ${urlId} status:`, {
-    isActive,
-    isLoaded,
-    loadedUrlIds
-  });
-
   if (isActive) {
     return isLoaded ? 'active-loaded' : 'active-unloaded';
   } else {
@@ -262,32 +255,33 @@ export default function MenuBar({
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const { preferences, loading: preferencesLoading } = useUserPreferences();
-  const isInitialMount = useRef(true);
-
-  // Track if this is the first render
   const [initialRenderComplete, setInitialRenderComplete] = useState(false);
-
-  // Track open/close state of URL groups
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
-
-  // For top menu: track active group and group selector menu
-  const [activeGroupId, setActiveGroupId] = useState<string | null>(null);
   const [groupMenuAnchorEl, setGroupMenuAnchorEl] = useState<null | HTMLElement>(null);
-
-  // Track all known URL IDs (used to determine if a URL has been loaded before)
-  const [knownUrlIds, setKnownUrlIds] = useState<Set<string>>(() => {
-    if (typeof window === 'undefined') return new Set();
-    const stored = localStorage.getItem('iframe-state-known-url-ids');
-    return new Set(stored ? JSON.parse(stored) : []);
-  });
-
-  // Add state to track if a long press is in progress
+  const [activeGroupId, setActiveGroupId] = useState<string | null>(null);
+  const isInitialMount = useRef(true);
   const [isLongPressInProgress, setIsLongPressInProgress] = useState(false);
+  const knownUrlIds = useRef(new Set<string>());
+  const [menuPosition, setMenuPosition] = useState<'side' | 'top'>(propMenuPosition);
 
   // Mark initial render as complete after first render cycle
   useEffect(() => {
     setInitialRenderComplete(true);
   }, []);
+
+  // Determine the final menu position with proper fallback
+  useEffect(() => {
+    // For mobile devices, always use side menu
+    if (isMobile) {
+      setMenuPosition('side');
+    } else if (propMenuPosition === 'top' || propMenuPosition === 'side') {
+      setMenuPosition(propMenuPosition);
+    } else if (!preferencesLoading && preferences.menuPosition) {
+      setMenuPosition(preferences.menuPosition);
+    } else {
+      setMenuPosition('side');
+    }
+  }, [isMobile, propMenuPosition, preferencesLoading, preferences.menuPosition]);
 
   // Restore state from localStorage on mount
   useEffect(() => {
@@ -327,106 +321,40 @@ export default function MenuBar({
   // Persist known URL IDs
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    localStorage.setItem('iframe-state-known-url-ids', JSON.stringify(Array.from(knownUrlIds)));
-  }, [knownUrlIds]);
-
-  // Determine the final menu position with proper fallback
-  // 1. For mobile devices, always use side menu regardless of preference
-  // 2. If a valid prop is passed, use it (this preserves backward compatibility)
-  // 3. If not, use the user preference
-  // 4. If no valid preference, default to 'side'
-  let menuPosition: 'side' | 'top' = 'side';
-
-  // For mobile devices, always use side menu
-  if (isMobile) {
-    // On mobile devices, always use side menu layout regardless of user preference
-    // This ensures consistent and optimized UI for smaller screens
-    menuPosition = 'side';
-  } else if (propMenuPosition === 'top' || propMenuPosition === 'side') {
-    menuPosition = propMenuPosition;
-  } else if (!preferencesLoading && preferences.menuPosition) {
-    menuPosition = preferences.menuPosition;
-  }
-
-  // Log for debugging
-  console.log('MenuBar menuPosition:', {
-    propMenuPosition,
-    preferenceMenuPosition: preferences.menuPosition,
-    isMobile,
-    finalMenuPosition: menuPosition,
-    preferencesLoading
-  });
-
-  // For debugging: log when activeGroupId changes
-  useEffect(() => {
-    console.log('MenuBar activeGroupId updated:', {
-      activeGroupId,
-      menuPosition,
-      activeUrlId,
-      activeUrlInThisGroup: activeGroupId
-        ? urlGroups.find(g => g.id === activeGroupId)?.urls.some(u => u.id === activeUrlId)
-        : false
-    });
-  }, [activeGroupId, menuPosition, activeUrlId, urlGroups]);
+    localStorage.setItem('iframe-state-known-url-ids', JSON.stringify(Array.from(knownUrlIds.current)));
+  }, []);
 
   // Update known URL IDs when loadedUrlIds changes
   useEffect(() => {
-    setKnownUrlIds(prev => {
-      const newSet = new Set(prev);
-      loadedUrlIds.forEach(id => newSet.add(id));
-      return newSet;
-    });
+    knownUrlIds.current = new Set(loadedUrlIds);
   }, [loadedUrlIds]);
 
   // Automatically open groups that contain active URLs and update active group for top menu
   useEffect(() => {
     if (activeUrlId) {
-      // Find the group containing the active URL
-      const activeUrlGroup = urlGroups.find(group =>
+      const activeGroup = urlGroups.find(group =>
         group.urls.some(url => url.id === activeUrlId)
       );
-
-      // If found, update the active group for top menu
-      if (activeUrlGroup) {
-        // For top menu: always set the active group to the one containing the active URL
-        if (menuPosition === 'top') {
-          setActiveGroupId(activeUrlGroup.id);
+      if (activeGroup) {
+        // For side menu: open the group
+        if (menuPosition === 'side') {
+          setOpenGroups(prev => ({
+            ...prev,
+            [activeGroup.id]: true
+          }));
         }
-
-        // Open the group in the side menu view
-        setOpenGroups(prev => ({
-          ...prev,
-          [activeUrlGroup.id]: true
-        }));
+        // For top menu: set as active group
+        else if (menuPosition === 'top') {
+          setActiveGroupId(activeGroup.id);
+        }
       }
-    }
-  }, [activeUrlId, urlGroups, menuPosition]);
-
-  // On mobile, automatically collapse non-active groups
-  useEffect(() => {
-    if (isMobile && activeUrlId) {
-      const updatedGroups: Record<string, boolean> = {};
-
-      for (const group of urlGroups) {
-        const hasActiveUrl = group.urls.some(url => url.id === activeUrlId);
-        updatedGroups[group.id] = hasActiveUrl;
-      }
-
-      setOpenGroups(updatedGroups);
-    }
-  }, [isMobile, activeUrlId, urlGroups]);
-
-  // Set initial active group only if no active URL is found
-  useEffect(() => {
-    // Only set initial active group if:
-    // 1. We're using the top menu
-    // 2. We have URL groups
-    // 3. We don't have an active URL ID (which would have set the group in the previous effect)
-    // 4. We don't already have an active group ID
-    if (menuPosition === 'top' && urlGroups.length > 0 && !activeUrlId && !activeGroupId) {
-      setActiveGroupId(urlGroups[0].id);
     }
   }, [urlGroups, activeGroupId, menuPosition, activeUrlId]);
+
+  // Prevent hydration mismatch by not rendering anything until client-side
+  if (typeof window === 'undefined') {
+    return null;
+  }
 
   // Only show a placeholder during initial load when preferences are loading and a prop wasn't passed
   const isLoading = !initialRenderComplete || (preferencesLoading && propMenuPosition !== 'top' && propMenuPosition !== 'side');
@@ -649,16 +577,6 @@ export default function MenuBar({
 
     // Use the group containing the active URL, or fall back to activeGroupId selection
     const activeGroup = activeUrlGroup || urlGroups.find(group => group.id === activeGroupId);
-
-    // Log for debugging which group we're selecting
-    if (activeGroup) {
-      console.log('Top menu displaying group:', {
-        groupId: activeGroup.id,
-        groupName: activeGroup.name,
-        containsActiveUrl: activeUrlId ? activeGroup.urls.some(url => url.id === activeUrlId) : false,
-        activeUrlId
-      });
-    }
 
     return (
       <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', width: '100%' }}>

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, ReactNode, useEffect } from 'react';
-import { Box, AppBar, Toolbar, IconButton, Typography, Drawer, useTheme, Menu, MenuItem, Divider, useMediaQuery } from '@mui/material';
+import { Box, AppBar, Toolbar, IconButton, Typography, Drawer, useTheme, Menu, MenuItem, Divider, useMediaQuery, CircularProgress } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import CloseIcon from '@mui/icons-material/Close';
 import Brightness4Icon from '@mui/icons-material/Brightness4';
@@ -47,39 +47,6 @@ export default function AppLayout({ children, menuContent, forceMenuPosition }: 
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
   const userMenuOpen = Boolean(userMenuAnchorEl);
-
-  // Event handler functions - defined before they're used
-  const handleUserMenuClick = (event: React.MouseEvent<HTMLElement>) => {
-    setUserMenuAnchorEl(event.currentTarget);
-  };
-
-  const handleUserMenuClose = () => {
-    setUserMenuAnchorEl(null);
-  };
-
-  const handleDrawerToggle = () => {
-    setMobileOpen(!mobileOpen);
-  };
-
-  const handleLogout = async () => {
-    await logout();
-    router.push('/login?logout=true');
-  };
-
-  const navigateToAdmin = () => {
-    handleUserMenuClose();
-    router.push('/admin');
-  };
-
-  const navigateToSettings = () => {
-    handleUserMenuClose();
-    router.push('/settings');
-  };
-
-  const navigateToDashboard = () => {
-    handleUserMenuClose();
-    router.push('/dashboard');
-  };
 
   // Mark initial render as complete after first render cycle
   useEffect(() => {
@@ -127,11 +94,85 @@ export default function AppLayout({ children, menuContent, forceMenuPosition }: 
     fetchAppConfig();
   }, []);
 
+  // Event handler functions - defined before they're used
+  const handleUserMenuClick = (event: React.MouseEvent<HTMLElement>) => {
+    setUserMenuAnchorEl(event.currentTarget);
+  };
+
+  const handleUserMenuClose = () => {
+    setUserMenuAnchorEl(null);
+  };
+
+  const handleDrawerToggle = () => {
+    setMobileOpen(!mobileOpen);
+  };
+
+  const handleLogout = async () => {
+    await logout();
+    router.push('/login?logout=true');
+  };
+
+  const navigateToAdmin = () => {
+    handleUserMenuClose();
+    router.push('/admin');
+  };
+
+  const navigateToSettings = () => {
+    handleUserMenuClose();
+    router.push('/settings');
+  };
+
+  const navigateToDashboard = () => {
+    handleUserMenuClose();
+    router.push('/dashboard');
+  };
+
+  // Prevent hydration mismatch by not rendering anything until client-side
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
+  // If we're still loading preferences and no forced menu position, render a minimal layout
+  if (!initialRenderComplete) {
+    return (
+      <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
+        <AppBar
+          position="fixed"
+          sx={{
+            zIndex: theme.zIndex.drawer + 1,
+            bgcolor: theme.palette.background.paper,
+            color: theme.palette.text.primary
+          }}
+        >
+          <Toolbar>
+            <Typography variant="h6" noWrap component="div">
+              Loading...
+            </Typography>
+          </Toolbar>
+        </AppBar>
+        <Box
+          component="main"
+          sx={{
+            flexGrow: 1,
+            p: 0,
+            mt: '64px',
+            height: 'calc(100vh - 64px)',
+            overflow: 'hidden',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}
+        >
+          <CircularProgress />
+        </Box>
+      </Box>
+    );
+  }
+
   // Determine if we're still in a loading state
   const isLoading = !initialRenderComplete || (preferencesLoading && !forceMenuPosition);
 
-  // For debugging
-  console.log('User data:', user);
 
   // If we're still loading preferences and no forced menu position, render a minimal layout
   if (isLoading) {

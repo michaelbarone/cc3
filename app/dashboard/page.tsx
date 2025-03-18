@@ -308,15 +308,6 @@ export default function DashboardPage() {
     }
   };
 
-  // Handle long press on unloaded url
-  const handleUrlLongPressUnloaded = (url: Url) => {
-    setNotification({
-      open: true,
-      message: `Navigation to ${url.title} was prevented by long press`,
-      severity: 'info'
-    });
-  };
-
   // Handle reload active iframe
   const handleUrlReload = (url: Url) => {
     if (iframeContainerRef.current) {
@@ -332,14 +323,6 @@ export default function DashboardPage() {
 
   // Handle iframe load event
   const handleIframeLoad = (urlId: string) => {
-    // Update loaded URLs list
-    setLoadedUrlIds(prev => {
-      if (!prev.includes(urlId)) {
-        return [...prev, urlId];
-      }
-      return prev;
-    });
-
     // Find URL title for notification
     const urlTitle = findUrlTitleById(urlId);
     if (urlTitle) {
@@ -352,17 +335,13 @@ export default function DashboardPage() {
   };
 
   // Handle iframe unload event
-  const handleIframeUnload = (urlId: string) => {
-    // Remove from loaded URLs list
-    setLoadedUrlIds(prev => prev.filter(id => id !== urlId));
+  const handleIframeUnload = () => {
+    // No need to update loadedUrlIds here, polling will handle it
   };
 
   // Handle iframe error event
   const handleIframeError = (urlId: string, error: string) => {
     console.error('Iframe error:', urlId, error);
-
-    // Remove from loaded URLs list
-    setLoadedUrlIds(prev => prev.filter(id => id !== urlId));
 
     // Find URL title for notification
     const urlTitle = findUrlTitleById(urlId);
@@ -394,9 +373,6 @@ export default function DashboardPage() {
     }));
   };
 
-  // For debugging
-  console.log('Dashboard using menu position:', preferences.menuPosition);
-
   return (
     <AppLayout
       menuContent={
@@ -407,7 +383,6 @@ export default function DashboardPage() {
           onUrlClick={handleUrlClick}
           onUrlReload={handleUrlReload}
           onUrlUnload={handleUrlUnload}
-          onUrlLongPressUnloaded={handleUrlLongPressUnloaded}
           menuPosition={preferences.menuPosition}
         />
       }
