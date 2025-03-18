@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import {
   List,
   ListItemButton,
@@ -230,41 +230,26 @@ export default function MenuBar({
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
   const [groupMenuAnchorEl, setGroupMenuAnchorEl] = useState<null | HTMLElement>(null);
   const [activeGroupId, setActiveGroupId] = useState<string | null>(null);
-  const isInitialMount = useRef(true);
-  const [isLongPressInProgress, setIsLongPressInProgress] = useState(false);
-  const [menuPosition, setMenuPosition] = useState<"side" | "top">(propMenuPosition);
   const previousActiveUrlId = useRef<string | null>(null);
+  const [isLongPressInProgress, setIsLongPressInProgress] = useState(false);
 
-  // Consolidated menu position and group management effect
+  // Determine effective menu position
+  const menuPosition = useMemo(() => {
+    if (isMobile) return "side";
+    if (propMenuPosition === "top" || propMenuPosition === "side") return propMenuPosition;
+    return preferences?.menuPosition || "side";
+  }, [isMobile, propMenuPosition, preferences?.menuPosition]);
+
+  // Handle active URL group management
   useEffect(() => {
-    const determineMenuPosition = () => {
-      if (isMobile) {
-        return "side";
-      }
-      if (propMenuPosition === "top" || propMenuPosition === "side") {
-        return propMenuPosition;
-      }
-      if (!preferencesLoading && preferences.menuPosition) {
-        return preferences.menuPosition;
-      }
-      return "side";
-    };
-
-    const newMenuPosition = determineMenuPosition();
-    if (menuPosition !== newMenuPosition) {
-      setMenuPosition(newMenuPosition);
-    }
-
-    // Handle active URL group management
     if (activeUrlId && activeUrlId !== previousActiveUrlId.current) {
       previousActiveUrlId.current = activeUrlId;
-
       const activeGroup = urlGroups.find((group) =>
         group.urls.some((url) => url.id === activeUrlId),
       );
 
       if (activeGroup) {
-        if (newMenuPosition === "side") {
+        if (menuPosition === "side") {
           setOpenGroups((prev) => ({
             ...prev,
             [activeGroup.id]: true,
@@ -274,53 +259,36 @@ export default function MenuBar({
         }
       }
     }
-  }, [
-    isMobile,
-    propMenuPosition,
-    preferencesLoading,
-    preferences.menuPosition,
-    activeUrlId,
-    urlGroups,
-    menuPosition,
-  ]);
+  }, [activeUrlId, urlGroups, menuPosition]);
 
-  // Initialize state only once
-  useEffect(() => {
-    if (!isInitialMount.current) return;
-    isInitialMount.current = false;
-
-    try {
-      // Restore open groups state
-      const storedOpenGroups = localStorage.getItem("menu-bar-open-groups");
-      if (storedOpenGroups) {
-        const parsedGroups = JSON.parse(storedOpenGroups);
-        setOpenGroups(parsedGroups);
+  // Handle group toggle
+  const handleGroupToggle = useCallback(
+    (groupId: string) => {
+      if (menuPosition === "side") {
+        setOpenGroups((prev) => ({
+          ...prev,
+          [groupId]: !prev[groupId],
+        }));
+      } else {
+        setActiveGroupId((prev) => (prev === groupId ? null : groupId));
       }
+    },
+    [menuPosition],
+  );
 
-      // Handle initial active URL group
-      if (activeUrlId) {
-        const activeGroup = urlGroups.find((group) =>
-          group.urls.some((url) => url.id === activeUrlId),
-        );
-        if (activeGroup) {
-          setOpenGroups((prev) => ({
-            ...prev,
-            [activeGroup.id]: true,
-          }));
-        }
-      }
-    } catch (error) {
-      console.error("Error initializing menu state:", error);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Empty dependency array as this should only run once
+  // Handle group menu
+  const handleGroupMenuOpen = useCallback(
+    (event: React.MouseEvent<HTMLElement>, groupId: string) => {
+      event.stopPropagation();
+      setGroupMenuAnchorEl(event.currentTarget);
+      setActiveGroupId(groupId);
+    },
+    [],
+  );
 
-  // Persist open groups state
-  useEffect(() => {
-    if (!isInitialMount.current) {
-      localStorage.setItem("menu-bar-open-groups", JSON.stringify(openGroups));
-    }
-  }, [openGroups]);
+  const handleGroupMenuClose = useCallback(() => {
+    setGroupMenuAnchorEl(null);
+  }, []);
 
   // Memoize URL click handler
   const handleUrlClick = useCallback(
@@ -495,20 +463,6 @@ export default function MenuBar({
     ],
   );
 
-  // Handle group menu
-  const handleGroupMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
-    setGroupMenuAnchorEl(event.currentTarget);
-  };
-
-  const handleGroupMenuClose = () => {
-    setGroupMenuAnchorEl(null);
-  };
-
-  const handleGroupSelect = (groupId: string) => {
-    setActiveGroupId(groupId);
-    handleGroupMenuClose();
-  };
-
   // Loading state check
   if (preferencesLoading && propMenuPosition !== "top" && propMenuPosition !== "side") {
     return (
@@ -543,7 +497,7 @@ export default function MenuBar({
         {/* Group selector */}
         <Box sx={{ display: "flex", alignItems: "center", mr: 2 }}>
           <Button
-            onClick={handleGroupMenuOpen}
+            onClick={(event) => handleGroupMenuOpen(event, activeGroup?.id || "")}
             endIcon={<ArrowDropDownIcon />}
             sx={{ textTransform: "none" }}
           >
@@ -563,7 +517,7 @@ export default function MenuBar({
             }}
           >
             {urlGroups
-              .filter((group) => group.id !== activeGroupId) // Filter out the currently selected group
+              .filter((group) => group.id !== activeGroup?.id) // Filter out the currently selected group
               .map((group) => (
                 <Box key={group.id} sx={{ p: 1 }}>
                   <Box
@@ -575,7 +529,10 @@ export default function MenuBar({
                     }}
                   >
                     <MenuItem
-                      onClick={() => handleGroupSelect(group.id)}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        handleGroupToggle(group.id);
+                      }}
                       sx={{
                         fontWeight: "bold",
                         pl: 1,
@@ -591,7 +548,8 @@ export default function MenuBar({
                     {group.urls.map((url) => renderUrlItem(url))}
                   </Box>
 
-                  {group.id !== urlGroups.filter((g) => g.id !== activeGroupId).slice(-1)[0].id && (
+                  {group.id !==
+                    urlGroups.filter((g) => g.id !== activeGroup?.id).slice(-1)[0].id && (
                     <Box sx={{ my: 1, borderBottom: `1px solid ${theme.palette.divider}` }} />
                   )}
                 </Box>
@@ -606,6 +564,9 @@ export default function MenuBar({
             flexGrow: 1,
             overflow: "auto",
             whiteSpace: "nowrap",
+            alignItems: "center",
+            px: 2,
+            gap: 1,
           }}
         >
           {activeGroup?.urls.map((url) => renderUrlItem(url))}
@@ -635,14 +596,7 @@ export default function MenuBar({
       ) : (
         urlGroups.map((group) => (
           <Box key={group.id}>
-            <ListItemButton
-              onClick={() =>
-                setOpenGroups((prev) => ({
-                  ...prev,
-                  [group.id]: !prev[group.id],
-                }))
-              }
-            >
+            <ListItemButton onClick={() => handleGroupToggle(group.id)}>
               <ListItemIcon>
                 <FolderIcon />
               </ListItemIcon>

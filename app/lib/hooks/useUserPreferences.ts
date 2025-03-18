@@ -33,15 +33,8 @@ export function useUserPreferences(): UseUserPreferencesReturn {
   // Load preferences from the server
   useEffect(() => {
     const fetchPreferences = async () => {
-      // Skip if no user
-      if (!user) {
-        setLoading(false);
-        return;
-      }
-
-      // Check if we should use cached data
-      const now = Date.now();
-      if (fetchedRef.current && (now - lastFetchTime.current < CACHE_DURATION)) {
+      // Skip if no user or if we've already fetched within cache duration
+      if (!user || (fetchedRef.current && Date.now() - lastFetchTime.current < CACHE_DURATION)) {
         setLoading(false);
         return;
       }
@@ -58,15 +51,22 @@ export function useUserPreferences(): UseUserPreferencesReturn {
 
         const data = await response.json();
 
-        // Carefully merge preferences - only apply defaults for missing properties
-        const mergedPreferences = {
-          ...DEFAULT_PREFERENCES,
-          ...data.preferences,
-        };
+        // Only update if the values are different
+        setPreferences(prev => {
+          const newPrefs = {
+            ...DEFAULT_PREFERENCES,
+            ...data.preferences,
+          };
 
-        setPreferences(mergedPreferences);
+          if (prev.menuPosition === newPrefs.menuPosition &&
+              prev.themeMode === newPrefs.themeMode) {
+            return prev;
+          }
+          return newPrefs;
+        });
+
         fetchedRef.current = true;
-        lastFetchTime.current = now;
+        lastFetchTime.current = Date.now();
       } catch (err) {
         console.error('Error fetching user preferences:', err);
         setError('Failed to load preferences');
@@ -76,19 +76,15 @@ export function useUserPreferences(): UseUserPreferencesReturn {
     };
 
     fetchPreferences();
-  }, [user]); // Only depend on user changes
+  }, [user]);
 
   // Update menu position with debouncing
   const updateMenuPosition = useCallback(async (position: 'side' | 'top') => {
-    if (!user) return;
-
-    // Don't update if it's the same as current value
-    if (preferences.menuPosition === position) {
-      return;
-    }
+    if (!user || preferences.menuPosition === position) return;
 
     try {
       setError(null);
+
       // Optimistically update the UI
       setPreferences(prev => ({
         ...prev,
@@ -108,13 +104,18 @@ export function useUserPreferences(): UseUserPreferencesReturn {
       }
 
       const data = await response.json();
-      lastFetchTime.current = Date.now(); // Update cache time after successful update
+      lastFetchTime.current = Date.now();
 
-      // Update with server response
-      setPreferences(prev => ({
-        ...prev,
-        menuPosition: data.preferences.menuPosition,
-      }));
+      // Only update if the server response is different from current state
+      setPreferences(prev => {
+        if (prev.menuPosition === data.preferences.menuPosition) {
+          return prev;
+        }
+        return {
+          ...prev,
+          menuPosition: data.preferences.menuPosition,
+        };
+      });
     } catch (err) {
       console.error('Error updating menu position:', err);
       setError('Failed to update menu position');
@@ -129,15 +130,11 @@ export function useUserPreferences(): UseUserPreferencesReturn {
 
   // Update theme mode with debouncing
   const updateThemeMode = useCallback(async (mode: 'light' | 'dark') => {
-    if (!user) return;
-
-    // Don't update if it's the same as current value
-    if (preferences.themeMode === mode) {
-      return;
-    }
+    if (!user || preferences.themeMode === mode) return;
 
     try {
       setError(null);
+
       // Optimistically update the UI
       setPreferences(prev => ({
         ...prev,
@@ -157,13 +154,18 @@ export function useUserPreferences(): UseUserPreferencesReturn {
       }
 
       const data = await response.json();
-      lastFetchTime.current = Date.now(); // Update cache time after successful update
+      lastFetchTime.current = Date.now();
 
-      // Update with server response
-      setPreferences(prev => ({
-        ...prev,
-        themeMode: data.preferences.themeMode,
-      }));
+      // Only update if the server response is different from current state
+      setPreferences(prev => {
+        if (prev.themeMode === data.preferences.themeMode) {
+          return prev;
+        }
+        return {
+          ...prev,
+          themeMode: data.preferences.themeMode,
+        };
+      });
     } catch (err) {
       console.error('Error updating theme mode:', err);
       setError('Failed to update theme mode');

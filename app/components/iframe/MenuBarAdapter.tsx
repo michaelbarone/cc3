@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect } from "react";
+import { useCallback } from "react";
 import MenuBar from "@/app/components/ui/MenuBar";
 import { useIframeContext } from "@/app/components/iframe/state/IframeContext";
 import { Url, UrlGroup } from "@/app/lib/types";
@@ -17,66 +17,48 @@ interface MenuBarAdapterProps {
  * It transforms the state format from our new context to what MenuBar expects.
  */
 export function MenuBarAdapter({ urlGroups, menuPosition }: MenuBarAdapterProps) {
-  const { states, activeUrlId, unloadIframe, reloadIframe, getLoadedUrlIds } = useIframeContext();
+  const { states, activeUrlId, dispatch } = useIframeContext();
 
-  // Transform states to loadedUrlIds array for MenuBar
-  const loadedUrlIds = getLoadedUrlIds();
-
-  // Add logging to track states
-  useEffect(() => {
-    console.log("--- MenuBarAdapter State Log ---");
-    console.log("Active URL ID:", activeUrlId);
-    console.log("Loaded URL IDs:", loadedUrlIds);
-    console.log("All iframe states:", states);
-
-    // Log individual URL states
-    urlGroups.forEach((group) => {
-      group.urls.forEach((url) => {
-        const state = states[url.id];
-        const isLoaded = loadedUrlIds.includes(url.id);
-        console.log(`URL ${url.id} (${url.title}):`, {
-          inLoadedArray: isLoaded,
-          stateStatus: state?.status || "unknown",
-          isActive: url.id === activeUrlId,
-        });
-      });
-    });
-  }, [activeUrlId, loadedUrlIds, states, urlGroups]);
+  // Get loaded URL IDs from iframe states
+  const loadedUrlIds = Object.entries(states)
+    .filter(([, state]) => state.status.includes("loaded"))
+    .map(([id]) => id);
 
   // Handle URL click
   const handleUrlClick = useCallback(
     (url: Url) => {
-      console.log("URL Click:", url.id, url.title);
-      // If this is already the active URL, reload it
-      if (url.id === activeUrlId) {
-        console.log("Reloading active URL:", url.id);
-        reloadIframe(url.id);
+      const currentState = states[url.id];
+
+      if (currentState?.status === "active-loaded") {
+        // If already active and loaded, trigger reload
+        dispatch({ type: "RELOAD_URL", payload: { urlId: url.id } });
       } else {
-        // We need to make this URL active
-        console.log("Setting new active URL:", url.id);
-        // For now we can just mark it as active-loaded in our state
-        reloadIframe(url.id);
+        // Set as active URL
+        dispatch({ type: "SET_ACTIVE_URL", payload: { urlId: url.id } });
+
+        // If unloaded, trigger load
+        if (currentState?.status.includes("unloaded")) {
+          dispatch({ type: "LOAD_URL", payload: { urlId: url.id } });
+        }
       }
     },
-    [activeUrlId, reloadIframe],
+    [states, dispatch],
   );
 
   // Handle URL reload
   const handleUrlReload = useCallback(
     (url: Url) => {
-      console.log("URL Reload:", url.id, url.title);
-      reloadIframe(url.id);
+      dispatch({ type: "RELOAD_URL", payload: { urlId: url.id } });
     },
-    [reloadIframe],
+    [dispatch],
   );
 
   // Handle URL unload
   const handleUrlUnload = useCallback(
     (url: Url) => {
-      console.log("URL Unload:", url.id, url.title);
-      unloadIframe(url.id);
+      dispatch({ type: "UNLOAD_URL", payload: { urlId: url.id } });
     },
-    [unloadIframe],
+    [dispatch],
   );
 
   return (

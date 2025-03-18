@@ -1,13 +1,12 @@
-import { PrismaClient } from '@prisma/client'
-import { execSync } from 'child_process'
 import fs from 'fs'
 import path from 'path'
+import { execSync } from 'child_process'
+import { prisma, getPrisma } from './prisma'
 import { main as seedDatabase } from '../../prisma/seed'
-
-const prisma = new PrismaClient()
 
 // Flag to ensure we only try to initialize once per process
 let isInitializing = false
+let isInitialized = false
 
 // Create required directories if they don't exist
 function createRequiredDirectories() {
@@ -30,9 +29,30 @@ function createRequiredDirectories() {
   })
 }
 
+// Function to check if database exists and is accessible
+async function checkDatabase(): Promise<boolean> {
+  try {
+    const prisma = await getPrisma()
+    await prisma.$queryRaw`SELECT 1`
+    return true
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  } catch (e) {
+    return false
+  }
+}
+
 export async function initializeDatabase() {
+  // Return if already initialized
+  if (isInitialized) {
+    return
+  }
+
   // Prevent concurrent initialization attempts
   if (isInitializing) {
+    // Wait for initialization to complete
+    while (isInitializing) {
+      await new Promise(resolve => setTimeout(resolve, 100))
+    }
     return
   }
 
@@ -42,12 +62,17 @@ export async function initializeDatabase() {
     // Create all required directories
     createRequiredDirectories()
 
-    // Run migrations first
-    console.log('Running database migrations...')
-    execSync('npx prisma migrate deploy', { stdio: 'inherit' })
+    // Check if database exists and is accessible
+    const dbExists = await checkDatabase()
 
-    // Now try to connect
-    await prisma.$connect()
+    if (!dbExists) {
+      console.log('Database not accessible, running migrations...')
+      // Run migrations
+      execSync('npx prisma migrate deploy', { stdio: 'inherit' })
+    }
+
+    // Get a fresh client
+    const prisma = await getPrisma()
 
     // Check if we need to seed
     const userCount = await prisma.user.count()
@@ -58,14 +83,19 @@ export async function initializeDatabase() {
     }
 
     console.log('Database initialization completed successfully')
+    isInitialized = true
   } catch (error) {
     console.error('Database initialization error:', error)
     throw error
   } finally {
     isInitializing = false
+    const prisma = await getPrisma()
     await prisma.$disconnect()
   }
 }
+
+// Initialize database on module import
+initializeDatabase().catch(console.error)
 
 // Function to seed test data - can be called manually when needed
 export async function seedTestData() {

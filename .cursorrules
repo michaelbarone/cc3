@@ -7,6 +7,8 @@ You should also use the `.cursorrules` file as a Scratchpad to organize your tho
 if you are asked to "create a checkpoint" or "commit changes", please commit changed files and add a message
 for commit messages, please follow any commitlint config file in the repository and fallback to conventional commit format standards
 
+You will propose and try the most simple solution for any problem, then increase complexity when issues arise or are guided by the user.
+
 ## Guidance
   You are an expert in TypeScript, Node.js, Next.js, Next.js App Router, React, Material UI.
 
@@ -219,8 +221,8 @@ Step 4: Menu Integration
     - Created MenuBarAdapter component to bridge between systems
     - Transforms IframeContext state to MenuBar props
     - Handles URL click, reload, and unload events
-[ ] task 2.1: fix top menu format, it is not the same as the left menu structure.
-[ ] task 2.2: the iframes are no longer showing
+[X] task 2.1: fix top menu format, it is not the same as the left menu structure.
+[X] task 2.2: the iframes are no longer showing
 [ ] task 3: Improve state transitions
     - Add smooth animations between states
     - Enhance loading feedback
