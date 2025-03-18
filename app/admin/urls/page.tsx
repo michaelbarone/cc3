@@ -381,7 +381,7 @@ export default function UrlManagement() {
         <DialogTitle>Delete URL</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            Are you sure you want to delete the URL "{selectedUrl?.title}"?
+            Are you sure you want to delete the URL &quot;{selectedUrl?.title}&quot;?
             <br /><br />
             This will also remove it from all URL groups. This action cannot be undone.
           </DialogContentText>

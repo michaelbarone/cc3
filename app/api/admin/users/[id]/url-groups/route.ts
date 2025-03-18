@@ -1,7 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { verifyToken } from '@/app/lib/auth/jwt';
-import { prisma } from '@/app/lib/db/prisma';
-import { UrlGroup } from '@prisma/client';
+import { NextRequest, NextResponse } from "next/server";
+import { verifyToken } from "@/app/lib/auth/jwt";
+import { prisma } from "@/app/lib/db/prisma";
 
 interface RouteParams {
   params: {
@@ -23,10 +22,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const user = await verifyToken();
 
     if (!user || !user.isAdmin) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 403 }
-      );
+      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 
     const { id } = params;
@@ -37,18 +33,15 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     });
 
     if (!targetUser) {
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
     // Fetch all URL groups assigned to the user
     const userUrlGroups = await prisma.userUrlGroup.findMany({
       where: { userId: id },
       include: {
-        urlGroup: true
-      }
+        urlGroup: true,
+      },
     });
 
     // Transform the data to a more frontend-friendly format
@@ -56,11 +49,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json(urlGroups);
   } catch (error) {
-    console.error('Error fetching URL groups for user:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    console.error("Error fetching URL groups for user:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
 
@@ -70,10 +60,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     const user = await verifyToken();
 
     if (!user || !user.isAdmin) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 403 }
-      );
+      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 
     const { id } = params;
@@ -81,8 +68,8 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
     if (!Array.isArray(urlGroupIds) || urlGroupIds.length === 0) {
       return NextResponse.json(
-        { error: 'URL group IDs must be a non-empty array' },
-        { status: 400 }
+        { error: "URL group IDs must be a non-empty array" },
+        { status: 400 },
       );
     }
 
@@ -92,10 +79,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     });
 
     if (!targetUser) {
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
     // Check if all URL groups exist
@@ -108,14 +92,11 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     });
 
     if (urlGroups.length !== urlGroupIds.length) {
-      return NextResponse.json(
-        { error: 'One or more URL groups not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "One or more URL groups not found" }, { status: 404 });
     }
 
     // Create user-URL group mappings
-    const createPromises = urlGroupIds.map(urlGroupId =>
+    const createPromises = urlGroupIds.map((urlGroupId) =>
       prisma.userUrlGroup.upsert({
         where: {
           userId_urlGroupId: {
@@ -128,18 +109,15 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
           userId: id,
           urlGroupId,
         },
-      })
+      }),
     );
 
     await Promise.all(createPromises);
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Error assigning URL groups to user:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    console.error("Error assigning URL groups to user:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
 
@@ -149,20 +127,14 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     const user = await verifyToken();
 
     if (!user || !user.isAdmin) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 403 }
-      );
+      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 
     const { id } = params;
     const { urlGroupIds } = await request.json();
 
     if (!Array.isArray(urlGroupIds)) {
-      return NextResponse.json(
-        { error: 'URL group IDs must be an array' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "URL group IDs must be an array" }, { status: 400 });
     }
 
     // Check if the user exists
@@ -171,10 +143,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     });
 
     if (!targetUser) {
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
     // Check if all URL groups exist (if any)
@@ -188,15 +157,12 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       });
 
       if (urlGroups.length !== urlGroupIds.length) {
-        return NextResponse.json(
-          { error: 'One or more URL groups not found' },
-          { status: 404 }
-        );
+        return NextResponse.json({ error: "One or more URL groups not found" }, { status: 404 });
       }
     }
 
     // Use transaction to ensure atomicity
-    await prisma.$transaction(async (tx: typeof prisma) => {
+    await prisma.$transaction(async (tx) => {
       // Delete all existing user-URL group mappings for this user
       await tx.userUrlGroup.deleteMany({
         where: { userId: id },
@@ -205,7 +171,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       // Create new mappings if any
       if (urlGroupIds.length > 0) {
         await tx.userUrlGroup.createMany({
-          data: urlGroupIds.map(urlGroupId => ({
+          data: urlGroupIds.map((urlGroupId) => ({
             userId: id,
             urlGroupId,
           })),
@@ -215,10 +181,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Error updating URL group assignments for user:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    console.error("Error updating URL group assignments for user:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

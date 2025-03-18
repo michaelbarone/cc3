@@ -3,16 +3,13 @@
 
 
 # any local project ignores should go here
-
 node_modules
-lib
-.eslintcache
-storybook-static
 
 # allow these folders -- these can be ignored (over-ridden) below, try not to do that.
-/lib/**/*
+!lib
+!/lib/**/*
 !/pages/**/*
-!/components/**/*
+!/components/**/*s
 !/src/**/*
 
 # any local project ignores should go here

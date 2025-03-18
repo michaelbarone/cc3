@@ -7,6 +7,8 @@ You should also use the `.cursorrules` file as a Scratchpad to organize your tho
 if you are asked to "create a checkpoint" or "commit changes", please commit changed files and add a message
 for commit messages, please follow any commitlint config file in the repository and fallback to conventional commit format standards
 
+You will propose and try the most simple solution for any problem, then increase complexity when issues arise or are guided by the user.
+
 ## Guidance
   You are an expert in TypeScript, Node.js, Next.js, Next.js App Router, React, Material UI.
 
@@ -141,7 +143,121 @@ Example Scratchpad Structure with no task:
 
 ## Scratchpad
 
-## Current Task: URL Menu State Management
+## Current Task: IframeContainer Refactor
+
+### Context
+- Need to refactor IframeContainer for better state management and component organization
+- Must maintain global iframe container outside React for proper functionality
+- Need to integrate with menu items for state synchronization
+- Support both mobile and desktop URLs
+- Support cross-origin iframes with fallbacks
+- Maintain reset/reload functionality
+- Support URL-specific idle timeouts
+
+### Plan
+Step 1: Core Types and Infrastructure
+[X] task 1: Create base types in types/iframe.ts
+    - IframeStatus enum ('active-loaded' | 'active-unloaded' | 'inactive-loaded' | 'inactive-unloaded')
+    - IframeState interface (id, url, urlMobile, status, error, lastActivity, idleTimeout)
+    - IframeAction type for reducer actions
+    - IframeContextValue interface for context
+[X] task 2: Create action creators in state/actions.ts
+    - setIframeStatus action
+    - setIframeError action
+    - updateIframeActivity action
+    - resetIframe action
+[X] task 3: Create state reducer in state/reducer.ts
+    - Handle all action types
+    - Implement state transitions
+    - Add activity tracking
+[X] task 4: Create context structure
+    - IframeContext.tsx with provider
+    - Initial state setup
+    - Context consumer hook
+
+Step 2: Core Hooks Implementation
+[X] task 1: Create useGlobalIframeContainer hook
+    - Implement container creation/management
+    - Add position syncing with ResizeObserver
+    - Handle cleanup
+[X] task 2: Create useIframeLifecycle hook
+    - Handle iframe creation/destruction
+    - Manage load/error events
+    - Track activity state
+[X] task 3: Create useIframeVisibility hook
+    - Handle show/hide logic
+    - Manage z-index
+    - Handle transitions
+[X] task 4: Create useIdleTimeout hook
+    - Implement per-URL timeout tracking
+    - Add activity reset
+    - Handle cleanup
+[X] task 5: Create useIframeEvents hook
+    - Handle load events
+    - Handle error events
+    - Manage cross-origin fallbacks
+
+Step 3: Component Implementation
+[X] task 1: Create overlay components
+    - LoadingOverlay with progress indicator
+    - ErrorOverlay with retry button
+    - UnloadedOverlay with reload button
+[X] task 2: Create IframeWrapper component
+    - Handle iframe rendering
+    - Manage ref forwarding
+    - Handle mobile/desktop URLs
+[X] task 3: Refactor main IframeContainer
+    - Use new hooks and components
+    - Implement proper state management
+    - Add error boundaries
+
+Step 4: Menu Integration
+[X] task 0: check the current implementation of the menu, and assess further steps
+[X] task 1: Identify shared state interface
+    - Confirmed using existing IframeState interface
+    - Already includes all required states (active-loaded, active-unloaded, inactive-loaded, inactive-unloaded)
+    - Contains error handling and activity tracking
+[X] task 2: Ensure existing Menu components work with the new state system
+    - Created MenuBarAdapter component to bridge between systems
+    - Transforms IframeContext state to MenuBar props
+    - Handles URL click, reload, and unload events
+[X] task 2.1: fix top menu format, it is not the same as the left menu structure.
+[X] task 2.2: the iframes are no longer showing
+[ ] task 3: Improve state transitions
+    - Add smooth animations between states
+    - Enhance loading feedback
+    - Implement error recovery UI
+
+Step 5: Testing and Validation
+[ ] task 1: Create test suite
+    - Add state transition tests
+    - Test menu integration
+    - Validate mobile support
+[ ] task 2: Test error scenarios
+    - Test cross-origin handling
+    - Validate timeout behavior
+    - Check cleanup
+
+### Progress
+[X] Initial analysis complete
+[X] Core types and infrastructure implementation complete
+[X] Hooks implementation complete
+[X] Component implementation complete
+[-] Menu integration in progress
+[ ] Testing pending
+
+### Blockers
+[!] Need to verify cross-origin iframe behavior in production environment
+
+### Dependencies
+- Material UI for components
+- React context for state management
+- ResizeObserver for container management
+- URL-specific idle timeouts from database
+
+## Future Plans
+
+URL Menu State Management
 
 ### Context
 - Need to implement four specific states for URL menu items:
@@ -188,7 +304,7 @@ Step 2: Iframe Management
 [X] Integrated long press state management with IframeStateContext
 [X] Added visual progress indicator for long press actions
 
-### Future Plans
+
 
 ### Idle Timeout Implementation
 
@@ -240,6 +356,8 @@ Step 3: Testing
 [ ] Add password recovery option
 [ ] Add user activity monitoring
 [ ] Create user preferences sync
+[ ] set dark mode as user default
+[ ] move theme toggle into user menu
 
 
 ## Completed Work
