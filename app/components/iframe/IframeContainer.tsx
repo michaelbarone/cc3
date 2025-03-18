@@ -314,11 +314,39 @@ const IframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
         reloadUnloadedIframe(urlId);
       },
       getLoadedUrlIds: () => {
-        return Object.keys(iframeStates).filter(
-          (urlId) => !iframeStates[urlId].loading &&
-                      !iframeStates[urlId].error &&
-                      !iframeStates[urlId].isUnloaded
-        );
+        return Object.entries(iframeStates)
+          .filter(([urlId]) => {
+            const state = iframeStates[urlId];
+            const iframe = iframeRefs.current[urlId];
+
+            // Helper function to normalize URLs for comparison
+            const normalizeUrl = (url: string) => {
+              try {
+                // Remove trailing slashes and normalize protocol
+                return url.replace(/\/$/, '')
+                         .replace(/^https?:\/\//, '')
+                         .toLowerCase();
+              } catch {
+                return url;
+              }
+            };
+
+            const currentSrc = iframe?.src || '';
+            const expectedUrl = iframe?.getAttribute('data-url') || '';
+            const srcMatches = currentSrc && expectedUrl &&
+                             normalizeUrl(currentSrc) === normalizeUrl(expectedUrl);
+
+            const isLoaded = !state.loading &&
+                           !state.error &&
+                           !state.isUnloaded &&
+                           iframe?.src &&
+                           iframe.src !== 'about:blank' &&
+                           iframe.src !== '' &&
+                           srcMatches;
+
+            return isLoaded;
+          })
+          .map(([urlId]) => urlId);
       }
     }));
 
@@ -374,7 +402,7 @@ const IframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
         }
       } else if (src !== prevSrc) {
         // Loading new content
-        console.log(`Setting src for iframe ${urlId}: ${prevSrc.substring(0, 30)}... -> ${src.substring(0, 30)}...`);
+        // console.log(`Setting src for iframe ${urlId}: ${prevSrc.substring(0, 30)}... -> ${src.substring(0, 30)}...`);
 
         // Update state to active-unloaded or inactive-unloaded while loading
         setIframeStates(prev => ({

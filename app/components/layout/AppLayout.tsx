@@ -39,8 +39,7 @@ export default function AppLayout({ children, menuContent, forceMenuPosition }: 
   const colorMode = useContext(ThemeContext);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [userMenuAnchorEl, setUserMenuAnchorEl] = useState<null | HTMLElement>(null);
-  const [menuPosition, setMenuPosition] = useState<'side' | 'top'>('side');
-  const [initialRenderComplete, setInitialRenderComplete] = useState(false);
+  const [menuPosition, setMenuPosition] = useState<'side' | 'top'>(forceMenuPosition || 'side');
   const [appConfig, setAppConfig] = useState<AppConfig>({ appName: 'Control Center', appLogo: null });
 
   // Add check for mobile screens
@@ -48,31 +47,19 @@ export default function AppLayout({ children, menuContent, forceMenuPosition }: 
 
   const userMenuOpen = Boolean(userMenuAnchorEl);
 
-  // Mark initial render as complete after first render cycle
-  useEffect(() => {
-    setInitialRenderComplete(true);
-  }, []);
-
   // Load menu position from user preferences unless a forced position is provided
   useEffect(() => {
     // For mobile devices, always use side menu for drawer regardless of preference
-    // Note: This only affects the main layout. The drawer will always use the side menu style on mobile.
     if (isMobile) {
-      console.log('Mobile device detected - using side menu for drawer');
       setMenuPosition('side');
       return;
     }
 
     if (forceMenuPosition) {
-      console.log('Using forced menu position:', forceMenuPosition);
       setMenuPosition(forceMenuPosition);
     } else if (preferences.menuPosition) {
-      // Use the preferences from useUserPreferences hook instead of user object
-      console.log('Using preferences menu position:', preferences.menuPosition);
       setMenuPosition(preferences.menuPosition);
     } else {
-      // Default fallback
-      console.log('Using default menu position: side');
       setMenuPosition('side');
     }
   }, [preferences.menuPosition, forceMenuPosition, isMobile]);
@@ -94,7 +81,7 @@ export default function AppLayout({ children, menuContent, forceMenuPosition }: 
     fetchAppConfig();
   }, []);
 
-  // Event handler functions - defined before they're used
+  // Event handler functions
   const handleUserMenuClick = (event: React.MouseEvent<HTMLElement>) => {
     setUserMenuAnchorEl(event.currentTarget);
   };
@@ -127,13 +114,8 @@ export default function AppLayout({ children, menuContent, forceMenuPosition }: 
     router.push('/dashboard');
   };
 
-  // Prevent hydration mismatch by not rendering anything until client-side
-  if (typeof window === 'undefined') {
-    return null;
-  }
-
   // If we're still loading preferences and no forced menu position, render a minimal layout
-  if (!initialRenderComplete) {
+  if (preferencesLoading && !forceMenuPosition) {
     return (
       <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
         <AppBar
@@ -165,126 +147,6 @@ export default function AppLayout({ children, menuContent, forceMenuPosition }: 
           }}
         >
           <CircularProgress />
-        </Box>
-      </Box>
-    );
-  }
-
-  // Determine if we're still in a loading state
-  const isLoading = !initialRenderComplete || (preferencesLoading && !forceMenuPosition);
-
-
-  // If we're still loading preferences and no forced menu position, render a minimal layout
-  if (isLoading) {
-    return (
-      <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
-        {/* App Bar */}
-        <AppBar
-          position="fixed"
-          sx={{
-            zIndex: theme.zIndex.drawer + 1,
-            bgcolor: theme.palette.background.paper,
-            color: theme.palette.text.primary
-          }}
-        >
-          <Toolbar sx={{ display: 'flex', justifyContent: 'space-between' }}>
-            {/* Left side: App Logo/Title */}
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              {appConfig.appLogo ? (
-                <Box
-                  component="img"
-                  src={appConfig.appLogo}
-                  alt={appConfig.appName}
-                  sx={{
-                    height: 40,
-                    maxWidth: 160,
-                    objectFit: 'contain'
-                  }}
-                />
-              ) : (
-                <Typography variant="h6" noWrap component="div">
-                  {appConfig.appName}
-                </Typography>
-              )}
-            </Box>
-
-            {/* Right side: User Menu and Theme Toggle */}
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              {user && (
-                <>
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      cursor: 'pointer',
-                      mr: 2
-                    }}
-                    onClick={handleUserMenuClick}
-                  >
-                    <AccountCircleIcon sx={{ mr: 1 }} />
-                    <Typography variant="body1">{user.username}</Typography>
-                    <ArrowDropDownIcon />
-                  </Box>
-                  <Menu
-                    id="user-menu"
-                    anchorEl={userMenuAnchorEl}
-                    open={userMenuOpen}
-                    onClose={handleUserMenuClose}
-                    MenuListProps={{
-                      'aria-labelledby': 'user-button',
-                    }}
-                    anchorOrigin={{
-                      vertical: 'bottom',
-                      horizontal: 'right',
-                    }}
-                    transformOrigin={{
-                      vertical: 'top',
-                      horizontal: 'right',
-                    }}
-                  >
-                    <MenuItem onClick={navigateToDashboard}>
-                      <DashboardIcon sx={{ mr: 1 }} />
-                      Dashboard
-                    </MenuItem>
-                    <MenuItem onClick={navigateToSettings}>
-                      <SettingsIcon sx={{ mr: 1 }} />
-                      Settings
-                    </MenuItem>
-                    {user.isAdmin && (
-                      <MenuItem onClick={navigateToAdmin}>
-                        <AdminPanelSettingsIcon sx={{ mr: 1 }} />
-                        Admin Area
-                      </MenuItem>
-                    )}
-                    <Divider />
-                    <MenuItem onClick={handleLogout}>
-                      <LogoutIcon sx={{ mr: 1 }} />
-                      Logout
-                    </MenuItem>
-                  </Menu>
-                </>
-              )}
-              <IconButton color="inherit" onClick={colorMode.toggleColorMode}>
-                {theme.palette.mode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
-              </IconButton>
-            </Box>
-          </Toolbar>
-        </AppBar>
-
-        {/* Main content area */}
-        <Box
-          component="main"
-          sx={{
-            flexGrow: 1,
-            p: 0,
-            mt: '64px', // Height of the AppBar
-            height: 'calc(100vh - 64px)',
-            overflow: 'hidden',
-            display: 'flex',
-            flexDirection: 'column'
-          }}
-        >
-          {children}
         </Box>
       </Box>
     );
