@@ -49,6 +49,16 @@ This document serves as the main project plan and tracks the status of all tasks
 
 ## Closed Tasks
 
+### Theme Picker Relocation
+- **Location**: `/docs/working-memory/open/theme-picker-relocation-20240320`
+- **Completion Date**: 2024-03-20
+- **Description**: Move theme picker from header to user dropdown menu
+- **Key Achievements**:
+  - Relocated theme picker to user dropdown menu
+  - Added visual separators for better organization
+  - Maintained existing functionality
+  - Improved UI consistency
+
 ### Admin Configuration
 - **Location**: `/docs/composer-history/done/admin-configuration`
 - **Completion Date**: 2024-03-18

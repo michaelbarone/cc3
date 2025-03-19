@@ -1,0 +1,42 @@
+# Theme Picker Relocation
+
+## Problem Analysis
+- Theme picker currently located in main header
+- Need to move it to user dropdown menu
+- Should be placed after admin area link
+- Requires its own section in the menu
+
+## Solution Design
+- Move theme picker component from header to user dropdown
+- Add visual separation for theme section
+- Ensure proper styling and alignment
+- Maintain existing functionality
+
+## Implementation Steps
+- [x] Locate theme picker component in header
+- [x] Identify user dropdown menu implementation
+- [x] Move theme picker to dropdown
+- [x] Add section separator
+- [x] Test functionality
+- [x] Verify styling
+
+## Affected Components
+- Header component
+- User dropdown menu
+- Theme picker component
+
+## Dependencies
+None - Self-contained UI change
+
+## Current Status
+
+### 2024-03-20 15:45
+
+**Status**: Completed
+- What's working:
+  - Theme picker successfully moved to user dropdown
+  - Visual separators added
+  - Functionality maintained
+  - Styling consistent with menu items
+- What's not: N/A
+- Next actions: None - Task completed
