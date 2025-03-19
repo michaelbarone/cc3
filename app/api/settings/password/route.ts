@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { verifyToken } from '@/app/lib/auth/jwt';
-import { db } from '@/app/lib/db';
-import bcrypt from 'bcrypt';
+import { verifyToken } from "@/app/lib/auth/jwt";
+import { hashPassword, verifyPassword } from "@/app/lib/auth/password";
+import { db } from "@/app/lib/db";
+import { NextRequest, NextResponse } from "next/server";
 
 export async function PUT(request: NextRequest) {
   try {
@@ -9,7 +9,7 @@ export async function PUT(request: NextRequest) {
     const tokenData = await verifyToken();
 
     if (!tokenData) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
     // Get the request body
@@ -26,7 +26,7 @@ export async function PUT(request: NextRequest) {
     });
 
     if (!user) {
-      return NextResponse.json({ message: 'User not found' }, { status: 404 });
+      return NextResponse.json({ message: "User not found" }, { status: 404 });
     }
 
     // Check if user has a password
@@ -34,9 +34,9 @@ export async function PUT(request: NextRequest) {
 
     // If user has a password, validate the current password
     if (hasPassword && currentPassword) {
-      const passwordValid = await bcrypt.compare(currentPassword, user.passwordHash || '');
+      const passwordValid = await verifyPassword(currentPassword, user.passwordHash);
       if (!passwordValid) {
-        return NextResponse.json({ message: 'Current password is incorrect' }, { status: 400 });
+        return NextResponse.json({ message: "Current password is incorrect" }, { status: 400 });
       }
     }
 
@@ -49,13 +49,12 @@ export async function PUT(request: NextRequest) {
       });
 
       return NextResponse.json({
-        message: 'Password protection disabled successfully',
-        hasPassword: false
+        message: "Password protection disabled successfully",
+        hasPassword: false,
       });
     } else {
       // Update with new password
-      const saltRounds = 10;
-      const passwordHash = await bcrypt.hash(newPassword, saltRounds);
+      const passwordHash = await hashPassword(newPassword);
 
       await db.user.update({
         where: { id: user.id },
@@ -63,15 +62,12 @@ export async function PUT(request: NextRequest) {
       });
 
       return NextResponse.json({
-        message: 'Password updated successfully',
-        hasPassword: true
+        message: "Password updated successfully",
+        hasPassword: true,
       });
     }
   } catch (error) {
-    console.error('Error updating password:', error);
-    return NextResponse.json(
-      { message: 'Internal server error' },
-      { status: 500 }
-    );
+    console.error("Error updating password:", error);
+    return NextResponse.json({ message: "Internal server error" }, { status: 500 });
   }
 }
