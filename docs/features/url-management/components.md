@@ -134,51 +134,145 @@ Key Features:
 
 ## Custom Hooks
 
-### useIframeState
+### Iframe Lifecycle Hooks
 
-Purpose: Manages IFrame state and lifecycle.
+The Iframe system uses a set of specialized hooks that work together to manage the entire iframe lifecycle. This modular approach allows for better separation of concerns and improved maintainability.
+
+#### useGlobalIframeContainer
+
+Purpose: Creates and manages a global container for iframes outside of React's DOM.
 
 ```typescript
-interface UseIframeStateOptions {
-  url: string;
-  timeout?: number;
-  retryAttempts?: number;
+function useGlobalIframeContainer(): {
+  createIframe: (urlId: string, url: string) => HTMLIFrameElement;
+  removeIframe: (urlId: string) => void;
+  updateIframeVisibility: (urlId: string, isVisible: boolean) => void;
+  updateContainerPosition: (rect: DOMRect) => void;
 }
+```
 
-function useIframeState({
-  url,
-  timeout = 30000,
-  retryAttempts = 3
-}: UseIframeStateOptions) {
-  // Hook implementation
-  return {
-    isLoaded: boolean;
-    isVisible: boolean;
-    error: string | null;
-    load: () => void;
-    unload: () => void;
-    retry: () => void;
-  };
+Key Features:
+- Singleton pattern for global container management
+- Direct DOM manipulation for performance
+- Maintains maps of iframes and wrapper elements
+- Handles iframe creation with proper attributes
+- Controls visibility and positioning
+- Manages cleanup on component unmount
+
+Example Usage:
+```typescript
+const { createIframe, updateIframeVisibility } = useGlobalIframeContainer();
+
+// Create a new iframe
+const iframe = createIframe('url-123', 'https://example.com');
+
+// Update visibility
+updateIframeVisibility('url-123', true);
+```
+
+#### useIframeLifecycle
+
+Purpose: Manages the loading, unloading, and resetting of iframes.
+
+```typescript
+function useIframeLifecycle(
+  urlId: string,
+  options: {
+    onLoad?: (urlId: string) => void;
+    onError?: (urlId: string, error: string) => void;
+    onUnload?: (urlId: string) => void;
+  } = {}
+): {
+  loadIframe: (urlId: string, url: string) => void;
+  unloadIframe: (urlId: string) => void;
+  resetIframe: (urlId: string) => void;
 }
+```
+
+Key Features:
+- Handles iframe load and error events
+- Maintains references to iframe elements
+- Updates state based on lifecycle events
+- Manages URL loading and unloading
+- Provides methods for content manipulation
+- Cleans up event listeners on unmount
+
+State Transitions:
+- On load: active-unloaded → active-loaded
+- On error: active-unloaded → active-error
+- On manual unload (long press): active-loaded → active-unloaded
+- On unload: active-loaded → inactive-unloaded
+- On reset: any → inactive-unloaded
+
+Example Usage:
+```typescript
+const { loadIframe, resetIframe } = useIframeLifecycle('url-123', {
+  onLoad: (urlId) => console.log(`Loaded: ${urlId}`),
+  onError: (urlId, error) => console.error(`Error loading ${urlId}: ${error}`),
+});
+
+// Load content
+loadIframe('url-123', 'https://example.com');
+
+// Reset on issue
+resetIframe('url-123');
+```
+
+#### useIframeVisibility
+
+Purpose: Controls iframe visibility based on active state while preserving loaded/unloaded state.
+
+```typescript
+function useIframeVisibility({
+  urlId: string,
+  isActive: boolean
+}): {
+  showIframe: () => void;
+  hideIframe: () => void;
+}
+```
+
+Key Features:
+- Updates iframe visibility without affecting loaded state
+- Manages status transitions between active and inactive states
+- Preserves content during visibility changes
+- Provides manual control methods
+- Integrates with iframe state context
+
+State Transitions:
+- When activating: inactive-loaded → active-loaded, inactive-unloaded → active-unloaded
+- When deactivating: active-loaded → inactive-loaded, active-unloaded → inactive-unloaded
+
+Example Usage:
+```typescript
+const { showIframe, hideIframe } = useIframeVisibility({
+  urlId: 'url-123',
+  isActive: true
+});
+
+// Manually control visibility
+button.onClick = () => hideIframe();
 ```
 
 ### useLongPress
 
-Purpose: Detects long press events for URL reset functionality.
+Purpose: Detects long press events for URL management, enabling both iframe unloading and full reset functionality.
 
 ```typescript
 interface UseLongPressOptions {
   duration?: number;
   onStart?: () => void;
-  onFinish: () => void;
+  onFinish: () => void; // Called when long press completes
   onCancel?: () => void;
+  actionType?: 'unload' | 'reset'; // Determines whether to unload or reset the iframe
 }
 
 function useLongPress({
   duration = 1000,
   onStart,
   onFinish,
-  onCancel
+  onCancel,
+  actionType = 'unload'
 }: UseLongPressOptions) {
   // Hook implementation
   return {

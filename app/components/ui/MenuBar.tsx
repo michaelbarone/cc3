@@ -1,30 +1,31 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { useLongPress } from "@/app/lib/hooks/useLongPress";
+import { useUserPreferences } from "@/app/lib/hooks/useUserPreferences";
+import { useIframeState } from "@/app/lib/state/iframe-state-context";
+import { Url, UrlGroup } from "@/app/lib/types";
+import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
+import ExpandLess from "@mui/icons-material/ExpandLess";
+import ExpandMore from "@mui/icons-material/ExpandMore";
+import FolderIcon from "@mui/icons-material/Folder";
 import {
+  Badge,
+  Box,
+  Button,
+  Collapse,
   List,
   ListItemButton,
   ListItemIcon,
   ListItemText,
-  Collapse,
-  Box,
-  Typography,
-  useTheme,
-  Badge,
-  useMediaQuery,
-  Tooltip,
   Menu,
   MenuItem,
-  Button,
+  Tooltip,
+  Typography,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
-import ExpandLess from "@mui/icons-material/ExpandLess";
-import ExpandMore from "@mui/icons-material/ExpandMore";
-import FolderIcon from "@mui/icons-material/Folder";
-import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
-import { Url, UrlGroup } from "@/app/lib/types";
-import { useUserPreferences } from "@/app/lib/hooks/useUserPreferences";
 import { Theme } from "@mui/material/styles";
-import { useIframeState } from "@/app/lib/state/iframe-state-context";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { LongPressProgress } from "./LongPressProgress";
 
 interface MenuBarProps {
@@ -93,8 +94,7 @@ function UrlItem({
   isLoaded,
   tooltipText,
   onUrlClick,
-  onMouseDown,
-  onTouchStart,
+  onLongPress,
   menuPosition,
   theme,
 }: {
@@ -103,13 +103,25 @@ function UrlItem({
   isLoaded: boolean;
   tooltipText: string;
   onUrlClick: (e: React.MouseEvent) => void;
-  onMouseDown: () => void;
-  onTouchStart: () => void;
+  onLongPress: () => void;
   menuPosition: "side" | "top";
   theme: Theme;
 }) {
   const { isLongPressing, longPressProgress, longPressUrlId } = useIframeState();
   const isLongPressingThis = isLongPressing && longPressUrlId === url.id;
+
+  // Use the longPress hook
+  const longPressHandlers = useLongPress({
+    onClick: () => {
+      // Create a mock event since we're in a callback that doesn't provide the event
+      const mockEvent = { stopPropagation: () => {} } as React.MouseEvent;
+      onUrlClick(mockEvent);
+    },
+    onLongPress,
+    duration: 800,
+    disabled: !isLoaded,
+    visualFeedback: true,
+  });
 
   const commonIconStyles = {
     width: 24,
@@ -141,9 +153,6 @@ function UrlItem({
     return (
       <Tooltip title={tooltipText}>
         <Button
-          onClick={onUrlClick}
-          onMouseDown={onMouseDown}
-          onTouchStart={onTouchStart}
           data-url-id={url.id}
           sx={{
             mx: 0.5,
@@ -159,6 +168,7 @@ function UrlItem({
               opacity: 0.8,
             },
           }}
+          {...longPressHandlers}
         >
           <Box sx={commonBoxStyles}>
             {url.iconPath ? (
@@ -187,10 +197,8 @@ function UrlItem({
           position: "relative",
           overflow: "hidden",
         }}
-        onClick={onUrlClick}
-        onMouseDown={onMouseDown}
-        onTouchStart={onTouchStart}
         data-url-id={url.id}
+        {...longPressHandlers}
       >
         <ListItemIcon sx={{ minWidth: 36 }}>
           <Box sx={commonBoxStyles}>
@@ -333,91 +341,6 @@ export default function MenuBar({
     [loadedUrlIds, onUrlUnload],
   );
 
-  // Handle mouse down for long press detection
-  const handleMouseDown = useCallback(
-    (url: Url) => {
-      if (!onUrlUnload) return;
-
-      // Only setup long press for loaded items
-      if (loadedUrlIds.includes(url.id)) {
-        let longPressTriggered = false;
-
-        const timer = setTimeout(() => {
-          longPressTriggered = true;
-          handleUrlLongPress(url);
-        }, 800); // 800ms long press
-
-        // Clear the timeout if mouse is released
-        const handleMouseUp = (e: MouseEvent) => {
-          clearTimeout(timer);
-          document.removeEventListener("mouseup", handleMouseUp);
-
-          // If this was a long press, prevent the click event
-          if (longPressTriggered) {
-            e.preventDefault();
-            e.stopPropagation();
-
-            // Also listen for click events to prevent them
-            const preventClick = (e: MouseEvent) => {
-              e.preventDefault();
-              e.stopPropagation();
-              document.removeEventListener("click", preventClick, true);
-            };
-
-            // Capture the next click event and prevent it
-            document.addEventListener("click", preventClick, true);
-          }
-        };
-
-        document.addEventListener("mouseup", handleMouseUp);
-      }
-    },
-    [loadedUrlIds, onUrlUnload, handleUrlLongPress],
-  );
-
-  // Handle touch events for mobile devices
-  const handleTouchStart = useCallback(
-    (url: Url) => {
-      if (!onUrlUnload) return;
-
-      // Only setup long press for loaded items
-      if (loadedUrlIds.includes(url.id)) {
-        let longPressTriggered = false;
-
-        const timer = setTimeout(() => {
-          longPressTriggered = true;
-          handleUrlLongPress(url);
-        }, 800);
-
-        // Function to clear the timeout on touch end
-        const handleTouchEnd = (e: TouchEvent) => {
-          clearTimeout(timer);
-          document.removeEventListener("touchend", handleTouchEnd);
-          document.removeEventListener("touchcancel", handleTouchEnd);
-
-          // If this was a long press, prevent the subsequent click event
-          if (longPressTriggered) {
-            e.preventDefault();
-
-            // Also listen for click events to prevent them
-            const preventClick = (e: Event) => {
-              e.preventDefault();
-              e.stopPropagation();
-              document.removeEventListener("click", preventClick, true);
-            };
-
-            // Capture the next click event and prevent it
-            document.addEventListener("click", preventClick, true);
-          }
-        };
-
-        document.addEventListener("touchend", handleTouchEnd);
-        document.addEventListener("touchcancel", handleTouchEnd);
-      }
-    },
-    [loadedUrlIds, onUrlUnload, handleUrlLongPress],
-  );
-
   // Memoize URL item renderer
   const renderUrlItem = useCallback(
     (url: Url) => {
@@ -441,26 +364,16 @@ export default function MenuBar({
           isActive={isActive}
           isLoaded={isLoaded}
           tooltipText={tooltipText}
-          onUrlClick={(e) => {
-            e.stopPropagation();
+          onUrlClick={() => {
             handleUrlClick(url);
           }}
-          onMouseDown={() => handleMouseDown(url)}
-          onTouchStart={() => handleTouchStart(url)}
+          onLongPress={() => handleUrlLongPress(url)}
           menuPosition={menuPosition}
           theme={theme}
         />
       );
     },
-    [
-      activeUrlId,
-      loadedUrlIds,
-      menuPosition,
-      theme,
-      handleUrlClick,
-      handleMouseDown,
-      handleTouchStart,
-    ],
+    [activeUrlId, loadedUrlIds, menuPosition, theme, handleUrlClick, handleUrlLongPress],
   );
 
   // Loading state check

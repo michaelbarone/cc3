@@ -82,6 +82,108 @@ interface MenuState {
 - Efficient state updates
 - Memory leak prevention
 
+### IFrame Lifecycle Management
+#### State Transition System
+The iframe container implements a sophisticated state machine for managing iframe lifecycles:
+
+```mermaid
+flowchart TD
+    A[Initial State] --> B[inactive-unloaded]
+    B -- "User clicks URL" --> C[active-unloaded]
+    C -- "Content loads successfully" --> D[active-loaded]
+    D -- "User selects different URL" --> E[inactive-loaded]
+    E -- "User reselects URL" --> D
+    E -- "Idle timeout/Manual reset" --> B
+    D -- "Long press reset" --> B
+    D -- "Long press unload" --> C
+    C -- "Load error" --> F[active-error]
+    F -- "Retry load" --> C
+```
+
+#### Core Hooks System
+The iframe lifecycle management relies on three specialized hooks that work together:
+
+1. **useGlobalIframeContainer**
+   - Creates a singleton DOM container outside React's render tree
+   - Manages iframe DOM elements directly for performance
+   - Handles iframe creation, removal, and visibility
+   - Maintains wrapper elements for positioning and z-index management
+   - Interface:
+     ```typescript
+     interface UseGlobalIframeContainerReturn {
+       createIframe: (urlId: string, url: string) => HTMLIFrameElement;
+       removeIframe: (urlId: string) => void;
+       updateIframeVisibility: (urlId: string, isVisible: boolean) => void;
+       updateContainerPosition: (rect: DOMRect) => void;
+     }
+     ```
+
+2. **useIframeLifecycle**
+   - Manages the loading, unloading, and resetting of iframes
+   - Handles iframe events (load, error)
+   - Updates state based on iframe lifecycle events
+   - Provides methods for content manipulation
+   - Interface:
+     ```typescript
+     interface UseIframeLifecycleReturn {
+       loadIframe: (urlId: string, url: string) => void;
+       unloadIframe: (urlId: string) => void;
+       resetIframe: (urlId: string) => void;
+     }
+     ```
+
+3. **useIframeVisibility**
+   - Controls iframe visibility based on active state
+   - Manages status transitions between active and inactive states
+   - Preserves loaded/unloaded state during visibility changes
+   - Interface:
+     ```typescript
+     interface UseIframeVisibilityReturn {
+       showIframe: () => void;
+       hideIframe: () => void;
+     }
+     ```
+
+#### Lifecycle Events and Handlers
+The iframe lifecycle includes several key events:
+
+| Event | Handler | State Transition | Action |
+|-------|---------|------------------|--------|
+| URL Selection | `onUrlSelect` | inactive-unloaded → active-unloaded | Set iframe src, show iframe |
+| Load Complete | `handleLoad` | active-unloaded → active-loaded | Update status, record activity |
+| Load Error | `handleError` | active-unloaded → active-error | Set error state, display error message |
+| URL Deselection | `onUrlDeselect` | active-loaded → inactive-loaded | Hide iframe but maintain content |
+| Manual Unload | `handleLongPress` | active-loaded → active-unloaded | Clear iframe src to free memory while keeping iframe visible |
+| Manual Reset | `resetIframe` | any → inactive-unloaded | Clear src, reset state |
+| Idle Timeout | `handleIdleTimeout` | inactive-loaded → inactive-unloaded | Clear content after timeout |
+
+#### Memory and Resource Management
+The iframe lifecycle system includes several optimizations:
+
+1. **Content Caching**
+   - Inactive iframes preserve their content for quick reactivation
+   - Loaded content is stored in memory until explicitly unloaded
+
+2. **Resource Limits**
+   - Configurable maximum number of cached iframes
+   - Automatic unloading of least recently used iframes
+   - Prioritization based on activity timestamps
+
+3. **Error Recovery**
+   - Automatic retry for transient errors
+   - Manual reset capability
+   - Error state preservation for diagnostics
+
+4. **Event Cleanup**
+   - Proper removal of event listeners
+   - DOM element cleanup on unmount
+   - Memory leak prevention
+
+5. **Performance Optimizations**
+   - Direct DOM manipulation outside React render cycles
+   - Batch updates for state changes
+   - Deferred loading for inactive URLs
+
 ### URL Menu Organization
 - Collapsible group structure
 - State-based rendering

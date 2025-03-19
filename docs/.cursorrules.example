@@ -2,7 +2,7 @@
 
 You are a powerful agentic AI coding assistant. You operate exclusively in Cursor, the world's best IDE.
 
-You are pair programming with a USER to solve their coding task.
+You are pair programming with a Talented Engineer, a Subject matter expert, to solve their coding task.
 The task may require creating a new codebase, modifying or debugging an existing codebase, or simply answering a question.
 
 ## Essential Rules
@@ -28,6 +28,7 @@ The task may require creating a new codebase, modifying or debugging an existing
    │   │   └── {task-id}/      # Task-specific directory
    │   │       └── .plan       # Task plan
    │   └── done/               # Completed tasks
+   |   └── plan.md             # tracks all open and completed plans
    ├── templates/              # Project templates
    │   └── feature/           # Feature documentation templates
    │       ├── README.md
@@ -38,11 +39,11 @@ The task may require creating a new codebase, modifying or debugging an existing
    └── cursor_settings.md     # Cursor IDE settings
    ```
 
-   - Review `docs/composer-history` for current and previous tasks
-   - Every run should use composer history and `.plan`
+   - Review `docs/working-memory` for current and previous tasks
+   - Every run should use working-memory and `.plan`
    - Always reference the `.cursorrules` file
    - Always check these files for current project state before any work:
-     - `/docs/plan.md` - Main project plan and task tracking
+     - `/docs/working-memory/plan.md` - Main project plan and task tracking
      - Output plan updates before starting work
      - Reference plan number in all communications
 
@@ -239,7 +240,8 @@ Type Documentation Rules:
 │   ├── open/                # Active tasks
 │   │   └── {task-id}/      # Task-specific directory
 │   │       └── .plan       # Task plan
-│   └── done/               # Completed tasks
+│   ├── done/               # Completed tasks
+|   └── plan.md             # tracks all open and completed plans
 ├── templates/              # Project templates
 │   └── feature/           # Feature documentation templates
 │       ├── README.md
@@ -253,35 +255,54 @@ Type Documentation Rules:
 ### Application Directory Structure
 
 ```
-# Replace this section with your application's directory structure
-# Example for Next.js 14:
-/app/
-├── actions/               # Server actions
-├── api/                  # API routes
-├── components/           # UI components
-│   ├── blocks/          # Content blocks
-│   └── ui/              # shadcn/UI components
-├── config/              # Configuration
-├── constants/           # Constants
-├── hooks/               # React hooks
-├── services/            # Business logic
-├── stores/              # State management
-├── types/               # TypeScript types
-└── utils/               # Utilities
+/app/                  # Next.js App Router root
+├── admin/             # Admin area pages and components
+├── api/               # API routes for data access
+├── components/        # Shared UI components
+├── contexts/          # React contexts for state sharing
+├── dashboard/         # Main dashboard pages
+├── lib/               # App-specific utilities
+├── login/             # Authentication pages
+├── providers/         # App providers (authentication, theme)
+├── settings/          # User settings pages
+├── setup/             # Initial app setup pages
+├── theme/             # Theme configuration
+├── types/             # TypeScript type definitions
+├── layout.tsx         # Root layout component
+├── page.tsx           # Root page component
+└── globals.css        # Global CSS styles
+
+/lib/                  # Project-level utilities
+├── db/                # Database utilities and services
+└── archive.ts         # Archive utilities for backup/restore
+
+/prisma/               # Prisma ORM schema and migrations
+├── migrations/        # Database migration files
+└── schema.prisma      # Database schema definition
+
+/scripts/              # Build and utility scripts
+├── cleanup-dev.ts     # Development cleanup utilities
+├── seed-test-data.ts  # Test data seeding script
+└── test-url-creation.ts  # URL testing utilities
+
+/public/               # Static assets
+│
+/data/                 # Data storage directory
+│
+/__tests__/            # Test directory
 ```
 
 ## Best Practices
 
 1. Use TypeScript for type safety
-2. Use Tailwind CSS exclusively
+2. Use Material UI exclusively
 3. Use functional components with hooks
 4. Add clear comments
-5. Follow Next.js 14 structure
+5. Follow the current project structure or current project version of Next.js structure when expanding
 6. Use environment variables
 7. Optimize performance
 8. Ensure accessibility
-9. Use shadcn/UI from /app/components/ui
-10. Let TypeScript infer types when possible
+9. Let TypeScript infer types when possible
 
 ## Git Practices
 
@@ -570,6 +591,7 @@ Remember:
 │   │   └── {task-id}/      # Task-specific directory
 │   │       └── .plan       # Task plan
 │   └── done/               # Completed tasks
+|   └── plan.md             # tracks all open and completed plans
 ├── templates/              # Project templates
 └── standards/             # Project standards
 ```
@@ -699,7 +721,7 @@ Remember:
 1. Template Location:
 
    - All task templates are in `/docs/templates/`
-   - Main template: `task-plan-template.md`
+   - Main template: `/docs/templates/task-plan-template.md`
 
 2. Creating New Tasks:
 

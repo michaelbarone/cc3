@@ -1,0 +1,54 @@
+## IframeContainer Refactor
+
+### Context
+
+- Need to implement a robust IframeContainer system for managing multiple iframes
+- System needs to handle state transitions, visibility control, and resource management
+- Must support mobile/desktop URLs and cross-origin handling
+- Required to implement URL-specific idle timeout cleanup
+
+### Plan
+
+Step 1: Core Architecture
+[X] Create core types and interfaces (IframeStatus, IframeState, actions, reducer)
+[X] Develop state management infrastructure with proper TypeScript typing
+[X] Implement lifecycle hooks (useGlobalIframeContainer, useIframeLifecycle, useIframeVisibility)
+[X] Create overlay components for various iframe states
+
+Step 2: State Management
+[X] Implement state synchronization between menu and iframes
+[X] Add visual indicators for iframe states
+[X] Create unified long press handler for iframe reset and unload
+[X] Add proper loading and error states
+[X] Implement iframe visibility controls
+
+Step 3: Optimization
+[X] Add resource cleanup and memory management
+[X] Implement proper event listener cleanup
+[X] Add performance optimizations for state updates
+[X] Create efficient iframe DOM management
+[X] Add URL-specific idle timeout system
+
+### Progress
+
+[X] Created robust state management with TypeScript types and interfaces
+[X] Developed modular hook system for iframe lifecycle management
+[X] Built flexible component architecture with proper error boundaries
+[X] Integrated menu system with state synchronization
+[X] Added support for mobile/desktop URLs and cross-origin handling
+[X] Implemented URL-specific idle timeout system
+[X] Fixed menu format issues and iframe visibility problems
+
+## Progress History
+
+### 2025-03-18 06:38 PM - Project Completion
+
+- ✓ Completed: Comprehensive refactor of IframeContainer system
+- ✓ Completed: Implemented specialized hooks (useGlobalIframeContainer, useIframeLifecycle, useIframeVisibility)
+- ✓ Completed: Built overlay components for various iframe states
+- ✓ Completed: Added visual indicators for iframe states
+- ✓ Completed: Created unified long press handler for iframe reset and unload
+- 🤔 Decisions: Used specialized hooks for better separation of concerns
+- 🤔 Decisions: Implemented direct DOM manipulation for performance optimization
+- 📚 Documentation: Created comprehensive state transition documentation
+- ⏭️ Led to: URL Menu State Management implementation

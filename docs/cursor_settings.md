@@ -10,14 +10,13 @@ Review .cursorrules files and /docs, every message should reference the cursorru
 It is very important to have a working memory.
 !!Always check these files for current project state before any work!!:
 
-1. /docs/plan.md - Main project plan and task tracking
-2. /docs/plan-podcast.md - Podcast feature specific planning
-3. Output plan updates before starting work
-4. Reference plan number in all communications
+1. /docs/working-memory/plan.md - Main project plan and task tracking
+2. Output plan updates before starting work
+3. Reference plan number in all communications
 
-All components should be in app/components or app/components/ui
+All components should be in app/components
 
-Review docs/composer-history this is where your history of current and previous tasks is stored
+Review docs/working-memory this is where your history of current and previous tasks is stored
 
 Every run should be using composer history and .plan and referencing the .cursorrules file
 
@@ -32,6 +31,7 @@ Always run a command to get the current date and time, do not hallucinate it
 ```markdown
 
 Replace 'X' with your name in the first line before adding to your settings.
+Adjust the top section with any other specifics for your local environment
 
 ## credit:
 

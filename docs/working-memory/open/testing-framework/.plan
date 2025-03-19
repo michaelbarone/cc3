@@ -1,0 +1,229 @@
+## Testing Framework Implementation
+
+### Context
+
+- Implementing testing framework with Vitest + Testing Library for unit/integration tests
+- Using Playwright for E2E testing
+- Focus on crucial and complicated parts of the codebase
+- No specific coverage requirements, but emphasis on critical paths
+- Following Next.js conventions with **tests** directory naming
+
+### Selected Stack
+
+1. Unit & Integration Testing:
+
+- Vitest
+- React Testing Library
+- MSW for API mocking
+- Testing Library User Event for interactions
+
+2. E2E Testing:
+
+- Playwright
+- Built-in test recorder
+- Cross-browser testing
+- Mobile viewport testing
+
+### Implementation Plan
+
+Step 1: Vitest + Testing Library Setup
+[X] Install dependencies (vitest, @testing-library/react, @testing-library/user-event, msw)
+[X] Configure Vitest for TypeScript and React
+[X] Set up test environment with happy-dom
+[X] Create test utilities and common mocks
+[X] Add basic smoke test to verify setup
+[X] Standardize test directory structure using **tests** prefix
+
+Step 2: Critical Path Testing Setup
+[X] Set up test structure for core features
+[-] Create test database configuration (Decided to use MSW instead)
+[X] Implement MSW handlers for API mocking
+[X] Add common test utilities and fixtures
+[-] Set up coverage reporting
+
+Step 3: Initial Test Implementation
+[ ] Test IframeContainer state management
+[ ] Test URL menu state transitions
+[ ] Test authentication flows
+[ ] Test API route handlers
+
+Step 4: Playwright Setup
+[ ] Install and configure Playwright
+[ ] Set up E2E test environment
+[ ] Create test database seeding utilities
+[ ] Add authentication test helpers
+[ ] Configure cross-browser testing
+
+### Step 2 Detailed Proposal: Critical Path Testing Setup
+
+#### 1. Test Structure Organization
+
+- Create standardized directory structure:
+  ```
+  __tests__/
+  ├── setup.ts
+  ├── utils/
+  │   ├── test-utils.tsx        # Common test utilities and wrappers
+  │   └── test-database.ts      # Test database utilities
+  ├── mocks/
+  │   ├── handlers/             # MSW API route handlers
+  │   │   ├── auth.ts          # Authentication route mocks
+  │   │   ├── urls.ts          # URL management route mocks
+  │   │   └── users.ts         # User management route mocks
+  │   ├── data/                # Mock data fixtures
+  │   │   ├── users.ts
+  │   │   ├── urls.ts
+  │   │   └── groups.ts
+  │   └── server.ts            # MSW server setup
+  └── __snapshots__/           # Jest snapshots if needed
+  ```
+
+#### 2. Test Database Configuration
+
+- Create isolated test database setup:
+  - Implement test database initialization
+  - Add data seeding utilities
+  - Create cleanup mechanisms
+  - Add transaction wrapping for test isolation
+  - Implement Prisma test helpers
+
+#### 3. MSW Handler Implementation
+
+- Create mock handlers for critical API routes:
+  ```typescript
+  // Example structure for auth handlers
+  export const authHandlers = [
+    http.post("/api/auth/login", async () => {
+      return HttpResponse.json({
+        /* mock response */
+      });
+    }),
+    http.get("/api/auth/session", async () => {
+      return HttpResponse.json({
+        /* mock session */
+      });
+    }),
+  ];
+  ```
+
+- Organize by feature domain:
+  - Authentication handlers
+  - URL management handlers
+  - User management handlers
+  - Settings handlers
+
+#### 4. Test Utilities & Fixtures
+
+- Create common test utilities:
+  ```typescript
+  // Example test wrapper
+  export function renderWithProviders(ui: React.ReactElement) {
+    return render(
+      <ThemeProvider>
+        <AuthProvider>
+          {ui}
+        </AuthProvider>
+      </ThemeProvider>
+    )
+  }
+  ```
+- Implement shared fixtures:
+  - User scenarios (admin, regular user, etc.)
+  - URL group configurations
+  - IFrame states
+  - Common test data
+
+#### 5. Coverage Configuration
+
+- Set up coverage reporting:
+  - Configure threshold requirements
+  - Set up coverage collection
+  - Add coverage reporting to CI pipeline
+  - Create coverage exclusion patterns
+
+### Implementation Steps
+
+1. Test Structure Setup
+   [ ] Create directory structure
+   [ ] Set up test utilities folder
+   [ ] Configure test database helpers
+   [ ] Add documentation for test organization
+
+2. Database Configuration
+   [ ] Create test database initialization script
+   [ ] Implement data seeding utilities
+   [ ] Add database cleanup mechanisms
+   [ ] Create transaction wrapper utility
+
+3. MSW Implementation
+   [ ] Set up base MSW configuration
+   [ ] Create auth route handlers
+   [ ] Add URL management handlers
+   [ ] Implement user management handlers
+
+4. Test Utilities
+   [ ] Create provider wrapper
+   [ ] Add common test helpers
+   [ ] Set up fixture data
+   [ ] Implement custom matchers
+
+5. Coverage Setup
+   [ ] Configure coverage thresholds
+   [ ] Set up coverage reporting
+   [ ] Add coverage to CI pipeline
+   [ ] Create coverage documentation
+
+### Key Considerations
+
+1. Test Isolation
+
+- Each test should run in isolation
+- Database state should be reset between tests
+- MSW handlers should be reset after each test
+- Provider state should be cleaned up
+
+2. Performance
+
+- Use fast matchers when possible
+- Minimize database operations
+- Cache test fixtures when appropriate
+- Use efficient setup/teardown patterns
+
+3. Maintainability
+
+- Keep test files close to source code
+- Use descriptive test names
+- Follow AAA pattern (Arrange, Act, Assert)
+- Document complex test scenarios
+
+4. Developer Experience
+
+- Provide clear error messages
+- Add helpful test utilities
+- Maintain good test documentation
+- Create example test cases
+
+### Dependencies Required
+
+- @testing-library/react
+- @testing-library/user-event
+- @testing-library/jest-dom
+- msw
+- @prisma/client (test config)
+- happy-dom
+- vitest
+
+### Next Actions
+
+1. Review and approve this proposal
+2. Begin implementation of directory structure
+3. Set up initial test utilities
+4. Create first set of MSW handlers
+
+## Progress History
+
+### 2025-03-18 06:34 PM - Testing Framework Setup
+
+- ✓ Completed: Initial setup of testing framework architecture
+- 🤔 Decisions: Decided to use MSW for API mocking instead of a test database
+- 📚 Documentation: Created plan document with detailed testing structure

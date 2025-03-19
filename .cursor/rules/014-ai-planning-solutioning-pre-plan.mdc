@@ -4,6 +4,11 @@ globs: **/docs/working-memory/**/*.md
 alwaysApply: false
 ---
 ---
+description: 
+globs: **/docs/working-memory/**/*.md
+alwaysApply: false
+---
+---
 description: Standardized approach for problem analysis, solution design, and implementation planning
 globs: ["**/docs/working-memory/**/*.md"]
 ---
