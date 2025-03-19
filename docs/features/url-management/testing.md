@@ -430,3 +430,286 @@ test.describe('URL Management', () => {
    - Check orientation changes
    - Test menu behavior
    - Verify mobile URLs 
+
+## Testing Strategies
+
+### Unit Testing Approach
+- Use Vitest for unit and integration tests
+- Isolate components with mock data
+- Test state transitions and event handlers
+- Use Testing Library for component interaction
+- Verify DOM updates
+
+### Integration Testing Approach
+- Test URL menu with IFrame interactions
+- Verify state synchronization
+- Test error handling and recovery
+- Validate accessibility features
+- Test mobile and desktop views
+
+### Testing IFrame Lifecycle States
+
+To properly test the IFrame container's complex state management system, we need to test each state transition and verify the correct behavior in each state. Below is a comprehensive testing approach for the IFrame lifecycle:
+
+#### Setting Up IFrame Lifecycle Tests
+
+```typescript
+// __tests__/hooks/useIframeLifecycle.test.tsx
+import { renderHook, act } from '@testing-library/react';
+import { useIframeLifecycle } from '@/components/iframe/hooks/useIframeLifecycle';
+import { IframeProvider } from '@/components/iframe/state/IframeContext';
+
+// Mock dependencies
+jest.mock('./useGlobalIframeContainer', () => ({
+  useGlobalIframeContainer: () => ({
+    createIframe: jest.fn(() => {
+      const iframe = document.createElement('iframe');
+      iframe.setAttribute('data-testid', 'test-iframe');
+      return iframe;
+    }),
+    removeIframe: jest.fn(),
+    updateIframeVisibility: jest.fn(),
+  }),
+}));
+
+describe('useIframeLifecycle', () => {
+  const wrapper = ({ children }) => (
+    <IframeProvider>{children}</IframeProvider>
+  );
+
+  it('should handle the iframe loading lifecycle', async () => {
+    const onLoad = jest.fn();
+    const onError = jest.fn();
+    const onUnload = jest.fn();
+    
+    const { result } = renderHook(
+      () => useIframeLifecycle('url-123', { onLoad, onError, onUnload }),
+      { wrapper }
+    );
+    
+    // Test initial state
+    expect(result.current).toHaveProperty('loadIframe');
+    expect(result.current).toHaveProperty('unloadIframe');
+    expect(result.current).toHaveProperty('resetIframe');
+    
+    // Test loading
+    act(() => {
+      result.current.loadIframe('url-123', 'https://example.com');
+    });
+    
+    // Simulate load event
+    const iframe = document.querySelector('[data-testid="test-iframe"]');
+    act(() => {
+      iframe.src = 'https://example.com';
+      iframe.dispatchEvent(new Event('load'));
+    });
+    
+    expect(onLoad).toHaveBeenCalledWith('url-123');
+    
+    // Test unloading
+    act(() => {
+      result.current.unloadIframe('url-123');
+    });
+    
+    expect(onUnload).toHaveBeenCalledWith('url-123');
+    expect(iframe.src).toBe('');
+    
+    // Test reset
+    act(() => {
+      result.current.resetIframe('url-123');
+    });
+    
+    // Verify src is reset
+    expect(iframe.src).toBe('about:blank');
+  });
+});
+```
+
+#### Testing State Transitions
+
+```typescript
+// __tests__/components/IframeContainer.test.tsx
+import { render, act, fireEvent, waitFor } from '@testing-library/react';
+import IframeContainer from '@/components/iframe/IframeContainer';
+
+describe('IframeContainer State Transitions', () => {
+  it('should transition through all iframe states correctly', async () => {
+    // Mock URL groups data
+    const urlGroups = [
+      {
+        id: 'group-1',
+        name: 'Test Group',
+        urls: [
+          { id: 'url-1', title: 'Test URL', url: 'https://example.com' },
+        ],
+      },
+    ];
+    
+    const { getByText, queryByTestId } = render(
+      <IframeContainer urlGroups={urlGroups} />
+    );
+    
+    // Initial state: inactive-unloaded
+    expect(queryByTestId('iframe-url-1')).toBeNull();
+    
+    // Click URL: inactive-unloaded → active-unloaded
+    const urlButton = getByText('Test URL');
+    fireEvent.click(urlButton);
+    
+    // Verify loading state
+    await waitFor(() => {
+      expect(queryByTestId('loading-indicator')).toBeInTheDocument();
+    });
+    
+    // Simulate load: active-unloaded → active-loaded
+    const iframe = document.querySelector('iframe');
+    act(() => {
+      iframe.dispatchEvent(new Event('load'));
+    });
+    
+    // Verify loaded state
+    await waitFor(() => {
+      expect(queryByTestId('loading-indicator')).not.toBeInTheDocument();
+      expect(urlButton).toHaveClass('active-loaded');
+    });
+    
+    // Test error state: simulate load error
+    act(() => {
+      iframe.dispatchEvent(new Event('error'));
+    });
+    
+    // Verify error state
+    await waitFor(() => {
+      expect(queryByTestId('error-indicator')).toBeInTheDocument();
+    });
+    
+    // Test long press reset
+    act(() => {
+      // Simulate long press
+      fireEvent.mouseDown(urlButton);
+      // Fast-forward timers to trigger long press
+      jest.advanceTimersByTime(1000);
+      fireEvent.mouseUp(urlButton);
+    });
+    
+    // Verify reset state
+    await waitFor(() => {
+      expect(urlButton).not.toHaveClass('active-loaded');
+      expect(iframe.src).toBe('');
+    });
+  });
+});
+```
+
+#### Testing Resource Management
+
+```typescript
+// __tests__/iframe-resource-management.test.tsx
+import { render, act } from '@testing-library/react';
+import IframeContainer from '@/components/iframe/IframeContainer';
+
+describe('IFrame Resource Management', () => {
+  it('should unload least recently used iframes when exceeding limit', async () => {
+    // Mock URL groups with many URLs
+    const urlGroups = [
+      {
+        id: 'group-1',
+        name: 'Test Group',
+        urls: Array.from({ length: 10 }, (_, i) => ({
+          id: `url-${i}`,
+          title: `URL ${i}`,
+          url: `https://example.com/${i}`,
+        })),
+      },
+    ];
+    
+    const { getAllByRole } = render(
+      <IframeContainer urlGroups={urlGroups} />
+    );
+    
+    // Click on 6 different URLs (assuming maxCachedFrames is 5)
+    const urlButtons = getAllByRole('button');
+    
+    for (let i = 0; i < 6; i++) {
+      act(() => {
+        fireEvent.click(urlButtons[i]);
+        // Simulate load
+        const iframe = document.querySelector(`iframe[data-iframe-id="url-${i}"]`);
+        if (iframe) {
+          iframe.dispatchEvent(new Event('load'));
+        }
+      });
+    }
+    
+    // Verify the first URL's iframe was unloaded
+    await waitFor(() => {
+      const firstIframe = document.querySelector('iframe[data-iframe-id="url-0"]');
+      expect(firstIframe.src).toBe('');
+    });
+  });
+
+  it('should properly clean up resources on unmount', () => {
+    // Render and then unmount
+    const { unmount } = render(
+      <IframeContainer urlGroups={[]} />
+    );
+    
+    // Get reference to container before unmount
+    const container = document.getElementById('global-iframe-container');
+    expect(container).toBeInTheDocument();
+    
+    // Unmount component
+    unmount();
+    
+    // Verify event listeners are removed
+    // (would need to spy on addEventListener/removeEventListener)
+    
+    // Note: The global container remains in the DOM even after unmount
+    // as it's designed to be a singleton
+  });
+});
+```
+
+## End-to-End Testing
+
+For end-to-end testing, focus on these key IFrame lifecycle scenarios:
+
+1. **Loading and Navigation**
+   - Verify iframes load correctly
+   - Test navigation between URL groups
+   - Validate state preservation when switching between URLs
+   
+2. **Error Handling**
+   - Test invalid URL handling
+   - Verify error messages display correctly
+   - Test retry functionality
+   
+3. **Resource Management**
+   - Validate memory usage over time
+   - Test performance with many open iframes
+   - Verify cleanup works as expected
+   
+4. **Mobile Responsiveness**
+   - Test on various viewports
+   - Verify touch interactions work for long press
+   - Test menu collapse/expand on mobile
+
+5. **Accessibility**
+   - Test keyboard navigation
+   - Verify screen reader compatibility
+   - Test focus management
+
+## Performance Testing
+
+### Metrics to Monitor
+- Iframe load time
+- Memory usage with multiple iframes
+- CPU usage during state transitions
+- Frame rate during animations
+- Idle timeout effectiveness
+
+### Test Cases
+- Load testing with many iframes
+- Stress testing with rapid iframe changes
+- Long-running tests for memory leak detection
+- Measure performance impact of content caching 
