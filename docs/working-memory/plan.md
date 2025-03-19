@@ -23,6 +23,23 @@ This document serves as the main project plan and tracks the status of all tasks
   - [X] Iframe Management
   - [ ] Visual Feedback Testing
 
+## Future Tasks
+
+### Performance Optimization
+- **Description**: Optimize iframe loading and switching, implement lazy loading
+- **Priority**: Medium
+- **Estimated Effort**: 1 week
+
+### Security & Monitoring
+- **Description**: Implement container security measures, add security scanning
+- **Priority**: High
+- **Estimated Effort**: 2 weeks
+
+### User Features
+- **Description**: Add password recovery option, user activity monitoring
+- **Priority**: Low
+- **Estimated Effort**: 1 week 
+
 ## Completed Tasks
 
 ### Admin Configuration
@@ -105,20 +122,3 @@ This document serves as the main project plan and tracks the status of all tasks
   - Next.js 15.2.2 project initialized with TypeScript and ESLint
   - Created database schema with User, UrlGroup, Url, and UserUrlGroup models
   - Created Dockerfile with multi-stage build
-
-## Future Tasks
-
-### Performance Optimization
-- **Description**: Optimize iframe loading and switching, implement lazy loading
-- **Priority**: Medium
-- **Estimated Effort**: 1 week
-
-### Security & Monitoring
-- **Description**: Implement container security measures, add security scanning
-- **Priority**: High
-- **Estimated Effort**: 2 weeks
-
-### User Features
-- **Description**: Add password recovery option, user activity monitoring
-- **Priority**: Low
-- **Estimated Effort**: 1 week 
