@@ -46,6 +46,7 @@ The task may require creating a new codebase, modifying or debugging an existing
      - `/docs/working-memory/plan.md` - Main project plan and task tracking
      - Output plan updates before starting work
      - Reference plan number in all communications
+   - Always follow the `/docs/templates/plan-template.md` when updating the `/docs/working-memory/plan.md`
 
 4. File Management:
 
