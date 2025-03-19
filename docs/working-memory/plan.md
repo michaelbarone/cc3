@@ -4,6 +4,18 @@ This document serves as the main project plan and tracks the status of all tasks
 
 ## Active Tasks
 
+### Menu State Management Optimization (Planned)
+- **Location**: `/docs/working-memory/open/menu-state-optimization-20250319`
+- **Status**: Planned
+- **Description**: Fix menu flickering during login and optimize state management
+- **Key Milestones**: 
+  - [ ] State Synchronization
+  - [ ] Authentication Flow Optimization
+  - [ ] Menu State Management
+  - [ ] Performance Optimization
+- **Priority**: High
+- **Target**: Next development cycle
+
 ### Login Page UI Updates (Planned)
 - **Location**: `/docs/working-memory/open/login-ui-update-20250319`
 - **Status**: Planned
