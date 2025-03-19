@@ -95,6 +95,7 @@ flowchart TD
     E -- "User reselects URL" --> D
     E -- "Idle timeout/Manual reset" --> B
     D -- "Long press reset" --> B
+    D -- "Long press unload" --> C
     C -- "Load error" --> F[active-error]
     F -- "Retry load" --> C
 ```
@@ -152,6 +153,7 @@ The iframe lifecycle includes several key events:
 | Load Complete | `handleLoad` | active-unloaded → active-loaded | Update status, record activity |
 | Load Error | `handleError` | active-unloaded → active-error | Set error state, display error message |
 | URL Deselection | `onUrlDeselect` | active-loaded → inactive-loaded | Hide iframe but maintain content |
+| Manual Unload | `handleLongPress` | active-loaded → active-unloaded | Clear iframe src to free memory while keeping iframe visible |
 | Manual Reset | `resetIframe` | any → inactive-unloaded | Clear src, reset state |
 | Idle Timeout | `handleIdleTimeout` | inactive-loaded → inactive-unloaded | Clear content after timeout |
 

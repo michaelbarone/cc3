@@ -200,6 +200,7 @@ Key Features:
 State Transitions:
 - On load: active-unloaded → active-loaded
 - On error: active-unloaded → active-error
+- On manual unload (long press): active-loaded → active-unloaded
 - On unload: active-loaded → inactive-unloaded
 - On reset: any → inactive-unloaded
 
@@ -255,21 +256,23 @@ button.onClick = () => hideIframe();
 
 ### useLongPress
 
-Purpose: Detects long press events for URL reset functionality.
+Purpose: Detects long press events for URL management, enabling both iframe unloading and full reset functionality.
 
 ```typescript
 interface UseLongPressOptions {
   duration?: number;
   onStart?: () => void;
-  onFinish: () => void;
+  onFinish: () => void; // Called when long press completes
   onCancel?: () => void;
+  actionType?: 'unload' | 'reset'; // Determines whether to unload or reset the iframe
 }
 
 function useLongPress({
   duration = 1000,
   onStart,
   onFinish,
-  onCancel
+  onCancel,
+  actionType = 'unload'
 }: UseLongPressOptions) {
   // Hook implementation
   return {

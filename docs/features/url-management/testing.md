@@ -289,6 +289,36 @@ describe('URL Management Flow', () => {
     const iframe = document.querySelector('iframe');
     expect(iframe?.src).toBe('');
   });
+
+  it('handles long press unload correctly', async () => {
+    render(<UrlManager />);
+
+    // Select URL first
+    const urlItem = screen.getByText('Test URL');
+    fireEvent.click(urlItem);
+    
+    // Verify loaded state
+    await waitFor(() => {
+      const iframe = document.querySelector('iframe');
+      expect(iframe).toBeVisible();
+      expect(iframe?.src).toBe('https://example.com');
+    });
+    
+    // Simulate long press with 'unload' action type
+    fireEvent.mouseDown(urlItem);
+    await act(async () => {
+      await new Promise(r => setTimeout(r, 800)); // Slightly shorter than reset
+    });
+    fireEvent.mouseUp(urlItem);
+
+    // Verify iframe is still visible but content is unloaded
+    await waitFor(() => {
+      const iframe = document.querySelector('iframe');
+      expect(iframe).toBeVisible(); // Still visible
+      expect(iframe?.src).toBe(''); // But content is unloaded
+      expect(urlItem).toHaveClass('active-unloaded'); // URL menu item shows unloaded state
+    });
+  });
 });
 ```
 
@@ -596,6 +626,55 @@ describe('IframeContainer State Transitions', () => {
     await waitFor(() => {
       expect(urlButton).not.toHaveClass('active-loaded');
       expect(iframe.src).toBe('');
+    });
+
+    it('should handle manual unload via long press correctly', async () => {
+      const urlGroups = [
+        {
+          id: 'group-1',
+          name: 'Test Group',
+          urls: [
+            { id: 'url-1', title: 'Test URL', url: 'https://example.com' },
+          ],
+        },
+      ];
+      
+      const { getByText, queryByTestId } = render(
+        <IframeContainer urlGroups={urlGroups} />
+      );
+      
+      // Click URL to load iframe
+      const urlButton = getByText('Test URL');
+      fireEvent.click(urlButton);
+      
+      // Simulate load completion
+      const iframe = document.querySelector('iframe');
+      act(() => {
+        iframe.dispatchEvent(new Event('load'));
+      });
+      
+      // Verify loaded state
+      await waitFor(() => {
+        expect(urlButton).toHaveClass('active-loaded');
+      });
+      
+      // Test long press unload (medium duration press)
+      act(() => {
+        // Simulate long press with unload action type
+        fireEvent.mouseDown(urlButton, { 
+          detail: { actionType: 'unload' } 
+        });
+        // Medium duration press
+        jest.advanceTimersByTime(800);
+        fireEvent.mouseUp(urlButton);
+      });
+      
+      // Verify unloaded state - iframe is still visible but content is cleared
+      await waitFor(() => {
+        expect(urlButton).toHaveClass('active-unloaded');
+        expect(iframe.src).toBe('');
+        expect(iframe).toBeVisible();
+      });
     });
   });
 });
