@@ -17,7 +17,7 @@ It is very important to have a working memory.
 
 All components should be in app/components or app/components/ui
 
-Review docs/composer-history this is where your history of current and previous tasks is stored
+Review docs/working-memory this is where your history of current and previous tasks is stored
 
 Every run should be using composer history and .plan and referencing the .cursorrules file
 

@@ -38,8 +38,8 @@ The task may require creating a new codebase, modifying or debugging an existing
    └── cursor_settings.md     # Cursor IDE settings
    ```
 
-   - Review `docs/composer-history` for current and previous tasks
-   - Every run should use composer history and `.plan`
+   - Review `docs/working-memory` for current and previous tasks
+   - Every run should use working-memory and `.plan`
    - Always reference the `.cursorrules` file
    - Always check these files for current project state before any work:
      - `/docs/plan.md` - Main project plan and task tracking
