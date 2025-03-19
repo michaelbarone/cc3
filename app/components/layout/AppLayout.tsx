@@ -316,6 +316,15 @@ export default function AppLayout({
                       </MenuItem>
                     )}
                     <Divider />
+                    <MenuItem onClick={colorMode.toggleColorMode}>
+                      {theme.palette.mode === "dark" ? (
+                        <Brightness7Icon sx={{ mr: 1 }} />
+                      ) : (
+                        <Brightness4Icon sx={{ mr: 1 }} />
+                      )}
+                      {theme.palette.mode === "dark" ? "Light Mode" : "Dark Mode"}
+                    </MenuItem>
+                    <Divider />
                     <MenuItem onClick={handleLogout}>
                       <LogoutIcon sx={{ mr: 1 }} />
                       Logout
@@ -323,9 +332,6 @@ export default function AppLayout({
                   </Menu>
                 </>
               )}
-              <IconButton color="inherit" onClick={colorMode.toggleColorMode}>
-                {theme.palette.mode === "dark" ? <Brightness7Icon /> : <Brightness4Icon />}
-              </IconButton>
             </Box>
           </Toolbar>
         </AppBar>
@@ -492,6 +498,15 @@ export default function AppLayout({
                     </MenuItem>
                   )}
                   <Divider />
+                  <MenuItem onClick={colorMode.toggleColorMode}>
+                    {theme.palette.mode === "dark" ? (
+                      <Brightness7Icon sx={{ mr: 1 }} />
+                    ) : (
+                      <Brightness4Icon sx={{ mr: 1 }} />
+                    )}
+                    {theme.palette.mode === "dark" ? "Light Mode" : "Dark Mode"}
+                  </MenuItem>
+                  <Divider />
                   <MenuItem onClick={handleLogout}>
                     <LogoutIcon sx={{ mr: 1 }} />
                     Logout
@@ -499,9 +514,6 @@ export default function AppLayout({
                 </Menu>
               </>
             )}
-            <IconButton color="inherit" onClick={colorMode.toggleColorMode}>
-              {theme.palette.mode === "dark" ? <Brightness7Icon /> : <Brightness4Icon />}
-            </IconButton>
           </Box>
         </Toolbar>
       </AppBar>
