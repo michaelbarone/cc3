@@ -1,0 +1,59 @@
+# Menu Visibility Enhancement
+
+## Problem Analysis
+The top menu's group selector currently shows regardless of the number of available groups, which is not optimal for UX:
+1. When no groups are available, the selector area is still visible but empty
+2. When only one group is available, the dropdown functionality is unnecessary
+
+## Solution Design
+Enhance the MenuBarAdapter component to implement conditional rendering based on URL group availability:
+
+1. No Groups Available:
+   - Hide the entire group selector area
+   - Show appropriate empty state or message if needed
+
+2. Single Group Available:
+   - Show the group name as static text
+   - Remove dropdown functionality
+   - Maintain consistent styling with the current design
+
+3. Multiple Groups Available:
+   - Keep current dropdown functionality
+   - No changes needed to current behavior
+
+## Implementation Steps
+- [ ] Update MenuBarAdapter Component
+  - [ ] Add conditional rendering logic for zero groups
+  - [ ] Add conditional rendering logic for single group
+  - [ ] Update styling to maintain consistency
+  - [ ] Add appropriate aria labels for accessibility
+  - [ ] Test with different group configurations
+
+## Affected Components
+- `/app/components/iframe/MenuBarAdapter.tsx`
+
+## Dependencies
+- None - This is a self-contained UI enhancement
+
+## Current Status
+
+### 2024-03-20 HH:mm
+**Status**: Planned
+
+- What's working: Current dropdown functionality for multiple groups
+- What's not: Unnecessary UI elements shown for 0-1 groups
+- Blocking issues: None
+- Next actions: Implementation of conditional rendering
+- Documentation updates needed:
+  - [ ] Component documentation updates
+  - [ ] UI/UX documentation updates
+
+## Progress History
+
+### 2024-03-20 HH:mm - Task Creation
+- ✓ Created task plan for menu visibility enhancement
+- 🤔 Decisions:
+  - Hide selector completely when no groups
+  - Show static text for single group
+  - Maintain current behavior for multiple groups
+- 📚 Documentation: Initial task documentation created
