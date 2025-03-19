@@ -1,32 +1,36 @@
-import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-import { verifyToken } from '@/app/lib/auth/jwt';
-import { cookies } from 'next/headers';
+import { verifyToken } from "@/app/lib/auth/jwt";
+import { prisma } from "@/app/lib/db/prisma";
+import { cookies } from "next/headers";
+import { NextRequest } from "next/server";
 
-const prisma = new PrismaClient();
+type RouteContext = {
+  params: Promise<{ id: string }>;
+};
 
 // GET - Fetch a specific URL group with its URLs
-export async function GET(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
+export async function GET(request: NextRequest, context: RouteContext): Promise<Response> {
   try {
     // Verify admin access
     const cookieStore = await cookies();
-    const token = cookieStore.get('auth_token')?.value;
+    const token = cookieStore.get("auth_token")?.value;
 
     if (!token) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { "Content-Type": "application/json" },
+      });
     }
 
     const userData = await verifyToken();
 
     if (!userData || !userData.isAdmin) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      return new Response(JSON.stringify({ error: "Forbidden" }), {
+        status: 403,
+        headers: { "Content-Type": "application/json" },
+      });
     }
 
-    // Await params before destructuring
-    const id = params.id;
+    const { id } = await context.params;
 
     // Get the URL group with its URLs
     const urlGroup = await prisma.urlGroup.findUnique({
@@ -34,64 +38,67 @@ export async function GET(
       include: {
         urls: {
           orderBy: {
-            displayOrder: 'asc'
-          }
-        }
-      }
+            displayOrder: "asc",
+          },
+        },
+      },
     });
 
     if (!urlGroup) {
-      return NextResponse.json(
-        { error: 'URL group not found' },
-        { status: 404 }
-      );
+      return new Response(JSON.stringify({ error: "URL group not found" }), {
+        status: 404,
+        headers: { "Content-Type": "application/json" },
+      });
     }
 
-    return NextResponse.json(urlGroup);
+    return new Response(JSON.stringify(urlGroup), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
   } catch (error) {
-    console.error('Error fetching URL group:', error);
-    return NextResponse.json(
-      { error: 'Internal Server Error' },
-      { status: 500 }
-    );
-  } finally {
-    await prisma.$disconnect();
+    console.error("Error fetching URL group:", error);
+    return new Response(JSON.stringify({ error: "Internal Server Error" }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
+    });
   }
 }
 
 // PUT - Update a URL group
-export async function PUT(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
+export async function PUT(request: NextRequest, context: RouteContext): Promise<Response> {
   try {
     // Verify admin access
     const cookieStore = await cookies();
-    const token = cookieStore.get('auth_token')?.value;
+    const token = cookieStore.get("auth_token")?.value;
 
     if (!token) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { "Content-Type": "application/json" },
+      });
     }
 
     const userData = await verifyToken();
 
     if (!userData || !userData.isAdmin) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      return new Response(JSON.stringify({ error: "Forbidden" }), {
+        status: 403,
+        headers: { "Content-Type": "application/json" },
+      });
     }
 
-    // Await params before destructuring
-    const id = params.id;
+    const { id } = await context.params;
 
     // Check if URL group exists
     const existingUrlGroup = await prisma.urlGroup.findUnique({
-      where: { id }
+      where: { id },
     });
 
     if (!existingUrlGroup) {
-      return NextResponse.json(
-        { error: 'URL group not found' },
-        { status: 404 }
-      );
+      return new Response(JSON.stringify({ error: "URL group not found" }), {
+        status: 404,
+        headers: { "Content-Type": "application/json" },
+      });
     }
 
     // Parse request body
@@ -99,10 +106,10 @@ export async function PUT(
 
     // Validate input
     if (!name || name.trim().length === 0) {
-      return NextResponse.json(
-        { error: 'Group name is required' },
-        { status: 400 }
-      );
+      return new Response(JSON.stringify({ error: "Group name is required" }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      });
     }
 
     // Update URL group
@@ -110,70 +117,74 @@ export async function PUT(
       where: { id },
       data: {
         name,
-        description: description || null
-      }
+        description: description || null,
+      },
     });
 
-    return NextResponse.json(updatedUrlGroup);
+    return new Response(JSON.stringify(updatedUrlGroup), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
   } catch (error) {
-    console.error('Error updating URL group:', error);
-    return NextResponse.json(
-      { error: 'Internal Server Error' },
-      { status: 500 }
-    );
-  } finally {
-    await prisma.$disconnect();
+    console.error("Error updating URL group:", error);
+    return new Response(JSON.stringify({ error: "Internal Server Error" }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
+    });
   }
 }
 
 // DELETE - Remove a URL group and all associated URLs
-export async function DELETE(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
+export async function DELETE(request: NextRequest, context: RouteContext): Promise<Response> {
   try {
     // Verify admin access
     const cookieStore = await cookies();
-    const token = cookieStore.get('auth_token')?.value;
+    const token = cookieStore.get("auth_token")?.value;
 
     if (!token) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { "Content-Type": "application/json" },
+      });
     }
 
     const userData = await verifyToken();
 
     if (!userData || !userData.isAdmin) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      return new Response(JSON.stringify({ error: "Forbidden" }), {
+        status: 403,
+        headers: { "Content-Type": "application/json" },
+      });
     }
 
-    // Await params before destructuring
-    const id = params.id;
+    const { id } = await context.params;
 
     // Check if URL group exists
     const existingUrlGroup = await prisma.urlGroup.findUnique({
-      where: { id }
+      where: { id },
     });
 
     if (!existingUrlGroup) {
-      return NextResponse.json(
-        { error: 'URL group not found' },
-        { status: 404 }
-      );
+      return new Response(JSON.stringify({ error: "URL group not found" }), {
+        status: 404,
+        headers: { "Content-Type": "application/json" },
+      });
     }
 
     // Delete URL group (will cascade delete URLs and user mappings due to schema)
     await prisma.urlGroup.delete({
-      where: { id }
+      where: { id },
     });
 
-    return NextResponse.json({ success: true });
+    return new Response(JSON.stringify({ success: true }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
   } catch (error) {
-    console.error('Error deleting URL group:', error);
-    return NextResponse.json(
-      { error: 'Internal Server Error' },
-      { status: 500 }
-    );
-  } finally {
-    await prisma.$disconnect();
+    console.error("Error deleting URL group:", error);
+    return new Response(JSON.stringify({ error: "Internal Server Error" }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
+    });
   }
 }

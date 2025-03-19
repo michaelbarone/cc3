@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
 import { verifyToken } from "@/app/lib/auth/jwt";
 import { prisma } from "@/app/lib/db/prisma";
 import { PrismaClient } from "@prisma/client";
+import { NextRequest, NextResponse } from "next/server";
 
 interface RouteParams {
   params: {
@@ -10,7 +10,7 @@ interface RouteParams {
 }
 
 // Get all users assigned to a URL group (admin only)
-export async function GET(request: NextRequest, params: RouteParams) {
+export async function GET(request: NextRequest, params: RouteParams): Promise<NextResponse> {
   try {
     const user = await verifyToken();
 
@@ -46,7 +46,8 @@ export async function GET(request: NextRequest, params: RouteParams) {
     });
 
     // Extract just the user information
-    const users = assignments.map((assignment) => assignment.user);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const users = assignments.map((assignment: any) => assignment.user);
 
     return NextResponse.json(users);
   } catch (error) {
@@ -56,7 +57,7 @@ export async function GET(request: NextRequest, params: RouteParams) {
 }
 
 // Update users assigned to a URL group (admin only)
-export async function PUT(request: NextRequest, params: RouteParams) {
+export async function PUT(request: NextRequest, params: RouteParams): Promise<NextResponse> {
   try {
     const user = await verifyToken();
 

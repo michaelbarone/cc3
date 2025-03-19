@@ -1,13 +1,16 @@
-import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
 import { verifyToken } from "@/app/lib/auth/jwt";
-import { cookies } from "next/headers";
 import { prisma } from "@/app/lib/db/prisma";
+import { PrismaClient } from "@prisma/client";
+import { cookies } from "next/headers";
+import { NextResponse } from "next/server";
 
 const prismaClient = new PrismaClient();
 
 // POST - Create a new URL within a URL group
-export async function POST(request: Request, { params }: { params: { id: string } }) {
+export async function POST(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> },
+): Promise<NextResponse> {
   try {
     const userData = await verifyToken();
 
@@ -15,7 +18,7 @@ export async function POST(request: Request, { params }: { params: { id: string 
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const { id: urlGroupId } = params;
+    const { id: urlGroupId } = await params;
 
     // Check if URL group exists
     const urlGroup = await prismaClient.urlGroup.findUnique({
@@ -85,27 +88,34 @@ export async function POST(request: Request, { params }: { params: { id: string 
       });
 
       // Filter out false positives by doing a more precise comparison
-      const matches = existingUrls.filter((existingUrl) => {
-        const normalizedExistingUrl = normalizeUrl(existingUrl.url);
-        return (
-          normalizedExistingUrl === normalizedNewUrl ||
-          normalizedExistingUrl.includes(normalizedNewUrl) ||
-          normalizedNewUrl.includes(normalizedExistingUrl)
-        );
-      });
+      const matches = existingUrls.filter(
+        (existingUrl: { id: string; title: string; url: string; urlGroupId: string }) => {
+          const normalizedExistingUrl = normalizeUrl(existingUrl.url);
+          return (
+            normalizedExistingUrl === normalizedNewUrl ||
+            normalizedExistingUrl.includes(normalizedNewUrl) ||
+            normalizedNewUrl.includes(normalizedExistingUrl)
+          );
+        },
+      );
 
       if (matches.length > 0) {
         // Return the matches with their details
         return NextResponse.json(
           {
             warning: "Similar URLs found",
-            matches: matches.map((u) => ({
-              id: u.id,
-              title: u.title,
-              url: u.url,
-              inGroup: !!u.urlGroupId,
-            })),
-            exactMatch: matches.some((u) => normalizeUrl(u.url) === normalizedNewUrl),
+            matches: matches.map(
+              (u: { id: string; title: string; url: string; urlGroupId: string }) => ({
+                id: u.id,
+                title: u.title,
+                url: u.url,
+                inGroup: !!u.urlGroupId,
+              }),
+            ),
+            exactMatch: matches.some(
+              (u: { id: string; title: string; url: string; urlGroupId: string }) =>
+                normalizeUrl(u.url) === normalizedNewUrl,
+            ),
           },
           { status: 409 },
         );
@@ -158,7 +168,10 @@ export async function POST(request: Request, { params }: { params: { id: string 
 }
 
 // PUT - Update URLs in a group
-export async function PUT(request: Request, { params }: { params: { id: string } }) {
+export async function PUT(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> },
+): Promise<NextResponse> {
   try {
     // Verify admin access
     const cookieStore = await cookies();
@@ -174,7 +187,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const { id } = params;
+    const { id } = await params;
     const { urlIds } = await request.json();
 
     // Check if URL group exists
