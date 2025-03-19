@@ -1,47 +1,47 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
+import IconUpload from "@/app/components/ui/IconUpload";
+import AddIcon from "@mui/icons-material/Add";
+import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
+import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
+import DeleteIcon from "@mui/icons-material/Delete";
+import EditIcon from "@mui/icons-material/Edit";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import GroupIcon from "@mui/icons-material/Group";
+import LinkIcon from "@mui/icons-material/Link";
+import SearchIcon from "@mui/icons-material/Search";
+import VisibilityIcon from "@mui/icons-material/Visibility";
 import {
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
+  Alert,
+  Autocomplete,
   Box,
   Button,
-  Paper,
-  Typography,
-  IconButton,
+  Checkbox,
+  Chip,
+  CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
   DialogContentText,
   DialogTitle,
-  TextField,
-  CircularProgress,
-  Alert,
-  Snackbar,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
+  Divider,
+  FormControlLabel,
+  Grid,
+  IconButton,
   List,
   ListItem,
-  ListItemText,
   ListItemSecondaryAction,
-  Divider,
-  Grid,
+  ListItemText,
+  Paper,
+  Snackbar,
+  TextField,
   Tooltip,
-  Checkbox,
-  FormControlLabel,
-  Chip,
-  Autocomplete
-} from '@mui/material';
-import AddIcon from '@mui/icons-material/Add';
-import EditIcon from '@mui/icons-material/Edit';
-import DeleteIcon from '@mui/icons-material/Delete';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import LinkIcon from '@mui/icons-material/Link';
-import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
-import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
-import GroupIcon from '@mui/icons-material/Group';
-import VisibilityIcon from '@mui/icons-material/Visibility';
-import IconUpload from '@/app/components/ui/IconUpload';
-import SearchIcon from '@mui/icons-material/Search';
+  Typography,
+} from "@mui/material";
+import React, { useEffect, useState } from "react";
 
 interface Url {
   id: string;
@@ -75,30 +75,38 @@ export default function UrlGroupManagement() {
 
   // Dialog state
   const [openDialog, setOpenDialog] = useState(false);
-  const [dialogType, setDialogType] = useState<'createGroup' | 'editGroup' | 'deleteGroup' | 'createUrl' | 'editUrl' | 'deleteUrl' | 'assignUsers'>('createGroup');
+  const [dialogType, setDialogType] = useState<
+    | "createGroup"
+    | "editGroup"
+    | "deleteGroup"
+    | "createUrl"
+    | "editUrl"
+    | "deleteUrl"
+    | "assignUsers"
+  >("createGroup");
   const [selectedGroup, setSelectedGroup] = useState<UrlGroup | null>(null);
   const [selectedUrl, setSelectedUrl] = useState<Url | null>(null);
 
   // Form state
   const [groupFormValues, setGroupFormValues] = useState({
-    name: '',
-    description: ''
+    name: "",
+    description: "",
   });
 
   const [urlFormValues, setUrlFormValues] = useState({
-    title: '',
-    url: '',
-    urlMobile: '',
-    iconPath: '',
+    title: "",
+    url: "",
+    urlMobile: "",
+    iconPath: "",
     displayOrder: 0,
-    idleTimeoutMinutes: 10
+    idleTimeoutMinutes: 10,
   });
 
   // Snackbar state
   const [snackbar, setSnackbar] = useState({
     open: false,
-    message: '',
-    severity: 'success' as 'success' | 'error' | 'info' | 'warning'
+    message: "",
+    severity: "success" as "success" | "error" | "info" | "warning",
   });
 
   // Expanded accordion state
@@ -112,7 +120,9 @@ export default function UrlGroupManagement() {
   const [selectedUrls, setSelectedUrls] = useState<Url[]>([]);
   const [loadingUrls, setLoadingUrls] = useState(false);
 
-  const [similarUrls, setSimilarUrls] = useState<{ id: string; title: string; url: string; inGroup: boolean }[]>([]);
+  const [similarUrls, setSimilarUrls] = useState<
+    { id: string; title: string; url: string; inGroup: boolean }[]
+  >([]);
   const [showSimilarUrlsDialog, setShowSimilarUrlsDialog] = useState(false);
   const [pendingUrlSubmit, setPendingUrlSubmit] = useState<{
     values: typeof urlFormValues;
@@ -122,16 +132,16 @@ export default function UrlGroupManagement() {
   const fetchUrlGroups = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/admin/url-groups');
+      const response = await fetch("/api/admin/url-groups");
 
       if (!response.ok) {
-        throw new Error('Failed to fetch URL groups');
+        throw new Error("Failed to fetch URL groups");
       }
 
       const data = await response.json();
       setUrlGroups(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An unknown error occurred');
+      setError(err instanceof Error ? err.message : "An unknown error occurred");
     } finally {
       setLoading(false);
     }
@@ -142,42 +152,46 @@ export default function UrlGroupManagement() {
   }, []);
 
   const handleOpenDialog = (
-    type: 'createGroup' | 'editGroup' | 'deleteGroup' | 'createUrl' | 'editUrl' | 'deleteUrl' | 'assignUsers',
+    type:
+      | "createGroup"
+      | "editGroup"
+      | "deleteGroup"
+      | "createUrl"
+      | "editUrl"
+      | "deleteUrl"
+      | "assignUsers",
     group?: UrlGroup,
-    url?: Url
+    url?: Url,
   ) => {
     setDialogType(type);
 
     if (group) {
       setSelectedGroup(group);
 
-      if (type === 'editGroup') {
+      if (type === "editGroup") {
         setGroupFormValues({
           name: group.name,
-          description: group.description || ''
+          description: group.description || "",
         });
-      } else if (type === 'createUrl') {
-        const maxOrder = group.urls.reduce(
-          (max, url) => Math.max(max, url.displayOrder),
-          -1
-        );
+      } else if (type === "createUrl") {
+        const maxOrder = group.urls.reduce((max, url) => Math.max(max, url.displayOrder), -1);
 
         setUrlFormValues({
-          title: '',
-          url: '',
-          urlMobile: '',
-          iconPath: '',
+          title: "",
+          url: "",
+          urlMobile: "",
+          iconPath: "",
           displayOrder: maxOrder + 1,
-          idleTimeoutMinutes: 10
+          idleTimeoutMinutes: 10,
         });
       }
     } else {
       setSelectedGroup(null);
 
-      if (type === 'createGroup') {
+      if (type === "createGroup") {
         setGroupFormValues({
-          name: '',
-          description: ''
+          name: "",
+          description: "",
         });
       }
     }
@@ -185,21 +199,21 @@ export default function UrlGroupManagement() {
     if (url) {
       setSelectedUrl(url);
 
-      if (type === 'editUrl') {
+      if (type === "editUrl") {
         setUrlFormValues({
           title: url.title,
           url: url.url,
-          urlMobile: url.urlMobile || '',
-          iconPath: url.iconPath || '',
+          urlMobile: url.urlMobile || "",
+          iconPath: url.iconPath || "",
           displayOrder: url.displayOrder,
-          idleTimeoutMinutes: url.idleTimeoutMinutes
+          idleTimeoutMinutes: url.idleTimeoutMinutes,
         });
       }
     } else {
       setSelectedUrl(null);
     }
 
-    if (type === 'assignUsers' && group) {
+    if (type === "assignUsers" && group) {
       fetchUsers();
       fetchAssignedUsers(group.id);
     }
@@ -212,42 +226,38 @@ export default function UrlGroupManagement() {
   };
 
   const handleGroupFormChange = (
-    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
     const { name, value } = event.target;
-    setGroupFormValues(prev => ({ ...prev, [name]: value }));
+    setGroupFormValues((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleUrlFormChange = (
-    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
     const { name, value } = event.target;
-    setUrlFormValues(prev => ({ ...prev, [name]: value }));
+    setUrlFormValues((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleUrlOrderChange = async (
-    groupId: string,
-    urlId: string,
-    direction: 'up' | 'down'
-  ) => {
+  const handleUrlOrderChange = async (groupId: string, urlId: string, direction: "up" | "down") => {
     try {
       const response = await fetch(`/api/admin/url-groups/${groupId}/urls/${urlId}/reorder`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ direction })
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ direction }),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData?.error || 'Operation failed');
+        throw new Error(errorData?.error || "Operation failed");
       }
 
       fetchUrlGroups();
     } catch (err) {
       setSnackbar({
         open: true,
-        message: err instanceof Error ? err.message : 'An unknown error occurred',
-        severity: 'error'
+        message: err instanceof Error ? err.message : "An unknown error occurred",
+        severity: "error",
       });
     }
   };
@@ -255,36 +265,36 @@ export default function UrlGroupManagement() {
   const handleSubmit = async () => {
     try {
       let response;
-      let successMessage = '';
+      let successMessage = "";
 
       // Handle group operations
-      if (dialogType === 'createGroup') {
-        response = await fetch('/api/admin/url-groups', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(groupFormValues)
+      if (dialogType === "createGroup") {
+        response = await fetch("/api/admin/url-groups", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(groupFormValues),
         });
-        successMessage = 'URL group created successfully';
-      } else if (dialogType === 'editGroup' && selectedGroup) {
+        successMessage = "URL group created successfully";
+      } else if (dialogType === "editGroup" && selectedGroup) {
         response = await fetch(`/api/admin/url-groups/${selectedGroup.id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(groupFormValues)
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(groupFormValues),
         });
-        successMessage = 'URL group updated successfully';
-      } else if (dialogType === 'deleteGroup' && selectedGroup) {
+        successMessage = "URL group updated successfully";
+      } else if (dialogType === "deleteGroup" && selectedGroup) {
         response = await fetch(`/api/admin/url-groups/${selectedGroup.id}`, {
-          method: 'DELETE'
+          method: "DELETE",
         });
-        successMessage = 'URL group deleted successfully';
+        successMessage = "URL group deleted successfully";
       }
 
       // Handle URL operations
-      else if (dialogType === 'createUrl' && selectedGroup) {
+      else if (dialogType === "createUrl" && selectedGroup) {
         response = await fetch(`/api/admin/url-groups/${selectedGroup.id}/urls`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(urlFormValues)
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(urlFormValues),
         });
 
         if (response.status === 409) {
@@ -292,37 +302,37 @@ export default function UrlGroupManagement() {
           setSimilarUrls(data.matches);
           setPendingUrlSubmit({
             values: urlFormValues,
-            groupId: selectedGroup.id
+            groupId: selectedGroup.id,
           });
           setShowSimilarUrlsDialog(true);
           return;
         }
 
-        successMessage = 'URL created successfully';
-      } else if (dialogType === 'editUrl' && selectedGroup && selectedUrl) {
+        successMessage = "URL created successfully";
+      } else if (dialogType === "editUrl" && selectedGroup && selectedUrl) {
         response = await fetch(`/api/admin/url-groups/${selectedGroup.id}/urls/${selectedUrl.id}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(urlFormValues)
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(urlFormValues),
         });
-        successMessage = 'URL updated successfully';
-      } else if (dialogType === 'deleteUrl' && selectedGroup && selectedUrl) {
+        successMessage = "URL updated successfully";
+      } else if (dialogType === "deleteUrl" && selectedGroup && selectedUrl) {
         response = await fetch(`/api/admin/url-groups/${selectedGroup.id}/urls/${selectedUrl.id}`, {
-          method: 'DELETE'
+          method: "DELETE",
         });
-        successMessage = 'URL deleted successfully';
+        successMessage = "URL deleted successfully";
       }
 
       if (!response?.ok) {
         const errorData = await response?.json();
-        throw new Error(errorData?.error || 'Operation failed');
+        throw new Error(errorData?.error || "Operation failed");
       }
 
       // Show success message
       setSnackbar({
         open: true,
         message: successMessage,
-        severity: 'success'
+        severity: "success",
       });
 
       // Refresh data
@@ -331,8 +341,8 @@ export default function UrlGroupManagement() {
     } catch (err) {
       setSnackbar({
         open: true,
-        message: err instanceof Error ? err.message : 'An unknown error occurred',
-        severity: 'error'
+        message: err instanceof Error ? err.message : "An unknown error occurred",
+        severity: "error",
       });
     }
   };
@@ -341,21 +351,24 @@ export default function UrlGroupManagement() {
     if (!pendingUrlSubmit) return;
 
     try {
-      const response = await fetch(`/api/admin/url-groups/${pendingUrlSubmit.groupId}/urls?force=true`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(pendingUrlSubmit.values)
-      });
+      const response = await fetch(
+        `/api/admin/url-groups/${pendingUrlSubmit.groupId}/urls?force=true`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(pendingUrlSubmit.values),
+        },
+      );
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData?.error || 'Operation failed');
+        throw new Error(errorData?.error || "Operation failed");
       }
 
       setSnackbar({
         open: true,
-        message: 'URL created successfully',
-        severity: 'success'
+        message: "URL created successfully",
+        severity: "success",
       });
 
       fetchUrlGroups();
@@ -366,8 +379,8 @@ export default function UrlGroupManagement() {
     } catch (err) {
       setSnackbar({
         open: true,
-        message: err instanceof Error ? err.message : 'An unknown error occurred',
-        severity: 'error'
+        message: err instanceof Error ? err.message : "An unknown error occurred",
+        severity: "error",
       });
     }
   };
@@ -380,10 +393,10 @@ export default function UrlGroupManagement() {
   const fetchUsers = async () => {
     try {
       setLoadingUsers(true);
-      const response = await fetch('/api/admin/users');
+      const response = await fetch("/api/admin/users");
 
       if (!response.ok) {
-        throw new Error('Failed to fetch users');
+        throw new Error("Failed to fetch users");
       }
 
       const data = await response.json();
@@ -391,8 +404,8 @@ export default function UrlGroupManagement() {
     } catch (err) {
       setSnackbar({
         open: true,
-        message: err instanceof Error ? err.message : 'Failed to fetch users',
-        severity: 'error'
+        message: err instanceof Error ? err.message : "Failed to fetch users",
+        severity: "error",
       });
     } finally {
       setLoadingUsers(false);
@@ -406,7 +419,7 @@ export default function UrlGroupManagement() {
       const response = await fetch(`/api/admin/url-groups/${groupId}/users`);
 
       if (!response.ok) {
-        throw new Error('Failed to fetch assigned users');
+        throw new Error("Failed to fetch assigned users");
       }
 
       const data = await response.json();
@@ -414,8 +427,8 @@ export default function UrlGroupManagement() {
     } catch (err) {
       setSnackbar({
         open: true,
-        message: err instanceof Error ? err.message : 'Failed to fetch assigned users',
-        severity: 'error'
+        message: err instanceof Error ? err.message : "Failed to fetch assigned users",
+        severity: "error",
       });
     } finally {
       setLoadingUsers(false);
@@ -424,9 +437,9 @@ export default function UrlGroupManagement() {
 
   // Handle user selection for URL group assignments
   const handleUserToggle = (userId: string) => {
-    setSelectedUsers(prev => {
+    setSelectedUsers((prev) => {
       if (prev.includes(userId)) {
-        return prev.filter(id => id !== userId);
+        return prev.filter((id) => id !== userId);
       } else {
         return [...prev, userId];
       }
@@ -439,28 +452,28 @@ export default function UrlGroupManagement() {
 
     try {
       const response = await fetch(`/api/admin/url-groups/${selectedGroup.id}/users`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userIds: selectedUsers }),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData?.error || 'Failed to save user assignments');
+        throw new Error(errorData?.error || "Failed to save user assignments");
       }
 
       setSnackbar({
         open: true,
-        message: 'User assignments saved successfully',
-        severity: 'success'
+        message: "User assignments saved successfully",
+        severity: "success",
       });
 
       handleCloseDialog();
     } catch (err) {
       setSnackbar({
         open: true,
-        message: err instanceof Error ? err.message : 'Failed to save user assignments',
-        severity: 'error'
+        message: err instanceof Error ? err.message : "Failed to save user assignments",
+        severity: "error",
       });
     }
   };
@@ -469,7 +482,7 @@ export default function UrlGroupManagement() {
   const handleIconUpload = (iconUrl: string) => {
     setUrlFormValues({
       ...urlFormValues,
-      iconPath: iconUrl
+      iconPath: iconUrl,
     });
   };
 
@@ -478,25 +491,28 @@ export default function UrlGroupManagement() {
     if (!urlFormValues.iconPath) return;
 
     try {
-      const response = await fetch(`/api/admin/icons?iconPath=${encodeURIComponent(urlFormValues.iconPath)}`, {
-        method: 'DELETE'
-      });
+      const response = await fetch(
+        `/api/admin/icons?iconPath=${encodeURIComponent(urlFormValues.iconPath)}`,
+        {
+          method: "DELETE",
+        },
+      );
 
       if (!response.ok) {
-        throw new Error('Failed to delete icon');
+        throw new Error("Failed to delete icon");
       }
 
       // Clear icon path
       setUrlFormValues({
         ...urlFormValues,
-        iconPath: ''
+        iconPath: "",
       });
     } catch (error) {
-      console.error('Error deleting icon:', error);
+      console.error("Error deleting icon:", error);
       setSnackbar({
         open: true,
-        message: 'Failed to delete icon',
-        severity: 'error'
+        message: "Failed to delete icon",
+        severity: "error",
       });
     }
   };
@@ -505,10 +521,10 @@ export default function UrlGroupManagement() {
   const fetchAvailableUrls = async () => {
     try {
       setLoadingUrls(true);
-      const response = await fetch('/api/admin/urls');
+      const response = await fetch("/api/admin/urls");
 
       if (!response.ok) {
-        throw new Error('Failed to fetch URLs');
+        throw new Error("Failed to fetch URLs");
       }
 
       const data = await response.json();
@@ -516,8 +532,8 @@ export default function UrlGroupManagement() {
     } catch (err) {
       setSnackbar({
         open: true,
-        message: err instanceof Error ? err.message : 'Failed to fetch URLs',
-        severity: 'error'
+        message: err instanceof Error ? err.message : "Failed to fetch URLs",
+        severity: "error",
       });
     } finally {
       setLoadingUrls(false);
@@ -545,20 +561,20 @@ export default function UrlGroupManagement() {
 
     try {
       const response = await fetch(`/api/admin/url-groups/${selectedGroup.id}/urls`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ urlIds: selectedUrls.map(url => url.id) }),
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ urlIds: selectedUrls.map((url) => url.id) }),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData?.error || 'Failed to save URL assignments');
+        throw new Error(errorData?.error || "Failed to save URL assignments");
       }
 
       setSnackbar({
         open: true,
-        message: 'URLs assigned successfully',
-        severity: 'success'
+        message: "URLs assigned successfully",
+        severity: "success",
       });
 
       fetchUrlGroups();
@@ -566,15 +582,17 @@ export default function UrlGroupManagement() {
     } catch (err) {
       setSnackbar({
         open: true,
-        message: err instanceof Error ? err.message : 'Failed to save URL assignments',
-        severity: 'error'
+        message: err instanceof Error ? err.message : "Failed to save URL assignments",
+        severity: "error",
       });
     }
   };
 
   if (loading && urlGroups.length === 0) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+      <Box
+        sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh" }}
+      >
         <CircularProgress />
       </Box>
     );
@@ -582,12 +600,12 @@ export default function UrlGroupManagement() {
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
         <Typography variant="h4">URL Group Management</Typography>
         <Button
           variant="contained"
           startIcon={<AddIcon />}
-          onClick={() => handleOpenDialog('createGroup')}
+          onClick={() => handleOpenDialog("createGroup")}
         >
           Add URL Group
         </Button>
@@ -600,7 +618,7 @@ export default function UrlGroupManagement() {
       )}
 
       {urlGroups.length === 0 && !loading ? (
-        <Paper sx={{ p: 3, textAlign: 'center' }}>
+        <Paper sx={{ p: 3, textAlign: "center" }}>
           <Typography variant="body1">
             No URL groups found. Create your first group to get started.
           </Typography>
@@ -618,14 +636,14 @@ export default function UrlGroupManagement() {
                   aria-controls={`panel-${group.id}-content`}
                   id={`panel-${group.id}-header`}
                 >
-                  <Box sx={{ width: '100%', display: 'flex', justifyContent: 'space-between' }}>
+                  <Box sx={{ width: "100%", display: "flex", justifyContent: "space-between" }}>
                     <Typography variant="h6">{group.name}</Typography>
                     <Box>
                       <Tooltip title="Edit Group">
                         <IconButton
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleOpenDialog('editGroup', group);
+                            handleOpenDialog("editGroup", group);
                           }}
                           size="small"
                         >
@@ -636,7 +654,7 @@ export default function UrlGroupManagement() {
                         <IconButton
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleOpenDialog('deleteGroup', group);
+                            handleOpenDialog("deleteGroup", group);
                           }}
                           size="small"
                           color="error"
@@ -648,7 +666,7 @@ export default function UrlGroupManagement() {
                         <IconButton
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleOpenDialog('assignUsers', group);
+                            handleOpenDialog("assignUsers", group);
                           }}
                           size="small"
                           color="primary"
@@ -662,7 +680,7 @@ export default function UrlGroupManagement() {
                 <AccordionDetails>
                   <Box sx={{ mb: 2 }}>
                     <Typography variant="body2" color="text.secondary">
-                      {group.description || 'No description provided'}
+                      {group.description || "No description provided"}
                     </Typography>
                   </Box>
 
@@ -670,7 +688,7 @@ export default function UrlGroupManagement() {
                     <Button
                       variant="outlined"
                       startIcon={<AddIcon />}
-                      onClick={() => handleOpenDialog('createUrl', group)}
+                      onClick={() => handleOpenDialog("createUrl", group)}
                       size="small"
                       sx={{ mr: 1 }}
                     >
@@ -690,7 +708,7 @@ export default function UrlGroupManagement() {
                     </Button>
                   </Box>
 
-                  <List sx={{ width: '100%' }}>
+                  <List sx={{ width: "100%" }}>
                     {group.urls.length === 0 ? (
                       <ListItem>
                         <ListItemText primary="No URLs in this group" />
@@ -703,7 +721,7 @@ export default function UrlGroupManagement() {
                             <ListItem>
                               <ListItemText
                                 primary={
-                                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                  <Box sx={{ display: "flex", alignItems: "center" }}>
                                     <Box sx={{ mr: 1 }}>
                                       {url.iconPath ? (
                                         <img
@@ -725,7 +743,11 @@ export default function UrlGroupManagement() {
                                       {url.url}
                                     </Typography>
                                     {url.urlMobile && (
-                                      <Typography variant="body2" color="text.secondary" component="div">
+                                      <Typography
+                                        variant="body2"
+                                        color="text.secondary"
+                                        component="div"
+                                      >
                                         Mobile: {url.urlMobile}
                                       </Typography>
                                     )}
@@ -738,7 +760,7 @@ export default function UrlGroupManagement() {
                                     <IconButton
                                       edge="end"
                                       aria-label="move up"
-                                      onClick={() => handleUrlOrderChange(group.id, url.id, 'up')}
+                                      onClick={() => handleUrlOrderChange(group.id, url.id, "up")}
                                       disabled={index === 0}
                                       size="small"
                                     >
@@ -751,7 +773,7 @@ export default function UrlGroupManagement() {
                                     <IconButton
                                       edge="end"
                                       aria-label="move down"
-                                      onClick={() => handleUrlOrderChange(group.id, url.id, 'down')}
+                                      onClick={() => handleUrlOrderChange(group.id, url.id, "down")}
                                       disabled={index === group.urls.length - 1}
                                       size="small"
                                     >
@@ -763,7 +785,7 @@ export default function UrlGroupManagement() {
                                   <IconButton
                                     edge="end"
                                     aria-label="preview"
-                                    onClick={() => window.open(url.url, '_blank')}
+                                    onClick={() => window.open(url.url, "_blank")}
                                     size="small"
                                   >
                                     <VisibilityIcon fontSize="small" />
@@ -773,7 +795,7 @@ export default function UrlGroupManagement() {
                                   <IconButton
                                     edge="end"
                                     aria-label="edit"
-                                    onClick={() => handleOpenDialog('editUrl', group, url)}
+                                    onClick={() => handleOpenDialog("editUrl", group, url)}
                                     size="small"
                                   >
                                     <EditIcon fontSize="small" />
@@ -783,7 +805,7 @@ export default function UrlGroupManagement() {
                                   <IconButton
                                     edge="end"
                                     aria-label="delete"
-                                    onClick={() => handleOpenDialog('deleteUrl', group, url)}
+                                    onClick={() => handleOpenDialog("deleteUrl", group, url)}
                                     color="error"
                                     size="small"
                                   >
@@ -806,11 +828,11 @@ export default function UrlGroupManagement() {
 
       {/* Group Dialogs */}
       <Dialog
-        open={openDialog && (dialogType === 'createGroup' || dialogType === 'editGroup')}
+        open={openDialog && (dialogType === "createGroup" || dialogType === "editGroup")}
         onClose={handleCloseDialog}
       >
         <DialogTitle>
-          {dialogType === 'createGroup' ? 'Create New URL Group' : 'Edit URL Group'}
+          {dialogType === "createGroup" ? "Create New URL Group" : "Edit URL Group"}
         </DialogTitle>
         <DialogContent>
           <TextField
@@ -839,19 +861,17 @@ export default function UrlGroupManagement() {
         <DialogActions>
           <Button onClick={handleCloseDialog}>Cancel</Button>
           <Button onClick={handleSubmit} variant="contained">
-            {dialogType === 'createGroup' ? 'Create' : 'Save'}
+            {dialogType === "createGroup" ? "Create" : "Save"}
           </Button>
         </DialogActions>
       </Dialog>
 
       {/* URL Dialogs */}
       <Dialog
-        open={openDialog && (dialogType === 'createUrl' || dialogType === 'editUrl')}
+        open={openDialog && (dialogType === "createUrl" || dialogType === "editUrl")}
         onClose={handleCloseDialog}
       >
-        <DialogTitle>
-          {dialogType === 'createUrl' ? 'Add New URL' : 'Edit URL'}
-        </DialogTitle>
+        <DialogTitle>{dialogType === "createUrl" ? "Add New URL" : "Edit URL"}</DialogTitle>
         <DialogContent>
           <Grid container spacing={2} sx={{ mt: 1 }}>
             <Grid item xs={12} sm={9}>
@@ -866,15 +886,22 @@ export default function UrlGroupManagement() {
                 onChange={handleUrlFormChange}
               />
             </Grid>
-            <Grid item xs={12} sm={3} sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+            <Grid
+              item
+              xs={12}
+              sm={3}
+              sx={{ display: "flex", justifyContent: "center", alignItems: "center" }}
+            >
               <IconUpload
                 iconUrl={urlFormValues.iconPath || null}
                 onUploadSuccess={handleIconUpload}
-                onUploadError={(error) => setSnackbar({
-                  open: true,
-                  message: error,
-                  severity: 'error'
-                })}
+                onUploadError={(error) =>
+                  setSnackbar({
+                    open: true,
+                    message: error,
+                    severity: "error",
+                  })
+                }
                 onDelete={handleIconDelete}
               />
             </Grid>
@@ -896,7 +923,7 @@ export default function UrlGroupManagement() {
                 label="Mobile URL"
                 fullWidth
                 variant="outlined"
-                value={urlFormValues.urlMobile || ''}
+                value={urlFormValues.urlMobile || ""}
                 onChange={handleUrlFormChange}
               />
             </Grid>
@@ -919,25 +946,26 @@ export default function UrlGroupManagement() {
         <DialogActions>
           <Button onClick={handleCloseDialog}>Cancel</Button>
           <Button onClick={handleSubmit} variant="contained">
-            {dialogType === 'createUrl' ? 'Add' : 'Save'}
+            {dialogType === "createUrl" ? "Add" : "Save"}
           </Button>
         </DialogActions>
       </Dialog>
 
       {/* Delete Confirmation Dialogs */}
       <Dialog
-        open={openDialog && (dialogType === 'deleteGroup' || dialogType === 'deleteUrl')}
+        open={openDialog && (dialogType === "deleteGroup" || dialogType === "deleteUrl")}
         onClose={handleCloseDialog}
       >
         <DialogTitle>
-          {dialogType === 'deleteGroup' ? 'Delete URL Group' : 'Delete URL'}
+          {dialogType === "deleteGroup" ? "Delete URL Group" : "Delete URL"}
         </DialogTitle>
         <DialogContent>
           <DialogContentText>
-            {dialogType === 'deleteGroup'
+            {dialogType === "deleteGroup"
               ? `Are you sure you want to delete the URL group "${selectedGroup?.name}"? This will also delete all URLs within this group and remove it from all users.`
               : `Are you sure you want to delete the URL "${selectedUrl?.title}"?`}
-            <br /><br />
+            <br />
+            <br />
             This action cannot be undone.
           </DialogContentText>
         </DialogContent>
@@ -951,7 +979,7 @@ export default function UrlGroupManagement() {
 
       {/* User Assignment Dialog - Replace the existing placeholder */}
       <Dialog
-        open={openDialog && dialogType === 'assignUsers'}
+        open={openDialog && dialogType === "assignUsers"}
         onClose={handleCloseDialog}
         maxWidth="md"
         fullWidth
@@ -963,16 +991,16 @@ export default function UrlGroupManagement() {
           </Typography>
 
           {loadingUsers ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
+            <Box sx={{ display: "flex", justifyContent: "center", p: 3 }}>
               <CircularProgress size={24} />
             </Box>
           ) : users.length === 0 ? (
-            <Typography variant="body1" sx={{ textAlign: 'center', py: 2 }}>
+            <Typography variant="body1" sx={{ textAlign: "center", py: 2 }}>
               No users found
             </Typography>
           ) : (
-            <List sx={{ maxHeight: '400px', overflow: 'auto' }}>
-              {users.map(user => (
+            <List sx={{ maxHeight: "400px", overflow: "auto" }}>
+              {users.map((user) => (
                 <ListItem key={user.id}>
                   <FormControlLabel
                     control={
@@ -982,15 +1010,10 @@ export default function UrlGroupManagement() {
                       />
                     }
                     label={
-                      <Box component="span" sx={{ display: 'flex', alignItems: 'center' }}>
+                      <Box component="span" sx={{ display: "flex", alignItems: "center" }}>
                         <Typography variant="body1">{user.username}</Typography>
                         {user.isAdmin && (
-                          <Chip
-                            label="Admin"
-                            size="small"
-                            color="primary"
-                            sx={{ ml: 1 }}
-                          />
+                          <Chip label="Admin" size="small" color="primary" sx={{ ml: 1 }} />
                         )}
                       </Box>
                     }
@@ -1002,11 +1025,7 @@ export default function UrlGroupManagement() {
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseDialog}>Cancel</Button>
-          <Button
-            onClick={handleSaveUserAssignments}
-            variant="contained"
-            disabled={loadingUsers}
-          >
+          <Button onClick={handleSaveUserAssignments} variant="contained" disabled={loadingUsers}>
             Save
           </Button>
         </DialogActions>
@@ -1026,7 +1045,7 @@ export default function UrlGroupManagement() {
           </Typography>
 
           {loadingUrls ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
+            <Box sx={{ display: "flex", justifyContent: "center", p: 3 }}>
               <CircularProgress size={24} />
             </Box>
           ) : (
@@ -1055,7 +1074,7 @@ export default function UrlGroupManagement() {
               )}
               renderOption={(props, option) => (
                 <li {...props}>
-                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                  <Box sx={{ display: "flex", alignItems: "center" }}>
                     {option.iconPath ? (
                       <img
                         src={option.iconPath}
@@ -1073,7 +1092,7 @@ export default function UrlGroupManagement() {
                         {option.url}
                         {option.urlMobile && (
                           <Typography component="span" variant="body2" color="text.secondary">
-                            {' '}
+                            {" "}
                             (Mobile: {option.urlMobile})
                           </Typography>
                         )}
@@ -1087,11 +1106,7 @@ export default function UrlGroupManagement() {
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseUrlSelectionDialog}>Cancel</Button>
-          <Button
-            onClick={handleSaveUrlSelection}
-            variant="contained"
-            disabled={loadingUrls}
-          >
+          <Button onClick={handleSaveUrlSelection} variant="contained" disabled={loadingUrls}>
             Save
           </Button>
         </DialogActions>
@@ -1110,7 +1125,16 @@ export default function UrlGroupManagement() {
       >
         <DialogTitle>Similar URLs Found</DialogTitle>
         <DialogContent>
-          <Box sx={{ mb: 4, p: 2, bgcolor: 'background.paper', borderRadius: 1, border: 1, borderColor: 'divider' }}>
+          <Box
+            sx={{
+              mb: 4,
+              p: 2,
+              bgcolor: "background.paper",
+              borderRadius: 1,
+              border: 1,
+              borderColor: "divider",
+            }}
+          >
             <Typography variant="subtitle2" color="primary" gutterBottom>
               New URL you are trying to add:
             </Typography>
@@ -1127,7 +1151,7 @@ export default function UrlGroupManagement() {
           </Typography>
           <List>
             {similarUrls.map((url) => (
-              <ListItem key={url.id} sx={{ bgcolor: 'action.hover', mb: 1, borderRadius: 1 }}>
+              <ListItem key={url.id} sx={{ bgcolor: "action.hover", mb: 1, borderRadius: 1 }}>
                 <ListItemText
                   primary={url.title}
                   secondary={
@@ -1167,11 +1191,9 @@ export default function UrlGroupManagement() {
       <Snackbar
         open={snackbar.open}
         autoHideDuration={6000}
-        onClose={() => setSnackbar(prev => ({ ...prev, open: false }))}
+        onClose={() => setSnackbar((prev) => ({ ...prev, open: false }))}
       >
-        <Alert severity={snackbar.severity}>
-          {snackbar.message}
-        </Alert>
+        <Alert severity={snackbar.severity}>{snackbar.message}</Alert>
       </Snackbar>
     </Box>
   );

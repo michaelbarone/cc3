@@ -1,16 +1,27 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { Box, Typography, Paper, TextField, Button, Alert, Switch, FormControlLabel, Stack, Divider } from '@mui/material';
-import { useAuth } from '@/app/lib/auth/auth-context';
+import { useAuth } from "@/app/lib/auth/auth-context";
+import {
+  Alert,
+  Box,
+  Button,
+  Divider,
+  FormControlLabel,
+  Paper,
+  Stack,
+  Switch,
+  TextField,
+  Typography,
+} from "@mui/material";
+import React, { useState } from "react";
 
 export default function PasswordSettingsPage() {
   const { user } = useAuth();
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [passwordEnabled, setPasswordEnabled] = useState(!!user?.hasPassword);
-  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -18,21 +29,21 @@ export default function PasswordSettingsPage() {
     setMessage(null);
 
     if (passwordEnabled && newPassword !== confirmPassword) {
-      setMessage({ type: 'error', text: 'Passwords do not match.' });
+      setMessage({ type: "error", text: "Passwords do not match." });
       return;
     }
 
     if (passwordEnabled && newPassword.length < 8) {
-      setMessage({ type: 'error', text: 'Password must be at least 8 characters.' });
+      setMessage({ type: "error", text: "Password must be at least 8 characters." });
       return;
     }
 
     setLoading(true);
     try {
-      const response = await fetch('/api/settings/password', {
-        method: 'PUT',
+      const response = await fetch("/api/settings/password", {
+        method: "PUT",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           currentPassword: currentPassword || undefined,
@@ -43,16 +54,16 @@ export default function PasswordSettingsPage() {
       const data = await response.json();
 
       if (response.ok) {
-        setMessage({ type: 'success', text: data.message || 'Password updated successfully!' });
-        setCurrentPassword('');
-        setNewPassword('');
-        setConfirmPassword('');
+        setMessage({ type: "success", text: data.message || "Password updated successfully!" });
+        setCurrentPassword("");
+        setNewPassword("");
+        setConfirmPassword("");
       } else {
-        setMessage({ type: 'error', text: data.message || 'Failed to update password.' });
+        setMessage({ type: "error", text: data.message || "Failed to update password." });
       }
     } catch (error) {
-      setMessage({ type: 'error', text: 'An error occurred. Please try again.' });
-      console.error('Error updating password:', error);
+      setMessage({ type: "error", text: "An error occurred. Please try again." });
+      console.error("Error updating password:", error);
     } finally {
       setLoading(false);
     }
@@ -61,8 +72,8 @@ export default function PasswordSettingsPage() {
   const handleTogglePassword = (event: React.ChangeEvent<HTMLInputElement>) => {
     setPasswordEnabled(event.target.checked);
     if (!event.target.checked) {
-      setNewPassword('');
-      setConfirmPassword('');
+      setNewPassword("");
+      setConfirmPassword("");
     }
   };
 
@@ -72,7 +83,8 @@ export default function PasswordSettingsPage() {
         Password Settings
       </Typography>
       <Typography variant="body1" color="text.secondary" paragraph>
-        Manage your account password. You can enable or disable password protection for your account.
+        Manage your account password. You can enable or disable password protection for your
+        account.
       </Typography>
 
       <Paper elevation={0} variant="outlined" sx={{ p: 3, mt: 2, maxWidth: 600 }}>
@@ -86,11 +98,7 @@ export default function PasswordSettingsPage() {
           <Stack spacing={3}>
             <FormControlLabel
               control={
-                <Switch
-                  checked={passwordEnabled}
-                  onChange={handleTogglePassword}
-                  color="primary"
-                />
+                <Switch checked={passwordEnabled} onChange={handleTogglePassword} color="primary" />
               }
               label="Enable password protection"
             />
@@ -137,14 +145,9 @@ export default function PasswordSettingsPage() {
               </>
             )}
 
-            <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
-              <Button
-                type="submit"
-                variant="contained"
-                color="primary"
-                disabled={loading}
-              >
-                {loading ? 'Saving...' : 'Save Changes'}
+            <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 2 }}>
+              <Button type="submit" variant="contained" color="primary" disabled={loading}>
+                {loading ? "Saving..." : "Save Changes"}
               </Button>
             </Box>
           </Stack>

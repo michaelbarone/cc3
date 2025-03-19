@@ -1,25 +1,25 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
+import DatabaseManagement from "@/app/components/admin/DatabaseManagement";
+import FaviconUpload from "@/app/components/ui/FaviconUpload";
+import LogoUpload from "@/app/components/ui/LogoUpload";
 import {
-  Box,
-  Typography,
-  TextField,
-  Button,
-  CircularProgress,
   Alert,
-  Snackbar,
-  Divider,
-  Grid,
+  Box,
+  Button,
   Card,
   CardContent,
   CardHeader,
+  CircularProgress,
+  Divider,
   FormControlLabel,
-  Switch
-} from '@mui/material';
-import LogoUpload from '@/app/components/ui/LogoUpload';
-import FaviconUpload from '@/app/components/ui/FaviconUpload';
-import DatabaseManagement from '@/app/components/admin/DatabaseManagement';
+  Grid,
+  Snackbar,
+  Switch,
+  TextField,
+  Typography,
+} from "@mui/material";
+import React, { useEffect, useState } from "react";
 
 interface AppConfig {
   id: string;
@@ -37,34 +37,34 @@ export default function AppConfigPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [appName, setAppName] = useState('');
-  const [loginTheme, setLoginTheme] = useState('dark');
+  const [appName, setAppName] = useState("");
+  const [loginTheme, setLoginTheme] = useState("dark");
   const [registrationEnabled, setRegistrationEnabled] = useState(false);
 
   // Snackbar state
   const [snackbar, setSnackbar] = useState({
     open: false,
-    message: '',
-    severity: 'success' as 'success' | 'error' | 'info' | 'warning'
+    message: "",
+    severity: "success" as "success" | "error" | "info" | "warning",
   });
 
   // Fetch app configuration
   const fetchAppConfig = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/admin/app-config');
+      const response = await fetch("/api/admin/app-config");
 
       if (!response.ok) {
-        throw new Error('Failed to fetch app configuration');
+        throw new Error("Failed to fetch app configuration");
       }
 
       const data = await response.json();
       setAppConfig(data);
       setAppName(data.appName);
-      setLoginTheme(data.loginTheme || 'dark');
+      setLoginTheme(data.loginTheme || "dark");
       setRegistrationEnabled(data.registrationEnabled || false);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An unknown error occurred');
+      setError(err instanceof Error ? err.message : "An unknown error occurred");
     } finally {
       setLoading(false);
     }
@@ -84,22 +84,22 @@ export default function AppConfigPage() {
     if (!appName.trim()) {
       setSnackbar({
         open: true,
-        message: 'App name cannot be empty',
-        severity: 'error'
+        message: "App name cannot be empty",
+        severity: "error",
       });
       return;
     }
 
     try {
       setSaving(true);
-      const response = await fetch('/api/admin/app-config', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ appName })
+      const response = await fetch("/api/admin/app-config", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ appName }),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to update app name');
+        throw new Error("Failed to update app name");
       }
 
       const data = await response.json();
@@ -107,14 +107,14 @@ export default function AppConfigPage() {
 
       setSnackbar({
         open: true,
-        message: 'App name updated successfully',
-        severity: 'success'
+        message: "App name updated successfully",
+        severity: "success",
       });
     } catch (err) {
       setSnackbar({
         open: true,
-        message: err instanceof Error ? err.message : 'An unknown error occurred',
-        severity: 'error'
+        message: err instanceof Error ? err.message : "An unknown error occurred",
+        severity: "error",
       });
     } finally {
       setSaving(false);
@@ -126,14 +126,14 @@ export default function AppConfigPage() {
     if (appConfig) {
       setAppConfig({
         ...appConfig,
-        appLogo: logoUrl
+        appLogo: logoUrl,
       });
     }
 
     setSnackbar({
       open: true,
-      message: 'App logo uploaded successfully',
-      severity: 'success'
+      message: "App logo uploaded successfully",
+      severity: "success",
     });
   };
 
@@ -142,14 +142,14 @@ export default function AppConfigPage() {
     if (appConfig) {
       setAppConfig({
         ...appConfig,
-        appLogo: null
+        appLogo: null,
       });
     }
 
     setSnackbar({
       open: true,
-      message: 'App logo removed successfully',
-      severity: 'success'
+      message: "App logo removed successfully",
+      severity: "success",
     });
   };
 
@@ -162,14 +162,14 @@ export default function AppConfigPage() {
   const handleSaveLoginTheme = async () => {
     try {
       setSaving(true);
-      const response = await fetch('/api/admin/app-config/theme', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ loginTheme })
+      const response = await fetch("/api/admin/app-config/theme", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ loginTheme }),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to update login theme');
+        throw new Error("Failed to update login theme");
       }
 
       const data = await response.json();
@@ -177,14 +177,14 @@ export default function AppConfigPage() {
 
       setSnackbar({
         open: true,
-        message: 'Login theme updated successfully',
-        severity: 'success'
+        message: "Login theme updated successfully",
+        severity: "success",
       });
     } catch (err) {
       setSnackbar({
         open: true,
-        message: err instanceof Error ? err.message : 'An unknown error occurred',
-        severity: 'error'
+        message: err instanceof Error ? err.message : "An unknown error occurred",
+        severity: "error",
       });
     } finally {
       setSaving(false);
@@ -200,14 +200,14 @@ export default function AppConfigPage() {
   const handleSaveRegistrationEnabled = async () => {
     try {
       setSaving(true);
-      const response = await fetch('/api/admin/app-config/registration', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ registrationEnabled })
+      const response = await fetch("/api/admin/app-config/registration", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ registrationEnabled }),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to update registration settings');
+        throw new Error("Failed to update registration settings");
       }
 
       const data = await response.json();
@@ -215,14 +215,14 @@ export default function AppConfigPage() {
 
       setSnackbar({
         open: true,
-        message: 'Registration settings updated successfully',
-        severity: 'success'
+        message: "Registration settings updated successfully",
+        severity: "success",
       });
     } catch (err) {
       setSnackbar({
         open: true,
-        message: err instanceof Error ? err.message : 'An unknown error occurred',
-        severity: 'error'
+        message: err instanceof Error ? err.message : "An unknown error occurred",
+        severity: "error",
       });
     } finally {
       setSaving(false);
@@ -231,7 +231,9 @@ export default function AppConfigPage() {
 
   if (loading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+      <Box
+        sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh" }}
+      >
         <CircularProgress />
       </Box>
     );
@@ -277,7 +279,7 @@ export default function AppConfigPage() {
                   onClick={handleSaveAppName}
                   disabled={saving || appName === appConfig?.appName}
                 >
-                  {saving ? <CircularProgress size={24} /> : 'Save'}
+                  {saving ? <CircularProgress size={24} /> : "Save"}
                 </Button>
               </Box>
 
@@ -289,47 +291,54 @@ export default function AppConfigPage() {
                   Application Logo
                 </Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                  The application logo will be displayed in the header. If no logo is set, the application name will be shown instead.
+                  The application logo will be displayed in the header. If no logo is set, the
+                  application name will be shown instead.
                 </Typography>
-                <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+                <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
                   <LogoUpload
                     logoUrl={appConfig?.appLogo || null}
                     onUploadSuccess={handleLogoUploadSuccess}
-                    onUploadError={(error) => setSnackbar({
-                      open: true,
-                      message: error,
-                      severity: 'error'
-                    })}
+                    onUploadError={(error) =>
+                      setSnackbar({
+                        open: true,
+                        message: error,
+                        severity: "error",
+                      })
+                    }
                     onDelete={handleLogoDelete}
                   />
                 </Box>
                 {/* Theme Previews for Logo */}
                 <Box sx={{ mt: 3 }}>
-                  <Box sx={{ display: 'flex', gap: 2 }}>
+                  <Box sx={{ display: "flex", gap: 2 }}>
                     {/* Light Theme Preview */}
                     <Box
                       sx={{
                         flex: 1,
                         p: 2,
-                        bgcolor: '#ffffff',
-                        color: '#000000',
+                        bgcolor: "#ffffff",
+                        color: "#000000",
                         borderRadius: 1,
                         border: 1,
-                        borderColor: 'divider',
+                        borderColor: "divider",
                       }}
                     >
-                      <Box sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        gap: 2,
-                      }}>
-                        <Box sx={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          height: 48,
-                          flex: 1,
-                        }}>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          gap: 2,
+                        }}
+                      >
+                        <Box
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            height: 48,
+                            flex: 1,
+                          }}
+                        >
                           {appConfig?.appLogo ? (
                             <Box
                               component="img"
@@ -338,18 +347,16 @@ export default function AppConfigPage() {
                               sx={{
                                 height: 40,
                                 maxWidth: 160,
-                                objectFit: 'contain',
+                                objectFit: "contain",
                               }}
                             />
                           ) : (
-                            <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+                            <Typography variant="h6" sx={{ fontWeight: "bold" }}>
                               {appName}
                             </Typography>
                           )}
                         </Box>
-                        <Typography variant="caption">
-                          Light Theme
-                        </Typography>
+                        <Typography variant="caption">Light Theme</Typography>
                       </Box>
                     </Box>
                     {/* Dark Theme Preview */}
@@ -357,25 +364,29 @@ export default function AppConfigPage() {
                       sx={{
                         flex: 1,
                         p: 2,
-                        bgcolor: '#121212',
-                        color: '#ffffff',
+                        bgcolor: "#121212",
+                        color: "#ffffff",
                         borderRadius: 1,
                         border: 1,
-                        borderColor: 'divider',
+                        borderColor: "divider",
                       }}
                     >
-                      <Box sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        gap: 2,
-                      }}>
-                        <Box sx={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          height: 48,
-                          flex: 1,
-                        }}>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          gap: 2,
+                        }}
+                      >
+                        <Box
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            height: 48,
+                            flex: 1,
+                          }}
+                        >
                           {appConfig?.appLogo ? (
                             <Box
                               component="img"
@@ -384,16 +395,16 @@ export default function AppConfigPage() {
                               sx={{
                                 height: 40,
                                 maxWidth: 160,
-                                objectFit: 'contain',
+                                objectFit: "contain",
                               }}
                             />
                           ) : (
-                            <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+                            <Typography variant="h6" sx={{ fontWeight: "bold" }}>
                               {appName}
                             </Typography>
                           )}
                         </Box>
-                        <Typography variant="caption" sx={{ color: 'inherit' }}>
+                        <Typography variant="caption" sx={{ color: "inherit" }}>
                           Dark Theme
                         </Typography>
                       </Box>
@@ -412,38 +423,40 @@ export default function AppConfigPage() {
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                   The browser favicon will be displayed in browser tabs and bookmarks.
                 </Typography>
-                <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+                <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
                   <FaviconUpload
                     faviconUrl={appConfig?.favicon || null}
                     onUploadSuccess={(favicon) => {
                       if (appConfig) {
                         setAppConfig({
                           ...appConfig,
-                          favicon
+                          favicon,
                         });
                       }
                       setSnackbar({
                         open: true,
-                        message: 'Favicon uploaded successfully',
-                        severity: 'success'
+                        message: "Favicon uploaded successfully",
+                        severity: "success",
                       });
                     }}
-                    onUploadError={(error) => setSnackbar({
-                      open: true,
-                      message: error,
-                      severity: 'error'
-                    })}
+                    onUploadError={(error) =>
+                      setSnackbar({
+                        open: true,
+                        message: error,
+                        severity: "error",
+                      })
+                    }
                     onDelete={() => {
                       if (appConfig) {
                         setAppConfig({
                           ...appConfig,
-                          favicon: null
+                          favicon: null,
                         });
                       }
                       setSnackbar({
                         open: true,
-                        message: 'Favicon removed successfully',
-                        severity: 'success'
+                        message: "Favicon removed successfully",
+                        severity: "success",
                       });
                     }}
                   />
@@ -465,16 +478,17 @@ export default function AppConfigPage() {
                   Login Page Theme
                 </Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                  Choose the theme for the login page. This affects the appearance of the login page only.
+                  Choose the theme for the login page. This affects the appearance of the login page
+                  only.
                 </Typography>
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mb: 3 }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 2, mb: 3 }}>
+                  <Box sx={{ display: "flex", alignItems: "center" }}>
                     <input
                       type="radio"
                       id="theme-light"
                       name="loginTheme"
                       value="light"
-                      checked={loginTheme === 'light'}
+                      checked={loginTheme === "light"}
                       onChange={handleLoginThemeChange}
                       style={{ marginRight: 1 }}
                     />
@@ -482,30 +496,30 @@ export default function AppConfigPage() {
                       component="label"
                       htmlFor="theme-light"
                       sx={{
-                        display: 'flex',
-                        alignItems: 'center',
+                        display: "flex",
+                        alignItems: "center",
                         ml: 1,
                         p: 1.5,
                         border: 1,
-                        borderColor: 'divider',
+                        borderColor: "divider",
                         borderRadius: 1,
-                        bgcolor: '#ffffff',
-                        color: '#000000',
-                        width: '100%',
-                        cursor: 'pointer'
+                        bgcolor: "#ffffff",
+                        color: "#000000",
+                        width: "100%",
+                        cursor: "pointer",
                       }}
                     >
                       <Typography>Light Theme</Typography>
                     </Box>
                   </Box>
 
-                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                  <Box sx={{ display: "flex", alignItems: "center" }}>
                     <input
                       type="radio"
                       id="theme-dark"
                       name="loginTheme"
                       value="dark"
-                      checked={loginTheme === 'dark'}
+                      checked={loginTheme === "dark"}
                       onChange={handleLoginThemeChange}
                       style={{ marginRight: 1 }}
                     />
@@ -513,17 +527,17 @@ export default function AppConfigPage() {
                       component="label"
                       htmlFor="theme-dark"
                       sx={{
-                        display: 'flex',
-                        alignItems: 'center',
+                        display: "flex",
+                        alignItems: "center",
                         ml: 1,
                         p: 1.5,
                         border: 1,
-                        borderColor: 'divider',
+                        borderColor: "divider",
                         borderRadius: 1,
-                        bgcolor: '#121212',
-                        color: '#ffffff',
-                        width: '100%',
-                        cursor: 'pointer'
+                        bgcolor: "#121212",
+                        color: "#ffffff",
+                        width: "100%",
+                        cursor: "pointer",
                       }}
                     >
                       <Typography>Dark Theme</Typography>
@@ -535,7 +549,7 @@ export default function AppConfigPage() {
                   onClick={handleSaveLoginTheme}
                   disabled={saving || loginTheme === appConfig?.loginTheme}
                 >
-                  {saving ? <CircularProgress size={24} /> : 'Save Theme'}
+                  {saving ? <CircularProgress size={24} /> : "Save Theme"}
                 </Button>
               </Box>
 
@@ -547,9 +561,10 @@ export default function AppConfigPage() {
                   User Registration
                 </Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                  Enable or disable self-registration for new users. When disabled, only administrators can create new user accounts.
+                  Enable or disable self-registration for new users. When disabled, only
+                  administrators can create new user accounts.
                 </Typography>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+                <Box sx={{ display: "flex", alignItems: "center", mb: 3 }}>
                   <FormControlLabel
                     control={
                       <Switch
@@ -566,7 +581,7 @@ export default function AppConfigPage() {
                   onClick={handleSaveRegistrationEnabled}
                   disabled={saving || registrationEnabled === appConfig?.registrationEnabled}
                 >
-                  {saving ? <CircularProgress size={24} /> : 'Save Registration Setting'}
+                  {saving ? <CircularProgress size={24} /> : "Save Registration Setting"}
                 </Button>
               </Box>
             </CardContent>
@@ -597,11 +612,9 @@ export default function AppConfigPage() {
       <Snackbar
         open={snackbar.open}
         autoHideDuration={6000}
-        onClose={() => setSnackbar(prev => ({ ...prev, open: false }))}
+        onClose={() => setSnackbar((prev) => ({ ...prev, open: false }))}
       >
-        <Alert severity={snackbar.severity}>
-          {snackbar.message}
-        </Alert>
+        <Alert severity={snackbar.severity}>{snackbar.message}</Alert>
       </Snackbar>
     </Box>
   );

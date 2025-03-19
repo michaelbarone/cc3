@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useCallback } from "react";
+import React, { useCallback, useEffect, useRef } from "react";
 import { useIframeContext } from "../state/IframeContext";
 
 interface UseIframeEventsProps {
   urlId: string;
-  iframeRef: React.MutableRefObject<HTMLIFrameElement | null>;
+  iframeRef: React.RefObject<HTMLIFrameElement>;
   onLoad?: (urlId: string) => void;
   onError?: (urlId: string, error: string) => void;
 }

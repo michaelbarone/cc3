@@ -13,19 +13,19 @@ export interface Setting<T> {
 
 // Specific setting types
 export interface PasswordSetting extends Setting<string | null> {
-  key: 'password';
+  key: "password";
 }
 
 export interface LastActiveUrlSetting extends Setting<string> {
-  key: 'lastActiveUrl';
+  key: "lastActiveUrl";
 }
 
-export interface ThemePreferenceSetting extends Setting<'light' | 'dark' | 'system'> {
-  key: 'themePreference';
+export interface ThemePreferenceSetting extends Setting<"light" | "dark" | "system"> {
+  key: "themePreference";
 }
 
 export interface LanguagePreferenceSetting extends Setting<string> {
-  key: 'languagePreference';
+  key: "languagePreference";
 }
 
 // Union type of all settings
@@ -36,7 +36,7 @@ export type UserSetting =
   | LanguagePreferenceSetting;
 
 // Settings keys
-export type SettingKey = UserSetting['key'];
+export type SettingKey = UserSetting["key"];
 
 // Settings service interface
 export interface SettingsService {

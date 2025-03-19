@@ -25,7 +25,7 @@ import {
   useTheme,
 } from "@mui/material";
 import { Theme } from "@mui/material/styles";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { LongPressProgress } from "./LongPressProgress";
 
 interface MenuBarProps {

@@ -1,34 +1,34 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
+import AddIcon from "@mui/icons-material/Add";
+import DeleteIcon from "@mui/icons-material/Delete";
+import EditIcon from "@mui/icons-material/Edit";
 import {
+  Alert,
   Box,
   Button,
+  Chip,
+  CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+  FormControlLabel,
+  IconButton,
   Paper,
+  Snackbar,
+  Switch,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
   TableRow,
-  Typography,
-  IconButton,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogContentText,
-  DialogTitle,
   TextField,
-  FormControlLabel,
-  Switch,
-  CircularProgress,
-  Alert,
-  Snackbar,
-  Chip
-} from '@mui/material';
-import EditIcon from '@mui/icons-material/Edit';
-import DeleteIcon from '@mui/icons-material/Delete';
-import AddIcon from '@mui/icons-material/Add';
+  Typography,
+} from "@mui/material";
+import React, { useEffect, useState } from "react";
 
 interface User {
   id: string;
@@ -46,37 +46,37 @@ export default function UserManagement() {
 
   // Dialog state
   const [openDialog, setOpenDialog] = useState(false);
-  const [dialogType, setDialogType] = useState<'create' | 'edit' | 'delete'>('create');
+  const [dialogType, setDialogType] = useState<"create" | "edit" | "delete">("create");
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
   // Form state
   const [formValues, setFormValues] = useState({
-    username: '',
+    username: "",
     hasPassword: false,
-    password: '',
-    isAdmin: false
+    password: "",
+    isAdmin: false,
   });
 
   // Snackbar state
   const [snackbar, setSnackbar] = useState({
     open: false,
-    message: '',
-    severity: 'success' as 'success' | 'error' | 'info' | 'warning'
+    message: "",
+    severity: "success" as "success" | "error" | "info" | "warning",
   });
 
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/admin/users');
+      const response = await fetch("/api/admin/users");
 
       if (!response.ok) {
-        throw new Error('Failed to fetch users');
+        throw new Error("Failed to fetch users");
       }
 
       const data = await response.json();
       setUsers(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An unknown error occurred');
+      setError(err instanceof Error ? err.message : "An unknown error occurred");
     } finally {
       setLoading(false);
     }
@@ -86,7 +86,7 @@ export default function UserManagement() {
     fetchUsers();
   }, []);
 
-  const handleOpenDialog = (type: 'create' | 'edit' | 'delete', user?: User) => {
+  const handleOpenDialog = (type: "create" | "edit" | "delete", user?: User) => {
     setDialogType(type);
 
     if (user) {
@@ -94,16 +94,16 @@ export default function UserManagement() {
       setFormValues({
         username: user.username,
         hasPassword: user.passwordHash !== null,
-        password: '', // Don't show existing password
-        isAdmin: user.isAdmin
+        password: "", // Don't show existing password
+        isAdmin: user.isAdmin,
       });
     } else {
       setSelectedUser(null);
       setFormValues({
-        username: '',
+        username: "",
         hasPassword: false,
-        password: '',
-        isAdmin: false
+        password: "",
+        isAdmin: false,
       });
     }
 
@@ -117,10 +117,10 @@ export default function UserManagement() {
   const handleFormChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, checked } = event.target;
 
-    if (name === 'hasPassword' || name === 'isAdmin') {
-      setFormValues(prev => ({ ...prev, [name]: checked }));
+    if (name === "hasPassword" || name === "isAdmin") {
+      setFormValues((prev) => ({ ...prev, [name]: checked }));
     } else {
-      setFormValues(prev => ({ ...prev, [name]: value }));
+      setFormValues((prev) => ({ ...prev, [name]: value }));
     }
   };
 
@@ -128,43 +128,43 @@ export default function UserManagement() {
     try {
       let response;
 
-      if (dialogType === 'create') {
-        response = await fetch('/api/admin/users', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            username: formValues.username,
-            password: formValues.hasPassword ? formValues.password : null,
-            isAdmin: formValues.isAdmin
-          })
-        });
-      } else if (dialogType === 'edit' && selectedUser) {
-        response = await fetch(`/api/admin/users/${selectedUser.id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+      if (dialogType === "create") {
+        response = await fetch("/api/admin/users", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             username: formValues.username,
             password: formValues.hasPassword ? formValues.password : null,
             isAdmin: formValues.isAdmin,
-            clearPassword: !formValues.hasPassword
-          })
+          }),
         });
-      } else if (dialogType === 'delete' && selectedUser) {
+      } else if (dialogType === "edit" && selectedUser) {
         response = await fetch(`/api/admin/users/${selectedUser.id}`, {
-          method: 'DELETE'
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            username: formValues.username,
+            password: formValues.hasPassword ? formValues.password : null,
+            isAdmin: formValues.isAdmin,
+            clearPassword: !formValues.hasPassword,
+          }),
+        });
+      } else if (dialogType === "delete" && selectedUser) {
+        response = await fetch(`/api/admin/users/${selectedUser.id}`, {
+          method: "DELETE",
         });
       }
 
       if (!response?.ok) {
         const errorData = await response?.json();
-        throw new Error(errorData?.error || 'Operation failed');
+        throw new Error(errorData?.error || "Operation failed");
       }
 
       // Show success message
       setSnackbar({
         open: true,
-        message: `User ${dialogType === 'create' ? 'created' : dialogType === 'edit' ? 'updated' : 'deleted'} successfully`,
-        severity: 'success'
+        message: `User ${dialogType === "create" ? "created" : dialogType === "edit" ? "updated" : "deleted"} successfully`,
+        severity: "success",
       });
 
       // Refresh user list
@@ -173,15 +173,17 @@ export default function UserManagement() {
     } catch (err) {
       setSnackbar({
         open: true,
-        message: err instanceof Error ? err.message : 'An unknown error occurred',
-        severity: 'error'
+        message: err instanceof Error ? err.message : "An unknown error occurred",
+        severity: "error",
       });
     }
   };
 
   if (loading && users.length === 0) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+      <Box
+        sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh" }}
+      >
         <CircularProgress />
       </Box>
     );
@@ -189,12 +191,12 @@ export default function UserManagement() {
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
         <Typography variant="h4">User Management</Typography>
         <Button
           variant="contained"
           startIcon={<AddIcon />}
-          onClick={() => handleOpenDialog('create')}
+          onClick={() => handleOpenDialog("create")}
         >
           Add User
         </Button>
@@ -237,15 +239,12 @@ export default function UserManagement() {
                 </TableCell>
                 <TableCell>{new Date(user.createdAt).toLocaleString()}</TableCell>
                 <TableCell>
-                  <IconButton
-                    aria-label="edit"
-                    onClick={() => handleOpenDialog('edit', user)}
-                  >
+                  <IconButton aria-label="edit" onClick={() => handleOpenDialog("edit", user)}>
                     <EditIcon />
                   </IconButton>
                   <IconButton
                     aria-label="delete"
-                    onClick={() => handleOpenDialog('delete', user)}
+                    onClick={() => handleOpenDialog("delete", user)}
                     color="error"
                   >
                     <DeleteIcon />
@@ -258,8 +257,8 @@ export default function UserManagement() {
       </TableContainer>
 
       {/* Create/Edit Dialog */}
-      <Dialog open={openDialog && dialogType !== 'delete'} onClose={handleCloseDialog}>
-        <DialogTitle>{dialogType === 'create' ? 'Create New User' : 'Edit User'}</DialogTitle>
+      <Dialog open={openDialog && dialogType !== "delete"} onClose={handleCloseDialog}>
+        <DialogTitle>{dialogType === "create" ? "Create New User" : "Edit User"}</DialogTitle>
         <DialogContent>
           <TextField
             autoFocus
@@ -301,11 +300,7 @@ export default function UserManagement() {
 
           <FormControlLabel
             control={
-              <Switch
-                checked={formValues.isAdmin}
-                onChange={handleFormChange}
-                name="isAdmin"
-              />
+              <Switch checked={formValues.isAdmin} onChange={handleFormChange} name="isAdmin" />
             }
             label="Admin Access"
           />
@@ -313,17 +308,18 @@ export default function UserManagement() {
         <DialogActions>
           <Button onClick={handleCloseDialog}>Cancel</Button>
           <Button onClick={handleSubmit} variant="contained">
-            {dialogType === 'create' ? 'Create' : 'Save'}
+            {dialogType === "create" ? "Create" : "Save"}
           </Button>
         </DialogActions>
       </Dialog>
 
       {/* Delete Confirmation Dialog */}
-      <Dialog open={openDialog && dialogType === 'delete'} onClose={handleCloseDialog}>
+      <Dialog open={openDialog && dialogType === "delete"} onClose={handleCloseDialog}>
         <DialogTitle>Delete User</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            Are you sure you want to delete user &quot;{selectedUser?.username}&quot;? This action cannot be undone.
+            Are you sure you want to delete user &quot;{selectedUser?.username}&quot;? This action
+            cannot be undone.
           </DialogContentText>
         </DialogContent>
         <DialogActions>
@@ -338,11 +334,9 @@ export default function UserManagement() {
       <Snackbar
         open={snackbar.open}
         autoHideDuration={6000}
-        onClose={() => setSnackbar(prev => ({ ...prev, open: false }))}
+        onClose={() => setSnackbar((prev) => ({ ...prev, open: false }))}
       >
-        <Alert severity={snackbar.severity}>
-          {snackbar.message}
-        </Alert>
+        <Alert severity={snackbar.severity}>{snackbar.message}</Alert>
       </Snackbar>
     </Box>
   );

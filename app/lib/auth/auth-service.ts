@@ -1,6 +1,6 @@
-import { prisma } from '../db/prisma';
-import { verifyPassword, hashPassword } from './password';
-import { generateToken, setAuthCookie, removeAuthCookie, JwtPayload } from './jwt';
+import { prisma } from "../db/prisma";
+import { verifyPassword, hashPassword } from "./password";
+import { generateToken, setAuthCookie, removeAuthCookie, JwtPayload } from "./jwt";
 
 interface LoginResult {
   success: boolean;
@@ -51,7 +51,7 @@ export async function loginUser(username: string, password?: string): Promise<Lo
     if (!user) {
       return {
         success: false,
-        message: 'User not found'
+        message: "User not found",
       };
     }
 
@@ -60,17 +60,17 @@ export async function loginUser(username: string, password?: string): Promise<Lo
       return {
         success: false,
         requiresPassword: true,
-        message: 'Password required'
+        message: "Password required",
       };
     }
 
     // Verify password if user has one set
     if (user.passwordHash) {
-      const isValidPassword = await verifyPassword(password || '', user.passwordHash);
+      const isValidPassword = await verifyPassword(password || "", user.passwordHash);
       if (!isValidPassword) {
         return {
           success: false,
-          message: 'Invalid password'
+          message: "Invalid password",
         };
       }
     }
@@ -102,15 +102,15 @@ export async function loginUser(username: string, password?: string): Promise<Lo
         hasPassword: !!user.passwordHash,
         lastActiveUrl: user.lastActiveUrl || undefined,
         avatarUrl: user.avatarUrl || undefined,
-        menuPosition: user.menuPosition || 'side',
-        themeMode: user.themeMode || 'light',
+        menuPosition: user.menuPosition || "side",
+        themeMode: user.themeMode || "light",
       },
     };
   } catch (error) {
-    console.error('Login error:', error);
+    console.error("Login error:", error);
     return {
       success: false,
-      message: 'An error occurred during login'
+      message: "An error occurred during login",
     };
   }
 }
@@ -118,7 +118,11 @@ export async function loginUser(username: string, password?: string): Promise<Lo
 /**
  * Register a new user
  */
-export async function registerUser(username: string, password?: string, isAdmin = false): Promise<RegisterResult> {
+export async function registerUser(
+  username: string,
+  password?: string,
+  isAdmin = false,
+): Promise<RegisterResult> {
   try {
     // Check if user already exists
     const existingUser = await prisma.user.findUnique({
@@ -128,7 +132,7 @@ export async function registerUser(username: string, password?: string, isAdmin 
     if (existingUser) {
       return {
         success: false,
-        message: 'Username already taken'
+        message: "Username already taken",
       };
     }
 
@@ -156,10 +160,10 @@ export async function registerUser(username: string, password?: string, isAdmin 
       user: newUser,
     };
   } catch (error) {
-    console.error('Registration error:', error);
+    console.error("Registration error:", error);
     return {
       success: false,
-      message: 'An error occurred during registration'
+      message: "An error occurred during registration",
     };
   }
 }

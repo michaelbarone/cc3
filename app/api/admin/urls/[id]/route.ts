@@ -1,16 +1,20 @@
-import { NextResponse } from "next/server";
 import { verifyToken } from "@/app/lib/auth/jwt";
 import { prisma } from "@/app/lib/db/prisma";
+import { NextRequest, NextResponse } from "next/server";
+
+type Props = {
+  params: Promise<{ id: string }>;
+};
 
 // GET - Fetch a specific URL
-export async function GET(request: Request, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, props: Props): Promise<NextResponse> {
   try {
     const userData = await verifyToken();
     if (!userData) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { id } = params;
+    const { id } = await props.params;
 
     // Get the URL
     const url = await prisma.url.findUnique({
@@ -29,7 +33,7 @@ export async function GET(request: Request, { params }: { params: { id: string }
 }
 
 // PUT - Update a URL
-export async function PUT(request: Request, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, props: Props): Promise<NextResponse> {
   try {
     const userData = await verifyToken();
 
@@ -37,7 +41,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const { id } = params;
+    const { id } = await props.params;
 
     // Parse request body with error handling
     let requestData;
@@ -88,7 +92,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
 }
 
 // DELETE - Remove a URL
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, props: Props): Promise<NextResponse> {
   try {
     const userData = await verifyToken();
 
@@ -96,7 +100,7 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const { id } = params;
+    const { id } = await props.params;
 
     // Check if URL exists
     const existingUrl = await prisma.url.findUnique({

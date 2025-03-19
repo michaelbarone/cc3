@@ -1,33 +1,40 @@
 "use client";
 
-import { useState, ReactNode, useEffect, useMemo, useCallback, useLayoutEffect } from "react";
-import {
-  Box,
-  AppBar,
-  Toolbar,
-  IconButton,
-  Typography,
-  Drawer,
-  useTheme,
-  Menu,
-  MenuItem,
-  Divider,
-} from "@mui/material";
-import MenuIcon from "@mui/icons-material/Menu";
-import CloseIcon from "@mui/icons-material/Close";
-import Brightness4Icon from "@mui/icons-material/Brightness4";
-import Brightness7Icon from "@mui/icons-material/Brightness7";
-import LogoutIcon from "@mui/icons-material/Logout";
+import { useAuth } from "@/app/lib/auth/auth-context";
+import { useUserPreferences } from "@/app/lib/hooks/useUserPreferences";
+import { ThemeContext } from "@/app/theme/theme-provider";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
-import SettingsIcon from "@mui/icons-material/Settings";
-import DashboardIcon from "@mui/icons-material/Dashboard";
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
-import { ThemeContext } from "@/app/theme/theme-provider";
-import { useAuth } from "@/app/lib/auth/auth-context";
+import Brightness4Icon from "@mui/icons-material/Brightness4";
+import Brightness7Icon from "@mui/icons-material/Brightness7";
+import CloseIcon from "@mui/icons-material/Close";
+import DashboardIcon from "@mui/icons-material/Dashboard";
+import LogoutIcon from "@mui/icons-material/Logout";
+import MenuIcon from "@mui/icons-material/Menu";
+import SettingsIcon from "@mui/icons-material/Settings";
+import {
+  AppBar,
+  Box,
+  Divider,
+  Drawer,
+  IconButton,
+  Menu,
+  MenuItem,
+  Toolbar,
+  Typography,
+  useTheme,
+} from "@mui/material";
 import { useRouter } from "next/navigation";
-import { useContext } from "react";
-import { useUserPreferences } from "@/app/lib/hooks/useUserPreferences";
+import React, {
+  ReactNode,
+  useCallback,
+  useContext,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useState,
+} from "react";
 
 const DRAWER_WIDTH = 240;
 

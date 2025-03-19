@@ -1,16 +1,13 @@
-import { NextResponse } from 'next/server';
-import { verifyToken } from '@/app/lib/auth/jwt';
-import { prisma } from '@/app/lib/db/prisma';
+import { NextResponse } from "next/server";
+import { verifyToken } from "@/app/lib/auth/jwt";
+import { prisma } from "@/app/lib/db/prisma";
 
 export async function GET() {
   try {
     const user = await verifyToken();
 
     if (!user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     // Get fresh user data from the database
@@ -29,10 +26,7 @@ export async function GET() {
     });
 
     if (!userData) {
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
     // Add hasPassword property based on whether passwordHash exists
@@ -44,10 +38,7 @@ export async function GET() {
 
     return NextResponse.json({ user: userWithHasPassword });
   } catch (error) {
-    console.error('Me route error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    console.error("Me route error:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

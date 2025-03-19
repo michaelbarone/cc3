@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/app/lib/db/prisma';
-import { verifyToken } from '@/app/lib/auth/jwt';
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/app/lib/db/prisma";
+import { verifyToken } from "@/app/lib/auth/jwt";
 
 // GET handler to fetch user preferences
 export async function GET() {
@@ -8,7 +8,7 @@ export async function GET() {
     // Verify the user's token
     const payload = await verifyToken();
     if (!payload) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     // Fetch the user with their preferences
@@ -22,24 +22,21 @@ export async function GET() {
     });
 
     if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
     // Return the user preferences, using database defaults if values are null
     // This ensures we use what's in the database instead of hardcoding defaults
     return NextResponse.json({
       preferences: {
-        menuPosition: user.menuPosition || 'side',
-        themeMode: user.themeMode || 'light',
+        menuPosition: user.menuPosition || "side",
+        themeMode: user.themeMode || "light",
       },
       rawPreferences: user, // Include raw data for debugging
     });
   } catch (error) {
-    console.error('Error fetching user preferences:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch user preferences' },
-      { status: 500 }
-    );
+    console.error("Error fetching user preferences:", error);
+    return NextResponse.json({ error: "Failed to fetch user preferences" }, { status: 500 });
   }
 }
 
@@ -49,7 +46,7 @@ export async function POST(request: NextRequest) {
     // Verify the user's token
     const payload = await verifyToken();
     if (!payload) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     // Get current user data first
@@ -63,7 +60,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (!currentUser) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
     // Parse the request body
@@ -75,10 +72,10 @@ export async function POST(request: NextRequest) {
 
     // Validate the menu position if provided
     if (menuPosition !== undefined) {
-      if (!['side', 'top'].includes(menuPosition)) {
+      if (!["side", "top"].includes(menuPosition)) {
         return NextResponse.json(
           { error: 'Invalid menu position. Must be "side" or "top".' },
-          { status: 400 }
+          { status: 400 },
         );
       }
       updateData.menuPosition = menuPosition;
@@ -87,10 +84,10 @@ export async function POST(request: NextRequest) {
 
     // Validate the theme mode if provided
     if (themeMode !== undefined) {
-      if (!['light', 'dark'].includes(themeMode)) {
+      if (!["light", "dark"].includes(themeMode)) {
         return NextResponse.json(
           { error: 'Invalid theme mode. Must be "light" or "dark".' },
-          { status: 400 }
+          { status: 400 },
         );
       }
       updateData.themeMode = themeMode;
@@ -100,8 +97,8 @@ export async function POST(request: NextRequest) {
     // If no valid update data, return error
     if (Object.keys(updateData).length === 0) {
       return NextResponse.json(
-        { error: 'No valid preferences provided for update.' },
-        { status: 400 }
+        { error: "No valid preferences provided for update." },
+        { status: 400 },
       );
     }
 
@@ -119,17 +116,14 @@ export async function POST(request: NextRequest) {
     // Return the updated preferences
     return NextResponse.json({
       preferences: {
-        menuPosition: updatedUser.menuPosition || 'side',
-        themeMode: updatedUser.themeMode || 'light',
+        menuPosition: updatedUser.menuPosition || "side",
+        themeMode: updatedUser.themeMode || "light",
       },
       rawPreferences: updatedUser, // Include raw data for debugging
       success: true, // Add explicit success flag
     });
   } catch (error) {
-    console.error('Error updating user preferences:', error);
-    return NextResponse.json(
-      { error: 'Failed to update user preferences' },
-      { status: 500 }
-    );
+    console.error("Error updating user preferences:", error);
+    return NextResponse.json({ error: "Failed to update user preferences" }, { status: 500 });
   }
 }

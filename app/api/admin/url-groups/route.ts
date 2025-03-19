@@ -1,7 +1,7 @@
-import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-import { verifyToken } from '@/app/lib/auth/jwt';
-import { cookies } from 'next/headers';
+import { NextResponse } from "next/server";
+import { PrismaClient } from "@prisma/client";
+import { verifyToken } from "@/app/lib/auth/jwt";
+import { cookies } from "next/headers";
 
 const prisma = new PrismaClient();
 
@@ -10,16 +10,16 @@ export async function GET() {
   try {
     // Verify admin access
     const cookieStore = await cookies();
-    const token = cookieStore.get('auth_token')?.value;
+    const token = cookieStore.get("auth_token")?.value;
 
     if (!token) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const userData = await verifyToken();
 
     if (!userData || !userData.isAdmin) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     // Get all URL groups with their URLs
@@ -27,22 +27,19 @@ export async function GET() {
       include: {
         urls: {
           orderBy: {
-            displayOrder: 'asc'
-          }
-        }
+            displayOrder: "asc",
+          },
+        },
       },
       orderBy: {
-        name: 'asc'
-      }
+        name: "asc",
+      },
     });
 
     return NextResponse.json(urlGroups);
   } catch (error) {
-    console.error('Error fetching URL groups:', error);
-    return NextResponse.json(
-      { error: 'Internal Server Error' },
-      { status: 500 }
-    );
+    console.error("Error fetching URL groups:", error);
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   } finally {
     await prisma.$disconnect();
   }
@@ -53,16 +50,16 @@ export async function POST(request: Request) {
   try {
     // Verify admin access
     const cookieStore = await cookies();
-    const token = cookieStore.get('auth_token')?.value;
+    const token = cookieStore.get("auth_token")?.value;
 
     if (!token) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const userData = await verifyToken();
 
     if (!userData || !userData.isAdmin) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     // Parse request body
@@ -70,27 +67,21 @@ export async function POST(request: Request) {
 
     // Validate input
     if (!name || name.trim().length === 0) {
-      return NextResponse.json(
-        { error: 'Group name is required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Group name is required" }, { status: 400 });
     }
 
     // Create new URL group
     const newUrlGroup = await prisma.urlGroup.create({
       data: {
         name,
-        description: description || null
-      }
+        description: description || null,
+      },
     });
 
     return NextResponse.json(newUrlGroup, { status: 201 });
   } catch (error) {
-    console.error('Error creating URL group:', error);
-    return NextResponse.json(
-      { error: 'Internal Server Error' },
-      { status: 500 }
-    );
+    console.error("Error creating URL group:", error);
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   } finally {
     await prisma.$disconnect();
   }

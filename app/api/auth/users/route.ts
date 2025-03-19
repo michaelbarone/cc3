@@ -1,5 +1,5 @@
-import { NextResponse } from 'next/server';
-import { prisma } from '@/app/lib/db/prisma';
+import { NextResponse } from "next/server";
+import { prisma } from "@/app/lib/db/prisma";
 
 // Define a type for the user from prisma
 type UserWithAuth = {
@@ -21,7 +21,7 @@ export async function GET() {
         passwordHash: true, // Needed to determine if password is required
       },
       orderBy: {
-        username: 'asc',
+        username: "asc",
       },
     });
 
@@ -35,10 +35,7 @@ export async function GET() {
 
     return NextResponse.json(transformedUsers);
   } catch (error) {
-    console.error('Error fetching users:', error);
-    return NextResponse.json(
-      { error: 'Error fetching users' },
-      { status: 500 }
-    );
+    console.error("Error fetching users:", error);
+    return NextResponse.json({ error: "Error fetching users" }, { status: 500 });
   }
 }

@@ -3,14 +3,12 @@ import { prisma } from "@/app/lib/db/prisma";
 import { PrismaClient } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 
-interface RouteParams {
-  params: {
-    id: string;
-  };
-}
+type Props = {
+  params: Promise<{ id: string }>;
+};
 
 // Get all users assigned to a URL group (admin only)
-export async function GET(request: NextRequest, params: RouteParams): Promise<NextResponse> {
+export async function GET(request: NextRequest, props: Props): Promise<NextResponse> {
   try {
     const user = await verifyToken();
 
@@ -19,7 +17,7 @@ export async function GET(request: NextRequest, params: RouteParams): Promise<Ne
     }
 
     // Get the URL group ID from params
-    const { id } = await Promise.resolve(params.params);
+    const { id } = await props.params;
 
     // Check if the URL group exists
     const urlGroup = await prisma.urlGroup.findUnique({
@@ -57,7 +55,7 @@ export async function GET(request: NextRequest, params: RouteParams): Promise<Ne
 }
 
 // Update users assigned to a URL group (admin only)
-export async function PUT(request: NextRequest, params: RouteParams): Promise<NextResponse> {
+export async function PUT(request: NextRequest, props: Props): Promise<NextResponse> {
   try {
     const user = await verifyToken();
 
@@ -66,7 +64,7 @@ export async function PUT(request: NextRequest, params: RouteParams): Promise<Ne
     }
 
     // Get the URL group ID from params
-    const { id } = await Promise.resolve(params.params);
+    const { id } = await props.params;
     const { userIds } = await request.json();
 
     // Check if the URL group exists

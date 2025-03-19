@@ -1,6 +1,6 @@
-import { NextResponse } from 'next/server';
-import { verifyToken } from '@/app/lib/auth/jwt';
-import { prisma } from '@/app/lib/db/prisma';
+import { NextResponse } from "next/server";
+import { verifyToken } from "@/app/lib/auth/jwt";
+import { prisma } from "@/app/lib/db/prisma";
 
 // Define a type for a URL
 interface Url {
@@ -39,10 +39,7 @@ export async function GET() {
     const user = await verifyToken();
 
     if (!user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     // Fetch all URL groups assigned to the user
@@ -55,7 +52,7 @@ export async function GET() {
               include: {
                 urls: {
                   orderBy: {
-                    displayOrder: 'asc',
+                    displayOrder: "asc",
                   },
                 },
               },
@@ -66,10 +63,7 @@ export async function GET() {
     });
 
     if (!userUrlGroups) {
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
     // Transform the data to a more frontend-friendly format
@@ -91,10 +85,7 @@ export async function GET() {
 
     return NextResponse.json({ urlGroups });
   } catch (error) {
-    console.error('Error fetching URL groups:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    console.error("Error fetching URL groups:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

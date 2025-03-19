@@ -2,15 +2,16 @@ import { verifyToken } from "@/app/lib/auth/jwt";
 import { prisma } from "@/app/lib/db/prisma";
 import { PrismaClient } from "@prisma/client";
 import { cookies } from "next/headers";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 const prismaClient = new PrismaClient();
 
+type Props = {
+  params: Promise<{ id: string }>;
+};
+
 // POST - Create a new URL within a URL group
-export async function POST(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> },
-): Promise<NextResponse> {
+export async function POST(request: NextRequest, props: Props): Promise<NextResponse> {
   try {
     const userData = await verifyToken();
 
@@ -18,7 +19,7 @@ export async function POST(
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const { id: urlGroupId } = await params;
+    const { id: urlGroupId } = await props.params;
 
     // Check if URL group exists
     const urlGroup = await prismaClient.urlGroup.findUnique({
@@ -54,68 +55,28 @@ export async function POST(
       let normalized = inputUrl.toLowerCase().trim();
       // Remove trailing slashes
       normalized = normalized.replace(/\/+$/, "");
-      // Remove http:// or https:// from the start
-      normalized = normalized.replace(/^https?:\/\//, "");
       return normalized;
     };
 
-    const normalizedNewUrl = normalizeUrl(url);
+    const normalizedUrl = normalizeUrl(url);
 
-    // Check for existing URLs with exact or partial matches
-    const searchParams = new URL(request.url).searchParams;
-    const force = searchParams.get("force") === "true";
-
-    if (!force) {
-      const existingUrls = await prismaClient.url.findMany({
+    // Check for similar URLs in the same group
+    const searchUrl = (await request.nextUrl.searchParams.get("force")) === "true";
+    if (!searchUrl) {
+      const similarUrls = await prismaClient.url.findMany({
         where: {
-          OR: [
-            // Exact match after normalization
-            { url: { contains: normalizedNewUrl } },
-            // Also check if the normalized version of existing URLs match
-            {
-              url: {
-                contains: normalizedNewUrl.replace(/^https?:\/\//, ""),
-              },
-            },
-          ],
-        },
-        select: {
-          id: true,
-          title: true,
-          url: true,
-          urlGroupId: true,
+          urlGroupId,
+          url: {
+            contains: normalizedUrl.toLowerCase(),
+          },
         },
       });
 
-      // Filter out false positives by doing a more precise comparison
-      const matches = existingUrls.filter(
-        (existingUrl: { id: string; title: string; url: string; urlGroupId: string }) => {
-          const normalizedExistingUrl = normalizeUrl(existingUrl.url);
-          return (
-            normalizedExistingUrl === normalizedNewUrl ||
-            normalizedExistingUrl.includes(normalizedNewUrl) ||
-            normalizedNewUrl.includes(normalizedExistingUrl)
-          );
-        },
-      );
-
-      if (matches.length > 0) {
-        // Return the matches with their details
+      if (similarUrls.length > 0) {
         return NextResponse.json(
           {
-            warning: "Similar URLs found",
-            matches: matches.map(
-              (u: { id: string; title: string; url: string; urlGroupId: string }) => ({
-                id: u.id,
-                title: u.title,
-                url: u.url,
-                inGroup: !!u.urlGroupId,
-              }),
-            ),
-            exactMatch: matches.some(
-              (u: { id: string; title: string; url: string; urlGroupId: string }) =>
-                normalizeUrl(u.url) === normalizedNewUrl,
-            ),
+            error: "Similar URLs found",
+            similarUrls,
           },
           { status: 409 },
         );
@@ -134,27 +95,15 @@ export async function POST(
       }
     }
 
-    // Determine display order if not provided
-    let finalDisplayOrder = displayOrder;
-    if (finalDisplayOrder === undefined) {
-      // Get highest existing display order
-      const highestOrderUrl = await prismaClient.url.findFirst({
-        where: { urlGroupId },
-        orderBy: { displayOrder: "desc" },
-      });
-
-      finalDisplayOrder = highestOrderUrl ? highestOrderUrl.displayOrder + 1 : 0;
-    }
-
     // Create new URL
     const newUrl = await prismaClient.url.create({
       data: {
-        urlGroupId,
         title,
-        url,
+        url: normalizedUrl,
         iconPath: iconPath || null,
-        displayOrder: finalDisplayOrder,
+        displayOrder: displayOrder || 0,
         idleTimeoutMinutes: timeoutMinutes,
+        urlGroupId,
       },
     });
 
@@ -168,10 +117,7 @@ export async function POST(
 }
 
 // PUT - Update URLs in a group
-export async function PUT(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> },
-): Promise<NextResponse> {
+export async function PUT(request: NextRequest, props: Props): Promise<NextResponse> {
   try {
     // Verify admin access
     const cookieStore = await cookies();
@@ -187,7 +133,7 @@ export async function PUT(
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const { id } = await params;
+    const { id } = await props.params;
     const { urlIds } = await request.json();
 
     // Check if URL group exists
@@ -240,19 +186,7 @@ export async function PUT(
     // Execute all updates in a transaction
     await prisma.$transaction(updates);
 
-    // Get the updated URL group with its URLs
-    const updatedUrlGroup = await prisma.urlGroup.findUnique({
-      where: { id },
-      include: {
-        urls: {
-          orderBy: {
-            displayOrder: "asc",
-          },
-        },
-      },
-    });
-
-    return NextResponse.json(updatedUrlGroup);
+    return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Error updating URLs in group:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });

@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import { useState, useRef, ChangeEvent } from 'react';
-import { Box, Avatar, IconButton, CircularProgress, Typography, Tooltip } from '@mui/material';
-import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
-import DeleteIcon from '@mui/icons-material/Delete';
-import ImageIcon from '@mui/icons-material/Image';
+import { useState, useRef, ChangeEvent } from "react";
+import { Box, Avatar, IconButton, CircularProgress, Typography, Tooltip } from "@mui/material";
+import PhotoCameraIcon from "@mui/icons-material/PhotoCamera";
+import DeleteIcon from "@mui/icons-material/Delete";
+import ImageIcon from "@mui/icons-material/Image";
 
 interface IconUploadProps {
   size?: number;
@@ -19,7 +19,7 @@ export default function IconUpload({
   iconUrl,
   onUploadSuccess,
   onUploadError,
-  onDelete
+  onDelete,
 }: IconUploadProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -31,8 +31,8 @@ export default function IconUpload({
     if (!file) return;
 
     // Validate file type
-    if (!file.type.startsWith('image/')) {
-      const errorMsg = 'Please select an image file';
+    if (!file.type.startsWith("image/")) {
+      const errorMsg = "Please select an image file";
       setError(errorMsg);
       if (onUploadError) onUploadError(errorMsg);
       return;
@@ -40,7 +40,7 @@ export default function IconUpload({
 
     // Validate file size (max 1MB)
     if (file.size > 1 * 1024 * 1024) {
-      const errorMsg = 'Image size must be less than 1MB';
+      const errorMsg = "Image size must be less than 1MB";
       setError(errorMsg);
       if (onUploadError) onUploadError(errorMsg);
       return;
@@ -52,15 +52,15 @@ export default function IconUpload({
 
     try {
       const formData = new FormData();
-      formData.append('icon', file);
+      formData.append("icon", file);
 
-      const response = await fetch('/api/admin/icons', {
-        method: 'POST',
+      const response = await fetch("/api/admin/icons", {
+        method: "POST",
         body: formData,
       });
 
       if (!response.ok) {
-        throw new Error('Failed to upload icon');
+        throw new Error("Failed to upload icon");
       }
 
       const data = await response.json();
@@ -69,7 +69,7 @@ export default function IconUpload({
         onUploadSuccess(data.iconUrl);
       }
     } catch (err) {
-      const errorMsg = err instanceof Error ? err.message : 'Failed to upload icon';
+      const errorMsg = err instanceof Error ? err.message : "Failed to upload icon";
       setError(errorMsg);
       if (onUploadError) onUploadError(errorMsg);
     } finally {
@@ -77,7 +77,7 @@ export default function IconUpload({
 
       // Clear the file input
       if (fileInputRef.current) {
-        fileInputRef.current.value = '';
+        fileInputRef.current.value = "";
       }
     }
   };
@@ -93,7 +93,7 @@ export default function IconUpload({
       // Let the parent component handle actual deletion
       onDelete();
     } catch (err) {
-      const errorMsg = err instanceof Error ? err.message : 'Failed to delete icon';
+      const errorMsg = err instanceof Error ? err.message : "Failed to delete icon";
       setError(errorMsg);
       if (onUploadError) onUploadError(errorMsg);
     } finally {
@@ -109,14 +109,14 @@ export default function IconUpload({
   };
 
   return (
-    <Box sx={{ position: 'relative', width: size, height: size }}>
+    <Box sx={{ position: "relative", width: size, height: size }}>
       {/* Hidden file input */}
       <input
         type="file"
         accept="image/*"
         ref={fileInputRef}
         onChange={handleFileChange}
-        style={{ display: 'none' }}
+        style={{ display: "none" }}
       />
 
       {/* Icon Avatar */}
@@ -126,9 +126,9 @@ export default function IconUpload({
         sx={{
           width: size,
           height: size,
-          cursor: 'pointer',
+          cursor: "pointer",
           fontSize: size / 2,
-          bgcolor: 'primary.light'
+          bgcolor: "primary.light",
         }}
         onClick={handleIconClick}
       >
@@ -138,11 +138,11 @@ export default function IconUpload({
       {/* Upload buttons */}
       <Box
         sx={{
-          position: 'absolute',
+          position: "absolute",
           bottom: -8,
           right: -8,
-          display: 'flex',
-          gap: 0.5
+          display: "flex",
+          gap: 0.5,
         }}
       >
         <Tooltip title="Upload icon">
@@ -152,8 +152,8 @@ export default function IconUpload({
             onClick={handleIconClick}
             disabled={isUploading}
             sx={{
-              bgcolor: 'background.paper',
-              '&:hover': { bgcolor: 'background.default' }
+              bgcolor: "background.paper",
+              "&:hover": { bgcolor: "background.default" },
             }}
           >
             <PhotoCameraIcon fontSize="small" />
@@ -168,8 +168,8 @@ export default function IconUpload({
               onClick={handleDeleteIcon}
               disabled={isUploading}
               sx={{
-                bgcolor: 'background.paper',
-                '&:hover': { bgcolor: 'background.default' }
+                bgcolor: "background.paper",
+                "&:hover": { bgcolor: "background.default" },
               }}
             >
               <DeleteIcon fontSize="small" />
@@ -182,16 +182,16 @@ export default function IconUpload({
       {isUploading && (
         <Box
           sx={{
-            position: 'absolute',
+            position: "absolute",
             top: 0,
             left: 0,
             right: 0,
             bottom: 0,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            bgcolor: 'rgba(0, 0, 0, 0.3)',
-            borderRadius: '50%'
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            bgcolor: "rgba(0, 0, 0, 0.3)",
+            borderRadius: "50%",
           }}
         >
           <CircularProgress size={size / 3} />
@@ -204,10 +204,10 @@ export default function IconUpload({
           variant="caption"
           color="error"
           sx={{
-            display: 'block',
-            textAlign: 'center',
+            display: "block",
+            textAlign: "center",
             mt: 1,
-            maxWidth: size * 2
+            maxWidth: size * 2,
           }}
         >
           {error}

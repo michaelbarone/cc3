@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import { useState, useRef, ChangeEvent } from 'react';
-import { Box, Avatar, IconButton, CircularProgress, Typography, Tooltip } from '@mui/material';
-import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
-import DeleteIcon from '@mui/icons-material/Delete';
-import { useAuth } from '@/app/lib/auth/auth-context';
+import { useState, useRef, ChangeEvent } from "react";
+import { Box, Avatar, IconButton, CircularProgress, Typography, Tooltip } from "@mui/material";
+import PhotoCameraIcon from "@mui/icons-material/PhotoCamera";
+import DeleteIcon from "@mui/icons-material/Delete";
+import { useAuth } from "@/app/lib/auth/auth-context";
 
 interface AvatarUploadProps {
   size?: number;
@@ -17,7 +17,7 @@ export default function AvatarUpload({
   size = 100,
   editable = true,
   onUploadSuccess,
-  onUploadError
+  onUploadError,
 }: AvatarUploadProps) {
   const { user, updateUser } = useAuth();
   const [isUploading, setIsUploading] = useState(false);
@@ -25,9 +25,7 @@ export default function AvatarUpload({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Get user initials for fallback avatar
-  const initials = user?.username
-    ? user.username.substring(0, 2).toUpperCase()
-    : '?';
+  const initials = user?.username ? user.username.substring(0, 2).toUpperCase() : "?";
 
   // Handle file selection
   const handleFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
@@ -35,8 +33,8 @@ export default function AvatarUpload({
     if (!file) return;
 
     // Validate file type
-    if (!file.type.startsWith('image/')) {
-      const errorMsg = 'Please select an image file';
+    if (!file.type.startsWith("image/")) {
+      const errorMsg = "Please select an image file";
       setError(errorMsg);
       if (onUploadError) onUploadError(errorMsg);
       return;
@@ -44,7 +42,7 @@ export default function AvatarUpload({
 
     // Validate file size (max 2MB)
     if (file.size > 2 * 1024 * 1024) {
-      const errorMsg = 'Image size must be less than 2MB';
+      const errorMsg = "Image size must be less than 2MB";
       setError(errorMsg);
       if (onUploadError) onUploadError(errorMsg);
       return;
@@ -56,15 +54,15 @@ export default function AvatarUpload({
 
     try {
       const formData = new FormData();
-      formData.append('avatar', file);
+      formData.append("avatar", file);
 
-      const response = await fetch('/api/user/avatar', {
-        method: 'POST',
+      const response = await fetch("/api/user/avatar", {
+        method: "POST",
         body: formData,
       });
 
       if (!response.ok) {
-        throw new Error('Failed to upload avatar');
+        throw new Error("Failed to upload avatar");
       }
 
       const data = await response.json();
@@ -73,7 +71,7 @@ export default function AvatarUpload({
       if (updateUser && data.avatarUrl && user) {
         updateUser({
           ...user,
-          avatarUrl: data.avatarUrl
+          avatarUrl: data.avatarUrl,
         });
       }
 
@@ -81,7 +79,7 @@ export default function AvatarUpload({
         onUploadSuccess(data.avatarUrl);
       }
     } catch (err) {
-      const errorMsg = err instanceof Error ? err.message : 'Failed to upload avatar';
+      const errorMsg = err instanceof Error ? err.message : "Failed to upload avatar";
       setError(errorMsg);
       if (onUploadError) onUploadError(errorMsg);
     } finally {
@@ -89,7 +87,7 @@ export default function AvatarUpload({
 
       // Clear the file input
       if (fileInputRef.current) {
-        fileInputRef.current.value = '';
+        fileInputRef.current.value = "";
       }
     }
   };
@@ -102,27 +100,27 @@ export default function AvatarUpload({
     setError(null);
 
     try {
-      const response = await fetch('/api/user/avatar', {
-        method: 'DELETE',
+      const response = await fetch("/api/user/avatar", {
+        method: "DELETE",
       });
 
       if (!response.ok) {
-        throw new Error('Failed to delete avatar');
+        throw new Error("Failed to delete avatar");
       }
 
       // Update user with null avatar URL
       if (updateUser && user) {
         updateUser({
           ...user,
-          avatarUrl: undefined
+          avatarUrl: undefined,
         });
       }
 
       if (onUploadSuccess) {
-        onUploadSuccess('');
+        onUploadSuccess("");
       }
     } catch (err) {
-      const errorMsg = err instanceof Error ? err.message : 'Failed to delete avatar';
+      const errorMsg = err instanceof Error ? err.message : "Failed to delete avatar";
       setError(errorMsg);
       if (onUploadError) onUploadError(errorMsg);
     } finally {
@@ -138,26 +136,26 @@ export default function AvatarUpload({
   };
 
   return (
-    <Box sx={{ position: 'relative', width: size, height: size, margin: '0 auto' }}>
+    <Box sx={{ position: "relative", width: size, height: size, margin: "0 auto" }}>
       {/* Hidden file input */}
       <input
         type="file"
         accept="image/*"
         ref={fileInputRef}
         onChange={handleFileChange}
-        style={{ display: 'none' }}
+        style={{ display: "none" }}
       />
 
       {/* Avatar */}
       <Avatar
         src={user?.avatarUrl || undefined}
-        alt={user?.username || 'User'}
+        alt={user?.username || "User"}
         sx={{
           width: size,
           height: size,
-          cursor: editable ? 'pointer' : 'default',
+          cursor: editable ? "pointer" : "default",
           fontSize: size / 2,
-          bgcolor: 'primary.main'
+          bgcolor: "primary.main",
         }}
         onClick={handleAvatarClick}
       >
@@ -168,11 +166,11 @@ export default function AvatarUpload({
       {editable && (
         <Box
           sx={{
-            position: 'absolute',
+            position: "absolute",
             bottom: 0,
             right: 0,
-            display: 'flex',
-            gap: 0.5
+            display: "flex",
+            gap: 0.5,
           }}
         >
           <Tooltip title="Upload new avatar">
@@ -182,8 +180,8 @@ export default function AvatarUpload({
               onClick={handleAvatarClick}
               disabled={isUploading}
               sx={{
-                bgcolor: 'background.paper',
-                '&:hover': { bgcolor: 'background.default' }
+                bgcolor: "background.paper",
+                "&:hover": { bgcolor: "background.default" },
               }}
             >
               <PhotoCameraIcon fontSize="small" />
@@ -198,8 +196,8 @@ export default function AvatarUpload({
                 onClick={handleDeleteAvatar}
                 disabled={isUploading}
                 sx={{
-                  bgcolor: 'background.paper',
-                  '&:hover': { bgcolor: 'background.default' }
+                  bgcolor: "background.paper",
+                  "&:hover": { bgcolor: "background.default" },
                 }}
               >
                 <DeleteIcon fontSize="small" />
@@ -213,16 +211,16 @@ export default function AvatarUpload({
       {isUploading && (
         <Box
           sx={{
-            position: 'absolute',
+            position: "absolute",
             top: 0,
             left: 0,
             right: 0,
             bottom: 0,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            bgcolor: 'rgba(0, 0, 0, 0.3)',
-            borderRadius: '50%'
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            bgcolor: "rgba(0, 0, 0, 0.3)",
+            borderRadius: "50%",
           }}
         >
           <CircularProgress size={size / 3} />
@@ -235,10 +233,10 @@ export default function AvatarUpload({
           variant="caption"
           color="error"
           sx={{
-            display: 'block',
-            textAlign: 'center',
+            display: "block",
+            textAlign: "center",
             mt: 1,
-            maxWidth: size * 2
+            maxWidth: size * 2,
           }}
         >
           {error}

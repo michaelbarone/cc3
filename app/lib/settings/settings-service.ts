@@ -1,5 +1,5 @@
-import { prisma } from '../db/prisma';
-import { SettingsService } from './types';
+import { prisma } from "../db/prisma";
+import { SettingsService } from "./types";
 
 /**
  * Implementation of the settings service using Prisma
@@ -16,9 +16,12 @@ export class PrismaSettingsService implements SettingsService {
           key,
         },
       },
+      select: {
+        value: true,
+      },
     });
 
-    return setting ? (setting.value as T) : null;
+    return setting ? (JSON.parse(setting.value) as T) : null;
   }
 
   /**
@@ -33,13 +36,13 @@ export class PrismaSettingsService implements SettingsService {
         },
       },
       update: {
-        value: value as unknown as string, // Prisma stores as JSON string
+        value: JSON.stringify(value),
         updatedAt: new Date(),
       },
       create: {
         userId,
         key,
-        value: value as unknown as string, // Prisma stores as JSON string
+        value: JSON.stringify(value),
         createdAt: new Date(),
         updatedAt: new Date(),
       },
@@ -68,12 +71,19 @@ export class PrismaSettingsService implements SettingsService {
       where: {
         userId,
       },
+      select: {
+        key: true,
+        value: true,
+      },
     });
 
-    return settings.reduce((acc: Record<string, unknown>, setting: { key: string; value: unknown }) => {
-      acc[setting.key] = setting.value;
-      return acc;
-    }, {} as Record<string, unknown>);
+    return settings.reduce(
+      (acc: Record<string, unknown>, setting: { key: string; value: string }) => {
+        acc[setting.key] = JSON.parse(setting.value);
+        return acc;
+      },
+      {} as Record<string, unknown>,
+    );
   }
 }
 

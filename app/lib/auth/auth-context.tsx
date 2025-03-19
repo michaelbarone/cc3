@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { cleanupIframes } from '../utils/iframe-utils';
+import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { cleanupIframes } from "../utils/iframe-utils";
 
 // Define user type
 export interface User {
@@ -11,8 +11,8 @@ export interface User {
   lastActiveUrl?: string;
   hasPassword?: boolean;
   avatarUrl?: string;
-  menuPosition?: 'side' | 'top';
-  themeMode?: 'light' | 'dark';
+  menuPosition?: "side" | "top";
+  themeMode?: "light" | "dark";
 }
 
 // Define context type
@@ -21,7 +21,10 @@ interface AuthContextType {
   loading: boolean;
   login: (username: string, password?: string) => Promise<User>;
   logout: () => Promise<void>;
-  register: (username: string, password?: string) => Promise<{ success: boolean; message?: string }>;
+  register: (
+    username: string,
+    password?: string,
+  ) => Promise<{ success: boolean; message?: string }>;
   updateUser: (updatedUser: User) => void;
 }
 
@@ -42,13 +45,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const response = await fetch('/api/auth/me');
+        const response = await fetch("/api/auth/me");
         if (response.ok) {
           const data = await response.json();
           setUser(data.user);
         }
       } catch (error) {
-        console.error('Failed to fetch user:', error);
+        console.error("Failed to fetch user:", error);
       } finally {
         setLoading(false);
       }
@@ -61,31 +64,31 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const login = async (username: string, password?: string): Promise<User> => {
     setLoading(true);
     try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ username, password }),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || errorData.message || 'Login failed');
+        throw new Error(errorData.error || errorData.message || "Login failed");
       }
 
       const data = await response.json();
 
       // Check if we have the expected response structure
       if (!data.success || !data.user) {
-        throw new Error('Invalid response from server');
+        throw new Error("Invalid response from server");
       }
 
       // Set the user state from the user property
       setUser(data.user);
       return data.user;
     } catch (error) {
-      console.error('Login error:', error);
+      console.error("Login error:", error);
       throw error;
     } finally {
       setLoading(false);
@@ -95,8 +98,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
   // Logout function
   const logout = async () => {
     try {
-      await fetch('/api/auth/logout', {
-        method: 'POST',
+      await fetch("/api/auth/logout", {
+        method: "POST",
       });
 
       // Clean up iframes before clearing user state
@@ -106,19 +109,19 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setUser(null);
 
       // Clear the remembered user from localStorage
-      localStorage.removeItem('rememberedUser');
+      localStorage.removeItem("rememberedUser");
     } catch (error) {
-      console.error('Logout error:', error);
+      console.error("Logout error:", error);
     }
   };
 
   // Register function
   const register = async (username: string, password?: string) => {
     try {
-      const response = await fetch('/api/auth/register', {
-        method: 'POST',
+      const response = await fetch("/api/auth/register", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ username, password }),
       });
@@ -132,8 +135,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
         return { success: false, message: data.error };
       }
     } catch (error) {
-      console.error('Registration error:', error);
-      return { success: false, message: 'An error occurred during registration' };
+      console.error("Registration error:", error);
+      return { success: false, message: "An error occurred during registration" };
     }
   };
 
@@ -158,7 +161,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 }

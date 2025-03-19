@@ -1,25 +1,19 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { verifyToken } from '@/app/lib/auth/jwt';
-import { prisma } from '@/app/lib/db/prisma';
+import { NextRequest, NextResponse } from "next/server";
+import { verifyToken } from "@/app/lib/auth/jwt";
+import { prisma } from "@/app/lib/db/prisma";
 
 export async function POST(request: NextRequest) {
   try {
     const user = await verifyToken();
 
     if (!user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const { urlId } = await request.json();
 
     if (!urlId) {
-      return NextResponse.json(
-        { error: 'URL ID is required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "URL ID is required" }, { status: 400 });
     }
 
     // Check if the URL exists
@@ -28,10 +22,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (!url) {
-      return NextResponse.json(
-        { error: 'URL not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "URL not found" }, { status: 404 });
     }
 
     // Update the user's last active URL
@@ -42,10 +33,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Error updating last active URL:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    console.error("Error updating last active URL:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

@@ -1,14 +1,14 @@
-'use client';
+"use client";
 
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Url } from '../types';
+import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { Url } from "../types";
 
 // Constants for localStorage keys
 const STORAGE_KEYS = {
-  ACTIVE_URL_ID: 'iframe-state-active-url-id',
-  ACTIVE_URL: 'iframe-state-active-url',
-  LOADED_URL_IDS: 'iframe-state-loaded-url-ids',
-  KNOWN_URL_IDS: 'iframe-state-known-url-ids'
+  ACTIVE_URL_ID: "iframe-state-active-url-id",
+  ACTIVE_URL: "iframe-state-active-url",
+  LOADED_URL_IDS: "iframe-state-loaded-url-ids",
+  KNOWN_URL_IDS: "iframe-state-known-url-ids",
 };
 
 interface IframeStateContextType {
@@ -37,7 +37,7 @@ const IframeStateContext = createContext<IframeStateContextType | undefined>(und
 export function useIframeState() {
   const context = useContext(IframeStateContext);
   if (!context) {
-    throw new Error('useIframeState must be used within an IframeStateProvider');
+    throw new Error("useIframeState must be used within an IframeStateProvider");
   }
   return context;
 }
@@ -49,11 +49,11 @@ interface IframeStateProviderProps {
 export function IframeStateProvider({ children }: IframeStateProviderProps) {
   // Initialize state from localStorage if available
   const [activeUrlId, setActiveUrlId] = useState<string | null>(() => {
-    if (typeof window === 'undefined') return null;
+    if (typeof window === "undefined") return null;
 
     // First check URL params
     const url = new URL(window.location.href);
-    const urlParam = url.searchParams.get('url');
+    const urlParam = url.searchParams.get("url");
     if (urlParam) return urlParam;
 
     // Then check localStorage
@@ -62,19 +62,19 @@ export function IframeStateProvider({ children }: IframeStateProviderProps) {
   });
 
   const [activeUrl, setActiveUrlObject] = useState<Url | null>(() => {
-    if (typeof window === 'undefined') return null;
+    if (typeof window === "undefined") return null;
     const stored = localStorage.getItem(STORAGE_KEYS.ACTIVE_URL);
     return stored ? JSON.parse(stored) : null;
   });
 
   const [loadedUrlIds, setLoadedUrlIds] = useState<string[]>(() => {
-    if (typeof window === 'undefined') return [];
+    if (typeof window === "undefined") return [];
     const stored = localStorage.getItem(STORAGE_KEYS.LOADED_URL_IDS);
     return stored ? JSON.parse(stored) : [];
   });
 
   const [knownUrlIds, setKnownUrlIds] = useState<Set<string>>(() => {
-    if (typeof window === 'undefined') return new Set();
+    if (typeof window === "undefined") return new Set();
     const stored = localStorage.getItem(STORAGE_KEYS.KNOWN_URL_IDS);
     return new Set(stored ? JSON.parse(stored) : []);
   });
@@ -89,7 +89,7 @@ export function IframeStateProvider({ children }: IframeStateProviderProps) {
     if (activeUrlId && activeUrl) {
       // Update browser history if needed
       const url = new URL(window.location.href);
-      const urlParam = url.searchParams.get('url');
+      const urlParam = url.searchParams.get("url");
       if (urlParam !== activeUrlId) {
         updateBrowserHistory(activeUrlId);
       }
@@ -101,7 +101,7 @@ export function IframeStateProvider({ children }: IframeStateProviderProps) {
 
   // Persist state changes to localStorage
   useEffect(() => {
-    if (typeof window === 'undefined') return;
+    if (typeof window === "undefined") return;
 
     if (activeUrlId) {
       localStorage.setItem(STORAGE_KEYS.ACTIVE_URL_ID, activeUrlId);
@@ -111,7 +111,7 @@ export function IframeStateProvider({ children }: IframeStateProviderProps) {
   }, [activeUrlId]);
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
+    if (typeof window === "undefined") return;
 
     if (activeUrl) {
       localStorage.setItem(STORAGE_KEYS.ACTIVE_URL, JSON.stringify(activeUrl));
@@ -121,38 +121,38 @@ export function IframeStateProvider({ children }: IframeStateProviderProps) {
   }, [activeUrl]);
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
+    if (typeof window === "undefined") return;
     localStorage.setItem(STORAGE_KEYS.LOADED_URL_IDS, JSON.stringify(loadedUrlIds));
   }, [loadedUrlIds]);
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
+    if (typeof window === "undefined") return;
     localStorage.setItem(STORAGE_KEYS.KNOWN_URL_IDS, JSON.stringify(Array.from(knownUrlIds)));
   }, [knownUrlIds]);
 
   // Helper: Update URL in browser history
   const updateBrowserHistory = (urlId: string) => {
     const newUrl = new URL(window.location.href);
-    newUrl.searchParams.set('url', urlId);
-    window.history.pushState({}, '', newUrl.toString());
+    newUrl.searchParams.set("url", urlId);
+    window.history.pushState({}, "", newUrl.toString());
   };
 
   // Helper: Save to server persistence
   const saveToPersistence = async (urlId: string): Promise<void> => {
     try {
-      const response = await fetch('/api/users/last-active-url', {
-        method: 'POST',
+      const response = await fetch("/api/users/last-active-url", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ urlId }),
       });
 
       if (!response.ok) {
-        console.error('Failed to update last active URL');
+        console.error("Failed to update last active URL");
       }
     } catch (error) {
-      console.error('Error updating last active URL:', error);
+      console.error("Error updating last active URL:", error);
     }
   };
 
@@ -160,26 +160,26 @@ export function IframeStateProvider({ children }: IframeStateProviderProps) {
   useEffect(() => {
     const handlePopState = () => {
       const url = new URL(window.location.href);
-      const urlId = url.searchParams.get('url');
+      const urlId = url.searchParams.get("url");
 
       if (urlId && urlId !== activeUrlId) {
         // We need to find the URL object to update it properly
         // This will be handled by the consuming component
-        console.log('Browser navigation detected, URL ID:', urlId);
+        console.log("Browser navigation detected, URL ID:", urlId);
       }
     };
 
-    window.addEventListener('popstate', handlePopState);
+    window.addEventListener("popstate", handlePopState);
     return () => {
-      window.removeEventListener('popstate', handlePopState);
+      window.removeEventListener("popstate", handlePopState);
     };
   }, [activeUrlId]);
 
   // Update known URL IDs when loadedUrlIds changes
   useEffect(() => {
-    setKnownUrlIds(prev => {
+    setKnownUrlIds((prev) => {
       const newSet = new Set(prev);
-      loadedUrlIds.forEach(id => newSet.add(id));
+      loadedUrlIds.forEach((id) => newSet.add(id));
       return newSet;
     });
   }, [loadedUrlIds]);
@@ -199,13 +199,13 @@ export function IframeStateProvider({ children }: IframeStateProviderProps) {
   // Reset iframe (reload)
   const resetIframe = (urlId: string) => {
     // This is a placeholder - actual implementation will be handled by iframe component
-    console.log('Reset iframe:', urlId);
+    console.log("Reset iframe:", urlId);
   };
 
   // Unload iframe
   const unloadIframe = (urlId: string) => {
     // This is a placeholder - actual implementation will be handled by iframe component
-    console.log('Unload iframe:', urlId);
+    console.log("Unload iframe:", urlId);
 
     // Remove from loaded URLs
     removeLoadedUrlId(urlId);
@@ -214,12 +214,12 @@ export function IframeStateProvider({ children }: IframeStateProviderProps) {
   // Reload iframe
   const reloadIframe = (urlId: string) => {
     // This is a placeholder - actual implementation will be handled by iframe component
-    console.log('Reload iframe:', urlId);
+    console.log("Reload iframe:", urlId);
   };
 
   // Add URL ID to loaded URLs
   const addLoadedUrlId = (urlId: string) => {
-    setLoadedUrlIds(prev => {
+    setLoadedUrlIds((prev) => {
       if (!prev.includes(urlId)) {
         return [...prev, urlId];
       }
@@ -229,7 +229,7 @@ export function IframeStateProvider({ children }: IframeStateProviderProps) {
 
   // Remove URL ID from loaded URLs
   const removeLoadedUrlId = (urlId: string) => {
-    setLoadedUrlIds(prev => prev.filter(id => id !== urlId));
+    setLoadedUrlIds((prev) => prev.filter((id) => id !== urlId));
   };
 
   // Long press methods
@@ -267,12 +267,8 @@ export function IframeStateProvider({ children }: IframeStateProviderProps) {
     longPressUrlId,
     startLongPress,
     endLongPress,
-    updateLongPressProgress
+    updateLongPressProgress,
   };
 
-  return (
-    <IframeStateContext.Provider value={value}>
-      {children}
-    </IframeStateContext.Provider>
-  );
+  return <IframeStateContext.Provider value={value}>{children}</IframeStateContext.Provider>;
 }

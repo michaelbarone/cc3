@@ -1,15 +1,16 @@
 import { verifyToken } from "@/app/lib/auth/jwt";
 import { PrismaClient } from "@prisma/client";
 import { cookies } from "next/headers";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 const prisma = new PrismaClient();
 
+type Props = {
+  params: Promise<{ id: string; urlId: string }>;
+};
+
 // PATCH - Update a URL
-export async function PATCH(
-  request: Request,
-  { params }: { params: Promise<{ id: string; urlId: string }> },
-) {
+export async function PATCH(request: NextRequest, props: Props): Promise<NextResponse> {
   try {
     // Verify admin access
     const cookieStore = await cookies();
@@ -25,7 +26,7 @@ export async function PATCH(
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const { id: urlGroupId, urlId } = await params;
+    const { id: urlGroupId, urlId } = await props.params;
 
     // Check if URL group exists
     const urlGroup = await prisma.urlGroup.findUnique({
@@ -79,7 +80,7 @@ export async function PATCH(
         title,
         url,
         iconPath: iconPath || null,
-        displayOrder: displayOrder !== undefined ? displayOrder : existingUrl.displayOrder,
+        displayOrder: displayOrder || existingUrl.displayOrder,
         idleTimeoutMinutes: timeoutMinutes,
       },
     });
@@ -93,11 +94,8 @@ export async function PATCH(
   }
 }
 
-// DELETE - Remove a URL
-export async function DELETE(
-  request: Request,
-  { params }: { params: Promise<{ id: string; urlId: string }> },
-) {
+// DELETE - Remove a URL from a group
+export async function DELETE(request: NextRequest, props: Props): Promise<NextResponse> {
   try {
     // Verify admin access
     const cookieStore = await cookies();
@@ -113,7 +111,7 @@ export async function DELETE(
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const { id: urlGroupId, urlId } = await params;
+    const { id: urlGroupId, urlId } = await props.params;
 
     // Check if URL exists in the specified group
     const existingUrl = await prisma.url.findFirst({

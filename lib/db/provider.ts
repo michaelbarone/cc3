@@ -1,25 +1,25 @@
-import { prisma } from './prisma'
-import { initializeDatabase } from './init'
+import { prisma } from "./prisma";
+import { initializeDatabase } from "./init";
 
 // Initialize database and export client
-let initialized = false
+let initialized = false;
 
 async function getInitializedPrisma() {
   if (!initialized) {
     try {
-      await initializeDatabase()
-      initialized = true
+      await initializeDatabase();
+      initialized = true;
     } catch (error) {
-      console.error('Failed to initialize database:', error)
-      throw error
+      console.error("Failed to initialize database:", error);
+      throw error;
     }
   }
-  return prisma
+  return prisma;
 }
 
 export async function getPrismaClient() {
-  return getInitializedPrisma()
+  return getInitializedPrisma();
 }
 
 // For backwards compatibility and direct access when we know initialization has occurred
-export default prisma
+export default prisma;

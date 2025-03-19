@@ -1,4 +1,4 @@
-import { Box, LinearProgress, useTheme, alpha } from '@mui/material';
+import { Box, LinearProgress, useTheme, alpha } from "@mui/material";
 
 interface LongPressProgressProps {
   progress: number;
@@ -15,12 +15,12 @@ export function LongPressProgress({ progress, isActive }: LongPressProgressProps
   return (
     <Box
       sx={{
-        position: 'absolute',
+        position: "absolute",
         left: 0,
         right: 0,
         bottom: 0,
         height: 2,
-        overflow: 'hidden',
+        overflow: "hidden",
         zIndex: 1,
       }}
     >
@@ -28,11 +28,11 @@ export function LongPressProgress({ progress, isActive }: LongPressProgressProps
         variant="determinate"
         value={progress}
         sx={{
-          height: '100%',
-          backgroundColor: 'transparent',
-          '& .MuiLinearProgress-bar': {
+          height: "100%",
+          backgroundColor: "transparent",
+          "& .MuiLinearProgress-bar": {
             backgroundColor: progressColor,
-            transition: 'none', // Remove default transition for smoother updates
+            transition: "none", // Remove default transition for smoother updates
           },
         }}
       />

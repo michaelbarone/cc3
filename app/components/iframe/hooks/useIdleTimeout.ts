@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useCallback } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { useIframeContext } from "../state/IframeContext";
 
 interface UseIdleTimeoutProps {
@@ -22,7 +22,7 @@ export function useIdleTimeout({
   isActive,
 }: UseIdleTimeoutProps): UseIdleTimeoutReturn {
   const { states, dispatch } = useIframeContext();
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const clearIdleTimeout = useCallback(() => {
     if (timeoutRef.current) {
@@ -66,7 +66,7 @@ export function useIdleTimeout({
     // Update idle timeout in state
     dispatch({
       type: "SET_IDLE_TIMEOUT",
-      payload: { urlId, timeout: timeoutMinutes },
+      payload: { urlId, minutes: timeoutMinutes },
     });
 
     // Don't set up timeout for active iframes or when timeout is disabled

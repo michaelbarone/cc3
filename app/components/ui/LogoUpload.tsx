@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import { useState, useRef, ChangeEvent } from 'react';
-import { Box, IconButton, CircularProgress, Typography, Tooltip, Paper } from '@mui/material';
-import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
-import DeleteIcon from '@mui/icons-material/Delete';
-import ImageIcon from '@mui/icons-material/Image';
+import { useState, useRef, ChangeEvent } from "react";
+import { Box, IconButton, CircularProgress, Typography, Tooltip, Paper } from "@mui/material";
+import PhotoCameraIcon from "@mui/icons-material/PhotoCamera";
+import DeleteIcon from "@mui/icons-material/Delete";
+import ImageIcon from "@mui/icons-material/Image";
 
 interface LogoUploadProps {
   logoUrl?: string | null;
@@ -17,7 +17,7 @@ export default function LogoUpload({
   logoUrl,
   onUploadSuccess,
   onUploadError,
-  onDelete
+  onDelete,
 }: LogoUploadProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -29,8 +29,8 @@ export default function LogoUpload({
     if (!file) return;
 
     // Validate file type
-    if (!file.type.startsWith('image/')) {
-      const errorMsg = 'Please select an image file';
+    if (!file.type.startsWith("image/")) {
+      const errorMsg = "Please select an image file";
       setError(errorMsg);
       if (onUploadError) onUploadError(errorMsg);
       return;
@@ -38,7 +38,7 @@ export default function LogoUpload({
 
     // Validate file size (max 1MB)
     if (file.size > 1 * 1024 * 1024) {
-      const errorMsg = 'Image size must be less than 1MB';
+      const errorMsg = "Image size must be less than 1MB";
       setError(errorMsg);
       if (onUploadError) onUploadError(errorMsg);
       return;
@@ -50,15 +50,15 @@ export default function LogoUpload({
 
     try {
       const formData = new FormData();
-      formData.append('logo', file);
+      formData.append("logo", file);
 
-      const response = await fetch('/api/admin/app-config/logo', {
-        method: 'POST',
+      const response = await fetch("/api/admin/app-config/logo", {
+        method: "POST",
         body: formData,
       });
 
       if (!response.ok) {
-        throw new Error('Failed to upload logo');
+        throw new Error("Failed to upload logo");
       }
 
       const data = await response.json();
@@ -67,7 +67,7 @@ export default function LogoUpload({
         onUploadSuccess(data.appLogo);
       }
     } catch (err) {
-      const errorMsg = err instanceof Error ? err.message : 'Failed to upload logo';
+      const errorMsg = err instanceof Error ? err.message : "Failed to upload logo";
       setError(errorMsg);
       if (onUploadError) onUploadError(errorMsg);
     } finally {
@@ -75,7 +75,7 @@ export default function LogoUpload({
 
       // Clear the file input
       if (fileInputRef.current) {
-        fileInputRef.current.value = '';
+        fileInputRef.current.value = "";
       }
     }
   };
@@ -88,17 +88,17 @@ export default function LogoUpload({
     setError(null);
 
     try {
-      const response = await fetch('/api/admin/app-config/logo', {
-        method: 'DELETE',
+      const response = await fetch("/api/admin/app-config/logo", {
+        method: "DELETE",
       });
 
       if (!response.ok) {
-        throw new Error('Failed to delete logo');
+        throw new Error("Failed to delete logo");
       }
 
       onDelete();
     } catch (err) {
-      const errorMsg = err instanceof Error ? err.message : 'Failed to delete logo';
+      const errorMsg = err instanceof Error ? err.message : "Failed to delete logo";
       setError(errorMsg);
       if (onUploadError) onUploadError(errorMsg);
     } finally {
@@ -114,31 +114,31 @@ export default function LogoUpload({
   };
 
   return (
-    <Box sx={{ position: 'relative', width: '100%', maxWidth: 300 }}>
+    <Box sx={{ position: "relative", width: "100%", maxWidth: 300 }}>
       {/* Hidden file input */}
       <input
         type="file"
         accept="image/*"
         ref={fileInputRef}
         onChange={handleFileChange}
-        style={{ display: 'none' }}
+        style={{ display: "none" }}
       />
 
       {/* Logo display area */}
       <Paper
         sx={{
-          width: '100%',
+          width: "100%",
           height: 100,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          cursor: 'pointer',
-          overflow: 'hidden',
-          position: 'relative',
-          bgcolor: 'background.default',
-          border: '1px dashed',
-          borderColor: 'divider',
-          p: 2
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          cursor: "pointer",
+          overflow: "hidden",
+          position: "relative",
+          bgcolor: "background.default",
+          border: "1px dashed",
+          borderColor: "divider",
+          p: 2,
         }}
         onClick={handleLogoClick}
       >
@@ -148,13 +148,15 @@ export default function LogoUpload({
             src={logoUrl}
             alt="App Logo"
             sx={{
-              maxWidth: '100%',
-              maxHeight: '100%',
-              objectFit: 'contain'
+              maxWidth: "100%",
+              maxHeight: "100%",
+              objectFit: "contain",
             }}
           />
         ) : (
-          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', opacity: 0.7 }}>
+          <Box
+            sx={{ display: "flex", flexDirection: "column", alignItems: "center", opacity: 0.7 }}
+          >
             <ImageIcon sx={{ fontSize: 40 }} />
             <Typography variant="caption" sx={{ mt: 1 }}>
               Click to upload logo
@@ -166,11 +168,11 @@ export default function LogoUpload({
       {/* Upload buttons */}
       <Box
         sx={{
-          position: 'absolute',
+          position: "absolute",
           bottom: -8,
           right: -8,
-          display: 'flex',
-          gap: 0.5
+          display: "flex",
+          gap: 0.5,
         }}
       >
         <Tooltip title="Upload logo">
@@ -180,8 +182,8 @@ export default function LogoUpload({
             onClick={handleLogoClick}
             disabled={isUploading}
             sx={{
-              bgcolor: 'background.paper',
-              '&:hover': { bgcolor: 'background.default' }
+              bgcolor: "background.paper",
+              "&:hover": { bgcolor: "background.default" },
             }}
           >
             <PhotoCameraIcon fontSize="small" />
@@ -196,8 +198,8 @@ export default function LogoUpload({
               onClick={handleDeleteLogo}
               disabled={isUploading}
               sx={{
-                bgcolor: 'background.paper',
-                '&:hover': { bgcolor: 'background.default' }
+                bgcolor: "background.paper",
+                "&:hover": { bgcolor: "background.default" },
               }}
             >
               <DeleteIcon fontSize="small" />
@@ -210,15 +212,15 @@ export default function LogoUpload({
       {isUploading && (
         <Box
           sx={{
-            position: 'absolute',
+            position: "absolute",
             top: 0,
             left: 0,
             right: 0,
             bottom: 0,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            bgcolor: 'rgba(0, 0, 0, 0.3)',
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            bgcolor: "rgba(0, 0, 0, 0.3)",
           }}
         >
           <CircularProgress size={40} />
@@ -231,9 +233,9 @@ export default function LogoUpload({
           variant="caption"
           color="error"
           sx={{
-            display: 'block',
-            textAlign: 'center',
-            mt: 1
+            display: "block",
+            textAlign: "center",
+            mt: 1,
           }}
         >
           {error}

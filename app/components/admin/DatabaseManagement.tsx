@@ -1,22 +1,22 @@
-'use client';
+"use client";
 
-import { useState, useRef } from 'react';
+import DownloadIcon from "@mui/icons-material/Download";
+import RestoreIcon from "@mui/icons-material/Restore";
 import {
-  Box,
-  Button,
-  Typography,
-  Paper,
-  LinearProgress,
   Alert,
   AlertTitle,
+  Box,
+  Button,
   Dialog,
-  DialogTitle,
+  DialogActions,
   DialogContent,
   DialogContentText,
-  DialogActions,
-} from '@mui/material';
-import RestoreIcon from '@mui/icons-material/Restore';
-import DownloadIcon from '@mui/icons-material/Download';
+  DialogTitle,
+  LinearProgress,
+  Paper,
+  Typography,
+} from "@mui/material";
+import React, { useRef, useState } from "react";
 
 interface BackupState {
   isLoading: boolean;
@@ -46,25 +46,25 @@ export default function DatabaseManagement() {
         success: null,
       });
 
-      const response = await fetch('/api/admin/backup', {
-        method: 'GET',
+      const response = await fetch("/api/admin/backup", {
+        method: "GET",
       });
 
       if (!response.ok) {
-        throw new Error('Failed to create backup');
+        throw new Error("Failed to create backup");
       }
 
       // Get the filename from the Content-Disposition header
-      const contentDisposition = response.headers.get('Content-Disposition');
+      const contentDisposition = response.headers.get("Content-Disposition");
       const filenameMatch = contentDisposition?.match(/filename="(.+)"/);
-      const filename = filenameMatch ? filenameMatch[1] : 'backup.zip';
+      const filename = filenameMatch ? filenameMatch[1] : "backup.zip";
 
       // Create a blob from the response
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
 
       // Create a temporary link and trigger download
-      const link = document.createElement('a');
+      const link = document.createElement("a");
       link.href = url;
       link.download = filename;
       document.body.appendChild(link);
@@ -72,16 +72,16 @@ export default function DatabaseManagement() {
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
 
-      setBackupState(prev => ({
+      setBackupState((prev) => ({
         ...prev,
         isLoading: false,
-        success: 'Backup created and downloaded successfully',
+        success: "Backup created and downloaded successfully",
       }));
     } catch (error) {
-      setBackupState(prev => ({
+      setBackupState((prev) => ({
         ...prev,
         isLoading: false,
-        error: error instanceof Error ? error.message : 'Failed to create backup',
+        error: error instanceof Error ? error.message : "Failed to create backup",
       }));
     }
   };
@@ -108,35 +108,35 @@ export default function DatabaseManagement() {
       });
 
       const formData = new FormData();
-      formData.append('backup', selectedFile);
+      formData.append("backup", selectedFile);
 
-      const response = await fetch('/api/admin/backup', {
-        method: 'POST',
+      const response = await fetch("/api/admin/backup", {
+        method: "POST",
         body: formData,
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to restore backup');
+        throw new Error(data.error || "Failed to restore backup");
       }
 
-      setBackupState(prev => ({
+      setBackupState((prev) => ({
         ...prev,
         isLoading: false,
-        success: 'Backup restored successfully',
+        success: "Backup restored successfully",
       }));
     } catch (error) {
-      setBackupState(prev => ({
+      setBackupState((prev) => ({
         ...prev,
         isLoading: false,
-        error: error instanceof Error ? error.message : 'Failed to restore backup',
+        error: error instanceof Error ? error.message : "Failed to restore backup",
       }));
     } finally {
       setShowRestoreConfirm(false);
       setSelectedFile(null);
       if (fileInputRef.current) {
-        fileInputRef.current.value = '';
+        fileInputRef.current.value = "";
       }
     }
   };
@@ -155,7 +155,7 @@ export default function DatabaseManagement() {
           Create a backup of the database and all uploaded files, or restore from a previous backup.
         </Typography>
 
-        <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
+        <Box sx={{ display: "flex", gap: 2, mb: 3 }}>
           <Button
             variant="contained"
             startIcon={<DownloadIcon />}
@@ -168,7 +168,7 @@ export default function DatabaseManagement() {
           <input
             type="file"
             accept=".zip"
-            style={{ display: 'none' }}
+            style={{ display: "none" }}
             ref={fileInputRef}
             onChange={handleFileSelect}
           />
@@ -184,12 +184,12 @@ export default function DatabaseManagement() {
 
         {/* Progress and Status */}
         {backupState.isLoading && (
-          <Box sx={{ width: '100%', mt: 2 }}>
+          <Box sx={{ width: "100%", mt: 2 }}>
             <LinearProgress variant="indeterminate" />
             <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
               {backupState.progress > 0
                 ? `Progress: ${Math.round(backupState.progress)}%`
-                : 'Processing...'}
+                : "Processing..."}
             </Typography>
           </Box>
         )}
@@ -212,14 +212,13 @@ export default function DatabaseManagement() {
       </Box>
 
       {/* Restore Confirmation Dialog */}
-      <Dialog
-        open={showRestoreConfirm}
-        onClose={() => setShowRestoreConfirm(false)}
-      >
+      <Dialog open={showRestoreConfirm} onClose={() => setShowRestoreConfirm(false)}>
         <DialogTitle>Confirm Restore</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            Are you sure you want to restore from this backup? This will replace your current database and uploaded files. A backup of your current state will be created before proceeding.
+            Are you sure you want to restore from this backup? This will replace your current
+            database and uploaded files. A backup of your current state will be created before
+            proceeding.
           </DialogContentText>
         </DialogContent>
         <DialogActions>

@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState } from "react";
 import {
   Card,
   CardContent,
@@ -15,8 +15,8 @@ import {
   Box,
   Skeleton,
   Alert,
-} from '@mui/material';
-import { format } from 'date-fns';
+} from "@mui/material";
+import { format } from "date-fns";
 
 interface Statistics {
   system: {
@@ -75,21 +75,24 @@ export default function AdminDashboard() {
   useEffect(() => {
     const fetchStatistics = async () => {
       try {
-        const response = await fetch('/api/admin/statistics');
+        const response = await fetch("/api/admin/statistics");
         if (!response.ok) {
-          throw new Error('Failed to fetch statistics');
+          throw new Error("Failed to fetch statistics");
         }
         const data = await response.json();
 
         // Log the activity data to check date formats
-        console.log('Recent activity dates:', data.activity.recentlyActive.map((user: { username: string; updatedAt: string }) => ({
-          username: user.username,
-          updatedAt: user.updatedAt
-        })));
+        console.log(
+          "Recent activity dates:",
+          data.activity.recentlyActive.map((user: { username: string; updatedAt: string }) => ({
+            username: user.username,
+            updatedAt: user.updatedAt,
+          })),
+        );
 
         setStatistics(data);
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'An error occurred');
+        setError(err instanceof Error ? err.message : "An error occurred");
       } finally {
         setLoading(false);
       }
@@ -112,13 +115,13 @@ export default function AdminDashboard() {
 
       // Check if date is valid
       if (isNaN(date.getTime())) {
-        console.warn('Invalid date:', dateStr);
-        return 'Unknown time';
+        console.warn("Invalid date:", dateStr);
+        return "Unknown time";
       }
 
       const diffInMinutes = Math.floor((currentTime.getTime() - date.getTime()) / (1000 * 60));
 
-      if (diffInMinutes < 1) return 'just now';
+      if (diffInMinutes < 1) return "just now";
       if (diffInMinutes < 60) return `${diffInMinutes} minutes ago`;
 
       const diffInHours = Math.floor(diffInMinutes / 60);
@@ -127,10 +130,10 @@ export default function AdminDashboard() {
       const diffInDays = Math.floor(diffInHours / 24);
       if (diffInDays < 7) return `${diffInDays} days ago`;
 
-      return format(date, 'MMM d, yyyy');
+      return format(date, "MMM d, yyyy");
     } catch (error) {
-      console.error('Error formatting date:', error);
-      return 'Unknown time';
+      console.error("Error formatting date:", error);
+      return "Unknown time";
     }
   };
 
@@ -181,15 +184,13 @@ export default function AdminDashboard() {
                   <Typography>Total Users: {statistics.system.users.total}</Typography>
                   <Typography>Active Users: {statistics.system.users.active}</Typography>
                   <Typography>
-                    Admin/Regular: {statistics.system.users.adminRatio.admin} /{' '}
+                    Admin/Regular: {statistics.system.users.adminRatio.admin} /{" "}
                     {statistics.system.users.adminRatio.regular}
                   </Typography>
                   <Typography>
                     Password Protected: {statistics.system.users.withPassword}
                   </Typography>
-                  <Typography>
-                    Passwordless: {statistics.system.users.withoutPassword}
-                  </Typography>
+                  <Typography>Passwordless: {statistics.system.users.withoutPassword}</Typography>
                 </Box>
               </Grid>
               <Grid item xs={12} md={4}>
@@ -213,9 +214,7 @@ export default function AdminDashboard() {
                   <Typography>
                     Mobile URL Set: {statistics.system.urls.withMobileVersion}
                   </Typography>
-                  <Typography>
-                    Desktop Only: {statistics.system.urls.desktopOnly}
-                  </Typography>
+                  <Typography>Desktop Only: {statistics.system.urls.desktopOnly}</Typography>
                   <Typography>Orphaned: {statistics.system.urls.orphaned}</Typography>
                 </Box>
               </Grid>
@@ -242,7 +241,7 @@ export default function AdminDashboard() {
                       <Typography key={theme}>
                         {theme}: {count} users
                       </Typography>
-                    )
+                    ),
                   )}
                 </Box>
               </Grid>
@@ -251,13 +250,13 @@ export default function AdminDashboard() {
                   Menu Position
                 </Typography>
                 <Box sx={{ mt: 1 }}>
-                  {Object.entries(
-                    statistics.userPreferences.menuPositionDistribution
-                  ).map(([position, count]) => (
-                    <Typography key={position}>
-                      {position}: {count} users
-                    </Typography>
-                  ))}
+                  {Object.entries(statistics.userPreferences.menuPositionDistribution).map(
+                    ([position, count]) => (
+                      <Typography key={position}>
+                        {position}: {count} users
+                      </Typography>
+                    ),
+                  )}
                 </Box>
               </Grid>
             </Grid>
@@ -272,7 +271,7 @@ export default function AdminDashboard() {
             <Typography variant="h6" gutterBottom>
               Recent Activity
             </Typography>
-            <Box sx={{ mt: 2, maxHeight: 300, overflow: 'auto' }}>
+            <Box sx={{ mt: 2, maxHeight: 300, overflow: "auto" }}>
               {statistics.activity.recentlyActive.map((user) => (
                 <Box key={user.username} sx={{ mb: 2 }}>
                   <Typography variant="subtitle2">{user.username}</Typography>

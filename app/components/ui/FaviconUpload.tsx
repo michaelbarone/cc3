@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { Box, Button, CircularProgress, Typography } from '@mui/material';
-import Image from 'next/image';
-import DeleteIcon from '@mui/icons-material/Delete';
-import UploadIcon from '@mui/icons-material/Upload';
+import DeleteIcon from "@mui/icons-material/Delete";
+import UploadIcon from "@mui/icons-material/Upload";
+import { Box, Button, CircularProgress, Typography } from "@mui/material";
+import Image from "next/image";
+import React, { useState } from "react";
 
 interface FaviconUploadProps {
   faviconUrl: string | null;
@@ -27,13 +27,13 @@ export default function FaviconUpload({
 
     // Check file size (max 100KB)
     if (file.size > 100 * 1024) {
-      onUploadError('File too large (max 100KB)');
+      onUploadError("File too large (max 100KB)");
       return;
     }
 
     // Check file type
-    if (!file.type.startsWith('image/')) {
-      onUploadError('File must be an image');
+    if (!file.type.startsWith("image/")) {
+      onUploadError("File must be an image");
       return;
     }
 
@@ -41,22 +41,22 @@ export default function FaviconUpload({
       setUploading(true);
 
       const formData = new FormData();
-      formData.append('favicon', file);
+      formData.append("favicon", file);
 
-      const response = await fetch('/api/admin/app-config/favicon', {
-        method: 'POST',
+      const response = await fetch("/api/admin/app-config/favicon", {
+        method: "POST",
         body: formData,
       });
 
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.error || 'Failed to upload favicon');
+        throw new Error(data.error || "Failed to upload favicon");
       }
 
       const data = await response.json();
       onUploadSuccess(data.favicon);
     } catch (error) {
-      onUploadError(error instanceof Error ? error.message : 'Failed to upload favicon');
+      onUploadError(error instanceof Error ? error.message : "Failed to upload favicon");
     } finally {
       setUploading(false);
     }
@@ -66,33 +66,33 @@ export default function FaviconUpload({
     try {
       setUploading(true);
 
-      const response = await fetch('/api/admin/app-config/favicon', {
-        method: 'DELETE',
+      const response = await fetch("/api/admin/app-config/favicon", {
+        method: "DELETE",
       });
 
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.error || 'Failed to delete favicon');
+        throw new Error(data.error || "Failed to delete favicon");
       }
 
       onDelete();
     } catch (error) {
-      onUploadError(error instanceof Error ? error.message : 'Failed to delete favicon');
+      onUploadError(error instanceof Error ? error.message : "Failed to delete favicon");
     } finally {
       setUploading(false);
     }
   };
 
   return (
-    <Box sx={{ textAlign: 'center' }}>
+    <Box sx={{ textAlign: "center" }}>
       {faviconUrl ? (
         <Box sx={{ mb: 2 }}>
           <Box
             sx={{
-              position: 'relative',
+              position: "relative",
               width: 32,
               height: 32,
-              margin: '0 auto',
+              margin: "0 auto",
               mb: 1,
             }}
           >
@@ -101,7 +101,7 @@ export default function FaviconUpload({
               alt="Favicon"
               width={32}
               height={32}
-              style={{ objectFit: 'contain' }}
+              style={{ objectFit: "contain" }}
             />
           </Box>
           <Button
@@ -118,7 +118,7 @@ export default function FaviconUpload({
         <Box>
           <input
             accept="image/*"
-            style={{ display: 'none' }}
+            style={{ display: "none" }}
             id="favicon-upload"
             type="file"
             onChange={handleFileChange}
@@ -136,7 +136,7 @@ export default function FaviconUpload({
           </label>
         </Box>
       )}
-      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
+      <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 1 }}>
         Upload a 32x32 pixel image for the browser favicon
       </Typography>
     </Box>

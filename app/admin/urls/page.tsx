@@ -1,33 +1,33 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
+import IconUpload from "@/app/components/ui/IconUpload";
+import AddIcon from "@mui/icons-material/Add";
+import DeleteIcon from "@mui/icons-material/Delete";
+import EditIcon from "@mui/icons-material/Edit";
 import {
+  Alert,
   Box,
   Button,
+  CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+  Grid,
+  IconButton,
   Paper,
+  Snackbar,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
   TableRow,
-  Typography,
-  IconButton,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogContentText,
-  DialogTitle,
   TextField,
-  CircularProgress,
-  Alert,
-  Snackbar,
-  Grid
-} from '@mui/material';
-import EditIcon from '@mui/icons-material/Edit';
-import DeleteIcon from '@mui/icons-material/Delete';
-import AddIcon from '@mui/icons-material/Add';
-import IconUpload from '@/app/components/ui/IconUpload';
+  Typography,
+} from "@mui/material";
+import React, { useEffect, useState } from "react";
 
 interface Url {
   id: string;
@@ -47,38 +47,38 @@ export default function UrlManagement() {
 
   // Dialog state
   const [openDialog, setOpenDialog] = useState(false);
-  const [dialogType, setDialogType] = useState<'create' | 'edit' | 'delete'>('create');
+  const [dialogType, setDialogType] = useState<"create" | "edit" | "delete">("create");
   const [selectedUrl, setSelectedUrl] = useState<Url | null>(null);
 
   // Form state
   const [formValues, setFormValues] = useState({
-    title: '',
-    url: '',
-    urlMobile: '',
-    iconPath: '',
-    idleTimeout: 10
+    title: "",
+    url: "",
+    urlMobile: "",
+    iconPath: "",
+    idleTimeout: 10,
   });
 
   // Snackbar state
   const [snackbar, setSnackbar] = useState({
     open: false,
-    message: '',
-    severity: 'success' as 'success' | 'error' | 'info' | 'warning'
+    message: "",
+    severity: "success" as "success" | "error" | "info" | "warning",
   });
 
   const fetchUrls = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/admin/urls');
+      const response = await fetch("/api/admin/urls");
 
       if (!response.ok) {
-        throw new Error('Failed to fetch URLs');
+        throw new Error("Failed to fetch URLs");
       }
 
       const data = await response.json();
       setUrls(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An unknown error occurred');
+      setError(err instanceof Error ? err.message : "An unknown error occurred");
     } finally {
       setLoading(false);
     }
@@ -88,7 +88,7 @@ export default function UrlManagement() {
     fetchUrls();
   }, []);
 
-  const handleOpenDialog = (type: 'create' | 'edit' | 'delete', url?: Url) => {
+  const handleOpenDialog = (type: "create" | "edit" | "delete", url?: Url) => {
     setDialogType(type);
 
     if (url) {
@@ -96,18 +96,18 @@ export default function UrlManagement() {
       setFormValues({
         title: url.title,
         url: url.url,
-        urlMobile: url.urlMobile || '',
-        iconPath: url.iconPath || '',
-        idleTimeout: url.idleTimeout || 10
+        urlMobile: url.urlMobile || "",
+        iconPath: url.iconPath || "",
+        idleTimeout: url.idleTimeout || 10,
       });
     } else {
       setSelectedUrl(null);
       setFormValues({
-        title: '',
-        url: '',
-        urlMobile: '',
-        iconPath: '',
-        idleTimeout: 10
+        title: "",
+        url: "",
+        urlMobile: "",
+        iconPath: "",
+        idleTimeout: 10,
       });
     }
 
@@ -118,48 +118,46 @@ export default function UrlManagement() {
     setOpenDialog(false);
   };
 
-  const handleFormChange = (
-    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
+  const handleFormChange = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = event.target;
-    setFormValues(prev => ({ ...prev, [name]: value }));
+    setFormValues((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async () => {
     try {
       let response;
-      let successMessage = '';
+      let successMessage = "";
 
-      if (dialogType === 'create') {
-        response = await fetch('/api/admin/urls', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(formValues)
+      if (dialogType === "create") {
+        response = await fetch("/api/admin/urls", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(formValues),
         });
-        successMessage = 'URL created successfully';
-      } else if (dialogType === 'edit' && selectedUrl) {
+        successMessage = "URL created successfully";
+      } else if (dialogType === "edit" && selectedUrl) {
         response = await fetch(`/api/admin/urls/${selectedUrl.id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(formValues)
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(formValues),
         });
-        successMessage = 'URL updated successfully';
-      } else if (dialogType === 'delete' && selectedUrl) {
+        successMessage = "URL updated successfully";
+      } else if (dialogType === "delete" && selectedUrl) {
         response = await fetch(`/api/admin/urls/${selectedUrl.id}`, {
-          method: 'DELETE'
+          method: "DELETE",
         });
-        successMessage = 'URL deleted successfully';
+        successMessage = "URL deleted successfully";
       }
 
       if (!response?.ok) {
         const errorData = await response?.json();
-        throw new Error(errorData?.error || 'Operation failed');
+        throw new Error(errorData?.error || "Operation failed");
       }
 
       setSnackbar({
         open: true,
         message: successMessage,
-        severity: 'success'
+        severity: "success",
       });
 
       fetchUrls();
@@ -167,8 +165,8 @@ export default function UrlManagement() {
     } catch (err) {
       setSnackbar({
         open: true,
-        message: err instanceof Error ? err.message : 'An unknown error occurred',
-        severity: 'error'
+        message: err instanceof Error ? err.message : "An unknown error occurred",
+        severity: "error",
       });
     }
   };
@@ -177,7 +175,7 @@ export default function UrlManagement() {
   const handleIconUpload = (iconUrl: string) => {
     setFormValues({
       ...formValues,
-      iconPath: iconUrl
+      iconPath: iconUrl,
     });
   };
 
@@ -186,31 +184,36 @@ export default function UrlManagement() {
     if (!formValues.iconPath) return;
 
     try {
-      const response = await fetch(`/api/admin/icons?iconPath=${encodeURIComponent(formValues.iconPath)}`, {
-        method: 'DELETE'
-      });
+      const response = await fetch(
+        `/api/admin/icons?iconPath=${encodeURIComponent(formValues.iconPath)}`,
+        {
+          method: "DELETE",
+        },
+      );
 
       if (!response.ok) {
-        throw new Error('Failed to delete icon');
+        throw new Error("Failed to delete icon");
       }
 
       setFormValues({
         ...formValues,
-        iconPath: ''
+        iconPath: "",
       });
     } catch (error) {
-      console.error('Error deleting icon:', error);
+      console.error("Error deleting icon:", error);
       setSnackbar({
         open: true,
-        message: 'Failed to delete icon',
-        severity: 'error'
+        message: "Failed to delete icon",
+        severity: "error",
       });
     }
   };
 
   if (loading && urls.length === 0) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+      <Box
+        sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh" }}
+      >
         <CircularProgress />
       </Box>
     );
@@ -218,12 +221,12 @@ export default function UrlManagement() {
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
         <Typography variant="h4">URL Management</Typography>
         <Button
           variant="contained"
           startIcon={<AddIcon />}
-          onClick={() => handleOpenDialog('create')}
+          onClick={() => handleOpenDialog("create")}
         >
           Add URL
         </Button>
@@ -236,7 +239,7 @@ export default function UrlManagement() {
       )}
 
       {urls.length === 0 && !loading ? (
-        <Paper sx={{ p: 3, textAlign: 'center' }}>
+        <Paper sx={{ p: 3, textAlign: "center" }}>
           <Typography variant="body1">
             No URLs found. Create your first URL to get started.
           </Typography>
@@ -263,25 +266,22 @@ export default function UrlManagement() {
                         component="img"
                         src={url.iconPath}
                         alt={url.title}
-                        sx={{ width: 24, height: 24, objectFit: 'contain' }}
+                        sx={{ width: 24, height: 24, objectFit: "contain" }}
                       />
                     )}
                   </TableCell>
                   <TableCell>{url.title}</TableCell>
                   <TableCell>{url.url}</TableCell>
-                  <TableCell>{url.urlMobile || '-'}</TableCell>
-                  <TableCell>{url.idleTimeout || '-'}</TableCell>
+                  <TableCell>{url.urlMobile || "-"}</TableCell>
+                  <TableCell>{url.idleTimeout || "-"}</TableCell>
                   <TableCell>
-                    <IconButton
-                      size="small"
-                      onClick={() => handleOpenDialog('edit', url)}
-                    >
+                    <IconButton size="small" onClick={() => handleOpenDialog("edit", url)}>
                       <EditIcon fontSize="small" />
                     </IconButton>
                     <IconButton
                       size="small"
                       color="error"
-                      onClick={() => handleOpenDialog('delete', url)}
+                      onClick={() => handleOpenDialog("delete", url)}
                     >
                       <DeleteIcon fontSize="small" />
                     </IconButton>
@@ -295,12 +295,10 @@ export default function UrlManagement() {
 
       {/* URL Dialog */}
       <Dialog
-        open={openDialog && (dialogType === 'create' || dialogType === 'edit')}
+        open={openDialog && (dialogType === "create" || dialogType === "edit")}
         onClose={handleCloseDialog}
       >
-        <DialogTitle>
-          {dialogType === 'create' ? 'Create New URL' : 'Edit URL'}
-        </DialogTitle>
+        <DialogTitle>{dialogType === "create" ? "Create New URL" : "Edit URL"}</DialogTitle>
         <DialogContent>
           <Grid container spacing={2} sx={{ mt: 1 }}>
             <Grid item xs={12} sm={9}>
@@ -315,15 +313,22 @@ export default function UrlManagement() {
                 onChange={handleFormChange}
               />
             </Grid>
-            <Grid item xs={12} sm={3} sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+            <Grid
+              item
+              xs={12}
+              sm={3}
+              sx={{ display: "flex", justifyContent: "center", alignItems: "center" }}
+            >
               <IconUpload
                 iconUrl={formValues.iconPath || null}
                 onUploadSuccess={handleIconUpload}
-                onUploadError={(error) => setSnackbar({
-                  open: true,
-                  message: error,
-                  severity: 'error'
-                })}
+                onUploadError={(error) =>
+                  setSnackbar({
+                    open: true,
+                    message: error,
+                    severity: "error",
+                  })
+                }
                 onDelete={handleIconDelete}
               />
             </Grid>
@@ -368,21 +373,19 @@ export default function UrlManagement() {
         <DialogActions>
           <Button onClick={handleCloseDialog}>Cancel</Button>
           <Button onClick={handleSubmit} variant="contained">
-            {dialogType === 'create' ? 'Create' : 'Save'}
+            {dialogType === "create" ? "Create" : "Save"}
           </Button>
         </DialogActions>
       </Dialog>
 
       {/* Delete Confirmation Dialog */}
-      <Dialog
-        open={openDialog && dialogType === 'delete'}
-        onClose={handleCloseDialog}
-      >
+      <Dialog open={openDialog && dialogType === "delete"} onClose={handleCloseDialog}>
         <DialogTitle>Delete URL</DialogTitle>
         <DialogContent>
           <DialogContentText>
             Are you sure you want to delete the URL &quot;{selectedUrl?.title}&quot;?
-            <br /><br />
+            <br />
+            <br />
             This will also remove it from all URL groups. This action cannot be undone.
           </DialogContentText>
         </DialogContent>
@@ -398,11 +401,9 @@ export default function UrlManagement() {
       <Snackbar
         open={snackbar.open}
         autoHideDuration={6000}
-        onClose={() => setSnackbar(prev => ({ ...prev, open: false }))}
+        onClose={() => setSnackbar((prev) => ({ ...prev, open: false }))}
       >
-        <Alert severity={snackbar.severity}>
-          {snackbar.message}
-        </Alert>
+        <Alert severity={snackbar.severity}>{snackbar.message}</Alert>
       </Snackbar>
     </Box>
   );

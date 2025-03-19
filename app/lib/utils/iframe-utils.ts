@@ -1,13 +1,13 @@
-import { resetGlobalContainer } from '@/app/components/iframe/IframeContainer';
+import { resetGlobalContainer } from "@/app/components/iframe/IframeContainer";
 
 // Utility function to cleanup iframes and container
 export function cleanupIframes() {
-  const iframeContainer = document.getElementById('global-iframe-container');
+  const iframeContainer = document.getElementById("global-iframe-container");
   if (iframeContainer) {
     // Remove all iframes
-    const iframes = iframeContainer.querySelectorAll('iframe');
-    iframes.forEach(iframe => {
-      iframe.src = '';
+    const iframes = iframeContainer.querySelectorAll("iframe");
+    iframes.forEach((iframe) => {
+      iframe.src = "";
       iframe.remove();
     });
     // Remove the container
@@ -19,5 +19,5 @@ export function cleanupIframes() {
 
 // Check if we're in the process of logging out
 export function isLoggingOut() {
-  return document.body.classList.contains('logging-out');
+  return document.body.classList.contains("logging-out");
 }
