@@ -1,0 +1,58 @@
+## URL Menu State Management
+
+### Context
+
+- Need to implement four specific states for URL menu items:
+  1. 'active-loaded': Active button + green dot (visible iframe with content)
+  2. 'active-unloaded': Active button, no dot (visible iframe, no content)
+  3. 'inactive-loaded': Normal button + green dot (hidden iframe with cached content)
+  4. 'inactive-unloaded': Normal button, no dot (hidden iframe, no content)
+- All buttons start as 'inactive-unloaded' on app load
+- Selected URL button becomes 'active-loaded' when clicked
+
+### Plan
+
+Step 1: State Implementation
+[X] Define UrlMenuItemState type with four states
+[X] Update button component to handle all states correctly
+[X] Implement proper state transitions on click events
+
+Step 2: Iframe Management
+[X] Ensure proper iframe src management (empty vs data-src)
+[X] Implement content caching for inactive-loaded state
+[X] Verify proper state sync between button and iframe
+[X] Create unified long press handler using custom hook
+[X] Move long press state management to IframeStateContext
+[X] Add visual feedback during long press (progress indicator)
+[ ] Test visual feedback implementation:
+  - Verify progress bar appears during long press
+  - Check progress bar styling and transparency
+  - Test progress updates are smooth (no stuttering)
+  - Verify proper cleanup after long press
+[ ] Improve tooltips for long press actions
+[ ] Add haptic feedback for mobile devices
+[ ] Implement proper cleanup of event listeners
+[ ] Test edge cases (rapid clicks, interrupted long press)
+[ ] Verify menu button click, long press are managed properly and result in the correct state being set
+
+### Progress
+
+[X] Defined clear requirements for each state
+[X] Clarified visual indicators for each state
+[X] Implemented proper iframe initialization in inactive-unloaded state
+[X] Added automatic content loading for active URLs
+[X] Synchronized button states with iframe loading states
+[X] Fixed timing issues with iframe content loading
+[X] Implemented proper state management for URL activation
+[X] Created and implemented useLongPress hook with proper TypeScript types and event handling
+[X] Integrated long press state management with IframeStateContext
+[X] Added visual progress indicator for long press actions
+
+## Progress History
+
+### 2025-03-18 06:36 PM - URL Menu State Implementation
+
+- ✓ Completed: Successfully implemented all four menu states with visual indicators
+- ✓ Completed: Created useLongPress hook for reset and unload functionality
+- 🤔 Decisions: Separated long press for reset vs unload using actionType parameter
+- 📚 Documentation: Added state transition documentation to component files
