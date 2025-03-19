@@ -23,6 +23,13 @@ This document serves as the main project plan and tracks the status of all tasks
   - [X] Iframe Management
   - [ ] Visual Feedback Testing
 
+### Menu Visibility Enhancement
+- **Location**: `/docs/working-memory/open/menu-visibility-20240320`
+- **Status**: Planned
+- **Description**: Improve menu visibility based on number of available groups
+- **Priority**: Medium
+- **Target**: Next UI update cycle
+
 ## Future Tasks
 
 ### Performance Optimization
@@ -40,7 +47,7 @@ This document serves as the main project plan and tracks the status of all tasks
 - **Priority**: Low
 - **Estimated Effort**: 1 week 
 
-## Completed Tasks
+## Closed Tasks
 
 ### Admin Configuration
 - **Location**: `/docs/composer-history/done/admin-configuration`
@@ -122,3 +129,11 @@ This document serves as the main project plan and tracks the status of all tasks
   - Next.js 15.2.2 project initialized with TypeScript and ESLint
   - Created database schema with User, UrlGroup, Url, and UserUrlGroup models
   - Created Dockerfile with multi-stage build
+
+## Task Categories
+- UI/UX Enhancements
+- Bug Fixes
+- Feature Implementations
+- Performance Improvements
+- Security Updates
+- Documentation Updates
