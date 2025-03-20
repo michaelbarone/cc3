@@ -1,6 +1,11 @@
+import { PrismaClient } from "@prisma/client";
 import fs from "fs";
 import path from "path";
-import { getPrisma } from "../lib/db/prisma";
+import { fileURLToPath } from "url";
+
+const prisma = new PrismaClient();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Create required directories if they don't exist
 function createRequiredDirectories() {
@@ -25,7 +30,6 @@ function createRequiredDirectories() {
 
 export async function main() {
   console.log("Starting database seeding...");
-  const prisma = await getPrisma();
 
   try {
     // Create required directories first
@@ -49,6 +53,8 @@ export async function main() {
           username: "admin",
           passwordHash: null, // No password initially
           isAdmin: true,
+          themeMode: "dark", // Set dark theme as default
+          menuPosition: "top", // Set top menu as default
         },
       });
 
@@ -140,7 +146,7 @@ export async function main() {
         console.log("Final setup verification:", JSON.stringify(verifySetup, null, 2));
       } catch (error) {
         console.error("Error during example group and URL setup:", error);
-        throw error; // Re-throw to be caught by the outer try-catch
+        throw error;
       }
     } else {
       console.log(
@@ -157,10 +163,8 @@ export async function main() {
   }
 }
 
-// Keep the direct invocation for prisma seed command
-if (require.main === module) {
-  main().catch((e) => {
-    console.error(e);
-    process.exit(1);
-  });
-}
+// Run the seed function
+main().catch((e) => {
+  console.error(e);
+  process.exit(1);
+});

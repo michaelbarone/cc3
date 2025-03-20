@@ -407,67 +407,78 @@ export default function MenuBar({
 
     return (
       <Box sx={{ display: "flex", flexDirection: "row", alignItems: "center", width: "100%" }}>
-        {/* Group selector */}
+        {/* Group selector - only show dropdown if multiple groups exist */}
         <Box sx={{ display: "flex", alignItems: "center", mr: 2 }}>
-          <Button
-            onClick={(event) => handleGroupMenuOpen(event, activeGroup?.id || "")}
-            endIcon={<ArrowDropDownIcon />}
-            sx={{ textTransform: "none" }}
-          >
-            <FolderIcon sx={{ mr: 1 }} />
-            {activeGroup?.name || "Select Group"}
-          </Button>
-          <Menu
-            anchorEl={groupMenuAnchorEl}
-            open={Boolean(groupMenuAnchorEl)}
-            onClose={handleGroupMenuClose}
-            PaperProps={{
-              sx: {
-                maxWidth: "80vw",
-                maxHeight: "60vh",
-                overflowX: "hidden",
-              },
-            }}
-          >
-            {urlGroups
-              .filter((group) => group.id !== activeGroup?.id) // Filter out the currently selected group
-              .map((group) => (
-                <Box key={group.id} sx={{ p: 1 }}>
-                  <Box
-                    sx={{
-                      display: "flex",
-                      flexDirection: "row",
-                      alignItems: "center",
-                      flexWrap: "wrap",
-                    }}
-                  >
-                    <MenuItem
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        handleGroupToggle(group.id);
-                      }}
+          {urlGroups.length > 1 ? (
+            <Button
+              onClick={(event) => handleGroupMenuOpen(event, activeGroup?.id || "")}
+              endIcon={<ArrowDropDownIcon />}
+              sx={{ textTransform: "none" }}
+            >
+              <FolderIcon sx={{ mr: 1 }} />
+              {activeGroup?.name || "Select Group"}
+            </Button>
+          ) : (
+            <Box sx={{ display: "flex", alignItems: "center", px: 2 }}>
+              <FolderIcon sx={{ mr: 1, color: theme.palette.text.secondary }} />
+              <Typography variant="body1" color="text.secondary">
+                {urlGroups[0]?.name}
+              </Typography>
+            </Box>
+          )}
+          {urlGroups.length > 1 && (
+            <Menu
+              anchorEl={groupMenuAnchorEl}
+              open={Boolean(groupMenuAnchorEl)}
+              onClose={handleGroupMenuClose}
+              PaperProps={{
+                sx: {
+                  maxWidth: "80vw",
+                  maxHeight: "60vh",
+                  overflowX: "hidden",
+                },
+              }}
+            >
+              {urlGroups
+                .filter((group) => group.id !== activeGroup?.id) // Filter out the currently selected group
+                .map((group) => (
+                  <Box key={group.id} sx={{ p: 1 }}>
+                    <Box
                       sx={{
-                        fontWeight: "bold",
-                        pl: 1,
-                        pr: 2,
-                        mr: 1,
-                        borderRight: `1px solid ${theme.palette.divider}`,
+                        display: "flex",
+                        flexDirection: "row",
+                        alignItems: "center",
+                        flexWrap: "wrap",
                       }}
                     >
-                      <FolderIcon sx={{ mr: 1 }} />
-                      {group.name}
-                    </MenuItem>
+                      <MenuItem
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          handleGroupToggle(group.id);
+                        }}
+                        sx={{
+                          fontWeight: "bold",
+                          pl: 1,
+                          pr: 2,
+                          mr: 1,
+                          borderRight: `1px solid ${theme.palette.divider}`,
+                        }}
+                      >
+                        <FolderIcon sx={{ mr: 1 }} />
+                        {group.name}
+                      </MenuItem>
 
-                    {group.urls.map((url) => renderUrlItem(url))}
+                      {group.urls.map((url) => renderUrlItem(url))}
+                    </Box>
+
+                    {group.id !==
+                      urlGroups.filter((g) => g.id !== activeGroup?.id).slice(-1)[0].id && (
+                      <Box sx={{ my: 1, borderBottom: `1px solid ${theme.palette.divider}` }} />
+                    )}
                   </Box>
-
-                  {group.id !==
-                    urlGroups.filter((g) => g.id !== activeGroup?.id).slice(-1)[0].id && (
-                    <Box sx={{ my: 1, borderBottom: `1px solid ${theme.palette.divider}` }} />
-                  )}
-                </Box>
-              ))}
-          </Menu>
+                ))}
+            </Menu>
+          )}
         </Box>
 
         {/* URLs in active group */}
