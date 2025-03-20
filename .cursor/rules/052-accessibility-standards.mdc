@@ -1,0 +1,298 @@
+---
+description: Accessibility (WCAG) compliance standards and best practices
+globs: "**/*.tsx,**/*.ts,**/*.css"
+alwaysApply: true
+---
+
+# Accessibility Standards and WCAG Compliance
+
+<rule>
+name: accessibility_standards
+description: Comprehensive accessibility guidelines following WCAG 2.1 standards
+filters:
+  - type: file_extension
+    pattern: "(tsx|ts|css)$"
+actions:
+  - type: suggest
+    message: |
+      Accessibility Best Practices:
+
+      1. Semantic HTML:
+         - Use proper HTML elements
+         - Implement correct heading hierarchy
+         - Provide descriptive landmarks
+         ```tsx
+         // Good
+         <main>
+           <h1>Page Title</h1>
+           <nav aria-label="Main navigation">
+             <ul>
+               <li><a href="/">Home</a></li>
+             </ul>
+           </nav>
+           <article>
+             <h2>Article Title</h2>
+             <p>Content</p>
+           </article>
+         </main>
+
+         // Bad
+         <div>
+           <div>Page Title</div>
+           <div>
+             <div>Home</div>
+           </div>
+         </div>
+         ```
+
+      2. ARIA Implementation:
+         - Use ARIA labels appropriately
+         - Implement proper roles
+         - Maintain ARIA relationships
+         ```tsx
+         // Good
+         <button
+           aria-expanded={isOpen}
+           aria-controls="menu-content"
+           onClick={toggleMenu}
+         >
+           <span className="sr-only">Toggle Menu</span>
+           <MenuIcon aria-hidden="true" />
+         </button>
+         <div
+           id="menu-content"
+           role="menu"
+           hidden={!isOpen}
+         >
+           {/* Menu content */}
+         </div>
+         ```
+
+      3. Keyboard Navigation:
+         - Ensure proper focus management
+         - Implement focus trapping for modals
+         - Provide skip links
+         ```tsx
+         // Skip link
+         <a
+           href="#main-content"
+           className={styles.skipLink}
+         >
+           Skip to main content
+         </a>
+
+         // Focus trap for modal
+         const Modal = ({ isOpen, onClose }) => {
+           const modalRef = useRef<HTMLDivElement>(null);
+
+           useEffect(() => {
+             if (isOpen) {
+               const focusTrap = createFocusTrap(modalRef.current, {
+                 escapeDeactivates: true,
+                 fallbackFocus: '[data-autofocus]'
+               });
+               focusTrap.activate();
+               return () => focusTrap.deactivate();
+             }
+           }, [isOpen]);
+
+           return (
+             <div ref={modalRef} role="dialog" aria-modal="true">
+               {/* Modal content */}
+             </div>
+           );
+         };
+         ```
+
+      4. Color and Contrast:
+         - Maintain sufficient color contrast
+         - Don't rely on color alone
+         - Support high contrast modes
+         ```css
+         /* Good */
+         .error {
+           color: #d32f2f;
+           border: 2px solid currentColor;
+           background: #ffebee;
+         }
+
+         /* Support high contrast */
+         @media (forced-colors: active) {
+           .button {
+             border: 2px solid currentColor;
+           }
+         }
+         ```
+
+      5. Form Accessibility:
+         - Use proper labels
+         - Provide error messages
+         - Group related fields
+         ```tsx
+         const Form = () => (
+           <form>
+             <fieldset>
+               <legend>Personal Information</legend>
+               <div>
+                 <label htmlFor="name">Full Name</label>
+                 <input
+                   id="name"
+                   type="text"
+                   aria-required="true"
+                   aria-invalid={!!errors.name}
+                   aria-describedby={errors.name ? "name-error" : undefined}
+                 />
+                 {errors.name && (
+                   <div id="name-error" role="alert">
+                     {errors.name}
+                   </div>
+                 )}
+               </div>
+             </fieldset>
+           </form>
+         );
+         ```
+
+      6. Dynamic Content:
+         - Announce important updates
+         - Handle loading states
+         - Manage focus after updates
+         ```tsx
+         const LiveRegion = () => {
+           const [message, setMessage] = useState("");
+
+           return (
+             <div
+               role="status"
+               aria-live="polite"
+               className="sr-only"
+             >
+               {message}
+             </div>
+           );
+         };
+
+         const LoadingState = () => (
+           <div
+             role="status"
+             aria-busy="true"
+             aria-label="Loading content"
+           >
+             <Spinner aria-hidden="true" />
+           </div>
+         );
+         ```
+
+      7. Media Accessibility:
+         - Provide text alternatives
+         - Include captions
+         - Support audio descriptions
+         ```tsx
+         const MediaPlayer = () => (
+           <div>
+             <video
+               controls
+               aria-label="Tutorial video"
+             >
+               <source src="video.mp4" type="video/mp4" />
+               <track
+                 kind="captions"
+                 src="captions.vtt"
+                 label="English"
+               />
+               <track
+                 kind="descriptions"
+                 src="descriptions.vtt"
+                 label="Audio Descriptions"
+               />
+             </video>
+           </div>
+         );
+         ```
+
+      8. Responsive Accessibility:
+         - Support zoom up to 400%
+         - Maintain readability
+         - Ensure touch targets
+         ```css
+         .button {
+           min-height: 44px;
+           min-width: 44px;
+           padding: 8px 16px;
+         }
+
+         @media (max-width: 768px) {
+           .content {
+             font-size: max(16px, 1rem);
+             line-height: 1.5;
+           }
+         }
+         ```
+
+      9. Testing:
+         - Use accessibility testing tools
+         - Perform keyboard testing
+         - Test with screen readers
+         ```tsx
+         // Jest + Testing Library example
+         describe('Button', () => {
+           it('should be keyboard accessible', () => {
+             render(<Button>Click me</Button>);
+             const button = screen.getByRole('button');
+             expect(button).toHaveFocus();
+             userEvent.tab();
+             expect(button).not.toHaveFocus();
+           });
+         });
+         ```
+
+      10. Documentation:
+          - Document accessibility features
+          - Provide ARIA usage notes
+          - Include keyboard shortcuts
+          ```tsx
+          /**
+           * Modal component
+           * @accessibility
+           * - Traps focus when open
+           * - Closes on ESC key
+           * - Uses aria-modal="true"
+           * - Returns focus on close
+           */
+          ```
+
+examples:
+  - input: |
+      const AccessibleButton = ({
+        onClick,
+        children,
+        isLoading,
+        disabled
+      }) => (
+        <button
+          onClick={onClick}
+          disabled={disabled || isLoading}
+          aria-busy={isLoading}
+          className={styles.button}
+        >
+          {isLoading ? (
+            <span aria-hidden="true">
+              <Spinner />
+            </span>
+          ) : children}
+          {isLoading && (
+            <span className="sr-only">Loading...</span>
+          )}
+        </button>
+      );
+    output: "Valid accessible button component with loading state"
+
+metadata:
+  priority: high
+  version: 1.0.0
+  tags:
+    - accessibility
+    - wcag
+    - a11y
+    - ui
+</rule>

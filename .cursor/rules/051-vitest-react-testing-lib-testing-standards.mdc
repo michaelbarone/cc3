@@ -1,0 +1,238 @@
+---
+description: Testing best practices using Vitest and React Testing Library
+globs: "**/*.test.ts,**/*.test.tsx,**/*.spec.ts,**/*.spec.tsx"
+alwaysApply: true
+---
+
+# Testing Standards and Best Practices
+
+<rule>
+name: testing_standards
+description: Comprehensive testing patterns and best practices using Vitest and React Testing Library
+filters:
+  - type: file_extension
+    pattern: "\\.(test|spec)\\.(ts|tsx)$"
+actions:
+  - type: suggest
+    message: |
+      Testing Best Practices:
+
+      1. Test File Organization:
+         - Place tests next to implementation
+         - Use consistent naming patterns
+         - Group related tests
+         ```typescript
+         // UserCard.tsx
+         // UserCard.test.tsx
+         import { render, screen } from '@testing-library/react';
+         import { UserCard } from './UserCard';
+
+         describe('UserCard', () => {
+           it('renders user information', () => {
+             render(<UserCard user={mockUser} />);
+             expect(screen.getByText(mockUser.name)).toBeInTheDocument();
+           });
+         });
+         ```
+
+      2. Test Structure:
+         - Use describe for grouping
+         - Write clear test descriptions
+         - Follow AAA pattern (Arrange, Act, Assert)
+         ```typescript
+         describe('Authentication', () => {
+           describe('login', () => {
+             it('successfully logs in with valid credentials', async () => {
+               // Arrange
+               const credentials = { email: 'test@example.com', password: 'password' };
+
+               // Act
+               const result = await login(credentials);
+
+               // Assert
+               expect(result.success).toBe(true);
+             });
+           });
+         });
+         ```
+
+      3. Component Testing:
+         - Test user interactions
+         - Verify rendered content
+         - Check accessibility
+         ```typescript
+         import { render, screen, fireEvent } from '@testing-library/react';
+
+         test('button click increments counter', () => {
+           render(<Counter />);
+
+           const button = screen.getByRole('button', { name: /increment/i });
+           const counter = screen.getByText(/count: 0/i);
+
+           fireEvent.click(button);
+
+           expect(counter).toHaveTextContent('Count: 1');
+         });
+         ```
+
+      4. Mocking:
+         - Mock external dependencies
+         - Use MSW for API mocking
+         - Create reusable mocks
+         ```typescript
+         import { rest } from 'msw';
+         import { setupServer } from 'msw/node';
+
+         const server = setupServer(
+           rest.get('/api/user', (req, res, ctx) => {
+             return res(ctx.json({ name: 'John' }));
+           })
+         );
+
+         beforeAll(() => server.listen());
+         afterEach(() => server.resetHandlers());
+         afterAll(() => server.close());
+         ```
+
+      5. Async Testing:
+         - Use proper async/await
+         - Handle loading states
+         - Test error scenarios
+         ```typescript
+         test('loads and displays user data', async () => {
+           render(<UserProfile id="123" />);
+
+           expect(screen.getByText(/loading/i)).toBeInTheDocument();
+
+           await screen.findByText('John Doe');
+
+           expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
+         });
+         ```
+
+      6. Context Testing:
+         - Provide necessary context
+         - Test with different context values
+         - Create test wrappers
+         ```typescript
+         function renderWithProviders(ui: React.ReactElement) {
+           return render(
+             <ThemeProvider>
+               <AuthProvider>
+                 {ui}
+               </AuthProvider>
+             </ThemeProvider>
+           );
+         }
+
+         test('uses theme from context', () => {
+           renderWithProviders(<ThemedComponent />);
+           // Assert themed styles
+         });
+         ```
+
+      7. Form Testing:
+         - Test form submissions
+         - Validate error states
+         - Check field interactions
+         ```typescript
+         test('form submission with validation', async () => {
+           const onSubmit = vi.fn();
+           render(<LoginForm onSubmit={onSubmit} />);
+
+           const emailInput = screen.getByLabelText(/email/i);
+           const submitButton = screen.getByRole('button', { name: /submit/i });
+
+           fireEvent.change(emailInput, { target: { value: 'invalid' } });
+           fireEvent.click(submitButton);
+
+           expect(screen.getByText(/invalid email/i)).toBeInTheDocument();
+           expect(onSubmit).not.toHaveBeenCalled();
+         });
+         ```
+
+      8. API Testing:
+         - Test successful responses
+         - Handle error cases
+         - Verify request payloads
+         ```typescript
+         test('API endpoint handles errors', async () => {
+           server.use(
+             rest.get('/api/user', (req, res, ctx) => {
+               return res(ctx.status(500));
+             })
+           );
+
+           render(<UserProfile />);
+
+           await screen.findByText(/error loading profile/i);
+         });
+         ```
+
+      9. Test Coverage:
+         - Maintain high coverage
+         - Test edge cases
+         - Focus on critical paths
+         ```typescript
+         // vitest.config.ts
+         export default defineConfig({
+           test: {
+             coverage: {
+               reporter: ['text', 'json', 'html'],
+               branches: 80,
+               functions: 80,
+               lines: 80,
+               statements: 80,
+             },
+           },
+         });
+         ```
+
+      10. Performance Testing:
+          - Test rendering performance
+          - Check memory leaks
+          - Verify cleanup
+          ```typescript
+          test('component cleanup', () => {
+            const { unmount } = render(<Component />);
+
+            // Perform actions
+
+            unmount();
+            // Verify cleanup
+          });
+          ```
+
+examples:
+  - input: |
+      test('user authentication flow', async () => {
+        const mockUser = { email: 'test@example.com' };
+        server.use(
+          rest.post('/api/login', (req, res, ctx) => {
+            return res(ctx.json({ user: mockUser }));
+          })
+        );
+
+        render(<LoginForm />);
+
+        fireEvent.change(
+          screen.getByLabelText(/email/i),
+          { target: { value: mockUser.email } }
+        );
+
+        fireEvent.click(screen.getByRole('button', { name: /submit/i }));
+
+        await screen.findByText(/welcome/i);
+        expect(screen.getByText(mockUser.email)).toBeInTheDocument();
+      });
+    output: "Valid test implementation"
+
+metadata:
+  priority: high
+  version: 1.0.0
+  tags:
+    - testing
+    - vitest
+    - react-testing-library
+    - msw
+</rule>

@@ -1,0 +1,234 @@
+---
+description: React state management best practices using Context and Hooks
+globs: "**/*.tsx,**/*.ts"
+alwaysApply: true
+---
+
+# React State Management Standards and Best Practices
+
+<rule>
+name: state_management_standards
+description: Comprehensive state management patterns and best practices for React applications
+filters:
+  - type: file_extension
+    pattern: "\\.(ts|tsx)$"
+actions:
+  - type: suggest
+    message: |
+      React State Management Best Practices:
+
+      1. Context Organization:
+         - Create contexts for distinct domains
+         - Keep context values focused and minimal
+         - Provide meaningful default values
+         ```typescript
+         // Good
+         interface AuthContext {
+           user: User | null;
+           login: (credentials: Credentials) => Promise<void>;
+           logout: () => Promise<void>;
+         }
+
+         const AuthContext = createContext<AuthContext>({
+           user: null,
+           login: async () => {},
+           logout: async () => {},
+         });
+         ```
+
+      2. Context Provider Pattern:
+         - Implement provider as separate component
+         - Handle loading and error states
+         - Memoize complex values
+         ```typescript
+         export function AuthProvider({ children }: PropsWithChildren) {
+           const [user, setUser] = useState<User | null>(null);
+           const [loading, setLoading] = useState(true);
+
+           const login = useCallback(async (credentials: Credentials) => {
+             // Implementation
+           }, []);
+
+           const value = useMemo(() => ({
+             user,
+             login,
+             logout,
+           }), [user, login, logout]);
+
+           if (loading) return <LoadingSpinner />;
+
+           return (
+             <AuthContext.Provider value={value}>
+               {children}
+             </AuthContext.Provider>
+           );
+         }
+         ```
+
+      3. Custom Hooks:
+         - Create hooks for reusable state logic
+         - Follow useXxx naming convention
+         - Handle loading and error states
+         ```typescript
+         function useAuth() {
+           const context = useContext(AuthContext);
+           if (!context) {
+             throw new Error('useAuth must be used within AuthProvider');
+           }
+           return context;
+         }
+         ```
+
+      4. State Updates:
+         - Use functional updates for state based on previous value
+         - Batch related state updates
+         - Consider using reducers for complex state
+         ```typescript
+         // Good
+         setCount(prev => prev + 1);
+
+         // Complex state
+         const [state, dispatch] = useReducer(reducer, initialState);
+         ```
+
+      5. Performance Optimization:
+         - Memoize callbacks with useCallback
+         - Memoize complex calculations with useMemo
+         - Split context by update frequency
+         ```typescript
+         // Good
+         const memoizedCallback = useCallback(() => {
+           doSomethingWith(prop1, prop2);
+         }, [prop1, prop2]);
+
+         const memoizedValue = useMemo(() =>
+           expensiveComputation(prop), [prop]
+         );
+         ```
+
+      6. Data Fetching:
+         - Implement loading states
+         - Handle errors gracefully
+         - Cache responses when appropriate
+         ```typescript
+         function useData<T>(url: string) {
+           const [data, setData] = useState<T | null>(null);
+           const [loading, setLoading] = useState(true);
+           const [error, setError] = useState<Error | null>(null);
+
+           useEffect(() => {
+             let mounted = true;
+
+             async function fetchData() {
+               try {
+                 const response = await fetch(url);
+                 const json = await response.json();
+                 if (mounted) setData(json);
+               } catch (err) {
+                 if (mounted) setError(err as Error);
+               } finally {
+                 if (mounted) setLoading(false);
+               }
+             }
+
+             fetchData();
+             return () => { mounted = false; };
+           }, [url]);
+
+           return { data, loading, error };
+         }
+         ```
+
+      7. State Dependencies:
+         - Use useEffect dependency array correctly
+         - Avoid unnecessary dependencies
+         - Consider using refs for values not triggering updates
+         ```typescript
+         // Good
+         const prevValue = useRef(value);
+         useEffect(() => {
+           if (value !== prevValue.current) {
+             // Handle value change
+             prevValue.current = value;
+           }
+         }, [value]);
+         ```
+
+      8. Context Composition:
+         - Compose providers meaningfully
+         - Consider provider order
+         - Create compound components when useful
+         ```typescript
+         function AppProviders({ children }: PropsWithChildren) {
+           return (
+             <ErrorBoundary>
+               <AuthProvider>
+                 <ThemeProvider>
+                   <DataProvider>
+                     {children}
+                   </DataProvider>
+                 </ThemeProvider>
+               </AuthProvider>
+             </ErrorBoundary>
+           );
+         }
+         ```
+
+      9. Error Handling:
+         - Implement error boundaries
+         - Provide fallback UI
+         - Handle async errors in effects
+         ```typescript
+         class ErrorBoundary extends React.Component {
+           state = { hasError: false };
+
+           static getDerivedStateFromError() {
+             return { hasError: true };
+           }
+
+           render() {
+             if (this.state.hasError) {
+               return <ErrorFallback />;
+             }
+             return this.props.children;
+           }
+         }
+         ```
+
+      10. Testing Considerations:
+          - Mock context providers in tests
+          - Test error conditions
+          - Verify state updates
+          ```typescript
+          test('useAuth hook', () => {
+            const wrapper = ({ children }) => (
+              <AuthProvider>{children}</AuthProvider>
+            );
+
+            const { result } = renderHook(() => useAuth(), { wrapper });
+            expect(result.current.user).toBeNull();
+          });
+          ```
+
+examples:
+  - input: |
+      function useCounter(initialValue = 0) {
+        const [count, setCount] = useState(initialValue);
+        const increment = useCallback(() =>
+          setCount(prev => prev + 1), []);
+        const decrement = useCallback(() =>
+          setCount(prev => prev - 1), []);
+
+        return { count, increment, decrement };
+      }
+    output: "Valid custom hook implementation"
+
+metadata:
+  priority: high
+  version: 1.0.0
+  tags:
+    - react
+    - state-management
+    - hooks
+    - context
+</rule>

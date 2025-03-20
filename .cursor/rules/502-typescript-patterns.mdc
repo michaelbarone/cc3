@@ -1,0 +1,204 @@
+---
+description: TypeScript best practices and patterns for the project
+globs: "**/*.ts,**/*.tsx"
+alwaysApply: true
+---
+
+# TypeScript Patterns and Best Practices
+
+<rule>
+name: typescript_patterns
+description: Comprehensive TypeScript best practices and patterns for the project
+filters:
+  - type: file_extension
+    pattern: "\\.(ts|tsx)$"
+actions:
+  - type: suggest
+    message: |
+      TypeScript Best Practices:
+
+      1. Type Inference:
+         - Let TypeScript infer types when obvious
+         - Explicitly declare types for function parameters
+         - Use return type annotations for non-trivial functions
+         ```typescript
+         // Good
+         const items = ['a', 'b', 'c']; // Type inference
+         function calculateTotal(prices: number[]): number {
+           return prices.reduce((sum, price) => sum + price, 0);
+         }
+
+         // Avoid
+         const items: string[] = ['a', 'b', 'c']; // Unnecessary
+         function calculateTotal(prices) { // Missing types
+           return prices.reduce((sum, price) => sum + price, 0);
+         }
+         ```
+
+      2. Interface vs Type:
+         - Use interfaces for object definitions that may be extended
+         - Use type aliases for unions, intersections, and primitives
+         - Prefer interfaces for public API definitions
+         ```typescript
+         // Good
+         interface User {
+           id: string;
+           name: string;
+         }
+         interface AdminUser extends User {
+           permissions: string[];
+         }
+
+         type Status = 'pending' | 'active' | 'deleted';
+         ```
+
+      3. Generics:
+         - Use descriptive type parameters (T -> TItem)
+         - Constrain generics when possible
+         - Document complex generic implementations
+         ```typescript
+         // Good
+         interface Repository<TEntity extends { id: string }> {
+           find(id: string): Promise<TEntity>;
+         }
+         ```
+
+      4. Null Handling:
+         - Enable strict null checks
+         - Use optional chaining and nullish coalescing
+         - Avoid explicit null/undefined unions when optional is clearer
+         ```typescript
+         // Good
+         interface User {
+           name: string;
+           email?: string; // Optional
+         }
+         const emailDisplay = user.email ?? 'No email';
+
+         // Avoid
+         interface User {
+           name: string;
+           email: string | null; // Use optional instead
+         }
+         ```
+
+      5. Type Guards:
+         - Use type predicates for custom type guards
+         - Prefer discriminated unions over type casting
+         - Document complex type guards
+         ```typescript
+         // Good
+         interface Error {
+           type: 'error';
+           message: string;
+         }
+         interface Success<T> {
+           type: 'success';
+           data: T;
+         }
+         type Result<T> = Error | Success<T>;
+
+         function isError(result: Result<unknown>): result is Error {
+           return result.type === 'error';
+         }
+         ```
+
+      6. Async Code:
+         - Use Promise<T> for async returns
+         - Avoid mixing Promise and async/await syntax
+         - Handle errors with try/catch
+         ```typescript
+         // Good
+         async function fetchUser(id: string): Promise<User> {
+           try {
+             const response = await api.get(`/users/${id}`);
+             return response.data;
+           } catch (error) {
+             handleError(error);
+             throw error;
+           }
+         }
+         ```
+
+      7. Component Props:
+         - Use interface for props
+         - Mark optional props with ?
+         - Use children prop from React.PropsWithChildren
+         ```typescript
+         // Good
+         interface ButtonProps extends React.PropsWithChildren {
+           variant?: 'primary' | 'secondary';
+           onClick?: () => void;
+         }
+         ```
+
+      8. Project Organization:
+         - Use barrel exports (index.ts)
+         - Group related types in separate files
+         - Use consistent naming conventions
+         ```typescript
+         // types/user.ts
+         export interface User { ... }
+         export type UserRole = ...
+
+         // index.ts
+         export * from './user';
+         ```
+
+      9. Error Handling:
+         - Create custom error types
+         - Use discriminated unions for error states
+         - Type error boundaries appropriately
+         ```typescript
+         // Good
+         class APIError extends Error {
+           constructor(
+             message: string,
+             public statusCode: number
+           ) {
+             super(message);
+           }
+         }
+         ```
+
+      10. Documentation:
+          - Use JSDoc for public APIs
+          - Include examples in complex type documentation
+          - Document magic numbers and complex logic
+          ```typescript
+          /**
+           * Processes user data and returns normalized result
+           * @param user - The user object to process
+           * @returns Normalized user data
+           * @throws {ValidationError} If user data is invalid
+           */
+          function processUser(user: User): NormalizedUser { ... }
+          ```
+
+examples:
+  - input: |
+      interface User {
+        id: string;
+        name: string;
+        email?: string;
+      }
+
+      function isValidUser(user: unknown): user is User {
+        return (
+          typeof user === 'object' &&
+          user !== null &&
+          'id' in user &&
+          'name' in user
+        );
+      }
+    output: "Valid TypeScript pattern usage"
+
+metadata:
+  priority: high
+  version: 1.0.0
+  tags:
+    - typescript
+    - frontend
+    - patterns
+    - best-practices
+</rule>

@@ -1,0 +1,286 @@
+---
+description: Performance optimization best practices across frontend, backend, and infrastructure
+globs: "**/*.tsx,**/*.ts,**/*.css,**/*.sql"
+alwaysApply: true
+---
+
+# Performance Optimization Standards
+
+<rule>
+name: performance_optimization
+description: Comprehensive performance optimization guidelines for web applications
+filters:
+  - type: file_extension
+    pattern: "(tsx|ts|css|sql)$"
+actions:
+  - type: suggest
+    message: |
+      Performance Optimization Best Practices:
+
+      1. React Component Optimization:
+         - Use memo and useMemo appropriately
+         - Implement proper key usage
+         - Optimize re-renders
+         ```tsx
+         // Good
+         const MemoizedComponent = React.memo(({ data }) => (
+           <div>
+             {data.map(item => (
+               <Item
+                 key={item.id}
+                 {...item}
+               />
+             ))}
+           </div>
+         ));
+
+         // Optimize expensive calculations
+         const ExpensiveComponent = ({ data }) => {
+           const processedData = useMemo(() => {
+             return expensiveOperation(data);
+           }, [data]);
+
+           return <div>{processedData}</div>;
+         };
+         ```
+
+      2. Bundle Optimization:
+         - Implement code splitting
+         - Use dynamic imports
+         - Optimize dependencies
+         ```tsx
+         // Code splitting with React.lazy
+         const LazyComponent = React.lazy(() => import('./LazyComponent'));
+
+         const App = () => (
+           <Suspense fallback={<Loading />}>
+             <LazyComponent />
+           </Suspense>
+         );
+
+         // Dynamic imports for routes
+         const routes = {
+           home: () => import('./Home'),
+           about: () => import('./About')
+         };
+         ```
+
+      3. Image Optimization:
+         - Use appropriate formats
+         - Implement lazy loading
+         - Optimize for different devices
+         ```tsx
+         const OptimizedImage = ({
+           src,
+           alt,
+           sizes,
+           loading = 'lazy'
+         }) => (
+           <picture>
+             <source
+               type="image/webp"
+               srcSet={`${src}.webp 1x, ${src}@2x.webp 2x`}
+             />
+             <img
+               src={`${src}.jpg`}
+               srcSet={`${src}@2x.jpg 2x`}
+               alt={alt}
+               loading={loading}
+               sizes={sizes}
+             />
+           </picture>
+         );
+         ```
+
+      4. CSS Performance:
+         - Minimize specificity
+         - Use efficient selectors
+         - Implement critical CSS
+         ```css
+         /* Good */
+         .button { /* Direct class */
+           color: blue;
+         }
+
+         /* Bad */
+         div > div > div .button { /* Deep nesting */
+           color: blue;
+         }
+
+         /* Critical CSS */
+         @import url('non-critical.css') print;
+         ```
+
+      5. API Optimization:
+         - Implement caching
+         - Use pagination
+         - Optimize queries
+         ```tsx
+         // API caching
+         const useCachedData = (key: string) => {
+           const { data, error } = useSWR(key, fetcher, {
+             revalidateOnFocus: false,
+             dedupingInterval: 60000
+           });
+
+           return { data, error };
+         };
+
+         // Pagination
+         const PaginatedList = () => {
+           const { data, size, setSize } = useSWRInfinite(
+             (index) => `/api/items?page=${index + 1}`,
+             fetcher
+           );
+
+           return (
+             <div>
+               {data?.map(pageData => (
+                 <ItemList data={pageData} />
+               ))}
+               <button onClick={() => setSize(size + 1)}>
+                 Load More
+               </button>
+             </div>
+           );
+         };
+         ```
+
+      6. Database Optimization:
+         - Index properly
+         - Optimize queries
+         - Use connection pooling
+         ```sql
+         -- Good: Using indexes
+         CREATE INDEX idx_user_email ON users(email);
+         SELECT * FROM users WHERE email = 'test@example.com';
+
+         -- Bad: Full table scan
+         SELECT * FROM users WHERE LOWER(email) = 'test@example.com';
+
+         -- Good: Efficient joins
+         SELECT u.name, o.order_date
+         FROM users u
+         INNER JOIN orders o ON u.id = o.user_id
+         WHERE o.status = 'pending'
+         LIMIT 10;
+         ```
+
+      7. State Management:
+         - Implement proper caching
+         - Optimize store updates
+         - Use selective subscriptions
+         ```tsx
+         // Optimized context
+         const useSelectiveContext = <T,>(
+           selector: (state: T) => any
+         ) => {
+           const context = useContext(AppContext);
+           return useMemo(
+             () => selector(context),
+             [context, selector]
+           );
+         };
+
+         // Efficient updates
+         const reducer = (state, action) => {
+           switch (action.type) {
+             case 'UPDATE_ITEM':
+               return {
+                 ...state,
+                 [action.id]: action.data
+               };
+             default:
+               return state;
+           }
+         };
+         ```
+
+      8. Network Optimization:
+         - Implement HTTP/2
+         - Use CDN
+         - Optimize asset delivery
+         ```typescript
+         // CDN configuration
+         const config = {
+           images: {
+             domains: ['cdn.example.com'],
+             deviceSizes: [640, 750, 828, 1080, 1200],
+             imageSizes: [16, 32, 48, 64, 96],
+             path: 'https://cdn.example.com/images',
+             loader: 'cloudinary'
+           }
+         };
+         ```
+
+      9. Memory Management:
+         - Clean up event listeners
+         - Implement proper garbage collection
+         - Optimize memory usage
+         ```tsx
+         const Component = () => {
+           useEffect(() => {
+             const handler = () => {
+               // Handle event
+             };
+             window.addEventListener('scroll', handler);
+
+             return () => {
+               window.removeEventListener('scroll', handler);
+             };
+           }, []);
+
+           return <div>Content</div>;
+         };
+         ```
+
+      10. Performance Monitoring:
+          - Implement metrics tracking
+          - Monitor core web vitals
+          - Use performance budgets
+          ```tsx
+          const trackMetric = (metric) => {
+            const entry = metric.entries[0];
+            analytics.track('Performance', {
+              name: metric.name,
+              value: entry.value,
+              rating: metric.rating
+            });
+          };
+
+          useEffect(() => {
+            webVitals.getCLS(trackMetric);
+            webVitals.getFID(trackMetric);
+            webVitals.getLCP(trackMetric);
+          }, []);
+          ```
+
+examples:
+  - input: |
+      const OptimizedList = React.memo(({ items }) => {
+        const sortedItems = useMemo(() => {
+          return [...items].sort((a, b) => b.priority - a.priority);
+        }, [items]);
+
+        return (
+          <div>
+            {sortedItems.map(item => (
+              <ListItem
+                key={item.id}
+                item={item}
+              />
+            ))}
+          </div>
+        );
+      });
+    output: "Valid optimized list component with proper memoization"
+
+metadata:
+  priority: high
+  version: 1.0.0
+  tags:
+    - performance
+    - optimization
+    - frontend
+    - backend
+</rule>

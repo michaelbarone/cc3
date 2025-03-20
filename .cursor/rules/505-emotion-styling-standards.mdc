@@ -1,0 +1,252 @@
+---
+description: Emotion styling best practices and MUI integration patterns
+globs: "**/*.tsx,**/*.ts"
+alwaysApply: true
+---
+
+# Emotion Styling Standards and Best Practices
+
+<rule>
+name: emotion_styling_standards
+description: Comprehensive styling patterns using Emotion with Material UI integration
+filters:
+  - type: file_extension
+    pattern: "\\.(ts|tsx)$"
+actions:
+  - type: suggest
+    message: |
+      Emotion Styling Best Practices:
+
+      1. MUI Theme Integration:
+         - Use theme values consistently
+         - Leverage MUI's styled API
+         - Maintain design system tokens
+         ```typescript
+         // Good
+         const StyledButton = styled(Button)(({ theme }) => ({
+           padding: theme.spacing(2),
+           color: theme.palette.primary.main,
+           transition: theme.transitions.create(['background-color', 'transform']),
+           '&:hover': {
+             backgroundColor: alpha(theme.palette.primary.main, 0.1),
+             transform: 'scale(1.02)',
+           },
+         }));
+         ```
+
+      2. Component Styling:
+         - Use semantic naming
+         - Maintain component isolation
+         - Follow single responsibility
+         ```typescript
+         // Good
+         const CardHeader = styled('div')(({ theme }) => ({
+           display: 'flex',
+           alignItems: 'center',
+           padding: theme.spacing(2),
+           borderBottom: `1px solid ${theme.palette.divider}`,
+         }));
+
+         const CardContent = styled('div')(({ theme }) => ({
+           padding: theme.spacing(2),
+         }));
+         ```
+
+      3. Responsive Design:
+         - Use MUI breakpoints
+         - Mobile-first approach
+         - Maintain consistent spacing
+         ```typescript
+         const ResponsiveLayout = styled('div')(({ theme }) => ({
+           display: 'grid',
+           gap: theme.spacing(2),
+           gridTemplateColumns: '1fr',
+           [theme.breakpoints.up('sm')]: {
+             gridTemplateColumns: '1fr 1fr',
+           },
+           [theme.breakpoints.up('md')]: {
+             gridTemplateColumns: '1fr 1fr 1fr',
+           },
+         }));
+         ```
+
+      4. Dynamic Styles:
+         - Type props properly
+         - Use variant patterns
+         - Handle conditional styles
+         ```typescript
+         interface ButtonProps {
+           variant: 'primary' | 'secondary';
+           size: 'small' | 'medium' | 'large';
+         }
+
+         const DynamicButton = styled('button')<ButtonProps>(
+           ({ theme, variant, size }) => ({
+             padding: {
+               small: theme.spacing(1),
+               medium: theme.spacing(2),
+               large: theme.spacing(3),
+             }[size],
+             backgroundColor: theme.palette[variant].main,
+           })
+         );
+         ```
+
+      5. Performance Optimization:
+         - Memoize styled components
+         - Use static styles when possible
+         - Avoid nested selectors
+         ```typescript
+         // Good
+         const StaticStyles = styled('div')({
+           display: 'flex',
+           alignItems: 'center',
+           gap: '8px',
+         });
+
+         // Avoid
+         const DeepNesting = styled('div')({
+           '& > div': {
+             '& > span': {
+               '& > p': {
+                 color: 'red',
+               },
+             },
+           },
+         });
+         ```
+
+      6. Theme Extension:
+         - Extend MUI theme properly
+         - Maintain type safety
+         - Document custom properties
+         ```typescript
+         declare module '@mui/material/styles' {
+           interface Theme {
+             custom: {
+               borderRadius: number;
+               boxShadow: string;
+             };
+           }
+           interface ThemeOptions {
+             custom?: {
+               borderRadius?: number;
+               boxShadow?: string;
+             };
+           }
+         }
+
+         const theme = createTheme({
+           custom: {
+             borderRadius: 8,
+             boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+           },
+         });
+         ```
+
+      7. Global Styles:
+         - Use Global component sparingly
+         - Maintain reset styles
+         - Document global changes
+         ```typescript
+         const GlobalStyles = () => (
+           <Global
+             styles={(theme) => ({
+               '*, *::before, *::after': {
+                 boxSizing: 'border-box',
+                 margin: 0,
+                 padding: 0,
+               },
+               body: {
+                 backgroundColor: theme.palette.background.default,
+                 color: theme.palette.text.primary,
+               },
+             })}
+           />
+         );
+         ```
+
+      8. Animation Patterns:
+         - Use theme transitions
+         - Maintain performance
+         - Consider reduced motion
+         ```typescript
+         const AnimatedComponent = styled('div')(({ theme }) => ({
+           transition: theme.transitions.create(['opacity', 'transform'], {
+             duration: theme.transitions.duration.standard,
+           }),
+           '@media (prefers-reduced-motion: reduce)': {
+             transition: 'none',
+           },
+           '&:hover': {
+             transform: 'translateY(-2px)',
+             opacity: 0.8,
+           },
+         }));
+         ```
+
+      9. CSS-in-JS Best Practices:
+         - Use meaningful class names
+         - Maintain style organization
+         - Document complex styles
+         ```typescript
+         const StyledComponent = styled('div', {
+           shouldComponentUpdate: false,
+           label: 'CustomCard',
+         })(({ theme }) => ({
+           // Card container styles
+           display: 'flex',
+           flexDirection: 'column',
+           borderRadius: theme.shape.borderRadius,
+           boxShadow: theme.shadows[1],
+         }));
+         ```
+
+      10. Testing Considerations:
+          - Test style variations
+          - Verify theme integration
+          - Check responsive behavior
+          ```typescript
+          test('component applies correct styles', () => {
+            const { container } = render(
+              <ThemeProvider theme={theme}>
+                <StyledComponent />
+              </ThemeProvider>
+            );
+
+            expect(container.firstChild).toHaveStyle({
+              display: 'flex',
+              flexDirection: 'column',
+            });
+          });
+          ```
+
+examples:
+  - input: |
+      const Card = styled(Paper)(({ theme }) => ({
+        borderRadius: theme.shape.borderRadius,
+        transition: theme.transitions.create(['box-shadow']),
+        '&:hover': {
+          boxShadow: theme.shadows[4],
+        },
+        [theme.breakpoints.down('sm')]: {
+          margin: theme.spacing(1),
+        },
+      }));
+
+      const CardTitle = styled(Typography)(({ theme }) => ({
+        color: theme.palette.text.primary,
+        fontSize: theme.typography.h6.fontSize,
+        fontWeight: theme.typography.fontWeightBold,
+      }));
+    output: "Valid Emotion styling implementation with MUI"
+
+metadata:
+  priority: high
+  version: 1.0.0
+  tags:
+    - emotion
+    - styling
+    - material-ui
+    - frontend
+</rule>

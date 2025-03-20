@@ -1,0 +1,212 @@
+---
+description: Docker configuration and containerization best practices
+globs: "**/Dockerfile,**/*.dockerfile,**/docker-compose.yml"
+alwaysApply: true
+---
+
+# Docker Standards and Best Practices
+
+<rule>
+name: docker_standards
+description: Comprehensive Docker configuration and containerization guidelines
+filters:
+  - type: file_extension
+    pattern: "(Dockerfile|\\.dockerfile|docker-compose\\.yml)$"
+actions:
+  - type: suggest
+    message: |
+      Docker Best Practices:
+
+      1. Multi-stage Builds:
+         - Optimize image size
+         - Separate build and runtime
+         - Use appropriate base images
+         ```dockerfile
+         # Build stage
+         FROM node:20-alpine AS builder
+         WORKDIR /app
+         COPY package*.json ./
+         RUN npm ci
+         COPY . .
+         RUN npm run build
+
+         # Runtime stage
+         FROM node:20-alpine
+         WORKDIR /app
+         COPY --from=builder /app/dist ./dist
+         COPY package*.json ./
+         RUN npm ci --production
+         CMD ["npm", "start"]
+         ```
+
+      2. Layer Optimization:
+         - Order commands by change frequency
+         - Combine related commands
+         - Use .dockerignore
+         ```dockerfile
+         # Good
+         COPY package*.json ./
+         RUN npm ci
+         COPY . .
+
+         # Bad
+         COPY . .
+         RUN npm ci
+         ```
+
+      3. Security Best Practices:
+         - Use non-root users
+         - Scan for vulnerabilities
+         - Minimize installed packages
+         ```dockerfile
+         # Create non-root user
+         RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+         USER appuser
+
+         # Minimize layers and installed packages
+         RUN apk add --no-cache package1 package2 \
+             && rm -rf /var/cache/apk/*
+         ```
+
+      4. Environment Configuration:
+         - Use ARG for build-time variables
+         - Use ENV for runtime variables
+         - Follow naming conventions
+         ```dockerfile
+         # Build arguments
+         ARG NODE_VERSION=20
+         FROM node:${NODE_VERSION}-alpine
+
+         # Environment variables
+         ENV NODE_ENV=production
+         ENV APP_PORT=3000
+         ```
+
+      5. Development vs Production:
+         - Use docker-compose for development
+         - Implement proper volume mounts
+         - Configure hot reloading
+         ```yaml
+         # docker-compose.yml
+         version: '3.8'
+         services:
+           app:
+             build:
+               context: .
+               target: development
+             volumes:
+               - .:/app
+               - /app/node_modules
+             environment:
+               - NODE_ENV=development
+             command: npm run dev
+         ```
+
+      6. Volume Management:
+         - Use named volumes for persistence
+         - Implement proper backup strategies
+         - Handle permissions correctly
+         ```yaml
+         volumes:
+           db_data:
+             driver: local
+
+         services:
+           db:
+             image: postgres:14
+             volumes:
+               - db_data:/var/lib/postgresql/data
+             environment:
+               POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+         ```
+
+      7. Networking:
+         - Use custom networks
+         - Implement proper service discovery
+         - Secure internal communication
+         ```yaml
+         networks:
+           frontend:
+           backend:
+             internal: true
+
+         services:
+           app:
+             networks:
+               - frontend
+               - backend
+           db:
+             networks:
+               - backend
+         ```
+
+      8. Health Checks:
+         - Implement proper health checks
+         - Configure appropriate timeouts
+         - Handle dependencies
+         ```dockerfile
+         HEALTHCHECK --interval=30s --timeout=3s \
+           CMD wget --no-verbose --tries=1 --spider http://localhost:3000/health || exit 1
+         ```
+
+      9. Resource Management:
+         - Set appropriate limits
+         - Monitor resource usage
+         - Implement scaling rules
+         ```yaml
+         services:
+           app:
+             deploy:
+               resources:
+                 limits:
+                   cpus: '0.50'
+                   memory: 512M
+                 reservations:
+                   cpus: '0.25'
+                   memory: 256M
+         ```
+
+      10. Logging:
+          - Configure proper logging
+          - Implement log rotation
+          - Use appropriate drivers
+          ```yaml
+          services:
+            app:
+              logging:
+                driver: "json-file"
+                options:
+                  max-size: "10m"
+                  max-file: "3"
+          ```
+
+examples:
+  - input: |
+      # Multi-stage build with security best practices
+      FROM node:20-alpine AS builder
+      WORKDIR /app
+      COPY package*.json ./
+      RUN npm ci
+      COPY . .
+      RUN npm run build
+
+      FROM node:20-alpine
+      WORKDIR /app
+      RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+      COPY --from=builder /app/dist ./dist
+      COPY package*.json ./
+      RUN npm ci --production
+      USER appuser
+      EXPOSE 3000
+      CMD ["npm", "start"]
+    output: "Valid Dockerfile with multi-stage build and security practices"
+
+metadata:
+  priority: high
+  version: 1.0.0
+  tags:
+    - docker
+    - containerization
+    - devops
+    - infrastructure
+</rule>

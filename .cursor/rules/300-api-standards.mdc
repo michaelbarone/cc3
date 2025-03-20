@@ -1,0 +1,297 @@
+---
+description: API and authentication best practices using NextAuth.js
+globs: "**/*.ts,**/*.tsx"
+alwaysApply: true
+---
+
+# API and Authentication Standards
+
+<rule>
+name: api_standards
+description: Comprehensive API and authentication patterns using NextAuth.js
+filters:
+  - type: file_extension
+    pattern: "\\.(ts|tsx)$"
+actions:
+  - type: suggest
+    message: |
+      API and Authentication Best Practices:
+
+      1. NextAuth.js Configuration:
+         - Configure session strategy
+         - Set up proper callbacks
+         - Handle JWT events
+         ```typescript
+         // pages/api/auth/[...nextauth].ts
+         export default NextAuth({
+           providers: [
+             // Configure providers
+           ],
+           session: {
+             strategy: 'jwt',
+             maxAge: 30 * 24 * 60 * 60, // 30 days
+           },
+           callbacks: {
+             async jwt({ token, user }) {
+               if (user) {
+                 token.id = user.id;
+                 token.role = user.role;
+               }
+               return token;
+             },
+             async session({ session, token }) {
+               if (session.user) {
+                 session.user.id = token.id;
+                 session.user.role = token.role;
+               }
+               return session;
+             },
+           },
+         });
+         ```
+
+      2. API Route Structure:
+         - Organize routes by feature
+         - Implement proper HTTP methods
+         - Use consistent error handling
+         ```typescript
+         // app/api/users/[id]/route.ts
+         export async function GET(
+           request: Request,
+           { params }: { params: { id: string } }
+         ) {
+           try {
+             const user = await prisma.user.findUnique({
+               where: { id: params.id },
+             });
+
+             if (!user) {
+               return new Response('User not found', { status: 404 });
+             }
+
+             return Response.json(user);
+           } catch (error) {
+             return new Response('Internal Server Error', { status: 500 });
+           }
+         }
+         ```
+
+      3. Authentication Middleware:
+         - Protect routes consistently
+         - Handle unauthorized access
+         - Implement role-based access
+         ```typescript
+         // middleware.ts
+         export function middleware(request: NextRequest) {
+           const token = request.cookies.get('next-auth.session-token');
+
+           if (!token) {
+             return NextResponse.redirect(new URL('/login', request.url));
+           }
+
+           return NextResponse.next();
+         }
+
+         export const config = {
+           matcher: ['/dashboard/:path*', '/admin/:path*'],
+         };
+         ```
+
+      4. Error Handling:
+         - Use consistent error responses
+         - Implement proper status codes
+         - Include error details when safe
+         ```typescript
+         class APIError extends Error {
+           constructor(
+             message: string,
+             public statusCode: number,
+             public code?: string
+           ) {
+             super(message);
+           }
+         }
+
+         function handleError(error: unknown) {
+           if (error instanceof APIError) {
+             return new Response(
+               JSON.stringify({
+                 error: error.message,
+                 code: error.code,
+               }),
+               { status: error.statusCode }
+             );
+           }
+
+           return new Response(
+             'Internal Server Error',
+             { status: 500 }
+           );
+         }
+         ```
+
+      5. Request Validation:
+         - Validate input data
+         - Use strong typing
+         - Implement schema validation
+         ```typescript
+         import { z } from 'zod';
+
+         const UserSchema = z.object({
+           name: z.string().min(2),
+           email: z.string().email(),
+           age: z.number().min(0).optional(),
+         });
+
+         export async function POST(request: Request) {
+           try {
+             const body = await request.json();
+             const user = UserSchema.parse(body);
+             // Process validated data
+           } catch (error) {
+             if (error instanceof z.ZodError) {
+               return new Response(
+                 JSON.stringify({ errors: error.errors }),
+                 { status: 400 }
+               );
+             }
+             throw error;
+           }
+         }
+         ```
+
+      6. Session Management:
+         - Use getServerSession for server components
+         - Implement proper session checks
+         - Handle expired sessions
+         ```typescript
+         import { getServerSession } from 'next-auth';
+
+         export default async function ServerComponent() {
+           const session = await getServerSession();
+
+           if (!session) {
+             redirect('/login');
+           }
+
+           return <ProtectedContent />;
+         }
+         ```
+
+      7. API Response Format:
+         - Use consistent response structure
+         - Include proper metadata
+         - Handle pagination
+         ```typescript
+         interface APIResponse<T> {
+           data: T;
+           metadata?: {
+             page: number;
+             limit: number;
+             total: number;
+           };
+           error?: {
+             message: string;
+             code: string;
+           };
+         }
+
+         function createResponse<T>(data: T, metadata?: APIResponse<T>['metadata']) {
+           return Response.json({ data, metadata });
+         }
+         ```
+
+      8. Rate Limiting:
+         - Implement rate limiting
+         - Use appropriate limits
+         - Handle limit exceeded
+         ```typescript
+         import { Ratelimit } from '@upstash/ratelimit';
+
+         const ratelimit = new Ratelimit({
+           redis: Redis.fromEnv(),
+           limiter: Ratelimit.slidingWindow(5, '1 m'),
+         });
+
+         export async function POST(request: Request) {
+           const ip = request.headers.get('x-forwarded-for');
+           const { success } = await ratelimit.limit(ip ?? 'anonymous');
+
+           if (!success) {
+             return new Response('Too Many Requests', { status: 429 });
+           }
+         }
+         ```
+
+      9. Security Headers:
+         - Set proper security headers
+         - Implement CORS
+         - Use CSP headers
+         ```typescript
+         export async function GET(request: Request) {
+           return new Response('OK', {
+             headers: {
+               'Content-Type': 'application/json',
+               'X-Frame-Options': 'DENY',
+               'X-Content-Type-Options': 'nosniff',
+               'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
+             },
+           });
+         }
+         ```
+
+      10. Testing:
+          - Test API routes
+          - Mock authentication
+          - Verify error handling
+          ```typescript
+          describe('User API', () => {
+            it('should return user data', async () => {
+              const response = await GET(
+                new Request('http://localhost/api/users/1'),
+                { params: { id: '1' } }
+              );
+
+              expect(response.status).toBe(200);
+              const data = await response.json();
+              expect(data).toHaveProperty('id');
+            });
+          });
+          ```
+
+examples:
+  - input: |
+      export async function GET(
+        request: Request,
+        { params }: { params: { id: string } }
+      ) {
+        try {
+          const session = await getServerSession();
+          if (!session) {
+            return new Response('Unauthorized', { status: 401 });
+          }
+
+          const user = await prisma.user.findUnique({
+            where: { id: params.id },
+          });
+
+          if (!user) {
+            return new Response('Not Found', { status: 404 });
+          }
+
+          return Response.json(user);
+        } catch (error) {
+          return handleError(error);
+        }
+      }
+    output: "Valid API route implementation"
+
+metadata:
+  priority: high
+  version: 1.0.0
+  tags:
+    - api
+    - nextauth
+    - authentication
+    - backend
+</rule>

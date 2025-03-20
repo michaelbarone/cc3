@@ -1,0 +1,220 @@
+---
+description: Material UI (MUI) v6 best practices and component standards
+globs: "**/*.tsx"
+alwaysApply: true
+---
+
+# Material UI Standards and Best Practices
+
+<rule>
+name: material_ui_standards
+description: Comprehensive Material UI implementation standards and patterns
+filters:
+  - type: file_extension
+    pattern: "\\.tsx$"
+actions:
+  - type: suggest
+    message: |
+      Material UI Best Practices:
+
+      1. Theme Configuration:
+         - Use createTheme for customization
+         - Define consistent color palette
+         - Maintain typography scale
+         - Define common component overrides
+         ```typescript
+         // theme/theme.ts
+         const theme = createTheme({
+           palette: {
+             primary: {
+               main: '#1976d2',
+               light: '#42a5f5',
+               dark: '#1565c0',
+             },
+           },
+           typography: {
+             fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
+             h1: {
+               fontSize: '2.5rem',
+               fontWeight: 500,
+             },
+           },
+         });
+         ```
+
+      2. Component Styling:
+         - Use styled API for custom components
+         - Leverage theme values
+         - Follow responsive design patterns
+         - Use sx prop for one-off styles
+         ```typescript
+         // Good
+         const StyledButton = styled(Button)(({ theme }) => ({
+           padding: theme.spacing(2),
+           [theme.breakpoints.down('sm')]: {
+             width: '100%',
+           },
+         }));
+
+         // One-off styling
+         <Box sx={{ p: 2, display: 'flex', gap: 2 }}>
+         ```
+
+      3. Layout Components:
+         - Use Box for basic layouts
+         - Stack for one-dimensional layouts
+         - Grid for complex layouts
+         - Container for page width constraints
+         ```typescript
+         // Good
+         <Container maxWidth="lg">
+           <Stack spacing={2}>
+             <Box sx={{ p: 2 }}>
+               <Grid container spacing={2}>
+                 <Grid item xs={12} md={6}>
+                   {/* Content */}
+                 </Grid>
+               </Grid>
+             </Box>
+           </Stack>
+         </Container>
+         ```
+
+      4. Component Props:
+         - Use variant prop for component variations
+         - Leverage color prop for semantic meaning
+         - Use size prop for consistent scaling
+         ```typescript
+         // Good
+         <Button
+           variant="contained"
+           color="primary"
+           size="large"
+           startIcon={<SaveIcon />}
+         >
+           Save Changes
+         </Button>
+         ```
+
+      5. Responsive Design:
+         - Use breakpoints consistently
+         - Implement mobile-first approach
+         - Use responsive props
+         ```typescript
+         // Good
+         <Box
+           sx={{
+             width: {
+               xs: '100%',
+               sm: '50%',
+               md: '33.33%',
+             },
+           }}
+         >
+         ```
+
+      6. Form Components:
+         - Use FormControl for form fields
+         - Implement proper form validation
+         - Use helper text for user feedback
+         ```typescript
+         // Good
+         <FormControl error={!!error} fullWidth>
+           <InputLabel>Username</InputLabel>
+           <OutlinedInput
+             value={username}
+             onChange={handleChange}
+           />
+           <FormHelperText>{error}</FormHelperText>
+         </FormControl>
+         ```
+
+      7. Data Display:
+         - Use appropriate components for data type
+         - Implement proper loading states
+         - Handle empty states
+         ```typescript
+         // Good
+         <TableContainer>
+           {loading ? (
+             <CircularProgress />
+           ) : data.length ? (
+             <Table>
+               {/* Table content */}
+             </Table>
+           ) : (
+             <Typography>No data available</Typography>
+           )}
+         </TableContainer>
+         ```
+
+      8. Performance:
+         - Use React.memo for expensive components
+         - Implement proper list virtualization
+         - Optimize image loading
+         ```typescript
+         // Good
+         const MemoizedComponent = React.memo(({ data }) => (
+           <Card>
+             {/* Complex rendering */}
+           </Card>
+         ));
+         ```
+
+      9. Accessibility:
+         - Use proper ARIA attributes
+         - Implement keyboard navigation
+         - Maintain color contrast
+         ```typescript
+         // Good
+         <IconButton
+           aria-label="delete item"
+           onClick={handleDelete}
+         >
+           <DeleteIcon />
+         </IconButton>
+         ```
+
+      10. Error Boundaries:
+          - Implement fallback UI
+          - Use error boundary components
+          - Handle component errors gracefully
+          ```typescript
+          // Good
+          <ErrorBoundary
+            fallback={<ErrorMessage />}
+          >
+            <ComplexComponent />
+          </ErrorBoundary>
+          ```
+
+examples:
+  - input: |
+      const StyledCard = styled(Card)(({ theme }) => ({
+        padding: theme.spacing(2),
+        margin: theme.spacing(1),
+        [theme.breakpoints.down('sm')]: {
+          margin: theme.spacing(0.5),
+        },
+      }));
+
+      function UserCard({ user }) {
+        return (
+          <StyledCard>
+            <CardContent>
+              <Typography variant="h6">{user.name}</Typography>
+            </CardContent>
+          </StyledCard>
+        );
+      }
+    output: "Valid Material UI component implementation"
+
+metadata:
+  priority: high
+  version: 1.0.0
+  tags:
+    - material-ui
+    - frontend
+    - components
+    - styling
+</rule>

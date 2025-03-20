@@ -1,0 +1,258 @@
+---
+description: Database access patterns and Prisma query optimization
+globs: "**/*.ts"
+alwaysApply: true
+---
+
+# Database Access Patterns and Best Practices
+
+<rule>
+name: database_access_patterns
+description: Comprehensive database access patterns and Prisma query optimization guidelines
+filters:
+  - type: file_extension
+    pattern: "\\.ts$"
+actions:
+  - type: suggest
+    message: |
+      Database Access Best Practices:
+
+      1. Connection Management:
+         - Use singleton PrismaClient
+         - Implement connection pooling
+         - Handle connection errors
+         ```typescript
+         // lib/prisma.ts
+         import { PrismaClient } from '@prisma/client';
+
+         const globalForPrisma = global as unknown as {
+           prisma: PrismaClient | undefined;
+         };
+
+         export const prisma = globalForPrisma.prisma ?? new PrismaClient({
+           log: ['query', 'error', 'warn'],
+         });
+
+         if (process.env.NODE_ENV !== 'production') {
+           globalForPrisma.prisma = prisma;
+         }
+         ```
+
+      2. Query Optimization:
+         - Use proper select statements
+         - Implement pagination
+         - Optimize includes
+         ```typescript
+         // Good
+         const users = await prisma.user.findMany({
+           select: {
+             id: true,
+             name: true,
+             email: true,
+           },
+           where: {
+             isActive: true,
+           },
+           take: 10,
+           skip: (page - 1) * 10,
+           orderBy: {
+             createdAt: 'desc',
+           },
+         });
+         ```
+
+      3. Transaction Management:
+         - Use transactions for atomic operations
+         - Handle rollbacks properly
+         - Implement retry logic
+         ```typescript
+         async function transferFunds(
+           fromId: string,
+           toId: string,
+           amount: number
+         ) {
+           return await prisma.$transaction(async (tx) => {
+             const from = await tx.account.update({
+               where: { id: fromId },
+               data: { balance: { decrement: amount } },
+             });
+
+             if (from.balance < 0) {
+               throw new Error('Insufficient funds');
+             }
+
+             await tx.account.update({
+               where: { id: toId },
+               data: { balance: { increment: amount } },
+             });
+           });
+         }
+         ```
+
+      4. Error Handling:
+         - Implement proper error types
+         - Handle unique constraint violations
+         - Log database errors
+         ```typescript
+         try {
+           await prisma.user.create({
+             data: userData,
+           });
+         } catch (error) {
+           if (error instanceof Prisma.PrismaClientKnownRequestError) {
+             if (error.code === 'P2002') {
+               throw new UniqueConstraintError('Email already exists');
+             }
+           }
+           throw error;
+         }
+         ```
+
+      5. Data Validation:
+         - Validate input before queries
+         - Use zod schemas
+         - Handle type conversions
+         ```typescript
+         const UserSchema = z.object({
+           email: z.string().email(),
+           name: z.string().min(2),
+           age: z.number().min(0).optional(),
+         });
+
+         async function createUser(data: unknown) {
+           const validated = UserSchema.parse(data);
+           return await prisma.user.create({
+             data: validated,
+           });
+         }
+         ```
+
+      6. Query Building:
+         - Use type-safe queries
+         - Build complex queries properly
+         - Implement reusable filters
+         ```typescript
+         type UserFilters = {
+           search?: string;
+           role?: string;
+           isActive?: boolean;
+         };
+
+         function buildUserQuery(filters: UserFilters) {
+           return {
+             where: {
+               AND: [
+                 filters.search ? {
+                   OR: [
+                     { name: { contains: filters.search } },
+                     { email: { contains: filters.search } },
+                   ],
+                 } : {},
+                 filters.role ? { role: filters.role } : {},
+                 filters.isActive ? { isActive: true } : {},
+               ],
+             },
+           };
+         }
+         ```
+
+      7. Performance Monitoring:
+         - Log slow queries
+         - Monitor query counts
+         - Track connection pool
+         ```typescript
+         const prisma = new PrismaClient({
+           log: [
+             { emit: 'event', level: 'query' },
+             { emit: 'stdout', level: 'error' },
+             { emit: 'stdout', level: 'info' },
+           ],
+         });
+
+         prisma.$on('query', (e) => {
+           if (e.duration > 100) {
+             console.warn('Slow query:', e);
+           }
+         });
+         ```
+
+      8. Batch Operations:
+         - Use createMany/updateMany
+         - Implement chunking
+         - Handle large datasets
+         ```typescript
+         async function batchCreateUsers(users: User[]) {
+           const chunkSize = 100;
+           for (let i = 0; i < users.length; i += chunkSize) {
+             const chunk = users.slice(i, i + chunkSize);
+             await prisma.user.createMany({
+               data: chunk,
+               skipDuplicates: true,
+             });
+           }
+         }
+         ```
+
+      9. Soft Deletes:
+         - Implement soft delete pattern
+         - Update queries accordingly
+         - Handle cascading deletes
+         ```typescript
+         // schema.prisma
+         model User {
+           id        String   @id @default(cuid())
+           deletedAt DateTime?
+         }
+
+         // Soft delete implementation
+         async function softDeleteUser(id: string) {
+           await prisma.user.update({
+             where: { id },
+             data: { deletedAt: new Date() },
+           });
+         }
+         ```
+
+      10. Testing:
+          - Use test database
+          - Reset data between tests
+          - Mock database calls
+          ```typescript
+          beforeEach(async () => {
+            await prisma.user.deleteMany();
+          });
+
+          test('creates user', async () => {
+            const user = await createUser({
+              email: 'test@example.com',
+              name: 'Test User',
+            });
+            expect(user).toHaveProperty('id');
+          });
+          ```
+
+examples:
+  - input: |
+      async function getUserWithPosts(userId: string) {
+        return await prisma.user.findUnique({
+          where: { id: userId },
+          include: {
+            posts: {
+              where: { published: true },
+              orderBy: { createdAt: 'desc' },
+              take: 10,
+            },
+          },
+        });
+      }
+    output: "Valid Prisma query with proper includes and filtering"
+
+metadata:
+  priority: high
+  version: 1.0.0
+  tags:
+    - database
+    - prisma
+    - performance
+    - backend
+</rule>
