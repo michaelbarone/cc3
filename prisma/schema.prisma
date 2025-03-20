@@ -16,8 +16,8 @@ model User {
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
   avatarUrl     String?
-  menuPosition  String?        @default("side")
-  themeMode     String?        @default("light")
+  menuPosition  String?        @default("top")
+  themeMode     String?        @default("dark")
   userUrlGroups UserUrlGroup[]
   settings      UserSetting[]
 }

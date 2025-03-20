@@ -1,9 +1,9 @@
 "use client";
 
-import { useCallback } from "react";
-import MenuBar from "@/app/components/ui/MenuBar";
 import { useIframeContext } from "@/app/components/iframe/state/IframeContext";
+import MenuBar from "@/app/components/ui/MenuBar";
 import { Url, UrlGroup } from "@/app/lib/types";
+import { useCallback } from "react";
 
 interface MenuBarAdapterProps {
   urlGroups: UrlGroup[];
@@ -15,6 +15,10 @@ interface MenuBarAdapterProps {
  *
  * This adapter connects the existing MenuBar component with our new IframeContext state system.
  * It transforms the state format from our new context to what MenuBar expects.
+ *
+ * Visibility behavior:
+ * - No groups: Hides group selector
+ * - Single group and Multiple groups handled in MenuBar component
  */
 export function MenuBarAdapter({ urlGroups, menuPosition }: MenuBarAdapterProps) {
   const { states, activeUrlId, dispatch } = useIframeContext();
@@ -23,6 +27,9 @@ export function MenuBarAdapter({ urlGroups, menuPosition }: MenuBarAdapterProps)
   const loadedUrlIds = Object.entries(states)
     .filter(([, state]) => state.status.includes("loaded"))
     .map(([id]) => id);
+
+  // Determine group visibility state
+  const hasNoGroups = urlGroups.length === 0;
 
   // Handle URL click
   const handleUrlClick = useCallback(
@@ -61,17 +68,25 @@ export function MenuBarAdapter({ urlGroups, menuPosition }: MenuBarAdapterProps)
     [dispatch],
   );
 
-  return (
-    <MenuBar
-      urlGroups={urlGroups}
-      activeUrlId={activeUrlId}
-      loadedUrlIds={loadedUrlIds}
-      onUrlClick={handleUrlClick}
-      onUrlReload={handleUrlReload}
-      onUrlUnload={handleUrlUnload}
-      menuPosition={menuPosition}
-    />
-  );
+  // Render appropriate group selector based on number of groups
+  const renderGroupSelector = () => {
+    if (hasNoGroups) {
+      return null; // Hide selector when no groups
+    }
+
+    return (
+      <MenuBar
+        urlGroups={urlGroups}
+        loadedUrlIds={loadedUrlIds}
+        activeUrlId={activeUrlId}
+        onUrlClick={handleUrlClick}
+        onUrlReload={handleUrlReload}
+        menuPosition={menuPosition}
+      />
+    );
+  };
+
+  return renderGroupSelector();
 }
 
 export default MenuBarAdapter;
