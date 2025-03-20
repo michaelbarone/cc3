@@ -30,6 +30,7 @@ module.exports = {
         "revert",
         "style",
         "test",
+        "plan",
       ],
     ],
   },
@@ -56,6 +57,11 @@ module.exports = {
           docs: {
             description: "Documentation only changes",
             title: "Documentation",
+            emoji: "📚",
+          },
+          plan: {
+            description: "Plan only changes",
+            title: "Plan",
             emoji: "📚",
           },
           style: {
