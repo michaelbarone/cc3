@@ -9,7 +9,12 @@ This directory contains all project documentation, planning materials, and worki
 Copy the section of `cursor_setting.md` into your cursor settings User Rules section and customize as needed
 
 Copy and rename the `.cursorrules.example` into the root directory as `.cursorrules`.  customize as needed
--.cursorrules are deprecated and this will be updated soon.
+
+- .cursorrules are deprecated and this will be updated soon.
+
+## Project Setup
+
+update the `docs/project-context.md` with specifics for this project for things like directory structure, key frameworks and depenedencies, and best practices
 
 ## Docs Directory Structure
 
