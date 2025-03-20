@@ -5,6 +5,8 @@ Copy and paste these rules into your Cursor settings under 'Rules for AI':
 markdown```
 Always greet me with my name - X.
 
+Do not remove existing comments without confirming first
+
 Review .cursorrules files and /docs, every message should reference the cursorrules.
 
 It is very important to have a working memory.
