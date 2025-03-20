@@ -47,13 +47,6 @@ This document serves as the main project plan and tracks the status of all tasks
   - [X] Iframe Management
   - [ ] Visual Feedback Testing
 
-### Menu Visibility Enhancement
-- **Location**: `/docs/working-memory/open/menu-visibility-20240320`
-- **Status**: Planned
-- **Description**: Improve menu visibility based on number of available groups
-- **Priority**: Medium
-- **Target**: Next UI update cycle
-
 ## Future Tasks
 
 ### Performance Optimization
@@ -72,6 +65,17 @@ This document serves as the main project plan and tracks the status of all tasks
 - **Estimated Effort**: 1 week 
 
 ## Closed Tasks
+
+### Menu Visibility Enhancement
+- **Location**: `/docs/working-memory/open/menu-visibility-20240320`
+- **Completion Date**: 2024-03-20
+- **Description**: Improve menu visibility based on number of available groups
+- **Key Achievements**:
+  - Removed dropdown functionality when only one group is available
+  - Implemented static group name display for single group case
+  - Maintained visual consistency with folder icon
+  - Improved UX by simplifying interface when dropdown is unnecessary
+  - Preserved existing functionality for multiple groups
 
 ### Theme Picker Relocation
 - **Location**: `/docs/working-memory/open/theme-picker-relocation-20240320`
