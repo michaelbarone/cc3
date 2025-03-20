@@ -1,17 +1,9 @@
 ---
-description: 
-globs: 
-alwaysApply: false
----
----
-description: 
+description: Ensures explicit acknowledgment of which rules are being followed and which are not relevant
 globs: **/*
 alwaysApply: true
 ---
----
-description: Ensures explicit acknowledgment of which rules are being followed and which are not relevant
-globs: ["**/*"]
----
+
 # Rule Acknowledgment and Relevance Tracking
 # Ensures transparency in rule application and relevance
 
@@ -31,15 +23,15 @@ actions:
       1. Rule Review Structure:
          ```markdown
          ### Rule Acknowledgment
-         
+
          **Relevant Rules Applied:**
          - [Rule Name]: How it's being applied
          - [Another Rule]: Specific application details
-         
+
          **Rules Considered But Not Relevant:**
          - [Rule Name]: Why it's not applicable
          - [Another Rule]: Reason for non-relevance
-         
+
          **Implementation Following:**
          [Your implementation details...]
          ```
@@ -68,30 +60,30 @@ examples:
       "Updating a component structure"
     output: |
       ### Rule Acknowledgment
-      
+
       **Relevant Rules Applied:**
       - documentation-reference: Following documentation linking requirements
       - component-structure: Applying component organization standards
-      
+
       **Rules Considered But Not Relevant:**
       - database-management: No database changes involved
       - api-versioning: Not touching API endpoints
-      
+
       **Implementation Following:**
       [Component update details...]
   - input: |
       "Setting up new feature"
     output: |
       ### Rule Acknowledgment
-      
+
       **Relevant Rules Applied:**
       - feature-planning: Following feature setup checklist
       - testing-standards: Implementing required test coverage
-      
+
       **Rules Considered But Not Relevant:**
       - migration-safety: No database migrations needed
       - cache-management: No caching requirements yet
-      
+
       **Implementation Following:**
       [Feature setup details...]
 metadata:
