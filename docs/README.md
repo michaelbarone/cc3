@@ -12,6 +12,8 @@ Copy and rename the `.cursorrules.example` into the root directory as `.cursorru
 
 - .cursorrules are deprecated and this will be updated soon.
 
+Add the ###-docs-* rule files to the .cursor/rules directory.
+
 ## Project Setup
 
 update the `docs/project-context.md` with specifics for this project for things like directory structure, key frameworks and depenedencies, and best practices.
