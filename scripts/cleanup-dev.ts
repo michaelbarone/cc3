@@ -50,6 +50,14 @@ async function cleanupDev() {
       fs.unlinkSync(journalPath);
     }
 
+    // 4. Clean .next directory
+    const nextDir = path.join(process.cwd(), ".next");
+    if (fs.existsSync(nextDir)) {
+      console.log("Removing Next.js build directory...");
+      fs.rmSync(nextDir, { recursive: true, force: true });
+      console.log(".next directory removed successfully!");
+    }
+
     console.log("Development resources cleaned successfully!");
     console.log(
       "Optional: Run `npm run db:migrate` and `npm run db:seed` to manually reinitialize the database.",
