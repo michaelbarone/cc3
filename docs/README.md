@@ -14,27 +14,32 @@ Copy and rename the `.cursorrules.example` into the root directory as `.cursorru
 
 ## Project Setup
 
-update the `docs/project-context.md` with specifics for this project for things like directory structure, key frameworks and depenedencies, and best practices
+update the `docs/project-context.md` with specifics for this project for things like directory structure, key frameworks and depenedencies, and best practices.
+
+ask the Agent to check the /docs folder to the Docs Dir Structure below, and create any missing folders
 
 ## Docs Directory Structure
 
 ```
 /docs/
-├── working-memory/           # Active context
-│   ├── open/                # Active tasks
-│   │   └── {task-id}/      # Task-specific directory
-│   │       └── .plan       # Task plan
-│   ├── done/               # Completed tasks
-│   └── plan.md             # Tracks all open and completed plans
-├── templates/              # Project templates
-│   └── feature/           # Feature documentation templates
-│       ├── README.md
-│       ├── api.md
-│       ├── architecture.md
-│       ├── components.md
-│       └── testing.md
-├── features/              # Feature-specific documentation
-└── README.md              # This file
+   ├── working-memory/           # Active context
+   │   ├── open/                 # Active tasks
+   │   │   └── {task-id}/        # Task-specific directory
+   │   │       └── .plan         # Task plan
+   │   ├── done/                 # Completed tasks
+   |   └── plan.md               # tracks all open and completed plans
+   ├── templates/                # Project templates
+   │   └── feature/              # Feature documentation templates
+   │       ├── README.md
+   │       ├── api.md
+   │       ├── architecture.md
+   │       ├── components.md
+   │       └── testing.md
+   ├── features/                 # Project features
+   ├── project-context.md        # Project Context, project folder structure, key dependencies and 
+   ├── .cursorrules.example      # cursorrules example file
+   ├── cursor_settings.md        # Cursor IDE settings
+   └── README.md                 # This file
 ```
 
 ## Quickly Adding Future Tasks
@@ -284,7 +289,6 @@ For maintaining the overall project plan:
 1. Review plan.md regularly to track progress
 2. Archive completed tasks older than 30 days
 
-   **PowerShell:**
    ```powershell
    # Archive tasks older than 30 days (example)
    $cutoffDate = (Get-Date).AddDays(-30)
@@ -298,7 +302,6 @@ For maintaining the overall project plan:
    }
    ```
 
-   **Bash:**
    ```bash
    # Archive tasks older than 30 days (example)
    mkdir -p docs/working-memory/archive
@@ -317,13 +320,11 @@ For maintaining the overall project plan:
 
 For timestamps in documentation:
 
-**PowerShell:**
 ```powershell
 Get-Date -Format "yyyy-MM-dd HH:mm"
 echo (Get-Date -Format "yyyy-MM-dd HH:mm")
 ```
 
-**Bash:**
 ```bash
 date "+%Y-%m-%d %H:%M"
 ```

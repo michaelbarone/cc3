@@ -16,8 +16,6 @@ It is very important to have a working memory.
 2. Output plan updates before starting work
 3. Reference plan number in all communications
 
-All components should be in app/components
-
 Review docs/working-memory this is where your history of current and previous tasks is stored
 
 Every run should be using composer history and .plan and referencing the .cursorrules file

@@ -1,5 +1,10 @@
 ---
 description: 
+globs: 
+alwaysApply: false
+---
+---
+description: Best practices for React development in the project
 globs: *.jsx,*.tsx
 alwaysApply: false
 ---

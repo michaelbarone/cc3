@@ -1,12 +1,12 @@
 ---
 description: 
-globs: **/*.prisma
+globs: 
 alwaysApply: false
 ---
 ---
 description: Best practices for using Prisma ORM in the project
-globs: "**/*.prisma"
-alwaysApply: true
+globs: **/*.prisma
+alwaysApply: false
 ---
 
 # Prisma Best Practices

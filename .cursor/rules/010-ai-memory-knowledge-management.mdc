@@ -1,12 +1,9 @@
 ---
 description: Memory management system rules and standards
 globs: ["**/docs/working-memory/**/*", "**/docs/templates/**/*", "**/docs/standards/**/*"]
-alwaysApply: false
+alwaysApply: true
 ---
----
-description: Memory management system rules and standards
-globs: ["**/docs/working-memory/**/*", "**/docs/templates/**/*", "**/docs/standards/**/*"]
----
+
 # Memory Management System
 # Comprehensive rules for managing working memory, project memory, and documentation memory
 
@@ -33,9 +30,9 @@ actions:
               /docs/working-memory/
               ├── open/                 # Active tasks
               │   └── {task-id}/
-              │       ├── plan.md       # Task planning
-              │       └── updates.md    # Progress tracking
-              └── done/                 # Completed tasks
+              │       └── .plan         # Task planning
+              ├── done/                 # Completed tasks
+              └── plan.md               # All Plan and Task Tracking
               ```
 
          b) Project Memory:
@@ -59,6 +56,11 @@ actions:
             - Testing Plan
             - Documentation Impact
             - Dependencies
+            - Phase Management:
+              - Only update current active phase
+              - Preserve future phases
+              - Mark interrupted tasks as [INCOMPLETE]
+              - Maintain phase dependencies
 
          b) updates.md Structure:
             - Current Status (top, single entry)
@@ -66,12 +68,22 @@ actions:
             - Decisions Log
             - Issues Encountered
             - Next Steps
+            - Surgical Updates:
+              - Update only affected tasks
+              - Preserve task hierarchy
+              - Maintain task IDs
+              - Document interruptions
 
       3. Status Update Process:
          a) Current Status:
             - Single active status
             - Use `date "+%Y-%m-%d %H:%M"` for timestamps
             - Previous status moves to history
+            - Task Status Markers:
+              - [x] for completed tasks
+              - [ ] for pending tasks
+              - [INCOMPLETE] for interrupted tasks
+              - Maintain task hierarchy
 
          b) Progress Markers:
             - ✓ Completed work
@@ -125,10 +137,20 @@ actions:
 
       Remember:
       - Update status before starting work
+      - ALWAYS run a command to get the current time for timestamp updates in files
       - Document decisions immediately
       - Keep progress log current
       - Use proper timestamps
       - Regular maintenance and cleanup
+      - ALWAYS update both task plan and main plan.md
+      - ALWAYS include progress history entries
+      - ALWAYS move task files to correct directories
+      - ALWAYS check related documentation
+      - Focus on current phase only
+      - Document interrupted tasks
+      - Maintain plan structure
+      - Keep future phases intact
+      - Update status in sync
 examples:
   - input: |
       # New task creation

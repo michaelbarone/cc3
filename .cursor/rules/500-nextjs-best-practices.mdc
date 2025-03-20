@@ -1,5 +1,10 @@
 ---
 description: 
+globs: 
+alwaysApply: false
+---
+---
+description: Best practices for Next.js development in the project
 globs: *.ts,*.tsx,*.js
 alwaysApply: false
 ---

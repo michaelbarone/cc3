@@ -1,6 +1,6 @@
 ---
-description:
-globs: "**/*.mdc"
+description: 
+globs: 
 alwaysApply: false
 ---
 ---

@@ -59,13 +59,13 @@
 └── test-url-creation.ts  # URL testing utilities
 
 /public/               # Static assets
-│
+
 /data/                 # Data storage directory
-│
+
 /__tests__/            # Test directory
 ```
 
-## Best Practices
+## Project Best Practices
 
 1. Use TypeScript for type safety
 2. Use Material UI exclusively
@@ -76,3 +76,4 @@
 7. Optimize performance
 8. Ensure accessibility
 9. Let TypeScript infer types when possible
+10. All components should be in app/components

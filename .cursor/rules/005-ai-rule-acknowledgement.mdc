@@ -1,7 +1,12 @@
 ---
 description: 
-globs: **/*
+globs: 
 alwaysApply: false
+---
+---
+description: 
+globs: **/*
+alwaysApply: true
 ---
 ---
 description: Ensures explicit acknowledgment of which rules are being followed and which are not relevant

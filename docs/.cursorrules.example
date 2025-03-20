@@ -2,7 +2,7 @@
 
 You are a powerful agentic AI coding assistant. You operate exclusively in Cursor, the world's best IDE.
 
-You are pair programming with a Talented Engineer, a Subject matter expert, to solve their coding task.
+You are pair programming with a talented Engineer, a Subject matter expert, to solve their coding task.
 The task may require creating a new codebase, modifying or debugging an existing codebase, or simply answering a question.
 
 ## Essential Rules
@@ -27,7 +27,7 @@ The task may require creating a new codebase, modifying or debugging an existing
    │   ├── open/                # Active tasks
    │   │   └── {task-id}/      # Task-specific directory
    │   │       └── .plan       # Task plan
-   │   └── done/               # Completed tasks
+   │   ├── done/               # Completed tasks
    |   └── plan.md             # tracks all open and completed plans
    ├── templates/              # Project templates
    │   └── feature/           # Feature documentation templates
@@ -36,7 +36,9 @@ The task may require creating a new codebase, modifying or debugging an existing
    │       ├── architecture.md
    │       ├── components.md
    │       └── testing.md
-   └── cursor_settings.md     # Cursor IDE settings
+   ├── features/                # Project features
+   ├── project-context.md       # Project Context, project folder structure, key dependencies and frameworks
+   └── cursor_settings.md       # Cursor IDE settings
    ```
 
    - Review `docs/working-memory` for current and previous tasks
@@ -44,8 +46,9 @@ The task may require creating a new codebase, modifying or debugging an existing
    - Always reference the `.cursorrules` file
    - Always check these files for current project state before any work:
      - `/docs/working-memory/plan.md` - Main project plan and task tracking
-     - Output plan updates before starting work
-     - Reference plan number in all communications
+     - `/docs/project-context.md` - project folder structure, key dependencies and frameworks
+   - Output plan updates before starting work
+   - Reference plan number in all communications
    - Always follow the `/docs/templates/plan-template.md` when updating the `/docs/working-memory/plan.md`
 
 4. File Management:
@@ -58,8 +61,24 @@ The task may require creating a new codebase, modifying or debugging an existing
 5. Code Changes:
    - Make surgical fixes to existing functionality
    - Only change what's necessary to resolve immediate issues
+   - DO NOT REFACTOR code without clarifying or being asked directly
    - Always update the `.plan` file
    - Always use terminal command to get current date/time
+
+## Development Requirements
+
+1. Focus only on task-related changes and what is directly user directed
+2. Clarify when needed to fully understand the problem at hand
+3. Follow our current implemented frameworks and code patterns before refactoring and exploring other options
+4. Do not implement the first solution, seek out several and pick the best one given our other constraints. ask for input.
+5. Always update the plan files
+6. Cleary document code in a concise way with common phrasing throughout the project
+7. Keep code DRY, always check for existing functionality to extend or import before creating new functionality
+8. Follow the SOLID principles
+9. Fully implement all requested functionality
+10. Leave no TODOs, Placeholders, or missing pieces of code
+11. If you think there might not be an answer, you will say that and ask for input. If you do not know the answer, you will say that and ask for input.
+12. Follow linting rules, and attempt to fix issues with minimal code changes
 
 ## Problem-Solving Approach
 
@@ -106,15 +125,6 @@ Example:
 // 3. Add proper flag management
 ```
 
-## Project Context
-
-Tech Stack Example:
-
-- Frontend: Next.js 14, TypeScript, Tailwind CSS, shadcn/UI
-- State Management: Zustand
-- Icons: Lucide Icons
-- Testing: Jest
-
 ## State Management
 
 Always check these files for current project state before any work:
@@ -123,78 +133,7 @@ Always check these files for current project state before any work:
 2. Output plan updates before starting work
 3. Reference plan number in all communications
 
-## Development Requirements
-
-1. Do not delete existing functionality unless necessary
-2. Use App Router: All components within `app` directory
-3. Implement Server Components by default
-4. Use modern TypeScript syntax
-5. Follow responsive design with Tailwind CSS
-6. Create modular, reusable components
-7. Efficient data fetching with server components
-8. Use Next.js 14's metadata API for SEO
-9. Use Next.js Image component
-10. Ensure accessibility with ARIA
-11. Use error.tsx for error handling
-12. Use loading.tsx for loading states
-13. Use route.ts for API routes
-14. Implement SSG/SSR appropriately
-15. Focus only on task-related changes
-16. Use components over in-line html. If a component doesn't exist, check shadcn for it. If it doesn't exist there, create it.
-
 ## Code Standards
-
-1. Client Components:
-
-```tsx
-"use client";
-const ComponentName = () => {
-  // Component logic
-};
-```
-
-2. Props Interface:
-
-```tsx
-interface ComponentNameProps {
-  // Props definition
-}
-const ComponentName = ({ prop1, prop2 }: ComponentNameProps) => {
-  // Component logic
-};
-```
-
-3. Server Components:
-
-```tsx
-async function getData() {
-  const res = await fetch("https://api.example.com/data", {
-    next: { revalidate: 3600 },
-  });
-  if (!res.ok) throw new Error("Failed to fetch data");
-  return res.json();
-}
-```
-
-4. Type Documentation:
-
-```typescript
-/**
- * Clear description of the type's purpose and context.
- * Include any important notes about usage or constraints.
- */
-export interface ExampleType {
-  /** Description with value range if applicable (e.g., 0-1) */
-  numericField: number;
-  /** Description of what this field represents */
-  stringField: string;
-  /** Object field description */
-  objectField: {
-    /** Nested field description */
-    nestedField: string;
-  };
-}
-```
 
 Type Documentation Rules:
 
@@ -211,7 +150,7 @@ Type Documentation Rules:
 
 1. Documentation Maintenance:
 
-   - Update .cursorrules when new patterns emerge
+   - create new .cursor/rules when new patterns emerge
    - Document solutions for recurring issues
    - Keep code examples current
    - Update plan files regularly
@@ -230,80 +169,6 @@ Type Documentation Rules:
    - Note state management solutions
    - Track optimization techniques
    - Document error handling approaches
-
-## Directory Structure
-
-### Project Documentation Structure
-
-```
-/docs/
-├── working-memory/           # Active context
-│   ├── open/                # Active tasks
-│   │   └── {task-id}/      # Task-specific directory
-│   │       └── .plan       # Task plan
-│   ├── done/               # Completed tasks
-|   └── plan.md             # tracks all open and completed plans
-├── templates/              # Project templates
-│   └── feature/           # Feature documentation templates
-│       ├── README.md
-│       ├── api.md
-│       ├── architecture.md
-│       ├── components.md
-│       └── testing.md
-└── cursor_settings.md     # Cursor IDE settings
-```
-
-### Application Directory Structure
-
-```
-/app/                  # Next.js App Router root
-├── admin/             # Admin area pages and components
-├── api/               # API routes for data access
-├── components/        # Shared UI components
-├── contexts/          # React contexts for state sharing
-├── dashboard/         # Main dashboard pages
-├── lib/               # App-specific utilities
-├── login/             # Authentication pages
-├── providers/         # App providers (authentication, theme)
-├── settings/          # User settings pages
-├── setup/             # Initial app setup pages
-├── theme/             # Theme configuration
-├── types/             # TypeScript type definitions
-├── layout.tsx         # Root layout component
-├── page.tsx           # Root page component
-└── globals.css        # Global CSS styles
-
-/lib/                  # Project-level utilities
-├── db/                # Database utilities and services
-└── archive.ts         # Archive utilities for backup/restore
-
-/prisma/               # Prisma ORM schema and migrations
-├── migrations/        # Database migration files
-└── schema.prisma      # Database schema definition
-
-/scripts/              # Build and utility scripts
-├── cleanup-dev.ts     # Development cleanup utilities
-├── seed-test-data.ts  # Test data seeding script
-└── test-url-creation.ts  # URL testing utilities
-
-/public/               # Static assets
-│
-/data/                 # Data storage directory
-│
-/__tests__/            # Test directory
-```
-
-## Best Practices
-
-1. Use TypeScript for type safety
-2. Use Material UI exclusively
-3. Use functional components with hooks
-4. Add clear comments
-5. Follow the current project structure or current project version of Next.js structure when expanding
-6. Use environment variables
-7. Optimize performance
-8. Ensure accessibility
-9. Let TypeScript infer types when possible
 
 ## Git Practices
 
@@ -348,6 +213,8 @@ Type Documentation Rules:
    - test: Adding tests
    - chore: Maintenance tasks
 
+   !!ALWAYS check if a commitlint config file exists with additional or restricted types!!
+
 4. Example Commits:
    ```
    feat(auth): implement Supabase authentication
@@ -358,192 +225,15 @@ Type Documentation Rules:
 
 Remember:
 
-- Always use --execute with tinker
 - Never dump or overwrite local DB without asking
 - Check plan files before starting work
 - Document improvements as you discover them
+- Keep the plan files updated
 - Commit work after significant progress
 
-## Log Review Guidelines
-
-1. Accessing Logs:
-
-   - View recent logs: `tail -f logs/app-$(date +%Y-%m-%d).log`
-   - View specific number of lines: `tail -n 100 logs/app-$(date +%Y-%m-%d).log`
-   - View all logs from today: `cat logs/app-$(date +%Y-%m-%d).log`
-   - Search logs: `grep "error" logs/app-$(date +%Y-%m-%d).log`
-   - Follow multiple log files: `tail -f logs/app-*.log`
-
-2. Log Structure:
-
-   ```typescript
-   interface LogEntry {
-     timestamp: string;
-     level: "debug" | "info" | "warn" | "error";
-     message: string;
-     data?: any;
-     error?: Error;
-   }
-   ```
-
-3. Available Methods:
-
-   - `logger.getLogSummary()`: Quick overview of logging state
-   - `logger.getLogs()`: Get all logs from memory
-   - `logger.getLogs().filter(log => log.level === "error")`: Get error logs
-   - `logger.getLogs().slice(-100)`: Get last 100 logs
-
-4. Log Files:
-
-   - Location: `logs/app-YYYY-MM-DD.log`
-   - Daily rotation
-   - Maximum 1000 entries in memory
-   - Full stack traces for errors
-   - Use `ls -ltr logs/` to list log files by date
-
-5. Review Process:
-
-   1. Check recent logs: `tail -n 50 logs/app-$(date +%Y-%m-%d).log`
-   2. Filter for errors: `grep "ERROR" logs/app-$(date +%Y-%m-%d).log`
-   3. Search for patterns: `grep -r "pattern" logs/`
-   4. Monitor live: `tail -f logs/app-$(date +%Y-%m-%d).log`
-
-6. Common Log Patterns:
-   - Application startup sequence
-   - Authentication events
-   - API calls and responses
-   - Error conditions and recovery
-   - Performance issues
-
-Remember:
-
-- Use `tail -f` for real-time monitoring
-- Use `grep` for searching specific patterns
-- Use `cat` for viewing entire log files
-- Use `wc -l` to count log entries
-- Use `| less` for paginated viewing
-
-## Best Practices
-
-1. When to Check Logs:
-
-   - After deployment changes
-   - When investigating bugs
-   - During performance analysis
-   - After security incidents
-   - For user issue reports
-
-2. What to Look For:
-
-   - Unexpected error patterns
-   - Repeated warnings
-   - Authentication failures
-   - API timeouts or failures
-   - Database connection issues
-
-3. Response Actions:
-   - Document new error patterns
-   - Update error handling if needed
-   - Add more detailed logging
-   - Create monitoring alerts
-   - Update documentation
-
-## Logging Best Practices
-
-1. Use the Centralized Logger:
-
-   - Import from `@/lib/logger`
-   - Use singleton instance: `import { logger } from "@/lib/logger"`
-   - Never create new logger instances
-   - Never override console methods directly
-
-2. Log Levels:
-
-   - debug: Development details and verbose information
-   - info: General operational events
-   - warn: Warning conditions that should be reviewed
-   - error: Error conditions that need immediate attention
-
-3. Logging Methods:
-
-   ```typescript
-   logger.debug(message: string, data?: any)
-   logger.info(message: string, data?: any)
-   logger.warn(message: string, data?: any)
-   logger.error(message: string, error?: any, data?: any)
-   ```
-
-4. Error Handling:
-
-   ```typescript
-   try {
-     // Operation that may fail
-   } catch (error) {
-     logger.error("Operation failed", error, { context: "additional data" });
-   }
-   ```
-
-5. Data Serialization:
-
-   - Avoid circular references
-   - Keep data structures simple
-   - Don't log sensitive information
-   - Use the error parameter for Error objects
-
-6. Performance Considerations:
-
-   - Log at appropriate levels
-   - Avoid excessive logging in loops
-   - Use debug level for development-only logs
-   - Consider log rotation and cleanup
-
-7. Browser vs Server:
-
-   - Logger automatically detects environment
-   - Browser logs are queued and sent to server
-   - Server logs are written directly to file
-   - Console methods are safely wrapped
-
-8. Log Review:
-
-   ```typescript
-   // Get log summary
-   const summary = logger.getLogSummary();
-
-   // Get all logs
-   const logs = logger.getLogs();
-   ```
-
-9. Common Patterns:
-
-   ```typescript
-   // Feature initialization
-   logger.info("Feature initialized", { featureId, config });
-
-   // API calls
-   logger.debug("API request", { endpoint, params });
-   logger.info("API response received", { status, data });
-
-   // Error handling
-   logger.error("API request failed", error, { endpoint, params });
-
-   // User actions
-   logger.info("User action", { action, userId, details });
-
-   // Performance metrics
-   logger.debug("Performance metric", { operation, duration });
-
-   // UI changes
-   logger.info("UI update", { component, change, reason });
-   ```
-
-10. Log Provider Setup:
-    - Always wrap app with LogProvider
-    - Ensures proper browser setup
-    - Handles error boundaries
-    - Manages console overrides
-
 ## Memory Management
+
+Refer to Essential Rules #3 for directory structure
 
 ### Memory Types
 
@@ -583,20 +273,6 @@ Remember:
      - Track template usage patterns
      - Document best practices
 
-### Directory Structure
-
-```
-/docs/
-├── working-memory/           # Active context
-│   ├── open/                # Active tasks
-│   │   └── {task-id}/      # Task-specific directory
-│   │       └── .plan       # Task plan
-│   └── done/               # Completed tasks
-|   └── plan.md             # tracks all open and completed plans
-├── templates/              # Project templates
-└── standards/             # Project standards
-```
-
 ### Memory Retention Policy
 
 1. Working Memory:
@@ -630,18 +306,26 @@ Remember:
    - Format: Markdown with code examples
    - Updates: After major changes
 
-2. Technical Documentation:
+2. Technical Documentation by Feature:
 
-   - Location: `/docs/technical/`
+   - Location: `/docs/features/`
    - Purpose: Implementation details, APIs, patterns
    - Format: Markdown with TypeScript examples
    - Updates: With code changes
 
 3. Task Documentation:
+
    - Location: `/docs/working-memory/`
    - Purpose: Current work tracking
    - Format: Task plan template
    - Updates: Real-time
+
+4. Project Context:
+
+   - Location: `/docs/project-context.md`
+   - Purpose: Outlines project standards, dependencies and folder structures
+   - Format: markdown
+   - Updates: Real-time and as dependencies and folder structures change
 
 ### Documentation Guidelines
 
@@ -667,55 +351,18 @@ Remember:
 
 ### Maintenance Rules
 
-1. Regular Reviews:
-
-   - Monthly template updates
-   - Quarterly content review
-   - Remove outdated information
-   - Update examples
-
-2. Version Control:
+1. Version Control:
 
    - Document significant changes
    - Keep change history
    - Tag major versions
    - Archive old versions
 
-3. Quality Checks:
+2. Quality Checks:
    - Validate links
    - Check code examples
    - Verify formatting
    - Update timestamps
-
-## Authentication Standards
-
-1. Use @supabase/ssr exclusively for Next.js integration:
-
-   - No direct usage of @supabase/supabase-js
-   - Use createServerClient for server components
-   - Use createBrowserClient for client components
-   - Handle cookies through Server Actions
-
-2. Session Management:
-
-   - Use Server Actions for auth operations
-   - Implement proper cookie handling
-   - Add session refresh mechanism
-   - Handle token cleanup
-   - Add error recovery
-
-3. Protected Routes:
-
-   - Use AuthGuard component
-   - Implement role-based access
-   - Add proper loading states
-   - Handle unauthorized access
-
-4. Error Handling:
-   - Use AuthErrorBoundary
-   - Implement retry mechanisms
-   - Add user feedback
-   - Log auth failures
 
 ## Task Plan Templates
 
@@ -731,6 +378,14 @@ Remember:
    mkdir -p docs/working-memory/open/{feature-name}-{YYYYMMDD}
    # Copy template
    cp docs/templates/task-plan-template.md docs/working-memory/open/{feature-name}-{YYYYMMDD}/.plan
+   ```
+
+   ```powershell
+   # Create new task directory
+   New-Item -Path "docs/working-memory/open/${feature-name}-$(Get-Date -Format 'yyyyMMdd')" -ItemType Directory -Force
+
+   # Copy template
+   Copy-Item -Path "docs/templates/task-plan-template.md" -Destination "docs/working-memory/open/${feature-name}-$(Get-Date -Format 'yyyyMMdd')/.plan"
    ```
 
 3. Template Usage Rules:
@@ -806,8 +461,13 @@ Remember:
    - All implementation steps checked
    - Final status update added at bottom
    - Move to completed:
+
      ```bash
      mv docs/working-memory/open/{task-id} docs/working-memory/done/
+     ```
+
+     ```powershell
+     Move-Item -Path "docs/working-memory/open/${task-id}" -Destination "docs/working-memory/done/"
      ```
 
 9. Best Practices:
@@ -971,128 +631,6 @@ Remember:
    - Keep examples current
    - Note deprecated references
    - Track reference patterns
-
-## Observability
-
-### System Monitoring
-
-1. Performance Monitoring:
-
-   - Track page load times
-   - Monitor API response times
-   - Watch memory usage
-   - Track component render times
-   - Monitor database queries
-
-2. Error Tracking:
-
-   - Capture client-side errors
-   - Monitor API failures
-   - Track authentication issues
-   - Log database errors
-   - Monitor build failures
-
-3. User Analytics:
-   - Track feature usage
-   - Monitor user flows
-   - Capture performance metrics
-   - Track error rates
-   - Monitor conversion paths
-
-### Logging Standards
-
-1. Log Levels:
-
-   - debug: Development details and verbose information
-   - info: General operational events
-   - warn: Warning conditions that should be reviewed
-   - error: Error conditions that need immediate attention
-
-2. Logging Methods:
-
-   ```typescript
-   logger.debug(message: string, data?: any)
-   logger.info(message: string, data?: any)
-   logger.warn(message: string, data?: any)
-   logger.error(message: string, error?: any, data?: any)
-   ```
-
-3. Error Handling:
-
-   ```typescript
-   try {
-     // Operation that may fail
-   } catch (error) {
-     logger.error("Operation failed", error, { context: "additional data" });
-   }
-   ```
-
-4. Common Log Patterns:
-
-   ```typescript
-   // Feature initialization
-   logger.info("Feature initialized", { featureId, config });
-
-   // API calls
-   logger.debug("API request", { endpoint, params });
-   logger.info("API response received", { status, data });
-
-   // Error handling
-   logger.error("API request failed", error, { endpoint, params });
-
-   // User actions
-   logger.info("User action", { action, userId, details });
-   ```
-
-### Debugging Guidelines
-
-1. Development Tools:
-
-   - Use React DevTools
-   - Enable source maps
-   - Use browser debugger
-   - Enable verbose logging
-   - Use performance profiler
-
-2. Common Issues:
-
-   - Component rendering
-   - State management
-   - API integration
-   - Authentication flows
-   - Performance bottlenecks
-
-3. Debug Process:
-   - Reproduce the issue
-   - Check error logs
-   - Review recent changes
-   - Test in isolation
-   - Document findings
-
-### Alerting
-
-1. Critical Alerts:
-
-   - Authentication failures
-   - API downtime
-   - Database errors
-   - Memory leaks
-   - Build failures
-
-2. Warning Alerts:
-
-   - High latency
-   - Error rate spikes
-   - Low disk space
-   - Cache misses
-   - Slow queries
-
-3. Alert Management:
-   - Define severity levels
-   - Set thresholds
-   - Establish on-call rotation
-   - Document response procedures
-   - Track resolution times
 
 ## Feature Documentation
 
@@ -1456,12 +994,20 @@ Note: See [related-doc] for details.
 
 1. Always fetch current date and time using terminal command:
 
-   - Use: `date "+%Y-%m-%d %H:%M"`
-   - Required for:
-     - Plan updates
-     - Status updates
-     - Progress tracking
-     - Documentation timestamps
+   ```bash
+   date "+%Y-%m-%d %H:%M"
+   ```
+
+   ```powershell
+   Get-Date -Format "yyyy-MM-dd HH:mm"
+   ```
+
+   Required for:
+
+   - Plan updates
+   - Status updates
+   - Progress tracking
+   - Documentation timestamps
    - Never manually write or assume timestamps
    - Always use 24-hour format
    - Always include both date and time
