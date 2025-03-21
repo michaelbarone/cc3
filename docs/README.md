@@ -14,11 +14,32 @@ Copy and rename the `.cursorrules.example` into the root directory as `.cursorru
 
 Add the ###-docs-* rule files to the .cursor/rules directory.
 
+NOTE: to prevent cursor IDE from changing or possibly disabling triggers of rules, update your user settings .json file with this to disable the built in mdc editor:
+
+```json
+    "workbench.editorAssociations": {
+        "*.mdc": "default"
+    }
+```
+
 ## Project Setup
 
 update the `docs/project-context.md` with specifics for this project for things like directory structure, key frameworks and depenedencies, and best practices.
 
+```cmd
+Can you ensure the @/docs/project-context.md file matches the project structure, and highlights key frameworks, dependencies and best pracices for this project
+
+@package.json
+@/docs/
+```
+
 ask the Agent to check the /docs folder to the Docs Dir Structure below, and create any missing folders
+
+```cmd
+Can you ensure the /docs folder directory matches the structure outlined in the @/docs/README.md file
+
+@/docs/
+```
 
 ## Docs Directory Structure
 
