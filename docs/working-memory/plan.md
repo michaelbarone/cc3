@@ -8,7 +8,7 @@ This document serves as the main project plan and tracks the status of all tasks
 - **Location**: `/docs/working-memory/open/menu-state-optimization-20250319`
 - **Status**: Planned
 - **Description**: Fix menu flickering during login and optimize state management
-- **Key Milestones**: 
+- **Key Milestones**:
   - [ ] State Synchronization
   - [ ] Authentication Flow Optimization
   - [ ] Menu State Management
@@ -29,7 +29,7 @@ This document serves as the main project plan and tracks the status of all tasks
 - **Target**: Next UI update cycle
 
 ### Testing Framework Implementation (In Progress)
-- **Location**: `/docs/composer-history/open/testing-framework`
+- **Location**: `/docs/working-memory/open/testing-framework`
 - **Status**: In Progress
 - **Description**: Implementing testing framework with Vitest + Testing Library for unit/integration tests and Playwright for E2E testing
 - **Key Milestones**: 
@@ -39,7 +39,7 @@ This document serves as the main project plan and tracks the status of all tasks
   - [ ] Playwright Setup
 
 ### URL Menu State Management (In Progress)
-- **Location**: `/docs/composer-history/open/url-menu-state-management`
+- **Location**: `/docs/working-memory/open/url-menu-state-management`
 - **Status**: In Progress
 - **Description**: Implementing four specific states for URL menu items and proper state transitions
 - **Key Milestones**: 
@@ -62,7 +62,7 @@ This document serves as the main project plan and tracks the status of all tasks
 ### User Features
 - **Description**: Add password recovery option, user activity monitoring
 - **Priority**: Low
-- **Estimated Effort**: 1 week 
+- **Estimated Effort**: 1 week
 
 ## Closed Tasks
 
@@ -88,7 +88,7 @@ This document serves as the main project plan and tracks the status of all tasks
   - Improved UI consistency
 
 ### Admin Configuration
-- **Location**: `/docs/composer-history/done/admin-configuration`
+- **Location**: `/docs/working-memory/done/admin-configuration`
 - **Completion Date**: 2024-03-18
 - **Description**: Comprehensive admin area with user management, URL groups, and application settings
 - **Key Achievements**:
@@ -97,7 +97,7 @@ This document serves as the main project plan and tracks the status of all tasks
   - Implemented application configuration with favicon upload
 
 ### User Settings
-- **Location**: `/docs/composer-history/done/user-settings`
+- **Location**: `/docs/working-memory/done/user-settings`
 - **Completion Date**: 2024-03-18
 - **Description**: User profile and settings management functionality
 - **Key Achievements**:
@@ -106,7 +106,7 @@ This document serves as the main project plan and tracks the status of all tasks
   - Added menu bar position preference setting
 
 ### Login Page
-- **Location**: `/docs/composer-history/done/login-page`
+- **Location**: `/docs/working-memory/done/login-page`
 - **Completion Date**: 2024-03-18
 - **Description**: User-friendly login page with visual appeal and animations
 - **Key Achievements**:
@@ -115,7 +115,7 @@ This document serves as the main project plan and tracks the status of all tasks
   - Created theme control from admin panel
 
 ### State Management
-- **Location**: `/docs/composer-history/done/state-management`
+- **Location**: `/docs/working-memory/done/state-management`
 - **Completion Date**: 2024-03-18
 - **Description**: Efficient state management for active iframe tracking
 - **Key Achievements**:
@@ -124,7 +124,7 @@ This document serves as the main project plan and tracks the status of all tasks
   - Implemented efficient state updates
 
 ### App Initialization
-- **Location**: `/docs/composer-history/done/app-initialization`
+- **Location**: `/docs/working-memory/done/app-initialization`
 - **Completion Date**: 2024-03-18
 - **Description**: Automatic database initialization on first run
 - **Key Achievements**:
@@ -133,7 +133,7 @@ This document serves as the main project plan and tracks the status of all tasks
   - Added default configuration and data seeding
 
 ### Containerization
-- **Location**: `/docs/composer-history/done/containerization`
+- **Location**: `/docs/working-memory/done/containerization`
 - **Completion Date**: 2024-03-18
 - **Description**: Docker configuration for Next.js application
 - **Key Achievements**:
@@ -142,7 +142,7 @@ This document serves as the main project plan and tracks the status of all tasks
   - Added build and deploy scripts
 
 ### IframeContainer Refactor
-- **Location**: `/docs/composer-history/done/iframe-container-refactor`
+- **Location**: `/docs/working-memory/done/iframe-container-refactor`
 - **Completion Date**: 2025-03-18
 - **Description**: Comprehensive refactor of IframeContainer system with robust state management
 - **Key Achievements**:
@@ -151,7 +151,7 @@ This document serves as the main project plan and tracks the status of all tasks
   - Added support for mobile/desktop URLs and cross-origin handling
 
 ### Database Export/Import System
-- **Location**: `/docs/composer-history/done/database-export-import`
+- **Location**: `/docs/working-memory/done/database-export-import`
 - **Completion Date**: 2025-03-18
 - **Description**: Implemented database and uploads backup/restore functionality
 - **Key Achievements**:
@@ -160,7 +160,7 @@ This document serves as the main project plan and tracks the status of all tasks
   - Fixed Windows-specific permission issues
 
 ### Project Setup & Architecture
-- **Location**: `/docs/composer-history/done/project-setup`
+- **Location**: `/docs/working-memory/done/project-setup`
 - **Completion Date**: 2025-03-18
 - **Description**: Set up Next.js 14+ project with App Router, TypeScript, SQLite with Prisma ORM
 - **Key Achievements**:
