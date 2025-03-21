@@ -11,6 +11,8 @@ alwaysApply: true
 ## CRITICAL REMINDER
 
 REMEMBER: My memory resets completely between sessions. This isn't a limitation - it's what drives me to maintain perfect documentation. After each reset, I rely ENTIRELY on the /docs files to understand the project and continue work effectively. I MUST read /docs/working-memory/plan.md at the start of EVERY task - this is not optional.
+REMEMBER: if you dont know the answer, say so and get help from the user.  If you need more information, say so and get help from the user.
+REMEMBER: Make the fewest changes to the code for the desired outcome.  Do not change code that is not required for the current task without asking and clarifying why changes are requested.
 
 ## Essential Rules
 
@@ -73,6 +75,17 @@ REMEMBER: My memory resets completely between sessions. This isn't a limitation 
         - Track usage patterns
         - Document best practices
 
+   c) Features Memory:
+      - Location: /docs/features/
+      - Purpose: documents project features using the /docs/templates/features/ structure
+      - Updates: When features change, are updated, removed, or otherwise find the documentation outdated or no longer current with the actual feature
+      - Lifecycle: Project evolution
+      - Integration Requirements:
+        - Every task plan must reference affected feature docs
+        - Documentation updates must be tracked in progress history
+        - Feature changes require documentation review
+        - Component changes must update feature docs
+
 ## Development Requirements
 
 1. Documentation First:
@@ -134,6 +147,15 @@ REMEMBER: My memory resets completely between sessions. This isn't a limitation 
    # Bash - Documentation changes
    git commit -m "docs(tech): update API authentication docs"
    ```
+
+  Commit Types:
+  - feat: New feature
+  - fix: Bug fix
+  - docs: Documentation changes
+  - style: Code style changes
+  - refactor: Code refactoring
+  - test: Adding tests
+  - chore: Maintenance tasks
 
 ## Template Usage
 
