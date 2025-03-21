@@ -1,6 +1,6 @@
 # Project Documentation
 
-*Updated: 2025-03-18 21:07*
+Updated: 2024-03-21 21:15
 
 This directory contains all project documentation, planning materials, and working memory for development tasks. This README outlines how to create, propose, and execute plans for new features or improvements using this /docs/ directory structure with an AI agent.
 
@@ -43,7 +43,7 @@ Can you ensure the /docs folder directory matches the structure outlined in the 
 
 ## Docs Directory Structure
 
-```
+```cmd
 /docs/
    ├── working-memory/           # Active context
    │   ├── open/                 # Active tasks
@@ -70,7 +70,8 @@ Can you ensure the /docs folder directory matches the structure outlined in the 
 To quickly add tasks to the Future Tasks section in plan.md, use these prompts:
 
 1. **Add a single future task**:
-   ```
+
+   ```cmd
    Add a new future task to plan.md:
    Name: [Task Name]
    Description: [Brief description of the task]
@@ -79,7 +80,8 @@ To quickly add tasks to the Future Tasks section in plan.md, use these prompts:
    ```
 
 2. **Add multiple future tasks at once**:
-   ```
+
+   ```cmd
    Add the following future tasks to plan.md:
    
    Task 1:
@@ -107,7 +109,8 @@ To quickly add tasks to the Future Tasks section in plan.md, use these prompts:
 To create a new plan using the AI assistant, follow these prompts:
 
 1. **Create a plan from a future task**:
-   ```
+
+   ```cmd
    Create a full task plan for the future task "[Task Name]" from plan.md.
    Expand it into a complete implementation plan with:
    - Detailed problem analysis based on the task description
@@ -118,7 +121,8 @@ To create a new plan using the AI assistant, follow these prompts:
    ```
 
 2. **Request a new plan**:
-   ```
+
+   ```cmd
    Create a new task plan for [feature/bugfix description]. 
    The plan should include:
    - Problem analysis
@@ -127,7 +131,8 @@ To create a new plan using the AI assistant, follow these prompts:
    ```
 
 3. **Request with specific requirements**:
-   ```
+
+   ```cmd
    Create a new task plan for [feature/bugfix description].
    It should address these requirements:
    - [Requirement 1]
@@ -136,7 +141,8 @@ To create a new plan using the AI assistant, follow these prompts:
    ```
 
 4. **Request with dependencies**:
-   ```
+
+   ```cmd
    Create a new task plan for [feature/bugfix description] 
    that builds on the work done in [previous task].
    ```
@@ -148,70 +154,80 @@ For best results, add clear requirements to the prompts and refine the plan.  Ev
 Here are comprehensive examples of prompts to use with the AI assistant for executing plans:
 
 1. **Starting a plan execution**:
-   ```
+
+   ```cmd
    Start executing the plan for [task-name]. Begin with step 1 and update the 
    progress in the plan file. Check the current status and update it with 
    today's date and "In Progress" status.
    ```
 
 2. **Executing a specific step**:
-   ```
+
+   ```cmd
    Execute step 2 from the [task-name] plan. Specifically, implement the 
    [specific feature] according to the approach selected in the Solution Design. 
    Update the progress history after completion.
    ```
 
 3. **Continuing from a previous point**:
-   ```
+
+   ```cmd
    Continue executing the [task-name] plan from step 3. The previous steps 
    were completed as noted in the progress history. Update the current status 
    as you make progress.
    ```
 
 4. **Implementing a specific component**:
-   ```
+
+   ```cmd
    Implement the [component-name] component as described in step 2.3 of the 
    [task-name] plan. Use the approach outlined in Solution Design and ensure 
    it follows the project's code standards.
    ```
 
 5. **Troubleshooting implementation issues**:
-   ```
+
+   ```cmd
    While implementing step 3 of the [task-name] plan, I'm encountering 
    [specific issue]. Help resolve this issue and update the plan's progress 
    history with the solution.
    ```
 
 6. **Adding tests for implemented features**:
-   ```
+
+   ```cmd
    Create tests for the features implemented in step 2 of the [task-name] plan. 
    Follow the testing approach outlined in the plan and update the progress 
    history with the test coverage achieved.
    ```
 
 7. **Reviewing and improving implementation**:
-   ```
+
+   ```cmd
    Review the code implemented for step 4 of the [task-name] plan. 
    Suggest improvements for performance and maintainability, then 
    implement the approved changes.
    ```
 
 8. **Detailed step execution with documentation**:
-   ```
+
+   ```cmd
    Execute step 3.2 of the [task-name] plan with a focus on thorough 
    documentation. Create the necessary component and update both the 
    code documentation and the corresponding feature documentation in /docs/features.
    ```
 
 9. **Testing specific implementation**:
-   ```
+
+   ```cmd
    I've completed step 2 of the [task-name] plan. Now help me test this 
    implementation against the success criteria defined in the plan. Update 
    the plan with test results and any issues found.
    ```
 
 10. **Status update request**:
-    ```
+
+    ```cmd
     Provide a status update for the [task-name] plan. Review what's been 
     completed, what's in progress, any blocking issues, and what comes next. 
     Then update the Current Status section with this information.
@@ -243,62 +259,70 @@ Here are comprehensive examples of prompts to use with the AI assistant for exec
 Here are comprehensive examples of prompts to use with the AI assistant for completing plans:
 
 1. **Final implementation verification**:
-   ```
+
+   ```cmd
    Verify that all steps in the [task-name] plan are completed. Check each item 
    in the Implementation Steps section, review functionality against success 
    criteria, and prepare a final summary of accomplishments.
    ```
 
 2. **Completing the final step**:
-   ```
+
+   ```cmd
    Complete the final step of the [task-name] plan. Once implemented, mark
    the plan as completed, update the Current Status to "Completed", and add
    a final progress history entry with today's date.
    ```
 
 3. **Final documentation update**:
-   ```
+
+   ```cmd
    The implementation for [task-name] is complete. Update all documentation
    including component docs, API references, and prepare a final progress
    history entry summarizing key achievements and decisions.
    ```
 
 4. **Plan completion with testing**:
-   ```
+
+   ```cmd
    Run final tests for the [task-name] implementation. If all tests pass,
    mark the plan as completed, add a comprehensive progress history entry,
    and prepare to move the task to the done directory.
    ```
 
 5. **Moving to completed tasks**:
-   ```
+
+   ```cmd
    The [task-name] plan is now fully implemented and tested. Update the plan.md
    file by moving this task from Active Tasks to Completed Tasks with today's
    date, a brief description, and key achievements.
    ```
 
 6. **Final review and completion**:
-   ```
+
+   ```cmd
    Perform a final review of the [task-name] implementation. Check code quality,
    test coverage, and documentation completeness. Then mark the plan as
    completed and summarize achievements in a final progress entry.
    ```
 
 7. **Task directory relocation**:
-   ```
+
+   ```cmd
    The [task-name] plan is complete. Help me move the task directory from
    docs/working-memory/open to docs/working-memory/done and update the
    corresponding references in plan.md.
    ```
 
-   ```
+   ```cmd
    The [task-name] plan is stale. Help me move the task directory from
    docs/working-memory/open to docs/working-memory/archive and update the
    corresponding references in plan.md.
    ```
 
 8. **Comprehensive completion summary**:
-   ```
+
+   ```cmd
    Generate a comprehensive completion summary for the [task-name] plan.
    Include what was implemented, key decisions made, challenges overcome,
    and documentation updates. Use this to create the final progress entry

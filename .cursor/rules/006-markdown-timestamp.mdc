@@ -1,0 +1,58 @@
+---
+description: UPDATE timestamp after main title in markdown files when saved
+globs: **/*.md
+alwaysApply: true
+---
+
+# Markdown Timestamp Update Rule
+
+## Context
+- Applies to all markdown files
+- Updates timestamp after main title
+- Ensures consistent documentation tracking
+- Maintains proper spacing for readability
+
+## Requirements
+- Add or update timestamp after main title (H1)
+- Format: Updated: YYYY-MM-DD HH:mm
+- ALWAYS get timestamp from system using:
+  ```powershell
+  Get-Date -Format "yyyy-MM-dd HH:mm"
+  ```
+  ```bash
+  date "+%Y-%m-%d %H:%M"
+  ```
+- One empty line after H1 title
+- One empty line after timestamp
+- Preserve existing content
+- Insert timestamp if not present
+- Update timestamp if present
+
+## Examples
+<example>
+# Document Title
+
+*Updated: 2024-03-21 20:45*
+
+Content starts here...
+</example>
+
+<example type="invalid">
+# Document Title
+*Updated: 2024-03-21 20:45*
+Content starts here...
+// Missing empty lines
+
+# Document Title
+Updated: March 21, 2024 // Wrong format and no command used
+Content starts here...
+</example>
+
+## Critical Rules
+- ALWAYS update timestamp on save
+- ALWAYS place timestamp after H1 title with one empty line before and after
+- ALWAYS use format: *Updated: YYYY-MM-DD HH:mm*
+- ALWAYS use system date command to generate timestamp
+- NEVER remove or modify other content
+- NEVER add timestamp if no H1 exists
+- NEVER manually write timestamps
