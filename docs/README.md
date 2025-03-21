@@ -1,6 +1,6 @@
 # Project Documentation
 
-Updated: 2024-03-21 21:15
+Updated: 2024-03-21 21:22
 
 This directory contains all project documentation, planning materials, and working memory for development tasks. This README outlines how to create, propose, and execute plans for new features or improvements using this /docs/ directory structure with an AI agent.
 
@@ -16,6 +16,8 @@ Add the ###-docs-* rule files to the .cursor/rules directory.
 
 NOTE: to prevent cursor IDE from changing or possibly disabling triggers of rules, update your user settings .json file with this to disable the built in mdc editor:
 
+JSON Configuration:
+
 ```json
     "workbench.editorAssociations": {
         "*.mdc": "default"
@@ -26,7 +28,9 @@ NOTE: to prevent cursor IDE from changing or possibly disabling triggers of rule
 
 update the `docs/project-context.md` with specifics for this project for things like directory structure, key frameworks and depenedencies, and best practices.
 
-```cmd
+Shell Command:
+
+```shell
 Can you ensure the @/docs/project-context.md file matches the project structure, and highlights key frameworks, dependencies and best pracices for this project
 
 @package.json
@@ -35,7 +39,9 @@ Can you ensure the @/docs/project-context.md file matches the project structure,
 
 ask the Agent to check the /docs folder to the Docs Dir Structure below, and create any missing folders
 
-```cmd
+Shell Command:
+
+```shell
 Can you ensure the /docs folder directory matches the structure outlined in the @/docs/README.md file
 
 @/docs/
@@ -43,7 +49,7 @@ Can you ensure the /docs folder directory matches the structure outlined in the 
 
 ## Docs Directory Structure
 
-```cmd
+```plaintext
 /docs/
    ├── working-memory/           # Active context
    │   ├── open/                 # Active tasks
@@ -71,7 +77,7 @@ To quickly add tasks to the Future Tasks section in plan.md, use these prompts:
 
 1. **Add a single future task**:
 
-   ```cmd
+   ```shell
    Add a new future task to plan.md:
    Name: [Task Name]
    Description: [Brief description of the task]
@@ -81,7 +87,7 @@ To quickly add tasks to the Future Tasks section in plan.md, use these prompts:
 
 2. **Add multiple future tasks at once**:
 
-   ```cmd
+   ```shell
    Add the following future tasks to plan.md:
    
    Task 1:
@@ -110,7 +116,7 @@ To create a new plan using the AI assistant, follow these prompts:
 
 1. **Create a plan from a future task**:
 
-   ```cmd
+   ```shell
    Create a full task plan for the future task "[Task Name]" from plan.md.
    Expand it into a complete implementation plan with:
    - Detailed problem analysis based on the task description
@@ -122,7 +128,7 @@ To create a new plan using the AI assistant, follow these prompts:
 
 2. **Request a new plan**:
 
-   ```cmd
+   ```shell
    Create a new task plan for [feature/bugfix description]. 
    The plan should include:
    - Problem analysis
@@ -132,7 +138,7 @@ To create a new plan using the AI assistant, follow these prompts:
 
 3. **Request with specific requirements**:
 
-   ```cmd
+   ```shell
    Create a new task plan for [feature/bugfix description].
    It should address these requirements:
    - [Requirement 1]
@@ -142,7 +148,7 @@ To create a new plan using the AI assistant, follow these prompts:
 
 4. **Request with dependencies**:
 
-   ```cmd
+   ```shell
    Create a new task plan for [feature/bugfix description] 
    that builds on the work done in [previous task].
    ```
@@ -155,7 +161,7 @@ Here are comprehensive examples of prompts to use with the AI assistant for exec
 
 1. **Starting a plan execution**:
 
-   ```cmd
+   ```shell
    Start executing the plan for [task-name]. Begin with step 1 and update the 
    progress in the plan file. Check the current status and update it with 
    today's date and "In Progress" status.
@@ -163,7 +169,7 @@ Here are comprehensive examples of prompts to use with the AI assistant for exec
 
 2. **Executing a specific step**:
 
-   ```cmd
+   ```shell
    Execute step 2 from the [task-name] plan. Specifically, implement the 
    [specific feature] according to the approach selected in the Solution Design. 
    Update the progress history after completion.
@@ -171,7 +177,7 @@ Here are comprehensive examples of prompts to use with the AI assistant for exec
 
 3. **Continuing from a previous point**:
 
-   ```cmd
+   ```shell
    Continue executing the [task-name] plan from step 3. The previous steps 
    were completed as noted in the progress history. Update the current status 
    as you make progress.
@@ -179,7 +185,7 @@ Here are comprehensive examples of prompts to use with the AI assistant for exec
 
 4. **Implementing a specific component**:
 
-   ```cmd
+   ```shell
    Implement the [component-name] component as described in step 2.3 of the 
    [task-name] plan. Use the approach outlined in Solution Design and ensure 
    it follows the project's code standards.
@@ -187,7 +193,7 @@ Here are comprehensive examples of prompts to use with the AI assistant for exec
 
 5. **Troubleshooting implementation issues**:
 
-   ```cmd
+   ```shell
    While implementing step 3 of the [task-name] plan, I'm encountering 
    [specific issue]. Help resolve this issue and update the plan's progress 
    history with the solution.
@@ -195,7 +201,7 @@ Here are comprehensive examples of prompts to use with the AI assistant for exec
 
 6. **Adding tests for implemented features**:
 
-   ```cmd
+   ```shell
    Create tests for the features implemented in step 2 of the [task-name] plan. 
    Follow the testing approach outlined in the plan and update the progress 
    history with the test coverage achieved.
@@ -203,7 +209,7 @@ Here are comprehensive examples of prompts to use with the AI assistant for exec
 
 7. **Reviewing and improving implementation**:
 
-   ```cmd
+   ```shell
    Review the code implemented for step 4 of the [task-name] plan. 
    Suggest improvements for performance and maintainability, then 
    implement the approved changes.
@@ -211,7 +217,7 @@ Here are comprehensive examples of prompts to use with the AI assistant for exec
 
 8. **Detailed step execution with documentation**:
 
-   ```cmd
+   ```shell
    Execute step 3.2 of the [task-name] plan with a focus on thorough 
    documentation. Create the necessary component and update both the 
    code documentation and the corresponding feature documentation in /docs/features.
@@ -219,7 +225,7 @@ Here are comprehensive examples of prompts to use with the AI assistant for exec
 
 9. **Testing specific implementation**:
 
-   ```cmd
+   ```shell
    I've completed step 2 of the [task-name] plan. Now help me test this 
    implementation against the success criteria defined in the plan. Update 
    the plan with test results and any issues found.
@@ -227,7 +233,7 @@ Here are comprehensive examples of prompts to use with the AI assistant for exec
 
 10. **Status update request**:
 
-    ```cmd
+    ```shell
     Provide a status update for the [task-name] plan. Review what's been 
     completed, what's in progress, any blocking issues, and what comes next. 
     Then update the Current Status section with this information.
@@ -260,7 +266,7 @@ Here are comprehensive examples of prompts to use with the AI assistant for comp
 
 1. **Final implementation verification**:
 
-   ```cmd
+   ```shell
    Verify that all steps in the [task-name] plan are completed. Check each item 
    in the Implementation Steps section, review functionality against success 
    criteria, and prepare a final summary of accomplishments.
@@ -268,7 +274,7 @@ Here are comprehensive examples of prompts to use with the AI assistant for comp
 
 2. **Completing the final step**:
 
-   ```cmd
+   ```shell
    Complete the final step of the [task-name] plan. Once implemented, mark
    the plan as completed, update the Current Status to "Completed", and add
    a final progress history entry with today's date.
@@ -276,7 +282,7 @@ Here are comprehensive examples of prompts to use with the AI assistant for comp
 
 3. **Final documentation update**:
 
-   ```cmd
+   ```shell
    The implementation for [task-name] is complete. Update all documentation
    including component docs, API references, and prepare a final progress
    history entry summarizing key achievements and decisions.
@@ -284,7 +290,7 @@ Here are comprehensive examples of prompts to use with the AI assistant for comp
 
 4. **Plan completion with testing**:
 
-   ```cmd
+   ```shell
    Run final tests for the [task-name] implementation. If all tests pass,
    mark the plan as completed, add a comprehensive progress history entry,
    and prepare to move the task to the done directory.
@@ -292,7 +298,7 @@ Here are comprehensive examples of prompts to use with the AI assistant for comp
 
 5. **Moving to completed tasks**:
 
-   ```cmd
+   ```shell
    The [task-name] plan is now fully implemented and tested. Update the plan.md
    file by moving this task from Active Tasks to Completed Tasks with today's
    date, a brief description, and key achievements.
@@ -300,7 +306,7 @@ Here are comprehensive examples of prompts to use with the AI assistant for comp
 
 6. **Final review and completion**:
 
-   ```cmd
+   ```shell
    Perform a final review of the [task-name] implementation. Check code quality,
    test coverage, and documentation completeness. Then mark the plan as
    completed and summarize achievements in a final progress entry.
@@ -308,13 +314,13 @@ Here are comprehensive examples of prompts to use with the AI assistant for comp
 
 7. **Task directory relocation**:
 
-   ```cmd
+   ```shell
    The [task-name] plan is complete. Help me move the task directory from
    docs/working-memory/open to docs/working-memory/done and update the
    corresponding references in plan.md.
    ```
 
-   ```cmd
+   ```shell
    The [task-name] plan is stale. Help me move the task directory from
    docs/working-memory/open to docs/working-memory/archive and update the
    corresponding references in plan.md.
@@ -322,7 +328,7 @@ Here are comprehensive examples of prompts to use with the AI assistant for comp
 
 8. **Comprehensive completion summary**:
 
-   ```cmd
+   ```shell
    Generate a comprehensive completion summary for the [task-name] plan.
    Include what was implemented, key decisions made, challenges overcome,
    and documentation updates. Use this to create the final progress entry
@@ -336,6 +342,8 @@ For maintaining the overall project plan:
 1. Review plan.md regularly to track progress
 2. Archive completed tasks older than 30 days
 
+   PowerShell Script:
+
    ```powershell
    # Archive tasks older than 30 days (example)
    $cutoffDate = (Get-Date).AddDays(-30)
@@ -348,6 +356,8 @@ For maintaining the overall project plan:
        Remove-Item -Path $task.FullName -Recurse -Force
    }
    ```
+
+   Bash Script:
 
    ```bash
    # Archive tasks older than 30 days (example)
@@ -367,10 +377,14 @@ For maintaining the overall project plan:
 
 For timestamps in documentation:
 
+PowerShell Commands:
+
 ```powershell
 Get-Date -Format "yyyy-MM-dd HH:mm"
 echo (Get-Date -Format "yyyy-MM-dd HH:mm")
 ```
+
+Bash Command:
 
 ```bash
 date "+%Y-%m-%d %H:%M"
