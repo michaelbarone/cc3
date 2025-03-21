@@ -1,17 +1,9 @@
 ---
-description: 
-globs: **/docs/working-memory/**/*.md
-alwaysApply: false
----
----
 description: Standardized approach for problem analysis, solution design, and implementation planning
 globs: **/docs/working-memory/**/*.md
 alwaysApply: false
 ---
----
-description: Standardized approach for problem analysis, solution design, and implementation planning
-globs: ["**/docs/working-memory/**/*.md"]
----
+
 # Problem-Solving Approach
 # Structured methodology for addressing issues and implementing features
 

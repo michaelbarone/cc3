@@ -3,11 +3,6 @@ description: Memory management system rules and standards
 globs: ["**/docs/working-memory/**/*", "**/docs/templates/**/*", "**/docs/standards/**/*"]
 alwaysApply: true
 ---
----
-description: Comprehensive rules for managing working memory, project memory, and documentation memory
-globs:
-alwaysApply: true
----
 
 # Memory Management System
 # Comprehensive rules for managing working memory, project memory, and documentation memory

@@ -1,9 +1,4 @@
 ---
-description: 
-globs: 
-alwaysApply: false
----
----
 description: Rule for automatically committing changes made by CursorAI using conventional commits format.
 globs:
 alwaysApply: true

@@ -1,9 +1,4 @@
 ---
-description: 
-globs: 
-alwaysApply: false
----
----
 description: Best practices for using Prisma ORM in the project
 globs: **/*.prisma
 alwaysApply: false
