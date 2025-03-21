@@ -7,204 +7,236 @@ alwaysApply: true
 # Memory Management System
 
 <rule>
-Memory Management System Rules:
 
-REMEMBER my memory resets completely between sessions. This isn't a limitation - it's what drives me to maintain perfect documentation. After each reset, I rely ENTIRELY on the /docs files to understand the project and continue work effectively. I MUST read /docs/working-memory/plan.md at the start of EVERY task - this is not optional.
+## CRITICAL REMINDER
 
-1. Memory Types:
-    a) Working Memory:
+REMEMBER: My memory resets completely between sessions. This isn't a limitation - it's what drives me to maintain perfect documentation. After each reset, I rely ENTIRELY on the /docs files to understand the project and continue work effectively. I MUST read /docs/working-memory/plan.md at the start of EVERY task - this is not optional.
+
+## Essential Rules
+
+1. Memory Reset Protocol:
+   - Complete memory reset between sessions
+   - All context must come from /docs
+   - Mandatory plan.md review before tasks
+   - Mandatory plan.md update during and after tasks
+   - No assumptions about previous state
+
+2. Directory Structure:
+   ```
+   /docs/
+   ├── working-memory/           # Active context
+   │   ├── open/                # Active tasks
+   │   │   └── {task-id}/      # Task-specific directory
+   │   │       ├── .plan       # Task planning and updates
+   │   ├── done/               # Completed tasks
+   │   └── plan.md             # Main project plan
+   ├── templates/              # Project templates
+   │   └── feature/           # Feature documentation templates
+   │       ├── README.md      # Feature overview template
+   │       ├── api.md         # API documentation template
+   │       ├── architecture.md # Design documentation template
+   │       ├── components.md   # Component documentation template
+   │       └── testing.md     # Test documentation template
+   ├── features/              # Project features
+   ├── project-context.md     # Project context and structure
+   └── cursor_settings.md     # IDE settings
+   ```
+
+3. Memory Types and Lifecycle:
+   a) Working Memory:
       - Location: /docs/working-memory/
-      - Purpose: Active context and ongoing tasks
-      - Updates: Real-time during task execution
-      - Structure:
-        ```
-        /docs/working-memory/
-        ├── open/                 # Active tasks
-        │   └── {task-id}/
-        │       └── .plan        # Task planning
-        ├── done/                # Completed tasks
-        └── plan.md              # All Plan and Task Tracking
-        ```
+      - Purpose: Active task tracking
+      - Updates: Real-time
+      - Lifecycle: Task duration
+      - Integration Requirements:
+        - Link to feature docs
+        - Track documentation updates
+        - Monitor component changes
 
-    b) Project Memory:
+   b) Project Memory:
       - Location: /docs/
-      - Purpose: Long-term project knowledge
-      - Updates: Major decisions and milestones
-      - Components: Architecture, decisions, standards
+      - Purpose: Long-term knowledge
+      - Updates: After milestones
+      - Lifecycle: Project duration
+      - Integration Requirements:
+        - Maintain feature directory
+        - Track documentation versions
+        - Monitor architecture decisions
 
-    c) Documentation Memory:
+   c) Documentation Memory:
       - Location: /docs/templates/
       - Purpose: Standards and patterns
-      - Review: Monthly template updates
-      - Maintenance: Keep examples current
+      - Updates: Monthly reviews
+      - Lifecycle: Project evolution
+      - Integration Requirements:
+        - Update templates
+        - Track usage patterns
+        - Document best practices
 
-2. Task Documentation Files:
-    a) plan.md Requirements:
-      - Problem Analysis
-      - Solution Design
-      - Implementation Steps
-      - Affected Components
-      - Testing Plan
-      - Documentation Impact
-      - Dependencies
-      - Phase Management:
-        - Only update current active phase
-        - Preserve future phases
-        - Mark interrupted tasks as [INCOMPLETE]
-        - Maintain phase dependencies
+## Development Requirements
 
-    b) updates.md Structure:
-      - Current Status (top, single entry)
-      - Progress History (chronological)
-      - Decisions Log
-      - Issues Encountered
-      - Next Steps
-      - Surgical Updates:
-        - Update only affected tasks
-        - Preserve task hierarchy
-        - Maintain task IDs
-        - Document interruptions
+1. Documentation First:
+   - Update documentation before code changes and update plans with current progress
+   - Maintain real-time progress tracking
+   - Ensure cross-reference accuracy
 
-3. Status Update Process:
-    a) Current Status:
-      - Single active status
-      - Use `date "+%Y-%m-%d %H:%M"` for timestamps
-      - Previous status moves to history
-      - Task Status Markers:
-        - [x] for completed tasks
-        - [ ] for pending tasks
-        - [INCOMPLETE] for interrupted tasks
-        - Maintain task hierarchy
+2. Task Management:
+   - Create task directories using templates
+   - Track progress in the task .plan document at the bottom in the Progress History section
+   - Move completed tasks to done/ and updating linking in the main plan.md file
 
-    b) Progress Markers:
-      - ✓ Completed work
-      - 🤔 Decisions made
-      - ❌ Issues encountered
-      - ⏭️ Next steps
-      - 📚 Documentation updates
+3. Quality Standards:
+   - Validate documentation links
+   - Verify template compliance
+   - Maintain timestamp accuracy
 
-4. Feature Documentation Management:
-    a) Structure:
-      ```
-      /docs/features/{feature-name}/
-      ├── README.md           # Feature overview
-      ├── architecture.md     # Technical design
-      ├── components.md       # Component documentation
-      ├── api.md             # API endpoints
-      └── testing.md         # Test scenarios
-      ```
+## Problem-Solving Approach
 
-    b) Integration with Working Memory:
-      - Link feature docs in task plans
-      - Track documentation debt
-      - Include doc updates in progress history
-      - Reference affected documentation
+1. Documentation Issue Analysis:
+   - Identify affected documentation
+   - List impacted components
+   - Check cross-references
+   - Verify template compliance
 
-    c) Documentation Requirements:
-      - Every feature task plan MUST include documentation updates
-      - Documentation changes MUST be reviewed before task completion
-      - Feature cannot be marked as complete without documentation
-      - All component changes require component.md updates
+2. Solution Design:
+   - Plan documentation updates
+   - Consider cross-reference impacts
+   - Evaluate template changes
+   - Plan validation steps
 
-    d) Review Process:
-      - Documentation completeness check
-      - Cross-reference validation
-      - Template compliance
-      - Regular health monitoring
-      - Monthly reviews
+3. Implementation Steps:
+   - Update affected documents
+   - Validate cross-references
+   - Verify template compliance
+   - Update timestamps
 
-    e) Feature Documentation Lifecycle:
-      - Creation:
-        - Create feature directory on feature branch
-        - Start with README.md
-        - Add other docs as feature develops
-      - Maintenance:
-        - Update on significant changes
-        - Review monthly
-        - Archive deprecated features
-      - Cross-Referencing:
-        - Link to related features
-        - Reference components
-        - Document API dependencies
+## Git Integration
 
-5. Cross-Reference Management:
-    a) Task References:
-      - Link to related feature docs
-      - Track dependencies
-      - Maintain relationship graphs
-      - Regular validation checks
+1. Commit Patterns:
+   ```powershell
+   # PowerShell - Memory-related commits
+   git commit -m "docs(memory): update task-123 working memory"
 
-    b) Documentation Links:
-      - Use relative paths
-      - Include section anchors
-      - Regular link validation
-      - Update on file moves
+   # PowerShell - Plan updates
+   git commit -m "docs(plan): update project milestones for Q2"
 
-    c) Component References:
-      - Link to implementation files
-      - Track component relationships
-      - Document API dependencies
-      - Monitor cross-component impacts
+   # PowerShell - Documentation changes
+   git commit -m "docs(tech): update API authentication docs"
+   ```
 
-6. Documentation Review Process:
-    a) Review Requirements:
-      - Documentation completeness check
-      - Cross-reference validation
-      - Template compliance
-      - Feature documentation updates
-      - Component documentation updates
+   ```bash
+   # Bash - Memory-related commits
+   git commit -m "docs(memory): update task-123 working memory"
 
-    b) Health Monitoring:
-      - Template usage analysis
-      - Best practices updates
-      - Documentation debt tracking
+   # Bash - Plan updates
+   git commit -m "docs(plan): update project milestones for Q2"
 
-7. Version Control:
-    a) Commit Patterns:
-      - Prefix: docs(memory)
-      - Include task ID
-      - Reference memory types
+   # Bash - Documentation changes
+   git commit -m "docs(tech): update API authentication docs"
+   ```
 
-Remember:
-- Update status before starting work
-- ALWAYS run a command to get the current time for timestamp updates in files
-- Document decisions immediately
-- Keep progress log current
-- Use proper timestamps
-- Regular maintenance and cleanup
-- ALWAYS update both task plan and main plan.md
-- ALWAYS include progress history entries
-- ALWAYS move task files to correct directories
-- ALWAYS check related documentation
-- Focus on current phase only
-- Document interrupted tasks
-- Maintain plan structure
-- Keep future phases intact
-- Update status in sync
+## Template Usage
 
-REMEMBER: After every memory reset, I begin completely fresh. The /docs directory is my only link to previous work. It must be maintained with precision and clarity, as my effectiveness depends entirely on its accuracy. ALWAYS update .plan and plan.md documents.
+1. Task Creation:
+   ```powershell
+   # PowerShell - Create task directory
+   New-Item -Path "docs/working-memory/open/${feature-name}-$(Get-Date -Format 'yyyyMMdd')" -ItemType Directory -Force
 
-examples:
-  - input: |
-      # New task creation
-      mkdir -p docs/working-memory/open/auth-update-20240320
-      cp docs/templates/task-plan-template.md docs/working-memory/open/auth-update-20240320/plan.md
-      cp docs/templates/task-updates-template.md docs/working-memory/open/auth-update-20240320/updates.md
+   # PowerShell - Copy templates
+   Copy-Item -Path "docs/templates/task-plan-template.md" -Destination "docs/working-memory/open/${feature-name}-$(Get-Date -Format 'yyyyMMdd')/.plan"
+   ```
 
-  - input: |
-      # Status update
-      date "+%Y-%m-%d %H:%M"
-      # Update status in updates.md
+   ```bash
+   # Bash - Create task directory
+   mkdir -p "docs/working-memory/open/${feature-name}-$(date +%Y%m%d)"
 
-  - input: |
-      # Task completion
-      mv docs/working-memory/open/auth-update-20240320 docs/working-memory/done/
+   # Bash - Copy templates
+   cp "docs/templates/task-plan-template.md" "docs/working-memory/open/${feature-name}-$(date +%Y%m%d)/.plan"
+   ```
 
-metadata:
-  priority: critical
-  version: 1.0
-  tags:
-    - memory
-    - documentation
-    - task-management
+2. Status Updates:
+   ```markdown
+   ## Current Status
+   ### PowerShell: $(Get-Date -Format "yyyy-MM-dd HH:mm")
+   ### Bash: $(date "+%Y-%m-%d %H:%M")
+
+   **Status**: In Progress
+
+   - What's working: {current state}
+   - What's not: {current issues}
+   - Blocking issues: {if any}
+   - Next actions: {immediate next steps}
+   ```
+
+3. Progress Tracking:
+   ```markdown
+   ## Progress History
+   ### PowerShell: $(Get-Date -Format "yyyy-MM-dd HH:mm") - {Brief Title}
+   ### Bash: $(date "+%Y-%m-%d %H:%M") - {Brief Title}
+
+   - ✓ Completed: {work completed}
+   - 🤔 Decisions: {decisions made}
+   - ❌ Issues: {problems encountered}
+   - 📚 Documentation: {documentation updates}
+   - ⏭️ Next: {next steps}
+   ```
+
+## Validation Requirements
+
+1. Documentation Checks:
+   - All links must be valid
+   - Templates must be followed
+   - Timestamps must be current
+   - Cross-references must be accurate
+
+2. Task Completion Criteria:
+   - Documentation is updated
+   - Templates are followed
+   - Cross-references are valid
+   - Timestamps are current
+
+3. Quality Metrics:
+   - No broken links
+   - No missing sections
+   - No outdated timestamps
+   - No invalid cross-references
+
+## Critical Reminders
+
+1. Always:
+   - Update plan.md before starting work
+   - Use current timestamps
+   - Follow templates exactly
+   - Validate cross-references
+
+2. Never:
+   - Skip documentation updates
+   - Use manual timestamps
+   - Ignore templates
+   - Leave broken links
+
+3. Before Task Completion:
+   - Verify all documentation
+   - Check all cross-references
+   - Validate all templates
+   - Update all timestamps
+
+## Metadata
+
+priority: critical
+version: 1.1.0
+last_updated:
+  powershell: $(Get-Date -Format "yyyy-MM-dd HH:mm")
+  bash: $(date "+%Y-%m-%d %H:%M")
+tags:
+  - memory
+  - documentation
+  - task-management
+  - working-memory
+  - templates
+  - validation
+dependencies:
+  - .cursorrules
+  - /docs/templates/
+  - /docs/working-memory/
 </rule>
