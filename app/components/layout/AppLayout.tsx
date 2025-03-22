@@ -150,7 +150,7 @@ export default function AppLayout({
   }, []);
 
   // If not mounted yet, render a minimal layout to match SSR
-  if (!mounted) {
+  if (!mounted || !effectiveMenuPosition) {
     return (
       <Box sx={{ display: "flex", flexDirection: "column", height: "100vh" }}>
         <AppBar
@@ -181,6 +181,7 @@ export default function AppLayout({
     );
   }
 
+  // TODO combine top and side menu layouts and just use effectiveMenuPosition to hide/show just the menu
   // Render the top menu layout
   if (effectiveMenuPosition === "top") {
     return (

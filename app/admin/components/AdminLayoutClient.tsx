@@ -1,10 +1,18 @@
 "use client";
 
-import { ReactNode, useState } from "react";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import DashboardIcon from "@mui/icons-material/Dashboard";
+import FolderIcon from "@mui/icons-material/Folder";
+import LinkIcon from "@mui/icons-material/Link";
+import MenuIcon from "@mui/icons-material/Menu";
+import PeopleIcon from "@mui/icons-material/People";
+import SettingsIcon from "@mui/icons-material/Settings";
 import {
   AppBar,
   Box,
+  Button,
   CssBaseline,
+  Divider,
   Drawer,
   IconButton,
   List,
@@ -14,17 +22,9 @@ import {
   ListItemText,
   Toolbar,
   Typography,
-  Divider,
-  Button,
 } from "@mui/material";
-import MenuIcon from "@mui/icons-material/Menu";
-import DashboardIcon from "@mui/icons-material/Dashboard";
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import PeopleIcon from "@mui/icons-material/People";
-import LinkIcon from "@mui/icons-material/Link";
-import SettingsIcon from "@mui/icons-material/Settings";
-import FolderIcon from "@mui/icons-material/Folder";
 import { usePathname, useRouter } from "next/navigation";
+import { ReactNode, useState } from "react";
 
 const drawerWidth = 240;
 
@@ -144,12 +144,36 @@ export function AdminLayoutClient({ children }: AdminLayoutClientProps) {
         component="main"
         sx={{
           flexGrow: 1,
-          p: 3,
+          p: 0,
           width: { sm: `calc(100% - ${drawerWidth}px)` },
           marginTop: "64px",
+          height: "calc(100vh - 64px)",
+          overflow: "hidden",
+          position: "relative",
         }}
       >
-        {children}
+        <Box
+          sx={{
+            position: "fixed",
+            top: 64, // AppBar height
+            left: { sm: drawerWidth, xs: 0 },
+            right: 0,
+            bottom: 0,
+            bgcolor: "background.default",
+            zIndex: (theme) => theme.zIndex.drawer + 2,
+          }}
+        />
+        <Box
+          sx={{
+            height: "100%",
+            overflow: "auto",
+            position: "relative",
+            zIndex: (theme) => theme.zIndex.drawer + 3,
+            p: 3,
+          }}
+        >
+          {children}
+        </Box>
       </Box>
     </Box>
   );

@@ -87,8 +87,26 @@ REMEMBER: Make the fewest changes to the code for the desired outcome.  Do not c
 4. Task Management:
    - Create task directories using templates in the /docs/working-memory directory structure
    - Track progress in task .plan
-   - Move completed tasks to done/
-   - Update main plan.md links
+   - Task Completion Checklist (ALL steps required):
+     1. Move task directory:
+        ```powershell
+        Move-Item "docs/working-memory/open/${task-name}" "docs/working-memory/done/"
+        ```
+        ```bash
+        mv "docs/working-memory/open/${task-name}" "docs/working-memory/done/"
+        ```
+     2. Update plan.md:
+        - Remove task from "Active Tasks" section
+        - Add task to "Closed Tasks" section with:
+          - Location (updated to /done/ path)
+          - Completion Date
+          - Description
+          - Key Achievements
+     3. Verify all related tasks:
+        - Check if this task was blocking other tasks
+        - Update status of dependent tasks
+        - Move any completed subtasks to done
+   - ALWAYS Update main plan.md links when anything changes in active or done
 
 5. Quality Standards:
    - Validate documentation links
