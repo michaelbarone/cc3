@@ -1,11 +1,11 @@
 "use client";
 
-import { createContext, useState, useEffect, useMemo, ReactNode, useRef } from "react";
-import { ThemeProvider as MuiThemeProvider } from "@mui/material/styles";
-import CssBaseline from "@mui/material/CssBaseline";
-import { lightTheme, darkTheme } from "./theme";
 import { useAuth } from "@/app/lib/auth/auth-context";
 import { useUserPreferences } from "@/app/lib/hooks/useUserPreferences";
+import CssBaseline from "@mui/material/CssBaseline";
+import { ThemeProvider as MuiThemeProvider } from "@mui/material/styles";
+import { createContext, ReactNode, useEffect, useMemo, useRef, useState } from "react";
+import { darkTheme, lightTheme } from "./theme";
 
 // Define the context for theme mode
 interface ThemeContextType {
@@ -24,57 +24,34 @@ interface ThemeProviderProps {
 
 export function ThemeProvider({ children }: ThemeProviderProps) {
   const { user } = useAuth();
-  const [mode, setMode] = useState<"light" | "dark">(() => {
-    // Initialize from localStorage if available
-    if (typeof window !== "undefined") {
-      const savedMode = localStorage.getItem("themeMode");
-      if (savedMode === "light" || savedMode === "dark") {
-        return savedMode;
-      }
-    }
-    return "dark";
-  });
   const { preferences, loading, updateThemeMode } = useUserPreferences();
   const initializedRef = useRef(false);
-  const lastUpdateRef = useRef<number>(0);
-  const UPDATE_DEBOUNCE = 1000; // 1 second debounce
+  const [mode, setMode] = useState<"light" | "dark">("dark"); // Start with dark as fallback
 
-  // Initialize theme from user data when it becomes available from auth
+  // Single initialization effect that prioritizes database preferences
   useEffect(() => {
-    if (user?.themeMode && !initializedRef.current) {
-      setMode(user.themeMode as "light" | "dark");
-      initializedRef.current = true;
-    }
-  }, [user]);
+    if (initializedRef.current) return;
 
-  // Initialize theme from user preferences when they load
-  useEffect(() => {
-    if (!loading && preferences.themeMode && !initializedRef.current) {
-      setMode(preferences.themeMode as "light" | "dark");
+    // Priority order: user preferences > user data > default dark
+    if (!loading && preferences.themeMode) {
+      setMode(preferences.themeMode);
       initializedRef.current = true;
     }
   }, [preferences.themeMode, loading]);
 
-  // Store theme preference in localStorage and sync with server
-  useEffect(() => {
-    const now = Date.now();
-    if (initializedRef.current && now - lastUpdateRef.current > UPDATE_DEBOUNCE) {
-      localStorage.setItem("themeMode", mode);
-      if (user) {
-        lastUpdateRef.current = now;
-        updateThemeMode(mode).catch(console.error);
-      }
-    }
-  }, [mode, user, updateThemeMode]);
-
   const colorMode = useMemo(
     () => ({
       toggleColorMode: () => {
-        setMode((prevMode) => (prevMode === "light" ? "dark" : "light"));
+        const newMode = mode === "light" ? "dark" : "light";
+        setMode(newMode);
+        // Update database immediately on toggle
+        if (user) {
+          updateThemeMode(newMode).catch(console.error);
+        }
       },
       mode,
     }),
-    [mode],
+    [mode, user, updateThemeMode],
   );
 
   const theme = useMemo(() => (mode === "light" ? lightTheme : darkTheme), [mode]);

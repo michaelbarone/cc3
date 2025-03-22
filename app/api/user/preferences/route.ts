@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/app/lib/db/prisma";
 import { verifyToken } from "@/app/lib/auth/jwt";
+import { prisma } from "@/app/lib/db/prisma";
+import { NextRequest, NextResponse } from "next/server";
 
 // GET handler to fetch user preferences
 export async function GET() {
@@ -29,8 +29,8 @@ export async function GET() {
     // This ensures we use what's in the database instead of hardcoding defaults
     return NextResponse.json({
       preferences: {
-        menuPosition: user.menuPosition || "side",
-        themeMode: user.themeMode || "light",
+        menuPosition: user.menuPosition || "top",
+        themeMode: user.themeMode || "dark",
       },
       rawPreferences: user, // Include raw data for debugging
     });
@@ -116,8 +116,8 @@ export async function POST(request: NextRequest) {
     // Return the updated preferences
     return NextResponse.json({
       preferences: {
-        menuPosition: updatedUser.menuPosition || "side",
-        themeMode: updatedUser.themeMode || "light",
+        menuPosition: updatedUser.menuPosition || "top",
+        themeMode: updatedUser.themeMode || "dark",
       },
       rawPreferences: updatedUser, // Include raw data for debugging
       success: true, // Add explicit success flag

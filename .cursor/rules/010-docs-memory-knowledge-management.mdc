@@ -1,6 +1,6 @@
 ---
-description: Memory Management System - Comprehensive rules for managing working memory, project memory, and documentation memory
-globs:
+description: Memory Management System - Comprehensive rules for managing working memory, project memory, and documentation memory.  Instructions for every request.
+globs: "**/*"
 alwaysApply: true
 ---
 

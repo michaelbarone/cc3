@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth } from "../auth/auth-context";
 
 interface UserPreferences {
@@ -18,7 +18,7 @@ interface UseUserPreferencesReturn {
 
 const DEFAULT_PREFERENCES: UserPreferences = {
   menuPosition: "side",
-  themeMode: "light",
+  themeMode: "dark",
 };
 
 export function useUserPreferences(): UseUserPreferencesReturn {

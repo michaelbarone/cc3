@@ -389,4 +389,6 @@ Bash Command:
 date "+%Y-%m-%d %H:%M"
 ```
 
-Remember to follow the project's conventions for dates, formatting, and documentation as specified in the .cursorrules file.
+## credit and resources
+
+https://github.com/Mawla/cursor_rules/
