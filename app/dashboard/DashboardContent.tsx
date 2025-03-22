@@ -17,8 +17,8 @@ export default function DashboardContent() {
   const [urlGroups, setUrlGroups] = useState<UrlGroup[]>([]);
   const [activeUrlId, setActiveUrlId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [preferences, setPreferences] = useState<{ menuPosition: "side" | "top" }>({
-    menuPosition: "side",
+  const [preferences, setPreferences] = useState<{ menuPosition?: "side" | "top" }>({
+    menuPosition: undefined,
   });
   const [notification, setNotification] = useState<{
     open: boolean;

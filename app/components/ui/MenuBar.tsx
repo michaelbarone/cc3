@@ -230,7 +230,7 @@ export default function MenuBar({
   onUrlClick,
   onUrlReload,
   onUrlUnload,
-  menuPosition: propMenuPosition = "side",
+  menuPosition: propMenuPosition = undefined,
 }: MenuBarProps) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
@@ -245,6 +245,7 @@ export default function MenuBar({
   const menuPosition = useMemo(() => {
     if (isMobile) return "side";
     if (propMenuPosition === "top" || propMenuPosition === "side") return propMenuPosition;
+    if (propMenuPosition === undefined) return preferences?.menuPosition || "side";
     return preferences?.menuPosition || "side";
   }, [isMobile, propMenuPosition, preferences?.menuPosition]);
 
@@ -256,7 +257,7 @@ export default function MenuBar({
         group.urls.some((url) => url.id === activeUrlId),
       );
 
-      if (activeGroup) {
+      if (activeGroup && menuPosition) {
         if (menuPosition === "side") {
           setOpenGroups((prev) => ({
             ...prev,
@@ -376,27 +377,8 @@ export default function MenuBar({
     [activeUrlId, loadedUrlIds, menuPosition, theme, handleUrlClick, handleUrlLongPress],
   );
 
-  // Loading state check
-  if (preferencesLoading && propMenuPosition !== "top" && propMenuPosition !== "side") {
-    return (
-      <Box
-        sx={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          height: propMenuPosition === "top" ? "auto" : "100%",
-          width: "100%",
-        }}
-      >
-        <Typography variant="body2" color="text.secondary">
-          Loading menu...
-        </Typography>
-      </Box>
-    );
-  }
-
   // Render top menu layout
-  if (menuPosition === "top") {
+  if (!preferencesLoading && menuPosition === "top") {
     // Find group containing active URL first (prioritize it)
     const activeUrlGroup = activeUrlId
       ? urlGroups.find((group) => group.urls.some((url) => url.id === activeUrlId))
@@ -499,48 +481,43 @@ export default function MenuBar({
     );
   }
 
-  // Default side menu layout
-  return (
-    <List
-      sx={{
-        width: "100%",
-        bgcolor: "background.default",
-        p: 1,
-        height: "100%",
-        overflow: "auto",
-      }}
-      component="nav"
-    >
-      {urlGroups.length === 0 ? (
-        <Box sx={{ p: 2, textAlign: "center" }}>
-          <Typography variant="body2" color="text.secondary">
-            No URL groups available
-          </Typography>
-        </Box>
-      ) : (
-        urlGroups.map((group) => (
-          <Box key={group.id}>
-            <ListItemButton onClick={() => handleGroupToggle(group.id)}>
-              <ListItemIcon>
-                <FolderIcon />
-              </ListItemIcon>
-              <ListItemText
-                primary={group.name}
-                primaryTypographyProps={{
-                  fontWeight: "medium",
-                  component: "div",
-                }}
-              />
-              {openGroups[group.id] ? <ExpandLess /> : <ExpandMore />}
-            </ListItemButton>
-            <Collapse in={openGroups[group.id] ?? false} timeout="auto" unmountOnExit>
-              <List component="div" disablePadding>
-                {group.urls.map((url) => renderUrlItem(url))}
-              </List>
-            </Collapse>
-          </Box>
-        ))
-      )}
-    </List>
-  );
+  // Render top menu layout
+  if (!preferencesLoading && menuPosition === "side") {
+    return (
+      <List
+        sx={{
+          width: "100%",
+          bgcolor: "background.default",
+          p: 1,
+          height: "100%",
+          overflow: "auto",
+        }}
+        component="nav"
+      >
+        {urlGroups.length > 0 &&
+          urlGroups.map((group) => (
+            <Box key={group.id}>
+              <ListItemButton onClick={() => handleGroupToggle(group.id)}>
+                <ListItemIcon>
+                  <FolderIcon />
+                </ListItemIcon>
+                <ListItemText
+                  primary={group.name}
+                  primaryTypographyProps={{
+                    fontWeight: "medium",
+                    component: "div",
+                  }}
+                />
+                {openGroups[group.id] ? <ExpandLess /> : <ExpandMore />}
+              </ListItemButton>
+              <Collapse in={openGroups[group.id] ?? false} timeout="auto" unmountOnExit>
+                <List component="div" disablePadding>
+                  {group.urls.map((url) => renderUrlItem(url))}
+                </List>
+              </Collapse>
+            </Box>
+          ))}
+      </List>
+    );
+  }
 }

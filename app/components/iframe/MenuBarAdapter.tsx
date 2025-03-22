@@ -70,8 +70,8 @@ export function MenuBarAdapter({ urlGroups, menuPosition }: MenuBarAdapterProps)
 
   // Render appropriate group selector based on number of groups
   const renderGroupSelector = () => {
-    if (hasNoGroups) {
-      return null; // Hide selector when no groups
+    if (hasNoGroups || menuPosition === undefined || !menuPosition) {
+      return null; // Hide selector when no groups or menuPosition is undefined
     }
 
     return (

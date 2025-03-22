@@ -89,11 +89,11 @@ export default function AppLayout({
 
   // Determine effective menu position
   const effectiveMenuPosition = useMemo(() => {
-    if (!mounted) return "side"; // Default before hydration
-    if (preferencesLoading) return "side"; // Default while loading
+    if (!mounted) return undefined; // Default before hydration
+    if (preferencesLoading) return undefined; // Default while loading
     if (isMobile) return "top"; // Force top menu on mobile
     if (forceMenuPosition) return forceMenuPosition;
-    return preferences?.menuPosition || "side";
+    return preferences?.menuPosition || undefined;
   }, [mounted, preferences?.menuPosition, forceMenuPosition, preferencesLoading, isMobile]);
 
   // Handle drawer toggle
@@ -380,208 +380,210 @@ export default function AppLayout({
     );
   }
 
-  // Default side menu layout
-  return (
-    <Box sx={{ display: "flex", flexDirection: "column", height: "100vh" }}>
-      {/* App Bar - full width */}
-      <AppBar
-        position="fixed"
-        sx={{
-          width: "100%",
-          zIndex: theme.zIndex.drawer + 1,
-          bgcolor: theme.palette.background.paper,
-          color: theme.palette.text.primary,
-        }}
-      >
-        <Toolbar sx={{ display: "flex" }}>
-          {/* Left section - Mobile menu toggle and app logo */}
-          <Box sx={{ display: "flex", alignItems: "center" }}>
-            {/* Mobile menu toggle */}
-            <IconButton
-              color="inherit"
-              aria-label="open drawer"
-              edge="start"
-              onClick={handleDrawerToggle}
-              sx={{
-                mr: 2,
-                display: { xs: "block", md: "none" },
-              }}
-            >
-              <MenuIcon />
-            </IconButton>
-
-            {/* App Logo/Title */}
-            {appConfig.appLogo ? (
-              <Box
-                component="img"
-                src={appConfig.appLogo}
-                alt={appConfig.appName}
-                sx={{
-                  height: 40,
-                  maxWidth: { xs: 120, sm: 160 },
-                  objectFit: "contain",
-                }}
-              />
-            ) : (
-              <Typography
-                variant="h6"
-                noWrap
-                component="div"
-                sx={{
-                  fontSize: { xs: "1rem", sm: "1.25rem" },
-                }}
-              >
-                {appConfig.appName}
-              </Typography>
-            )}
-          </Box>
-
-          {/* Spacer to push user menu to the right */}
-          <Box sx={{ flexGrow: 1 }} />
-
-          {/* Right section - User menu and theme toggle */}
-          <Box sx={{ display: "flex", alignItems: "center" }}>
-            {user && (
-              <>
-                <Box
-                  sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    cursor: "pointer",
-                    mr: 2,
-                  }}
-                  onClick={handleUserMenuClick}
-                  aria-controls={userMenuAnchorEl ? "user-menu" : undefined}
-                  aria-haspopup="true"
-                  aria-expanded={userMenuAnchorEl ? "true" : undefined}
-                >
-                  <AccountCircleIcon sx={{ mr: { xs: 0, sm: 1 } }} />
-                  <Typography
-                    variant="body1"
-                    sx={{
-                      display: { xs: "none", sm: "block" },
-                    }}
-                  >
-                    {user.username}
-                  </Typography>
-                  <ArrowDropDownIcon sx={{ display: { xs: "none", sm: "block" } }} />
-                </Box>
-                <Menu
-                  id="user-menu"
-                  anchorEl={userMenuAnchorEl}
-                  open={Boolean(userMenuAnchorEl)}
-                  onClose={handleUserMenuClose}
-                  MenuListProps={{
-                    "aria-labelledby": "user-button",
-                  }}
-                  anchorOrigin={{
-                    vertical: "bottom",
-                    horizontal: "right",
-                  }}
-                  transformOrigin={{
-                    vertical: "top",
-                    horizontal: "right",
-                  }}
-                >
-                  <MenuItem onClick={navigateToDashboard}>
-                    <DashboardIcon sx={{ mr: 1 }} />
-                    Dashboard
-                  </MenuItem>
-                  <MenuItem onClick={navigateToSettings}>
-                    <SettingsIcon sx={{ mr: 1 }} />
-                    Settings
-                  </MenuItem>
-                  {user.isAdmin && (
-                    <MenuItem onClick={navigateToAdmin}>
-                      <AdminPanelSettingsIcon sx={{ mr: 1 }} />
-                      Admin Area
-                    </MenuItem>
-                  )}
-                  <Divider />
-                  <MenuItem onClick={colorMode.toggleColorMode}>
-                    {theme.palette.mode === "dark" ? (
-                      <Brightness7Icon sx={{ mr: 1 }} />
-                    ) : (
-                      <Brightness4Icon sx={{ mr: 1 }} />
-                    )}
-                    {theme.palette.mode === "dark" ? "Light Mode" : "Dark Mode"}
-                  </MenuItem>
-                  <Divider />
-                  <MenuItem onClick={handleLogout}>
-                    <LogoutIcon sx={{ mr: 1 }} />
-                    Logout
-                  </MenuItem>
-                </Menu>
-              </>
-            )}
-          </Box>
-        </Toolbar>
-      </AppBar>
-
-      {/* Main content with side menu and content area */}
-      <Box sx={{ display: "flex", flexGrow: 1, pt: "64px", height: "calc(100vh - 64px)" }}>
-        {/* Side Navigation */}
-        <Box component="nav" sx={{ width: { md: DRAWER_WIDTH }, flexShrink: { md: 0 } }}>
-          {/* Mobile drawer */}
-          <Drawer
-            variant="temporary"
-            open={mobileOpen}
-            onClose={handleDrawerToggle}
-            ModalProps={{
-              keepMounted: true, // Better open performance on mobile
-            }}
-            sx={{
-              display: { xs: "block", md: "none" },
-              "& .MuiDrawer-paper": {
-                boxSizing: "border-box",
-                width: DRAWER_WIDTH,
-                backgroundColor: theme.palette.background.default,
-              },
-            }}
-          >
-            <Toolbar sx={{ display: "flex", justifyContent: "flex-end" }}>
-              <IconButton onClick={handleDrawerToggle}>
-                <CloseIcon />
-              </IconButton>
-            </Toolbar>
-            {menuContent}
-          </Drawer>
-
-          {/* Desktop drawer - always visible */}
-          <Drawer
-            variant="permanent"
-            sx={{
-              display: { xs: "none", md: "block" },
-              "& .MuiDrawer-paper": {
-                boxSizing: "border-box",
-                width: DRAWER_WIDTH,
-                height: "calc(100vh - 64px)",
-                top: "64px",
-                backgroundColor: theme.palette.background.default,
-                borderRight: `1px solid ${theme.palette.divider}`,
-              },
-            }}
-            open
-          >
-            {menuContent}
-          </Drawer>
-        </Box>
-
-        {/* Main content area */}
-        <Box
-          component="main"
+  // Render the side menu layout
+  if (effectiveMenuPosition === "side") {
+    return (
+      <Box sx={{ display: "flex", flexDirection: "column", height: "100vh" }}>
+        {/* App Bar - full width */}
+        <AppBar
+          position="fixed"
           sx={{
-            flexGrow: 1,
-            p: 0,
-            height: "100%",
-            overflow: "hidden",
-            display: "flex",
-            flexDirection: "column",
+            width: "100%",
+            zIndex: theme.zIndex.drawer + 1,
+            bgcolor: theme.palette.background.paper,
+            color: theme.palette.text.primary,
           }}
         >
-          {children}
+          <Toolbar sx={{ display: "flex" }}>
+            {/* Left section - Mobile menu toggle and app logo */}
+            <Box sx={{ display: "flex", alignItems: "center" }}>
+              {/* Mobile menu toggle */}
+              <IconButton
+                color="inherit"
+                aria-label="open drawer"
+                edge="start"
+                onClick={handleDrawerToggle}
+                sx={{
+                  mr: 2,
+                  display: { xs: "block", md: "none" },
+                }}
+              >
+                <MenuIcon />
+              </IconButton>
+
+              {/* App Logo/Title */}
+              {appConfig.appLogo ? (
+                <Box
+                  component="img"
+                  src={appConfig.appLogo}
+                  alt={appConfig.appName}
+                  sx={{
+                    height: 40,
+                    maxWidth: { xs: 120, sm: 160 },
+                    objectFit: "contain",
+                  }}
+                />
+              ) : (
+                <Typography
+                  variant="h6"
+                  noWrap
+                  component="div"
+                  sx={{
+                    fontSize: { xs: "1rem", sm: "1.25rem" },
+                  }}
+                >
+                  {appConfig.appName}
+                </Typography>
+              )}
+            </Box>
+
+            {/* Spacer to push user menu to the right */}
+            <Box sx={{ flexGrow: 1 }} />
+
+            {/* Right section - User menu and theme toggle */}
+            <Box sx={{ display: "flex", alignItems: "center" }}>
+              {user && (
+                <>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      cursor: "pointer",
+                      mr: 2,
+                    }}
+                    onClick={handleUserMenuClick}
+                    aria-controls={userMenuAnchorEl ? "user-menu" : undefined}
+                    aria-haspopup="true"
+                    aria-expanded={userMenuAnchorEl ? "true" : undefined}
+                  >
+                    <AccountCircleIcon sx={{ mr: { xs: 0, sm: 1 } }} />
+                    <Typography
+                      variant="body1"
+                      sx={{
+                        display: { xs: "none", sm: "block" },
+                      }}
+                    >
+                      {user.username}
+                    </Typography>
+                    <ArrowDropDownIcon sx={{ display: { xs: "none", sm: "block" } }} />
+                  </Box>
+                  <Menu
+                    id="user-menu"
+                    anchorEl={userMenuAnchorEl}
+                    open={Boolean(userMenuAnchorEl)}
+                    onClose={handleUserMenuClose}
+                    MenuListProps={{
+                      "aria-labelledby": "user-button",
+                    }}
+                    anchorOrigin={{
+                      vertical: "bottom",
+                      horizontal: "right",
+                    }}
+                    transformOrigin={{
+                      vertical: "top",
+                      horizontal: "right",
+                    }}
+                  >
+                    <MenuItem onClick={navigateToDashboard}>
+                      <DashboardIcon sx={{ mr: 1 }} />
+                      Dashboard
+                    </MenuItem>
+                    <MenuItem onClick={navigateToSettings}>
+                      <SettingsIcon sx={{ mr: 1 }} />
+                      Settings
+                    </MenuItem>
+                    {user.isAdmin && (
+                      <MenuItem onClick={navigateToAdmin}>
+                        <AdminPanelSettingsIcon sx={{ mr: 1 }} />
+                        Admin Area
+                      </MenuItem>
+                    )}
+                    <Divider />
+                    <MenuItem onClick={colorMode.toggleColorMode}>
+                      {theme.palette.mode === "dark" ? (
+                        <Brightness7Icon sx={{ mr: 1 }} />
+                      ) : (
+                        <Brightness4Icon sx={{ mr: 1 }} />
+                      )}
+                      {theme.palette.mode === "dark" ? "Light Mode" : "Dark Mode"}
+                    </MenuItem>
+                    <Divider />
+                    <MenuItem onClick={handleLogout}>
+                      <LogoutIcon sx={{ mr: 1 }} />
+                      Logout
+                    </MenuItem>
+                  </Menu>
+                </>
+              )}
+            </Box>
+          </Toolbar>
+        </AppBar>
+
+        {/* Main content with side menu and content area */}
+        <Box sx={{ display: "flex", flexGrow: 1, pt: "64px", height: "calc(100vh - 64px)" }}>
+          {/* Side Navigation */}
+          <Box component="nav" sx={{ width: { md: DRAWER_WIDTH }, flexShrink: { md: 0 } }}>
+            {/* Mobile drawer */}
+            <Drawer
+              variant="temporary"
+              open={mobileOpen}
+              onClose={handleDrawerToggle}
+              ModalProps={{
+                keepMounted: true, // Better open performance on mobile
+              }}
+              sx={{
+                display: { xs: "block", md: "none" },
+                "& .MuiDrawer-paper": {
+                  boxSizing: "border-box",
+                  width: DRAWER_WIDTH,
+                  backgroundColor: theme.palette.background.default,
+                },
+              }}
+            >
+              <Toolbar sx={{ display: "flex", justifyContent: "flex-end" }}>
+                <IconButton onClick={handleDrawerToggle}>
+                  <CloseIcon />
+                </IconButton>
+              </Toolbar>
+              {menuContent}
+            </Drawer>
+
+            {/* Desktop drawer - always visible */}
+            <Drawer
+              variant="permanent"
+              sx={{
+                display: { xs: "none", md: "block" },
+                "& .MuiDrawer-paper": {
+                  boxSizing: "border-box",
+                  width: DRAWER_WIDTH,
+                  height: "calc(100vh - 64px)",
+                  top: "64px",
+                  backgroundColor: theme.palette.background.default,
+                  borderRight: `1px solid ${theme.palette.divider}`,
+                },
+              }}
+              open
+            >
+              {menuContent}
+            </Drawer>
+          </Box>
+
+          {/* Main content area */}
+          <Box
+            component="main"
+            sx={{
+              flexGrow: 1,
+              p: 0,
+              height: "100%",
+              overflow: "hidden",
+              display: "flex",
+              flexDirection: "column",
+            }}
+          >
+            {children}
+          </Box>
         </Box>
       </Box>
-    </Box>
-  );
+    );
+  }
 }
