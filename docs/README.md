@@ -12,10 +12,7 @@ Copy and rename the `.cursorrules.example` into the root directory as `.cursorru
 
 - .cursorrules are deprecated and this will be updated soon.
 
-Add the ###-docs-* rule files to the .cursor/rules directory.
-
 NOTE: to prevent cursor IDE from changing or possibly disabling triggers of rules, update your user settings .json file with this to disable the built in mdc editor:
-
 JSON Configuration:
 
 ```json
@@ -24,6 +21,8 @@ JSON Configuration:
     }
 ```
 
+Add the ###-docs-* rule files to the .cursor/rules directory.
+
 ## Project Setup
 
 update the `docs/project-context.md` with specifics for this project for things like directory structure, key frameworks and depenedencies, and best practices.
@@ -31,7 +30,7 @@ update the `docs/project-context.md` with specifics for this project for things 
 Shell Command:
 
 ```shell
-Can you ensure the @/docs/project-context.md file matches the project structure, and highlights key frameworks, dependencies and best pracices for this project
+Can you ensure the @/docs/project-context.md file matches the project structure, and highlights key frameworks, dependencies and best practices for this project
 
 @package.json
 @/docs/
@@ -58,7 +57,7 @@ Can you ensure the /docs folder directory matches the structure outlined in the 
    │   ├── done/                 # Completed tasks
    |   └── plan.md               # tracks all open and completed plans
    ├── templates/                # Project templates
-   │   └── feature/              # Feature documentation templates
+   │   └── features/              # Feature documentation templates
    │       ├── README.md
    │       ├── api.md
    │       ├── architecture.md

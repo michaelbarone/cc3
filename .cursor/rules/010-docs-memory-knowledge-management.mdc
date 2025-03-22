@@ -16,14 +16,17 @@ REMEMBER: Make the fewest changes to the code for the desired outcome.  Do not c
 
 ## Essential Rules
 
-1. Memory Reset Protocol:
+1. Personalization:
+   - Always refer to the User Rules for User Preferences and Local Environment Specifics
+
+2. Memory Reset Protocol:
    - Complete memory reset between sessions
    - All context must come from /docs
    - Mandatory plan.md review before tasks
    - Mandatory plan.md update during and after tasks
    - No assumptions about previous state
 
-2. Directory Structure:
+3. Directory Structure:
    ```
    /docs/
    ├── working-memory/           # Active context
@@ -33,72 +36,61 @@ REMEMBER: Make the fewest changes to the code for the desired outcome.  Do not c
    │   ├── done/               # Completed tasks
    │   └── plan.md             # Main project plan
    ├── templates/              # Project templates
-   │   └── feature/           # Feature documentation templates
+   │   └── features/           # Feature documentation templates
    │       ├── README.md      # Feature overview template
    │       ├── api.md         # API documentation template
    │       ├── architecture.md # Design documentation template
    │       ├── components.md   # Component documentation template
    │       └── testing.md     # Test documentation template
    ├── features/              # Project features
-   ├── project-context.md     # Project context and structure
+   ├── project-context.md     # Tech stack, directory structure, and project best practices
    └── cursor_settings.md     # IDE settings
    ```
 
-3. Memory Types and Lifecycle:
-   a) Working Memory:
-      - Location: /docs/working-memory/
-      - Purpose: Active task tracking
-      - Updates: Real-time
-      - Lifecycle: Task duration
-      - Integration Requirements:
-        - Link to feature docs
-        - Track documentation updates
-        - Monitor component changes
+4. File Management:
+   - Be very cautious when deleting files
+   - Only delete relevant files
+   - Ask for permission if unsure about deletions
+   - Before commits with large deletions, review and confirm necessity
 
-   b) Project Memory:
-      - Location: /docs/
-      - Purpose: Long-term knowledge
-      - Updates: After milestones
-      - Lifecycle: Project duration
-      - Integration Requirements:
-        - Maintain feature directory
-        - Track documentation versions
-        - Monitor architecture decisions
-
-   c) Documentation Memory:
-      - Location: /docs/templates/
-      - Purpose: Standards and patterns
-      - Updates: Monthly reviews
-      - Lifecycle: Project evolution
-      - Integration Requirements:
-        - Update templates
-        - Track usage patterns
-        - Document best practices
-
-   c) Features Memory:
-      - Location: /docs/features/
-      - Purpose: documents project features using the /docs/templates/features/ structure
-      - Updates: When features change, are updated, removed, or otherwise find the documentation outdated or no longer current with the actual feature
-      - Lifecycle: Project evolution
-      - Integration Requirements:
-        - Every task plan must reference affected feature docs
-        - Documentation updates must be tracked in progress history
-        - Feature changes require documentation review
-        - Component changes must update feature docs
+5. Code Changes:
+   - Make surgical fixes to existing functionality
+   - Only change what's necessary to resolve immediate issues
+   - DO NOT REFACTOR code without clarifying or being asked directly
+   - Review several options to fultill the current task before moving forward with the option that requires the least amount of code changes
+   - Before creating new components, check for existing components first
 
 ## Development Requirements
 
-1. Documentation First:
-   - Update documentation before code changes and update plans with current progress
+1. Focus and Clarity:
+   - Focus only on task-related changes
+   - Follow direct user instructions
+   - Clarify when needed
+   - Seek multiple solutions
+   - Ask for input when uncertain
+   - DO NOT change style, position of ui elements unless instructed to in the current task
+
+2. Code Standards:
+   - Follow current frameworks and patterns
+   - Keep code DRY
+   - Follow SOLID principles
+   - Fully implement requested functionality
+   - No TODOs or placeholders
+   - Follow linting rules
+   - Make minimal changes for the current task
+
+3. Documentation First:
+   - Update documentation before code changes
    - Maintain real-time progress tracking
    - Ensure cross-reference accuracy
 
-2. Task Management:
-   - Create task directories using templates
-   - Track progress in the task .plan document at the bottom in the Progress History section
-   - Move completed tasks to done/ and updating linking in the main plan.md file
+4. Task Management:
+   - Create task directories using templates in the /docs/working-memory directory structure
+   - Track progress in task .plan
+   - Move completed tasks to done/
+   - Update main plan.md links
 
-3. Quality Standards:
+5. Quality Standards:
    - Validate documentation links
    - Verify template compliance
    - Maintain timestamp accuracy
@@ -149,13 +141,20 @@ REMEMBER: Make the fewest changes to the code for the desired outcome.  Do not c
    ```
 
   Commit Types:
-  - feat: New feature
-  - fix: Bug fix
-  - docs: Documentation changes
-  - style: Code style changes
-  - refactor: Code refactoring
-  - test: Adding tests
-  - chore: Maintenance tasks
+  - feat: ✨ A new feature
+  - fix: 🐛 A bug fix
+  - hotfix: 🔥 Hotfix Required
+  - docs: 📚 Documentation only changes
+  - plan: 📚 Plan only changes
+  - style: 💎 Changes that do not affect the meaning of the code (white-space, formatting, missing semi-colons, etc)
+  - refactor: 📦 A code change that neither fixes a bug nor adds a feature
+  - perf: 🚀 A code change that improves performance
+  - test: 🚨 Adding missing tests or correcting existing tests
+  - build: 🛠 Changes that affect the build system or external dependencies
+  - ci: ⚙️ Changes to CI configuration files and scripts
+  - chore: ♻️ Other changes that don't modify src or test files
+  - revert: 🗑 Reverts a previous commit
+  - rule: 📜 Changes to .cursor/rules files
 
 ## Template Usage
 
@@ -242,6 +241,132 @@ REMEMBER: Make the fewest changes to the code for the desired outcome.  Do not c
    - Check all cross-references
    - Validate all templates
    - Update all timestamps
+
+
+
+## Type Documentation Rules
+
+1. Required Documentation:
+   - Every exported type must have JSDoc comment
+   - Each field must have inline JSDoc
+   - Include value ranges for numeric fields
+   - Document optional fields
+   - Explain type relationships
+   - Note validation requirements
+   - Document default values
+   - Include usage examples
+
+2. Code Sample Guidelines:
+   - Always precede code with explanatory text
+   - Include parameter descriptions
+   - Explain return values
+   - Add usage examples where helpful
+   - Keep code samples focused and minimal
+
+## Self-Improvement Rules
+
+1. Documentation Maintenance:
+   - Create new .cursor/rules for emerging patterns
+   - Document solutions for recurring issues
+   - Keep code examples current
+   - Update plan files regularly
+
+2. Knowledge Capture:
+   - Document common errors and solutions
+   - Record successful patterns
+   - Update component examples
+   - Track performance improvements
+   - Document API learnings
+
+3. Issue Prevention:
+   - Document type-checking patterns
+   - Record validation strategies
+   - Note state management solutions
+   - Track optimization techniques
+   - Document error handling approaches
+
+## Date and Time Management
+
+1. Always fetch current date and time using terminal command:
+
+   ```powershell
+   Get-Date -Format "yyyy-MM-dd HH:mm"
+   ```
+
+   ```bash
+   date "+%Y-%m-%d %H:%M"
+   ```
+
+   Required for:
+   - Plan updates
+   - Status updates
+   - Progress tracking
+   - Documentation timestamps
+   - Never manually write or assume timestamps
+   - Always use 24-hour format
+   - Always include both date and time
+
+2. Example Usage:
+   ```markdown
+   ### $(Get-Date -Format "yyyy-MM-dd HH:mm") - Feature Update
+
+   - ✓ Completed: Task details
+   - 🤔 Decisions: Decision details
+   - ❌ Issues: Issue details
+   - ⏭️ Next: Next steps
+   ```
+
+3. Timestamp Guidelines:
+   - Use consistent format across all documents
+   - Include timezone if working across timezones
+   - Update timestamps in real-time
+   - Never backdate or forward-date entries
+   - Always fetch new timestamp for each update
+
+## Memory Types and Lifecycle
+
+1. Project Memory:
+   - Location: /docs/
+   - Purpose: Long-term project knowledge
+   - Lifecycle: Project duration
+   - Updates: After significant milestones
+   - Integration Requirements:
+     - Maintain /docs/features/ directory
+     - Track documentation versions
+     - Link features to architectural decisions
+     - Monitor documentation health
+
+2. Working Memory:
+   - Location: /docs/working-memory/
+   - Purpose: Active task tracking and current context
+   - Updates: Real-time during task execution
+   - Lifecycle: Task duration
+   - Integration Requirements:
+     - Link to feature docs
+     - Track documentation updates
+     - Monitor component changes
+
+3. Documentation Memory:
+   - Location: /docs/templates/
+   - Purpose: Standards and patterns
+   - Lifecycle: Evolves with project
+   - Updates: Monthly reviews
+   - Integration Requirements:
+     - Maintain feature documentation templates
+     - Update templates based on learnings
+     - Track template usage patterns
+     - Document best practices
+
+4. Features Memory:
+   - Location: /docs/features/
+   - Purpose: Documents project features using templates
+   - Updates: When features change or documentation becomes outdated
+   - Lifecycle: Project evolution
+   - Integration Requirements:
+     - Every task plan must reference affected feature docs
+     - Documentation updates must be tracked in progress history
+     - Feature changes require documentation review
+     - Component changes must update feature docs
 
 ## Metadata
 

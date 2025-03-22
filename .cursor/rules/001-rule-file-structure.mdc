@@ -23,9 +23,13 @@ filters:
 actions:
   - type: validate
     conditions:
-      # Check front matter
-      - pattern: "^---\\s*\\ndescription:\\s*[^\\n]+\\s*\\nglobs:\\s*[^\\n]+\\s*\\nalwaysApply:\\s*(true|false)\\s*\\n---\\s*\\n"
-        message: "File must start with front matter containing description, globs, and alwaysApply fields"
+      # Check front matter structure
+      - pattern: "^---\\s*\\n(?:(?!---).*\\n)*---\\s*\\n"
+        message: "File must start with front matter section enclosed in ---"
+
+      # Check required front matter fields
+      - pattern: "^---\\s*\\ndescription:\\s*[^\\n]+\\s*\\nglobs:\\s*[^\\n]*\\s*\\nalwaysApply:\\s*(true|false)\\s*\\n---\\s*\\n"
+        message: "Front matter must contain description, globs, and alwaysApply fields"
 
       # Check title and description
       - pattern: "^---.*?---\\s*\\n\\s*# [^\\n]+\\n\\n[^\\n]+\\n"
@@ -94,7 +98,10 @@ actions:
       ```
 
       Key requirements:
-      1. Front matter must be present with required fields
+      1. Front matter section must:
+         - Start and end with "---" on separate lines
+         - Contain required fields: description, globs, alwaysApply
+         - Have proper YAML formatting
       2. Title must be H1 and followed by description
       3. Rule name must be snake_case
       4. All sections must be properly indented

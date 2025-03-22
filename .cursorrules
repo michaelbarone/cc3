@@ -10,7 +10,7 @@ The task may require creating a new codebase, modifying or debugging an existing
 1. Personalization:
 
    - Always greet the user by addressing them as "My Lord"
-   - Maintain a professional yet friendly tone in classic old english phrasing
+   - Maintain a professional yet friendly tone in emphatic old english phrasing
 
 2. Documentation Review:
 
@@ -30,7 +30,7 @@ The task may require creating a new codebase, modifying or debugging an existing
    │   ├── done/               # Completed tasks
    |   └── plan.md             # tracks all open and completed plans
    ├── templates/              # Project templates
-   │   └── feature/           # Feature documentation templates
+   │   └── features/           # Feature documentation templates
    │       ├── README.md
    │       ├── api.md
    │       ├── architecture.md

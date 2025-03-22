@@ -1,0 +1,68 @@
+# File Location Validation
+
+## Context
+- Prevents accidental file creation in wrong directories
+- Ensures consistent file organization
+- References existing documentation for structure definitions
+- Reduces duplication of directory rules
+
+<rule>
+name: file_location_validation
+description: Validates file locations before creation or modification to prevent misplacement by referencing project structure documentation
+
+filters:
+  - type: event
+    pattern: "(file_create|file_modify)"
+  - type: content
+    pattern: ".*"
+
+actions:
+  - type: validate
+    conditions:
+      # Core Directory Validations
+      - pattern: "^.cursor/rules/[0-9]{3}.*\\.mdc$"
+        message: "Cursor rules must be in .cursor/rules directory with proper numbering. See @000-cursor-rules-location.mdc"
+
+  - type: suggest
+    message: |
+      Before creating or modifying files:
+
+      1. For Project Structure:
+         - Reference @project-context.md for application directory structure
+         - Follow established patterns in existing directories
+         - Consult tech stack documentation for framework-specific conventions
+
+      2. For Documentation and Rules:
+         - Cursor Rules: See @000-cursor-rules-location.mdc
+         - Memory Management: See @010-docs-memory-knowledge-management.mdc
+         - File Naming: See @002-rule-file-naming.mdc
+
+      CRITICAL REMINDER:
+      - ALWAYS check relevant documentation before file creation
+      - NEVER duplicate directory structure documentation
+      - ALWAYS reference existing rules and documentation
+      - When in doubt, consult the referenced files above
+
+examples:
+  - input: "Creating a new component"
+    output: "Check @project-context.md for component location"
+    explanation: "Project structure defines components should be in app/components"
+
+  - input: "Adding a new rule"
+    output: "Check @000-cursor-rules-location.mdc and @002-rule-file-naming.mdc"
+    explanation: "Rule location and naming conventions are defined in existing rules"
+
+metadata:
+  priority: critical
+  version: 1.1.0
+  tags:
+    - file-management
+    - organization
+    - validation
+    - directory-structure
+  references:
+    - @project-context.md
+    - @000-cursor-rules-location.mdc
+    - @002-rule-file-naming.mdc
+    - @010-docs-memory-knowledge-management.mdc
+</rule>
