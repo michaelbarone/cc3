@@ -37,52 +37,202 @@ actions:
       Follow these React best practices:
 
       1. Component Structure:
-         - Keep components small and focused
-         - Use proper prop typing
-         - Implement proper error boundaries
-         - Use proper component composition
+         - Keep components small and focused (under 200 lines)
+         - Use proper prop typing with TypeScript
+         - Implement error boundaries for fault isolation
+         - Use composition over inheritance
+         - Extract reusable UI into shared components
+         - Implement proper loading and error states
+         - Use proper component composition patterns:
+           ```tsx
+           // Good: Composition
+           function Dialog({ header, content, footer }) {
+             return (
+               <div className="dialog">
+                 <DialogHeader>{header}</DialogHeader>
+                 <DialogContent>{content}</DialogContent>
+                 <DialogFooter>{footer}</DialogFooter>
+               </div>
+             );
+           }
 
-      2. Hooks:
-         - Follow hooks rules (only call at top level)
-         - Create custom hooks for reusable logic
-         - Use proper dependency arrays
-         - Implement proper cleanup in useEffect
+           // Bad: Props drilling
+           function Dialog({ title, content, buttonText }) {
+             return (
+               <div>
+                 <h2>{title}</h2>
+                 <p>{content}</p>
+                 <button>{buttonText}</button>
+               </div>
+             );
+           }
+           ```
 
-      3. Performance:
-         - Use proper memoization (useMemo, useCallback)
-         - Implement proper key props for lists
-         - Avoid unnecessary re-renders
-         - Use proper lazy loading
+      2. useEffect Best Practices:
+         - Minimize useEffect Usage:
+           ```tsx
+           // Bad: Unnecessary useEffect
+           function Counter() {
+             const [count, setCount] = useState(0);
+             const [doubled, setDoubled] = useState(0);
 
-      4. State Management:
-         - Keep state as local as possible
-         - Use proper state initialization
-         - Implement proper state updates
-         - Use proper context structure
+             useEffect(() => {
+               setDoubled(count * 2);
+             }, [count]);
+
+             // Good: Calculate during render
+             const doubled = count * 2;
+           }
+           ```
+
+         - Valid useEffect Use Cases:
+           1. Synchronizing with external systems
+           2. Managing subscriptions
+           3. Fetching data (when not using a data fetching library)
+           4. Imperative DOM updates
+
+         - Proper Cleanup:
+           ```tsx
+           useEffect(() => {
+             const subscription = subscribe();
+             return () => {
+               subscription.unsubscribe();
+             };
+           }, []);
+           ```
+
+         - Avoid Race Conditions:
+           ```tsx
+           useEffect(() => {
+             let isMounted = true;
+
+             async function fetchData() {
+               const data = await api.fetch();
+               if (isMounted) {
+                 setData(data);
+               }
+             }
+
+             fetchData();
+             return () => {
+               isMounted = false;
+             };
+           }, []);
+           ```
+
+      3. Performance Optimization:
+         - Use Proper Memoization:
+           ```tsx
+           // When to use useMemo
+           const expensiveValue = useMemo(() => {
+             return computeExpensiveValue(a, b);
+           }, [a, b]);
+
+           // When to use useCallback
+           const memoizedCallback = useCallback(() => {
+             doSomething(a, b);
+           }, [a, b]);
+           ```
+
+         - Implement List Virtualization:
+           ```tsx
+           import { VirtualizedList } from 'react-window';
+
+           function LongList({ items }) {
+             return (
+               <VirtualizedList
+                 height={400}
+                 itemCount={items.length}
+                 itemSize={50}
+                 width={300}
+               >
+                 {({ index, style }) => (
+                   <div style={style}>{items[index]}</div>
+                 )}
+               </VirtualizedList>
+             );
+           }
+           ```
+
+         - Code Splitting:
+           ```tsx
+           const HeavyComponent = lazy(() => import('./HeavyComponent'));
+
+           function App() {
+             return (
+               <Suspense fallback={<Loading />}>
+                 <HeavyComponent />
+               </Suspense>
+             );
+           }
+           ```
+
+      4. Testing Best Practices:
+         - Test User Behavior:
+           ```tsx
+           test('submits form with user data', async () => {
+             render(<UserForm />);
+
+             await userEvent.type(
+               screen.getByLabelText(/name/i),
+               'John Doe'
+             );
+             await userEvent.click(
+               screen.getByRole('button', { name: /submit/i })
+             );
+
+             expect(screen.getByText(/success/i)).toBeInTheDocument();
+           });
+           ```
+
+         - Test Custom Hooks:
+           ```tsx
+           function setup(initialProps) {
+             const returnVal = {};
+
+             function TestComponent(props) {
+               const result = useCustomHook(props);
+               Object.assign(returnVal, result);
+               return null;
+             }
+
+             render(<TestComponent {...initialProps} />);
+             return returnVal;
+           }
+           ```
 
 examples:
   - input: |
-      type Props = {
-        title: string;
-        onClick: () => void;
+      // Bad: Unnecessary useEffect
+      function Profile({ userId }) {
+        const [fullName, setFullName] = useState('');
+
+        useEffect(() => {
+          setFullName(`${user.firstName} ${user.lastName}`);
+        }, [user]);
+
+        return <h1>{fullName}</h1>;
       }
 
-      export function Button({ title, onClick }: Props) {
-        return <button onClick={onClick}>{title}</button>
+      // Good: Calculate during render
+      function Profile({ user }) {
+        const fullName = `${user.firstName} ${user.lastName}`;
+        return <h1>{fullName}</h1>;
       }
-    output: "Invalid: Component name should be PascalCase"
+    output: "Example of avoiding unnecessary useEffect"
 
   - input: |
-      type Props = {
-        title: string;
-        onClick: () => void;
-      }
+      // Good: Proper useEffect cleanup
+      function ChatRoom({ roomId }) {
+        useEffect(() => {
+          const connection = createConnection(roomId);
+          connection.connect();
+          return () => connection.disconnect();
+        }, [roomId]);
 
-      export function useCustomHook() {
-        const [state, setState] = useState(false)
-        return { state, setState }
+        return <div>Chat Room: {roomId}</div>;
       }
-    output: "Valid React hook"
+    output: "Valid useEffect with proper cleanup"
 
 metadata:
   priority: high

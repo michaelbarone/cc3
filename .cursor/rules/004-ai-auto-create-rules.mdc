@@ -1,10 +1,48 @@
 ---
 description: Use ALWAYS when asked to CREATE A RULE or UPDATE A RULE or taught a lesson from the user that should be retained as a new rule for Cursor
-globs:
-alwaysApply: false
+globs: .cursor/rules/**/*.mdc
+alwaysApply: true
 ---
 
 # Cursor Rules Format
+
+## Rule Creation Process
+
+1. Before Creating a New Rule:
+   - Search existing rules for similar content
+   - Check for overlapping requirements
+   - Identify potential conflicts
+   - Verify rule category assignment
+
+2. Duplication Prevention Steps:
+   ```markdown
+   a. Search Phase:
+      - Review all .cursor/rules/*.mdc files
+      - Look for similar rule names
+      - Check for overlapping content
+      - Identify related rules
+
+   b. Analysis Phase:
+      - Compare rule purposes
+      - Check for content overlap
+      - Identify potential conflicts
+      - Review rule categories
+
+   c. Decision Phase:
+      - If duplicate found: Stop and notify user
+      - If partial overlap: Propose consolidation
+      - If related but distinct: Cross-reference rules
+      - If unique: Proceed with creation
+   ```
+
+3. Required Coordination Checks:
+   ```markdown
+   - Category Alignment: Check if rule fits assigned number range
+   - Cross-References: Link to related rules
+   - Dependency Chain: Document rule dependencies
+   - Version Compatibility: Ensure no conflicts
+   ```
+
 ## Template Structure for Rules Files
 
 ```mdc
@@ -19,10 +57,12 @@ alwaysApply: {true or false}
 ## Context
 - When to apply this rule
 - Prerequisites or conditions
+- Related rules and dependencies
 
 ## Requirements
 - Concise, actionable items
 - Each requirement must be testable
+- Cross-references to other rules
 
 ## Examples
 <example>
@@ -36,6 +76,7 @@ Invalid concise example with explanation
 ## Critical Rules
   - Always do X
   - NEVER do Y
+  - Reference related rules when overlapping
 ```
 
 ## File Organization
@@ -67,7 +108,7 @@ Common glob patterns for different rule types:
 - alwaysApply: {true or false} - when true will be attached to every conversation (but front matter still is important for it to be used!)
 
 ### Body
-- context: Usage conditions
+- context: Usage conditions and related rules
 - requirements: Actionable items
 - examples: Both valid and invalid
 - critical-rules: summary of short rule bullets that are the most critical to abide by
@@ -82,14 +123,16 @@ Common glob patterns for different rule types:
 - Always indent content within XML or nested XML tags by 2 spaces
 - Emojies and Mermaid diagrams are allowed if it is not redundant and better explains the rule for the AI comprehension.
 
-
 ## Critical Rules
   - Keep frontmatter description under 120 characters (or less) while maintaining clear intent for rule selection by AI Agent
-  - Keep the rule DRY - do not repeate or be redundant or overly explanetory.
-  - Use susinct markdown the agent can easily understand.
-  - the front matter MUST ALWAYS have description, globs, and alwaysApply, even if the value is null
+  - Keep the rule DRY - do not repeat or be redundant or overly explanatory
+  - Use succinct markdown the agent can easily understand
+  - The front matter MUST ALWAYS have description, globs, and alwaysApply, even if the value is null
   - Use standard glob patterns without quotes (e.g., *.js, src/**/*.ts)
   - TRY to keep the total rule line count under 50, better under 25, lines (unless there are diagrams or longer required examples, as that will increase the overall line count)
   - Always include a valid and invalid example
   - Quotes are not needed around glob patterns
-```
+  - ALWAYS check for existing rules that might contain similar content
+  - STOP and clarify with user if potential rule overlap is found
+  - Document relationships and dependencies between rules
+  - Cross-reference related rules using their file names
