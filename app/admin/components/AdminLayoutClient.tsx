@@ -1,6 +1,6 @@
 "use client";
 
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import UserMenu from "@/app/components/ui/UserMenu";
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import FolderIcon from "@mui/icons-material/Folder";
 import LinkIcon from "@mui/icons-material/Link";
@@ -10,7 +10,6 @@ import SettingsIcon from "@mui/icons-material/Settings";
 import {
   AppBar,
   Box,
-  Button,
   CssBaseline,
   Divider,
   Drawer,
@@ -39,10 +38,6 @@ export function AdminLayoutClient({ children }: AdminLayoutClientProps) {
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
-  };
-
-  const handleBackToDashboard = () => {
-    router.replace("/dashboard");
   };
 
   const menuItems = [
@@ -109,9 +104,7 @@ export function AdminLayoutClient({ children }: AdminLayoutClientProps) {
           <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
             {menuItems.find((item) => item.href === pathname)?.text || "Admin"}
           </Typography>
-          <Button color="inherit" startIcon={<ArrowBackIcon />} onClick={handleBackToDashboard}>
-            Back to Dashboard
-          </Button>
+          <UserMenu showAdminOption />
         </Toolbar>
       </AppBar>
       <Box component="nav" sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 } }}>

@@ -1,32 +1,14 @@
 "use client";
 
+import UserMenu from "@/app/components/ui/UserMenu";
 import { useAuth } from "@/app/lib/auth/auth-context";
 import { useUserPreferences } from "@/app/lib/hooks/useUserPreferences";
 import { ThemeContext } from "@/app/theme/theme-provider";
-import AccountCircleIcon from "@mui/icons-material/AccountCircle";
-import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
-import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
-import Brightness4Icon from "@mui/icons-material/Brightness4";
-import Brightness7Icon from "@mui/icons-material/Brightness7";
 import CloseIcon from "@mui/icons-material/Close";
-import DashboardIcon from "@mui/icons-material/Dashboard";
-import LogoutIcon from "@mui/icons-material/Logout";
 import MenuIcon from "@mui/icons-material/Menu";
-import SettingsIcon from "@mui/icons-material/Settings";
-import {
-  AppBar,
-  Box,
-  Divider,
-  Drawer,
-  IconButton,
-  Menu,
-  MenuItem,
-  Toolbar,
-  Typography,
-  useTheme,
-} from "@mui/material";
+import { AppBar, Box, Drawer, IconButton, Toolbar, Typography, useTheme } from "@mui/material";
 import { useRouter } from "next/navigation";
-import React, {
+import {
   ReactNode,
   useCallback,
   useContext,
@@ -46,7 +28,7 @@ interface AppConfig {
 interface AppLayoutProps {
   children: ReactNode;
   menuContent: ReactNode;
-  forceMenuPosition?: "side" | "top" | null; // Updated type to match state type
+  forceMenuPosition?: "side" | "top" | null;
 }
 
 export default function AppLayout({
@@ -54,7 +36,7 @@ export default function AppLayout({
   menuContent,
   forceMenuPosition = null,
 }: AppLayoutProps) {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const { preferences, loading: preferencesLoading } = useUserPreferences();
   const router = useRouter();
   const theme = useTheme();
@@ -62,7 +44,6 @@ export default function AppLayout({
   const [mounted, setMounted] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [userMenuAnchorEl, setUserMenuAnchorEl] = useState<null | HTMLElement>(null);
   const [appConfig, setAppConfig] = useState<AppConfig>({
     appName: "Control Center",
     appLogo: null,
@@ -100,37 +81,6 @@ export default function AppLayout({
   const handleDrawerToggle = useCallback(() => {
     setMobileOpen((prev) => !prev);
   }, []);
-
-  // Navigation functions with menu close
-  const navigateToAdmin = useCallback(() => {
-    setUserMenuAnchorEl(null);
-    router.replace("/admin");
-  }, [router]);
-
-  const navigateToSettings = useCallback(() => {
-    setUserMenuAnchorEl(null);
-    router.replace("/settings");
-  }, [router]);
-
-  const navigateToDashboard = useCallback(() => {
-    setUserMenuAnchorEl(null);
-    router.replace("/dashboard");
-  }, [router]);
-
-  // Event handler functions
-  const handleUserMenuClick = useCallback((event: React.MouseEvent<HTMLElement>) => {
-    setUserMenuAnchorEl(event.currentTarget);
-  }, []);
-
-  const handleUserMenuClose = useCallback(() => {
-    setUserMenuAnchorEl(null);
-  }, []);
-
-  const handleLogout = useCallback(async () => {
-    setUserMenuAnchorEl(null);
-    await logout();
-    router.push("/login");
-  }, [logout, router]);
 
   // Fetch app configuration
   useEffect(() => {
@@ -260,79 +210,7 @@ export default function AppLayout({
                 ml: "auto",
               }}
             >
-              {user && (
-                <>
-                  <Box
-                    sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      cursor: "pointer",
-                      mr: 2,
-                    }}
-                    onClick={handleUserMenuClick}
-                    aria-controls={userMenuAnchorEl ? "user-menu" : undefined}
-                    aria-haspopup="true"
-                    aria-expanded={userMenuAnchorEl ? "true" : undefined}
-                  >
-                    <AccountCircleIcon sx={{ mr: { xs: 0, sm: 1 } }} />
-                    <Typography
-                      variant="body1"
-                      sx={{
-                        display: { xs: "none", sm: "block" },
-                      }}
-                    >
-                      {user.username}
-                    </Typography>
-                    <ArrowDropDownIcon sx={{ display: { xs: "none", sm: "block" } }} />
-                  </Box>
-                  <Menu
-                    id="user-menu"
-                    anchorEl={userMenuAnchorEl}
-                    open={Boolean(userMenuAnchorEl)}
-                    onClose={handleUserMenuClose}
-                    MenuListProps={{
-                      "aria-labelledby": "user-button",
-                    }}
-                    anchorOrigin={{
-                      vertical: "bottom",
-                      horizontal: "right",
-                    }}
-                    transformOrigin={{
-                      vertical: "top",
-                      horizontal: "right",
-                    }}
-                  >
-                    <MenuItem onClick={navigateToDashboard}>
-                      <DashboardIcon sx={{ mr: 1 }} />
-                      Dashboard
-                    </MenuItem>
-                    <MenuItem onClick={navigateToSettings}>
-                      <SettingsIcon sx={{ mr: 1 }} />
-                      Settings
-                    </MenuItem>
-                    {user.isAdmin && (
-                      <MenuItem onClick={navigateToAdmin}>
-                        <AdminPanelSettingsIcon sx={{ mr: 1 }} />
-                        Admin Area
-                      </MenuItem>
-                    )}
-                    <Divider />
-                    <MenuItem onClick={colorMode.toggleColorMode}>
-                      {theme.palette.mode === "dark" ? (
-                        <Brightness7Icon sx={{ mr: 1 }} />
-                      ) : (
-                        <Brightness4Icon sx={{ mr: 1 }} />
-                      )}
-                      {theme.palette.mode === "dark" ? "Light Mode" : "Dark Mode"}
-                    </MenuItem>
-                    <Divider />
-                    <MenuItem onClick={handleLogout}>
-                      <LogoutIcon sx={{ mr: 1 }} />
-                      Logout
-                    </MenuItem>
-                  </Menu>
-                </>
-              )}
+              {user && <UserMenu showAdminOption />}
             </Box>
           </Toolbar>
         </AppBar>
@@ -443,79 +321,7 @@ export default function AppLayout({
 
             {/* Right section - User menu and theme toggle */}
             <Box sx={{ display: "flex", alignItems: "center" }}>
-              {user && (
-                <>
-                  <Box
-                    sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      cursor: "pointer",
-                      mr: 2,
-                    }}
-                    onClick={handleUserMenuClick}
-                    aria-controls={userMenuAnchorEl ? "user-menu" : undefined}
-                    aria-haspopup="true"
-                    aria-expanded={userMenuAnchorEl ? "true" : undefined}
-                  >
-                    <AccountCircleIcon sx={{ mr: { xs: 0, sm: 1 } }} />
-                    <Typography
-                      variant="body1"
-                      sx={{
-                        display: { xs: "none", sm: "block" },
-                      }}
-                    >
-                      {user.username}
-                    </Typography>
-                    <ArrowDropDownIcon sx={{ display: { xs: "none", sm: "block" } }} />
-                  </Box>
-                  <Menu
-                    id="user-menu"
-                    anchorEl={userMenuAnchorEl}
-                    open={Boolean(userMenuAnchorEl)}
-                    onClose={handleUserMenuClose}
-                    MenuListProps={{
-                      "aria-labelledby": "user-button",
-                    }}
-                    anchorOrigin={{
-                      vertical: "bottom",
-                      horizontal: "right",
-                    }}
-                    transformOrigin={{
-                      vertical: "top",
-                      horizontal: "right",
-                    }}
-                  >
-                    <MenuItem onClick={navigateToDashboard}>
-                      <DashboardIcon sx={{ mr: 1 }} />
-                      Dashboard
-                    </MenuItem>
-                    <MenuItem onClick={navigateToSettings}>
-                      <SettingsIcon sx={{ mr: 1 }} />
-                      Settings
-                    </MenuItem>
-                    {user.isAdmin && (
-                      <MenuItem onClick={navigateToAdmin}>
-                        <AdminPanelSettingsIcon sx={{ mr: 1 }} />
-                        Admin Area
-                      </MenuItem>
-                    )}
-                    <Divider />
-                    <MenuItem onClick={colorMode.toggleColorMode}>
-                      {theme.palette.mode === "dark" ? (
-                        <Brightness7Icon sx={{ mr: 1 }} />
-                      ) : (
-                        <Brightness4Icon sx={{ mr: 1 }} />
-                      )}
-                      {theme.palette.mode === "dark" ? "Light Mode" : "Dark Mode"}
-                    </MenuItem>
-                    <Divider />
-                    <MenuItem onClick={handleLogout}>
-                      <LogoutIcon sx={{ mr: 1 }} />
-                      Logout
-                    </MenuItem>
-                  </Menu>
-                </>
-              )}
+              {user && <UserMenu showAdminOption />}
             </Box>
           </Toolbar>
         </AppBar>
