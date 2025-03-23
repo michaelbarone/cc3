@@ -135,6 +135,16 @@ interface Session {
 - Malware scanning
 - Secure storage
 
+### Session Security
+- JWT tokens with short expiration
+- HTTP-only secure cookies
+- CSRF protection implemented
+- Session invalidation on password change
+- Explicit cookie removal during logout
+- Force page reload after logout to clear state
+- Cookie settings enforced (secure, sameSite: strict)
+- Cookie expiration set to epoch on logout
+
 ## Performance Considerations
 
 ### Authentication Optimization

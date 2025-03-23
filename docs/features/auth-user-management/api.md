@@ -49,14 +49,20 @@ interface LoginResponse {
 
 ### POST /api/auth/logout
 
-Ends the current user session.
+Ends the current user session and removes authentication cookie.
 
 ```typescript
 // Response Type
 interface LogoutResponse {
   success: boolean;
+  error?: string;
 }
 ```
+
+Key Features:
+- Removes HTTP-only auth_token cookie
+- Invalidates current session
+- Forces page reload for clean state
 
 ### GET /api/auth/session
 
