@@ -9,7 +9,7 @@ alwaysApply: true
 
 <rule>
 name: rule_acknowledgment
-description: Enforces explicit acknowledgment of rule relevance and application in responses
+description: Enforces explicit acknowledgment of rule relevance and application in responses, including dynamic updates during conversations
 filters:
   - type: event
     pattern: "response_start"
@@ -20,7 +20,7 @@ actions:
     message: |
       Please acknowledge rules at the start of your response:
 
-      1. Rule Review Structure:
+      1. Initial Rule Review Structure:
          ```markdown
          ### Rule Acknowledgment
 
@@ -29,35 +29,52 @@ actions:
          - [Another Rule]: Specific application details
 
          **Rules Considered But Not Relevant:**
-         - [Rule Name]: Why it's not applicable
-         - [Another Rule]: Reason for non-relevance
+         [Grouped by category with brief explanation of non-relevance]
 
          **Implementation Following:**
          [Your implementation details...]
          ```
 
-      2. Required Components:
+      2. Dynamic Update Structure (Required when new rules are considered):
+         ```markdown
+         ### Rule Acknowledgment Update
+         [Timestamp from system]
+
+         **Newly Considered Rules:**
+         - [Rule Name]: Why it was brought in and how it's being applied
+         - [Another Rule]: Its relevance and application
+
+         **Previously Active Rules:**
+         - [List of rules that were already in use]
+         ```
+
+      3. Required Components:
          - [ ] List all rules considered
          - [ ] Explicitly state which rules are being followed
          - [ ] Explain why certain rules aren't relevant
          - [ ] Reference specific sections of applied rules
          - [ ] Note any rule conflicts or priority decisions
+         - [ ] Provide updates when new rules are considered
+         - [ ] Maintain history of rule applications in conversation
 
-      3. Rule Application Notes:
+      4. Rule Application Notes:
          - Document any rule adaptations
          - Note version-specific rule considerations
          - Highlight any rule overlap handling
          - Explain priority decisions when rules conflict
+         - Track rule consideration history
+         - Update acknowledgments when context changes
 
-      4. Rule Documentation Updates:
+      5. Rule Documentation Updates:
          - Note any needed rule clarifications
          - Suggest rule improvements based on application
          - Document any rule conflicts discovered
          - Track rule effectiveness
+         - Record patterns of rule usage in conversations
 
 examples:
   - input: |
-      "Updating a component structure"
+      "Initial component structure setup"
     output: |
       ### Rule Acknowledgment
 
@@ -66,29 +83,34 @@ examples:
       - component-structure: Applying component organization standards
 
       **Rules Considered But Not Relevant:**
-      - database-management: No database changes involved
-      - api-versioning: Not touching API endpoints
+      Frontend Rules:
+      - [List of rules]: Not applicable to current task
+
+      Backend Rules:
+      - [List of rules]: Not dealing with backend changes
 
       **Implementation Following:**
-      [Component update details...]
+      [Component setup details...]
+
   - input: |
-      "Setting up new feature"
+      "Adding API integration to component"
     output: |
-      ### Rule Acknowledgment
+      ### Rule Acknowledgment Update
 
-      **Relevant Rules Applied:**
-      - feature-planning: Following feature setup checklist
-      - testing-standards: Implementing required test coverage
+      **Newly Considered Rules:**
+      - api-standards: Now relevant for API integration
+      - error-handling: Required for API error states
 
-      **Rules Considered But Not Relevant:**
-      - migration-safety: No database migrations needed
-      - cache-management: No caching requirements yet
+      **Previously Active Rules:**
+      - documentation-reference
+      - component-structure
 
       **Implementation Following:**
-      [Feature setup details...]
+      [API integration details...]
+
 metadata:
   priority: high
-  version: 1.0
+  version: 1.1
   tags:
     - process
     - documentation
