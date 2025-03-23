@@ -1,24 +1,23 @@
 "use client";
 
-import { ReactNode, useState, useEffect } from "react";
-import {
-  Box,
-  Typography,
-  Paper,
-  List,
-  ListItem,
-  ListItemIcon,
-  ListItemText,
-  ListItemButton,
-  Divider,
-  useTheme,
-} from "@mui/material";
-import LockIcon from "@mui/icons-material/Lock";
 import AppLayout from "@/app/components/layout/AppLayout";
-import { usePathname } from "next/navigation";
-import { useRouter } from "next/navigation";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import BrushIcon from "@mui/icons-material/Brush";
+import LockIcon from "@mui/icons-material/Lock";
+import {
+  Box,
+  Divider,
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
+  Paper,
+  Typography,
+  useTheme,
+} from "@mui/material";
+import { usePathname, useRouter } from "next/navigation";
+import { ReactNode, useEffect, useState } from "react";
 
 interface SettingsLayoutProps {
   children: ReactNode;
