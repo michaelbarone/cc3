@@ -10,6 +10,7 @@ Rule for automatically committing changes made by CursorAI using conventional co
 <rule>
 name: conventional_commits
 description: Automatically commit changes made by CursorAI using conventional commits format with support for breaking changes, multiple scopes, and detailed descriptions
+
 filters:
   - type: event
     pattern: "build_success"
@@ -17,63 +18,6 @@ filters:
     pattern: "*"
 
 actions:
-  - type: execute
-    command: |
-      # Extract the change type and scope from the changes
-      CHANGE_TYPE=""
-      case "$CHANGE_DESCRIPTION" in
-        *"add"*|*"create"*|*"implement"*) CHANGE_TYPE="feat";;
-        *"fix"*|*"correct"*|*"resolve"*) CHANGE_TYPE="fix";;
-        *"refactor"*|*"restructure"*) CHANGE_TYPE="refactor";;
-        *"test"*) CHANGE_TYPE="test";;
-        *"doc"*|*"comment"*) CHANGE_TYPE="docs";;
-        *"style"*|*"format"*) CHANGE_TYPE="style";;
-        *"perf"*|*"optimize"*) CHANGE_TYPE="perf";;
-        *) CHANGE_TYPE="chore";;
-      esac
-
-      # Extract scopes from file path and content
-      SCOPES=()
-      # Add directory-based scope
-      DIR_SCOPE=$(dirname "$FILE" | tr '/' '-')
-      if [ ! -z "$DIR_SCOPE" ] && [ "$DIR_SCOPE" != "." ]; then
-        SCOPES+=("$DIR_SCOPE")
-      fi
-
-      # Add content-based scopes (e.g., from comments or file content)
-      if grep -q "BREAKING CHANGE:" "$FILE"; then
-        SCOPES+=("breaking")
-      fi
-
-      # Combine scopes if multiple exist
-      if [ ${#SCOPES[@]} -gt 0 ]; then
-        SCOPE=$(printf "%s," "${SCOPES[@]}" | sed 's/,$//')
-      else
-        SCOPE=""
-      fi
-
-      # Check for breaking changes
-      BREAKING=""
-      if grep -q "BREAKING CHANGE:" "$FILE"; then
-        BREAKING="BREAKING CHANGE: "
-      fi
-
-      # Extract detailed description if available
-      BODY=""
-      if [ -n "$CHANGE_DESCRIPTION" ]; then
-        BODY="\n\n$CHANGE_DESCRIPTION"
-      fi
-
-      # Extract references and breaking changes for footer
-      FOOTER=""
-      if grep -q "Closes #" "$FILE"; then
-        FOOTER="\n\nCloses $(grep -o "Closes #[0-9]*" "$FILE" | tr '\n' ' ')"
-      fi
-
-      # Commit the changes
-      git add "$FILE"
-      git commit -m "$CHANGE_TYPE${SCOPE:+($SCOPE)}: $BREAKING$CHANGE_DESCRIPTION$BODY$FOOTER"
-
   - type: suggest
     message: |
       Changes should be committed using conventional commits format:
@@ -105,6 +49,251 @@ actions:
       Body and Footer:
       - Body: Detailed description of the change
       - Footer: References to issues (e.g., "Closes #123")
+
+      ## Multi-line Commit Examples
+
+      ### PowerShell Examples
+
+      1. Using Here-String (Recommended):
+      ```powershell
+      # Best for complex multi-line messages with formatting
+      $commitMessage = @"
+      feat(auth): implement OAuth2 authentication
+
+      - Add OAuth2 provider integration
+      - Implement token refresh logic
+      - Add user session management
+      - Update authentication middleware
+
+      BREAKING CHANGE: New authentication flow requires updated client configuration
+      Closes #123
+      "@
+      git commit -m $commitMessage
+      ```
+
+      2. Using Multiple -m Parameters:
+      ```powershell
+      # Good for bullet-point style messages
+      git commit -m "feat(ui): add new dashboard components" `
+                -m "" `
+                -m "- Implement metric cards" `
+                -m "- Add chart components" `
+                -m "- Create responsive layout" `
+                -m "" `
+                -m "Closes #456"
+      ```
+
+      3. Using String Array Join:
+      ```powershell
+      # Best for programmatic commits
+      $message = @(
+          "feat(api): add new endpoints"
+          ""
+          "- Add user management endpoints"
+          "- Implement rate limiting"
+          "- Add request validation"
+          ""
+          "Closes #789"
+      ) -join "`n"
+      git commit -m $message
+      ```
+
+      4. Using Environment Variable with Editor:
+      ```powershell
+      # Best for very complex commits
+      $env:GIT_EDITOR = "code --wait"
+      git commit
+      ```
+
+      ### Bash Examples
+
+      1. Using Heredoc (Recommended):
+      ```bash
+      # Best for complex multi-line messages with formatting
+      git commit -m "$(cat << 'EOF'
+      feat(auth): implement OAuth2 authentication
+
+      - Add OAuth2 provider integration
+      - Implement token refresh logic
+      - Add user session management
+      - Update authentication middleware
+
+      BREAKING CHANGE: New authentication flow requires updated client configuration
+      Closes #123
+      EOF
+      )"
+      ```
+
+      2. Using Multiple -m Parameters:
+      ```bash
+      # Good for bullet-point style messages
+      git commit -m "feat(ui): add new dashboard components" \
+                -m "" \
+                -m "- Implement metric cards" \
+                -m "- Add chart components" \
+                -m "- Create responsive layout" \
+                -m "" \
+                -m "Closes #456"
+      ```
+
+      3. Using Variable with Newlines:
+      ```bash
+      # Best for programmatic commits
+      message="feat(api): add new endpoints
+
+      - Add user management endpoints
+      - Implement rate limiting
+      - Add request validation
+
+      Closes #789"
+      git commit -m "$message"
+      ```
+
+      4. Using Environment Variable with Editor:
+      ```bash
+      # Best for very complex commits
+      export GIT_EDITOR="code --wait"
+      git commit
+      ```
+
+      ## Best Practices for Multi-line Commits
+
+      1. Here-String/Heredoc Method:
+         - Best for complex multi-line messages
+         - Preserves formatting exactly
+         - Easiest to read and maintain
+         - Use when commit has detailed body
+
+      2. Multiple `-m` Parameters:
+         - Good for bullet-point style messages
+         - Each `-m` creates a new paragraph
+         - Use backtick (PowerShell) or backslash (Bash) for line continuation
+         - Always include empty lines between sections
+
+      3. String/Variable Method:
+         - Good for programmatic commits
+         - Allows dynamic content
+         - Use array join in PowerShell
+         - Use embedded newlines in Bash
+
+      4. Editor Method:
+         - Best for very complex commits
+         - Allows template usage
+         - Full editor capabilities
+         - Good for collaborative review
+
+      ## Common Pitfalls to Avoid
+
+      1. PowerShell - Don't use newlines directly:
+      ```powershell
+      # BAD: Newlines won't work as expected
+      git commit -m "feat(scope): title
+      body line 1
+      body line 2"
+      ```
+
+      2. PowerShell - Don't use && for command chaining:
+      ```powershell
+      # BAD: Using && will fail in PowerShell
+      git add . && git commit -m "feat(scope): new feature"
+
+      # BAD: Attempting to combine commands with &&
+      git add . && git commit -m "feat(scope): title" && git push
+
+      # BAD: Mixed command chaining
+      git add . && git commit -m "feat(scope): changes
+      with newlines" && git push
+      ```
+
+      3. PowerShell - Don't use incorrect line continuation:
+      ```powershell
+      # BAD: Incorrect line continuation
+      git commit -m "feat(scope): title \
+      body line 1 \
+      body line 2"
+
+      # BAD: Missing backtick for line continuation
+      git commit -m "feat(ui): add components"
+                -m "- First change"
+                -m "- Second change"
+      ```
+
+      4. PowerShell - Instead use these correct approaches:
+      ```powershell
+      # GOOD: Using here-string
+      $msg = @"
+      feat(scope): title
+
+      body line 1
+      body line 2
+      "@
+      git commit -m $msg
+
+      # GOOD: Using semicolon or separate lines
+      git add .; git commit -m "feat(scope): new feature"
+
+      # GOOD: Using proper line continuation
+      git commit -m "feat(ui): add components" `
+                -m "- First change" `
+                -m "- Second change"
+
+      # GOOD: Using command sequence
+      git add .
+      git commit -m "feat(scope): new feature"
+      git push
+      ```
+
+      5. PowerShell - Don't use string concatenation:
+      ```powershell
+      # BAD: String concatenation for multi-line
+      $msg = "feat(scope): title" + "`n" +
+             "body line 1" + "`n" +
+             "body line 2"
+      git commit -m $msg
+
+      # BAD: Mixed string types
+      $msg = 'feat(scope): title' + "`n" +
+             'body line 1'
+      git commit -m $msg
+      ```
+
+      6. PowerShell - Instead use proper string formatting:
+      ```powershell
+      # GOOD: Using string array join
+      $msg = @(
+          "feat(scope): title"
+          ""
+          "body line 1"
+          "body line 2"
+      ) -join "`n"
+      git commit -m $msg
+
+      # GOOD: Using format operator
+      $type = "feat"
+      $scope = "ui"
+      $msg = "{0}({1}): add new components" -f $type, $scope
+      git commit -m $msg
+      ```
+
+      3. Bash - Don't use:
+      ```bash
+      # BAD: Escaping newlines incorrectly
+      git commit -m "feat(scope): title \n\
+      body line 1 \n\
+      body line 2"
+      ```
+
+      4. Bash - Instead use:
+      ```bash
+      # GOOD: Using heredoc
+      git commit -m "$(cat << 'EOF'
+      feat(scope): title
+
+      body line 1
+      body line 2
+      EOF
+      )"
+      ```
 
 examples:
   - input: |
