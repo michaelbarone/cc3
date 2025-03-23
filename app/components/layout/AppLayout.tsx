@@ -129,7 +129,7 @@ export default function AppLayout({
   const handleLogout = useCallback(async () => {
     setUserMenuAnchorEl(null);
     await logout();
-    router.push("/login?logout=true");
+    router.push("/login");
   }, [logout, router]);
 
   // Fetch app configuration

@@ -45,15 +45,21 @@ export default function LoginPage() {
   const searchParams = useSearchParams();
   const redirectPath = searchParams.get("redirect") || "/";
   const justLoggedOut = searchParams.get("logout") === "true";
-  const { login, user, loading } = useAuth();
+  const { login, user, loading, setUser } = useAuth();
   const theme = useTheme();
 
   // Add effect to handle redirect for authenticated users
   useEffect(() => {
-    if (!loading && user && !justLoggedOut) {
-      router.replace(redirectPath);
+    if (!loading && user) {
+      // Only redirect if user is logged in and not coming from a logout action
+      if (!justLoggedOut) {
+        router.replace(redirectPath);
+      } else {
+        // If user was logged out but somehow still has user data, clear it
+        setUser(null);
+      }
     }
-  }, [loading, user, justLoggedOut, router, redirectPath]);
+  }, [loading, user, justLoggedOut, router, redirectPath, setUser]);
 
   // State for theme configuration
   const [currentTheme, setCurrentTheme] = useState<"light" | "dark">("dark");

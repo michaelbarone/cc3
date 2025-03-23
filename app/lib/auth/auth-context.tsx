@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { createContext, ReactNode, useContext, useEffect, useState } from "react";
 import { cleanupIframes } from "../utils/iframe-utils";
 
@@ -26,6 +27,7 @@ interface AuthContextType {
     password?: string,
   ) => Promise<{ success: boolean; message?: string }>;
   updateUser: (updatedUser: User) => void;
+  setUser: (user: User | null) => void;
 }
 
 // Create context
@@ -38,6 +40,7 @@ interface AuthProviderProps {
 
 // Auth provider component
 export function AuthProvider({ children }: AuthProviderProps) {
+  const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -98,15 +101,27 @@ export function AuthProvider({ children }: AuthProviderProps) {
   // Logout function
   const logout = async () => {
     try {
-      await fetch("/api/auth/logout", {
+      // Call logout endpoint and wait for it to complete
+      const response = await fetch("/api/auth/logout", {
         method: "POST",
+        credentials: "include", // Important: include credentials to ensure cookie is sent
       });
+
+      if (!response.ok) {
+        throw new Error("Logout failed");
+      }
 
       // Clean up iframes before clearing user state
       cleanupIframes();
 
       // Clear user state
       setUser(null);
+
+      // Use router.push which will trigger a new server request
+      router.push("/login");
+
+      // Force a reload after navigation to ensure clean state
+      router.refresh();
     } catch (error) {
       console.error("Logout error:", error);
     }
@@ -149,6 +164,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     logout,
     register,
     updateUser,
+    setUser,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
