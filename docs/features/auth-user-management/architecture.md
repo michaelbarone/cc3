@@ -29,15 +29,26 @@ sequenceDiagram
     participant A as Auth API
     participant D as Database
 
-    U->>C: Select User Tile
-    alt Has Password
-        C->>U: Show Password Form
-        U->>C: Enter Password
+    Note over U,C: Initial Page Load
+    U->>C: Access Login Page
+    C->>A: Check Auth State
+    alt Already Authenticated
+        A->>C: Return User Data
+        C->>U: Redirect to Dashboard
+    else Not Authenticated
+        C->>U: Show Login Page
+        U->>C: Select User Tile
+        alt Requires Password
+            C->>U: Show Password Form
+            U->>C: Enter Password
+            C->>A: POST /api/auth/login
+        else No Password Required
+            C->>A: POST /api/auth/login
+        end
+        A->>D: Verify Credentials
+        A->>C: Set HTTP-only Cookie
+        C->>U: Redirect to Dashboard
     end
-    C->>A: POST /api/auth/login
-    A->>D: Verify Credentials
-    A->>C: Set HTTP-only Cookie
-    C->>U: Redirect to Dashboard
     
     Note over C,M: Subsequent Requests
     C->>M: Request Protected Route
@@ -56,6 +67,7 @@ interface User {
   is_admin: boolean;
   avatar_url?: string;
   last_active_url?: string;
+  requires_password: boolean;
   created_at: Date;
   updated_at: Date;
 }
@@ -64,7 +76,6 @@ interface UserSettings {
   user_id: string;
   theme: 'light' | 'dark';
   menu_position: 'left' | 'top';
-  remember_me: boolean;
   created_at: Date;
   updated_at: Date;
 }
@@ -78,6 +89,12 @@ interface Session {
 ```
 
 ## Technical Decisions
+
+### Authentication State Management
+- Client-side auth state tracking
+- Automatic redirects for authenticated users
+- Loading state management
+- Proper cleanup on logout
 
 ### JWT Authentication
 - Chosen for stateless authentication

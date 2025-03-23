@@ -6,6 +6,34 @@ The authentication and user management system consists of several key components
 
 ## Authentication Components
 
+### LoginPage
+
+Purpose: Main login page component that handles user authentication and redirects.
+
+```typescript
+const LoginPage: React.FC = () => {
+  const { login, user, loading } = useAuth();
+  const router = useRouter();
+  const redirectPath = searchParams.get("redirect") || "/";
+
+  // Handles redirect for authenticated users
+  useEffect(() => {
+    if (!loading && user && !justLoggedOut) {
+      router.replace(redirectPath);
+    }
+  }, [loading, user, justLoggedOut, router, redirectPath]);
+
+  // Component implementation
+};
+```
+
+Key Features:
+- Automatic redirect for authenticated users
+- Loading state management
+- Proper redirect path handling
+- Respects logout state
+- Theme configuration support
+
 ### UserTile
 
 Purpose: Displays a clickable user tile with avatar and username for login selection.
@@ -16,10 +44,10 @@ interface UserTileProps {
     id: string;
     username: string;
     avatar_url?: string;
-    has_password: boolean;
+    requiresPassword: boolean;
   };
   isSelected: boolean;
-  onSelect: (userId: string) => void;
+  onSelect: (user: UserTile) => void;
 }
 
 const UserTile: React.FC<UserTileProps> = ({ user, isSelected, onSelect }) => {
@@ -33,6 +61,8 @@ Key Features:
 - Indicates password requirement
 - Handles selection state
 - Provides click interaction
+- Immediate login for passwordless users
+- Selection state reset when clicking outside
 
 ### PasswordForm
 

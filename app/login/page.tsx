@@ -45,8 +45,15 @@ export default function LoginPage() {
   const searchParams = useSearchParams();
   const redirectPath = searchParams.get("redirect") || "/";
   const justLoggedOut = searchParams.get("logout") === "true";
-  const { login } = useAuth();
+  const { login, user, loading } = useAuth();
   const theme = useTheme();
+
+  // Add effect to handle redirect for authenticated users
+  useEffect(() => {
+    if (!loading && user && !justLoggedOut) {
+      router.replace(redirectPath);
+    }
+  }, [loading, user, justLoggedOut, router, redirectPath]);
 
   // State for theme configuration
   const [currentTheme, setCurrentTheme] = useState<"light" | "dark">("dark");
@@ -88,7 +95,6 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [rememberMe, setRememberMe] = useState(false);
 
   // Create base theme that matches the server-side default
   const baseTheme = createTheme({
@@ -122,26 +128,6 @@ export default function LoginPage() {
         if (usersResponse.ok) {
           const usersData = await usersResponse.json();
           setUsers(usersData);
-
-          // Check for remembered user, but only if not just logged out
-          if (!justLoggedOut) {
-            const rememberedUser = localStorage.getItem("rememberedUser");
-            if (rememberedUser) {
-              try {
-                const userObj = JSON.parse(rememberedUser);
-                // Check if the remembered user exists in our user list
-                const matchingUser = usersData.find((u: UserTile) => u.id === userObj.id);
-                if (matchingUser) {
-                  setSelectedUser(matchingUser);
-                  setRememberMe(true);
-                }
-                // eslint-disable-next-line @typescript-eslint/no-unused-vars
-              } catch (_) {
-                // Invalid remembered user data
-                localStorage.removeItem("rememberedUser");
-              }
-            }
-          }
         }
 
         // Fetch app configuration
@@ -152,12 +138,11 @@ export default function LoginPage() {
         }
       } catch (error) {
         console.error("Error fetching data:", error);
-        // setError('Failed to load users or application config');
       }
     }
 
     fetchData();
-  }, [justLoggedOut]);
+  }, []);
 
   // Separate effect for theme initialization
   useEffect(() => {
@@ -179,7 +164,7 @@ export default function LoginPage() {
         return;
       }
 
-      await performLogin(selectedUser, password, rememberMe);
+      await performLogin(selectedUser, password);
     } catch (err) {
       console.error("Auth error:", err);
       setError("An unexpected error occurred");
@@ -189,23 +174,9 @@ export default function LoginPage() {
   };
 
   // Common login function
-  const performLogin = async (user: UserTile, pwd: string, remember: boolean) => {
+  const performLogin = async (user: UserTile, pwd: string) => {
     try {
       await login(user.username, pwd);
-
-      // Save user to localStorage if remember me is checked
-      if (remember) {
-        localStorage.setItem(
-          "rememberedUser",
-          JSON.stringify({
-            id: user.id,
-            username: user.username,
-          }),
-        );
-      } else {
-        localStorage.removeItem("rememberedUser");
-      }
-
       // Redirect to dashboard or requested page
       router.push(redirectPath);
     } catch (error) {
@@ -214,36 +185,37 @@ export default function LoginPage() {
       } else {
         setError("Login failed");
       }
-      throw error; // Rethrow to be caught by calling function
+      throw error;
     }
   };
 
   // Handle user tile selection
   const handleUserSelect = async (user: UserTile) => {
-    setSelectedUser(user);
-    setPassword("");
-    setError("");
-
-    // If user doesn't require a password, log them in automatically
+    // For passwordless users, trigger login immediately without selection state
     if (!user.requiresPassword) {
-      setIsLoading(true);
-      setRememberMe(true); // Auto set remember me for passwordless users
-
       try {
-        await performLogin(user, "", true);
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      } catch (_) {
-        // Error is already set in performLogin
-        setIsLoading(false);
+        await performLogin(user, "");
+      } catch (error) {
+        // Only show error if login fails
+        if (error instanceof Error) {
+          setError(error.message || "Login failed");
+        } else {
+          setError("Login failed");
+        }
       }
       return;
     }
 
-    // Focus on password field if required
-    if (user.requiresPassword && passwordInputRef.current) {
+    // For password-protected users, proceed with selection and password entry
+    setSelectedUser(user);
+    setPassword("");
+    setError("");
+
+    // Focus on password field
+    if (passwordInputRef.current) {
       setTimeout(() => {
         passwordInputRef.current?.focus();
-      }, 400); // Delay to allow animation to complete
+      }, 400);
     }
   };
 

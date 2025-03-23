@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { createContext, ReactNode, useContext, useEffect, useState } from "react";
 import { cleanupIframes } from "../utils/iframe-utils";
 
 // Define user type
@@ -107,9 +107,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
       // Clear user state
       setUser(null);
-
-      // Clear the remembered user from localStorage
-      localStorage.removeItem("rememberedUser");
     } catch (error) {
       console.error("Logout error:", error);
     }
