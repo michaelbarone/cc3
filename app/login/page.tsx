@@ -241,6 +241,7 @@ export default function LoginPage() {
         >
           {/* App Branding */}
           <Box
+            role="banner"
             sx={{
               display: "flex",
               flexDirection: "column",
@@ -259,7 +260,7 @@ export default function LoginPage() {
               >
                 <img
                   src={appConfig.appLogo}
-                  alt={appConfig.appName}
+                  alt={`${appConfig.appName} logo`}
                   style={{
                     width: "100%",
                     height: "100%",
@@ -281,7 +282,10 @@ export default function LoginPage() {
 
           {/* User Tiles Grid */}
           <Box sx={{ width: "100%", px: 2 }}>
-            <Grid container spacing={3} justifyContent="center">
+            <Typography component="h2" id="login-instruction" sx={{ mb: 2, textAlign: "center" }}>
+              Select your user account to log in
+            </Typography>
+            <Grid container spacing={3} justifyContent="center" aria-labelledby="login-instruction">
               {users.map((user) => (
                 <Grid item xs={12} sm={6} md={4} key={user.id}>
                   <Box
@@ -425,6 +429,7 @@ export default function LoginPage() {
                         <Box
                           component="form"
                           onSubmit={handleSubmit}
+                          aria-label={`Password form for ${selectedUser?.username}`}
                           sx={{
                             position: "absolute",
                             bottom: 0,
@@ -458,12 +463,15 @@ export default function LoginPage() {
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             inputRef={passwordInputRef}
+                            aria-invalid={!!error}
+                            aria-describedby={error ? "password-error" : undefined}
                             InputProps={{
                               endAdornment: (
                                 <InputAdornment position="end">
                                   <IconButton
                                     onClick={handleTogglePasswordVisibility}
                                     edge="end"
+                                    aria-label={showPassword ? "Hide password" : "Show password"}
                                     sx={{ color: "white" }}
                                   >
                                     {showPassword ? <VisibilityOff /> : <Visibility />}
