@@ -65,56 +65,70 @@ actions:
 
       ### PowerShell Examples
 
-      1. Using Here-String (Recommended):
+      1. Simple Single-Line (Most Reliable):
       ```powershell
-      # Best for complex multi-line messages with formatting
-      $commitMessage = @"
+      # Best for simple changes
+      git commit -m "feat(ui): add new button component"
+      ```
+
+      2. Two-Part Message (Recommended):
+      ```powershell
+      # Good for changes needing brief explanation
+      git commit -m "feat(ui): add new dashboard components" -m "Implements metric cards and responsive layout"
+      ```
+
+      3. Using Here-String (For Complex Messages):
+      ```powershell
+      # For complex messages, save to variable first
+      $msg = @"
       feat(auth): implement OAuth2 authentication
 
       - Add OAuth2 provider integration
-      - Implement token refresh logic
-      - Add user session management
-      - Update authentication middleware
-
-      BREAKING CHANGE: New authentication flow requires updated client configuration
-      Closes #123
+      - Update middleware
       "@
-      git commit -m $commitMessage
+      git commit -m $msg
       ```
 
-      2. Using Multiple -m Parameters:
-      ```powershell
-      # Good for bullet-point style messages
-      git commit -m "feat(ui): add new dashboard components" `
-                -m "" `
-                -m "- Implement metric cards" `
-                -m "- Add chart components" `
-                -m "- Create responsive layout" `
-                -m "" `
-                -m "Closes #456"
-      ```
-
-      3. Using String Array Join:
-      ```powershell
-      # Best for programmatic commits
-      $message = @(
-          "feat(api): add new endpoints"
-          ""
-          "- Add user management endpoints"
-          "- Implement rate limiting"
-          "- Add request validation"
-          ""
-          "Closes #789"
-      ) -join "`n"
-      git commit -m $message
-      ```
-
-      4. Using Environment Variable with Editor:
+      4. Using Environment Variable with Editor (For Very Complex Messages):
       ```powershell
       # Best for very complex commits
       $env:GIT_EDITOR = "code --wait"
       git commit
       ```
+
+      ## Best Practices for PowerShell Commits
+
+      1. Keep It Simple:
+         - Prefer single-line commits when possible
+         - Use two-part messages for basic explanations
+         - Avoid complex multi-line formatting
+         - Save complex messages in a variable first
+
+      2. Reliable Approaches (in order of preference):
+         - Single -m parameter
+         - Two -m parameters
+         - Here-string saved to variable
+         - Editor for complex changes
+
+      3. Command Sequencing:
+         - Use semicolons between commands
+         - Or use separate lines (most readable)
+         ```powershell
+         # GOOD: Using semicolon
+         git add .; git commit -m "feat(scope): new feature"
+
+         # BETTER: Using separate lines
+         git add .
+         git commit -m "feat(scope): new feature"
+         ```
+
+      4. Breaking Changes:
+         - Keep breaking change notices simple
+         - Use two-part commit message
+         ```powershell
+         # GOOD: Breaking change with two-part message
+         git commit -m "feat(auth): change authentication flow" -m "BREAKING CHANGE: New OAuth2 flow requires client update"
+         ```
 
       ### Bash Examples
 
@@ -381,5 +395,5 @@ examples:
 
 metadata:
   priority: high
-  version: 1.3.0
+  version: 1.4.0
 </rule>
