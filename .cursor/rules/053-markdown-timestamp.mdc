@@ -1,6 +1,6 @@
 ---
 description: UPDATE timestamp after main title in markdown files when saved
-globs: **/*.md
+globs: "**/*.md,**/*.mdx"
 alwaysApply: true
 ---
 

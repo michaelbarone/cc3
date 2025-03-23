@@ -1,7 +1,7 @@
 ---
 description: Emotion styling best practices and MUI integration patterns
 globs: "**/*.tsx,**/*.ts"
-alwaysApply: true
+alwaysApply: false
 ---
 
 # Emotion Styling Standards and Best Practices

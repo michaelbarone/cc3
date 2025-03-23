@@ -1,7 +1,7 @@
 ---
 description: Standards for managing environment variables, configuration, and secrets across different environments
-globs: "**/*.{env,ts,tsx,dockerfile}"
-alwaysApply: true
+globs: "**/.env*,**/*.ts"
+alwaysApply: false
 ---
 
 # Environment and Configuration Standards

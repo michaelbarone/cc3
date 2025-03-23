@@ -1,6 +1,6 @@
 ---
 description: Standards for Next.js App Router implementation and organization
-globs: "app/**/*.{ts,tsx}"
+globs: "app/**/*.tsx,app/**/*.ts"
 alwaysApply: false
 ---
 

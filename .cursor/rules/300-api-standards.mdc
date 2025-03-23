@@ -1,7 +1,7 @@
 ---
 description: API and authentication best practices using NextAuth.js
-globs: "**/*.ts,**/*.tsx"
-alwaysApply: true
+globs: "app/api/**/*.ts"
+alwaysApply: false
 ---
 
 # API and Authentication Standards

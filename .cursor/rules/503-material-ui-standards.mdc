@@ -1,7 +1,7 @@
 ---
 description: Material UI (MUI) v6 best practices and component standards
-globs: "**/*.tsx"
-alwaysApply: true
+globs: "**/*.tsx,**/*.ts"
+alwaysApply: false
 ---
 
 # Material UI Standards and Best Practices

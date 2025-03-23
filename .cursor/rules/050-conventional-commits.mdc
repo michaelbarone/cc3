@@ -1,6 +1,6 @@
 ---
 description: Rule for automatically committing changes made by CursorAI using conventional commits format.
-globs:
+globs: "**/*"
 alwaysApply: true
 ---
 # Git Conventional Commits

@@ -1,7 +1,7 @@
 ---
 description: Testing best practices using Vitest and React Testing Library
 globs: "**/*.test.ts,**/*.test.tsx,**/*.spec.ts,**/*.spec.tsx"
-alwaysApply: true
+alwaysApply: false
 ---
 
 # Testing Standards and Best Practices

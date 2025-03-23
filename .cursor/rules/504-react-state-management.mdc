@@ -1,7 +1,7 @@
 ---
 description: React state management best practices using Context and Hooks
-globs: "**/*.tsx,**/*.ts"
-alwaysApply: true
+globs: "**/*.tsx,**/*.jsx"
+alwaysApply: false
 ---
 
 # React State Management Standards and Best Practices

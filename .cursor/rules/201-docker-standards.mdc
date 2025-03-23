@@ -1,7 +1,7 @@
 ---
 description: Docker configuration and containerization best practices
 globs: "**/Dockerfile,**/*.dockerfile,**/docker-compose.yml"
-alwaysApply: true
+alwaysApply: false
 ---
 
 # Docker Standards and Best Practices
@@ -179,7 +179,6 @@ actions:
                   max-size: "10m"
                   max-file: "3"
           ```
-
 examples:
   - input: |
       # Multi-stage build with security best practices
@@ -210,3 +209,4 @@ metadata:
     - devops
     - infrastructure
 </rule>
+

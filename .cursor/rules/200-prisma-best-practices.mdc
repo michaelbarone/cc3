@@ -1,6 +1,6 @@
 ---
 description: Best practices for using Prisma ORM in the project
-globs: **/*.prisma
+globs: "**/*.prisma,**/*.ts"
 alwaysApply: false
 ---
 

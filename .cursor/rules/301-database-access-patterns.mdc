@@ -1,7 +1,7 @@
 ---
 description: Database access patterns and Prisma query optimization
-globs: "**/*.ts"
-alwaysApply: true
+globs: "**/*.prisma,app/api/**/*.ts"
+alwaysApply: false
 ---
 
 # Database Access Patterns and Best Practices
