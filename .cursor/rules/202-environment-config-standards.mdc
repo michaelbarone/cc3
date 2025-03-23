@@ -1,0 +1,271 @@
+---
+description: Standards for managing environment variables, configuration, and secrets across different environments
+globs: "**/*.{env,ts,tsx,dockerfile}"
+alwaysApply: true
+---
+
+# Environment and Configuration Standards
+
+<rule>
+name: environment_config_standards
+description: Standards for managing environment variables, configuration, and secrets across different environments
+filters:
+  - type: file_extension
+    pattern: "\\.(env|ts|tsx|dockerfile)$"
+actions:
+  - type: suggest
+    message: |
+      Environment and Configuration Standards:
+
+      1. Environment Variable Management:
+         - Use typed environment variables
+         - Implement validation
+         - Maintain environment templates
+         ```typescript
+         // lib/env.ts
+         import { z } from 'zod';
+
+         const envSchema = z.object({
+           DATABASE_URL: z.string().url(),
+           NEXTAUTH_SECRET: z.string().min(32),
+           NEXTAUTH_URL: z.string().url(),
+           NODE_ENV: z.enum(['development', 'test', 'production']),
+         });
+
+         declare global {
+           namespace NodeJS {
+             interface ProcessEnv extends z.infer<typeof envSchema> {}
+           }
+         }
+
+         try {
+           envSchema.parse(process.env);
+         } catch (error) {
+           console.error('Invalid environment variables:', error.errors);
+           process.exit(1);
+         }
+         ```
+
+      2. Configuration File Structure:
+         - Use environment-specific configs
+         - Implement proper overrides
+         - Maintain type safety
+         ```typescript
+         // config/index.ts
+         import { z } from 'zod';
+
+         const configSchema = z.object({
+           api: z.object({
+             baseUrl: z.string().url(),
+             timeout: z.number(),
+           }),
+           auth: z.object({
+             sessionMaxAge: z.number(),
+           }),
+         });
+
+         const config = {
+           api: {
+             baseUrl: process.env.API_URL,
+             timeout: 5000,
+           },
+           auth: {
+             sessionMaxAge: 30 * 24 * 60 * 60, // 30 days
+           },
+         } as const;
+
+         export default configSchema.parse(config);
+         ```
+
+      3. Docker Environment Configuration:
+         - Use multi-stage builds
+         - Implement proper env handling
+         - Secure sensitive data
+         ```dockerfile
+         # Development stage
+         FROM node:20-alpine AS dev
+         ENV NODE_ENV=development
+         COPY .env.development .env
+
+         # Production stage
+         FROM node:20-alpine AS prod
+         ENV NODE_ENV=production
+         # Use runtime secrets instead of build-time secrets
+         COPY --from=dev /app/dist ./dist
+         ```
+
+      4. Secret Management:
+         - Never commit secrets
+         - Use secret management service
+         - Implement proper rotation
+         ```typescript
+         // Good: Using secret management
+         import { SecretsManager } from '@aws-sdk/client-secrets-manager';
+
+         async function getSecret(secretName: string) {
+           const client = new SecretsManager({
+             region: process.env.AWS_REGION,
+           });
+           const response = await client.getSecretValue({
+             SecretId: secretName,
+           });
+           return response.SecretString;
+         }
+         ```
+
+      5. Environment Templates:
+         - Maintain .env.example
+         - Document all variables
+         - Include validation rules
+         ```bash
+         # .env.example
+         # Database Configuration
+         DATABASE_URL=postgresql://user:pass@localhost:5432/dbname
+
+         # Authentication
+         NEXTAUTH_SECRET=min-32-chars-secret
+         NEXTAUTH_URL=http://localhost:3000
+
+         # API Configuration
+         API_URL=http://localhost:3000/api
+         API_TIMEOUT=5000
+         ```
+
+      6. Environment Validation:
+         - Validate on startup
+         - Check required values
+         - Verify format/types
+         ```typescript
+         // lib/validateEnv.ts
+         export function validateEnv() {
+           const required = [
+             'DATABASE_URL',
+             'NEXTAUTH_SECRET',
+             'NEXTAUTH_URL',
+           ];
+
+           const missing = required.filter(
+             (key) => !process.env[key]
+           );
+
+           if (missing.length > 0) {
+             throw new Error(
+               `Missing required env vars: ${missing.join(', ')}`
+             );
+           }
+         }
+         ```
+
+      7. Configuration Access Patterns:
+         - Use centralized config access
+         - Implement proper typing
+         - Cache when appropriate
+         ```typescript
+         // lib/config.ts
+         export class Config {
+           private static instance: Config;
+           private cache: Map<string, any> = new Map();
+
+           private constructor() {}
+
+           static getInstance(): Config {
+             if (!Config.instance) {
+               Config.instance = new Config();
+             }
+             return Config.instance;
+           }
+
+           get<T>(key: string): T {
+             if (this.cache.has(key)) {
+               return this.cache.get(key);
+             }
+             // Fetch and cache config
+             const value = fetchConfig(key);
+             this.cache.set(key, value);
+             return value;
+           }
+         }
+         ```
+
+      8. Environment-Specific Features:
+         - Use feature flags
+         - Implement proper toggles
+         - Handle graceful fallbacks
+         ```typescript
+         // lib/features.ts
+         export const features = {
+           newUI: process.env.ENABLE_NEW_UI === 'true',
+           beta: process.env.ENABLE_BETA_FEATURES === 'true',
+           maintenance: process.env.MAINTENANCE_MODE === 'true',
+         } as const;
+
+         export function isFeatureEnabled(
+           feature: keyof typeof features
+         ): boolean {
+           return features[feature];
+         }
+         ```
+
+      9. Testing Configurations:
+         - Mock environment variables
+         - Test validation logic
+         - Verify error handling
+         ```typescript
+         // __tests__/env.test.ts
+         describe('Environment Validation', () => {
+           const OLD_ENV = process.env;
+
+           beforeEach(() => {
+             jest.resetModules();
+             process.env = { ...OLD_ENV };
+           });
+
+           afterAll(() => {
+             process.env = OLD_ENV;
+           });
+
+           test('throws on missing required vars', () => {
+             delete process.env.DATABASE_URL;
+             expect(() => validateEnv()).toThrow();
+           });
+         });
+         ```
+
+      10. Documentation Requirements:
+          - Document all environment variables
+          - Maintain setup guides
+          - Include validation rules
+          ```markdown
+          ## Environment Variables
+
+          | Variable | Required | Description | Format |
+          |----------|----------|-------------|---------|
+          | DATABASE_URL | Yes | Database connection string | URL |
+          | NEXTAUTH_SECRET | Yes | Auth secret key | min 32 chars |
+          | API_KEY | No | External API key | string |
+          ```
+
+examples:
+  - input: |
+      // Environment validation implementation
+      const { DATABASE_URL, NEXTAUTH_SECRET } = envSchema.parse(process.env);
+
+      export const config = {
+        database: {
+          url: DATABASE_URL,
+        },
+        auth: {
+          secret: NEXTAUTH_SECRET,
+        },
+      } as const;
+    output: "Valid environment configuration with validation"
+
+metadata:
+  priority: high
+  version: 1.0.0
+  tags:
+    - environment
+    - configuration
+    - security
+    - docker
+</rule>

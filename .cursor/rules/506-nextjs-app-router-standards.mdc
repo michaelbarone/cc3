@@ -1,0 +1,294 @@
+---
+description: Standards for Next.js App Router implementation and organization
+globs: "app/**/*.{ts,tsx}"
+alwaysApply: false
+---
+
+# Next.js App Router Standards
+
+<rule>
+name: nextjs_app_router_standards
+description: Standards for Next.js App Router implementation and organization
+filters:
+  - type: file_extension
+    pattern: "\\.(ts|tsx)$"
+  - type: directory
+    pattern: "app/"
+
+actions:
+  - type: suggest
+    message: |
+      Next.js App Router Standards:
+
+      1. Route Organization:
+         - Follow strict directory structure
+         - Use proper file naming conventions
+         - Implement proper route grouping
+         ```typescript
+         // app/(auth)/login/page.tsx - Auth group
+         // app/(dashboard)/settings/page.tsx - Dashboard group
+         // app/api/users/route.ts - API routes
+         ```
+
+      2. Component Type Separation:
+         - Mark Server Components by default
+         - Explicitly mark Client Components
+         - Use proper data fetching methods
+         ```typescript
+         // Server Component (default)
+         export default async function Page() {
+           const data = await fetchData();
+           return <Component data={data} />;
+         }
+
+         // Client Component
+         'use client';
+         export default function InteractiveComponent() {
+           const [state, setState] = useState();
+           return <div onClick={() => setState(newValue)} />;
+         }
+         ```
+
+      3. Layout Implementation:
+         - Use nested layouts appropriately
+         - Implement loading states
+         - Handle errors properly
+         ```typescript
+         // app/dashboard/layout.tsx
+         export default function DashboardLayout({
+           children,
+         }: {
+           children: React.ReactNode;
+         }) {
+           return (
+             <div className="dashboard-layout">
+               <DashboardNav />
+               {children}
+             </div>
+           );
+         }
+
+         // app/dashboard/loading.tsx
+         export default function Loading() {
+           return <LoadingSpinner />;
+         }
+
+         // app/dashboard/error.tsx
+         'use client';
+         export default function Error({
+           error,
+           reset,
+         }: {
+           error: Error;
+           reset: () => void;
+         }) {
+           return (
+             <div>
+               <h2>Something went wrong!</h2>
+               <button onClick={() => reset()}>Try again</button>
+             </div>
+           );
+         }
+         ```
+
+      4. Data Fetching Patterns:
+         - Use Server Components for data fetching
+         - Implement proper caching strategies
+         - Handle revalidation appropriately
+         ```typescript
+         // Good: Server Component data fetching
+         async function getData() {
+           const res = await fetch('https://api.example.com/data', {
+             next: { revalidate: 3600 } // Revalidate every hour
+           });
+           return res.json();
+         }
+
+         // Good: Mutation with server action
+         async function createItem(formData: FormData) {
+           'use server';
+           const item = await prisma.item.create({
+             data: {
+               name: formData.get('name'),
+             },
+           });
+           revalidatePath('/items');
+           return item;
+         }
+         ```
+
+      5. Route Handlers:
+         - Use proper HTTP methods
+         - Implement proper error handling
+         - Follow API route structure
+         ```typescript
+         // app/api/users/route.ts
+         import { NextResponse } from 'next/server';
+
+         export async function GET() {
+           try {
+             const users = await prisma.user.findMany();
+             return NextResponse.json(users);
+           } catch (error) {
+             return NextResponse.json(
+               { error: 'Failed to fetch users' },
+               { status: 500 }
+             );
+           }
+         }
+         ```
+
+      6. Metadata Management:
+         - Implement proper SEO metadata
+         - Use dynamic metadata when needed
+         - Handle OpenGraph data
+         ```typescript
+         // app/layout.tsx
+         export const metadata = {
+           title: {
+             template: '%s | My App',
+             default: 'My App',
+           },
+           description: 'My app description',
+         };
+
+         // app/blog/[slug]/page.tsx
+         export async function generateMetadata({
+           params,
+         }: {
+           params: { slug: string };
+         }) {
+           const post = await getPost(params.slug);
+           return {
+             title: post.title,
+             description: post.excerpt,
+           };
+         }
+         ```
+
+      7. Authentication Integration:
+         - Use proper middleware
+         - Implement protected routes
+         - Handle session management
+         ```typescript
+         // middleware.ts
+         export const config = {
+           matcher: ['/dashboard/:path*', '/admin/:path*'],
+         };
+
+         export async function middleware(request: NextRequest) {
+           const session = await getSession();
+           if (!session) {
+             return NextResponse.redirect(new URL('/login', request.url));
+           }
+         }
+         ```
+
+      8. Performance Optimization:
+         - Use proper image optimization
+         - Implement streaming where beneficial
+         - Use proper suspense boundaries
+         ```typescript
+         // Good: Image optimization
+         import Image from 'next/image';
+
+         export default function Avatar() {
+           return (
+             <Image
+               src="/avatar.png"
+               alt="User avatar"
+               width={64}
+               height={64}
+               priority={true}
+             />
+           );
+         }
+
+         // Good: Streaming with suspense
+         export default function Page() {
+           return (
+             <Suspense fallback={<Loading />}>
+               <SlowComponent />
+             </Suspense>
+           );
+         }
+         ```
+
+      9. Error Handling:
+         - Implement error boundaries
+         - Use proper error pages
+         - Handle loading states
+         ```typescript
+         // app/error.tsx
+         'use client';
+
+         export default function GlobalError({
+           error,
+           reset,
+         }: {
+           error: Error & { digest?: string };
+           reset: () => void;
+         }) {
+           return (
+             <html>
+               <body>
+                 <h2>Something went wrong!</h2>
+                 <button onClick={() => reset()}>Try again</button>
+               </body>
+             </html>
+           );
+         }
+         ```
+
+      10. State Management Integration:
+          - Use server state appropriately
+          - Implement proper client state
+          - Handle form state correctly
+          ```typescript
+          // Good: Server state
+          async function TodoList() {
+            const todos = await prisma.todo.findMany();
+            return (
+              <ul>
+                {todos.map(todo => (
+                  <TodoItem key={todo.id} todo={todo} />
+                ))}
+              </ul>
+            );
+          }
+
+          // Good: Client state
+          'use client';
+          function FilterButtons() {
+            const [filter, setFilter] = useState('all');
+            return (
+              <div>
+                <button onClick={() => setFilter('all')}>All</button>
+                <button onClick={() => setFilter('active')}>Active</button>
+              </div>
+            );
+          }
+          ```
+
+examples:
+  - input: |
+      // Page implementation with proper patterns
+      export default async function DashboardPage() {
+        const data = await getData();
+        return (
+          <Suspense fallback={<Loading />}>
+            <Dashboard data={data} />
+          </Suspense>
+        );
+      }
+    output: "Valid Next.js App Router implementation"
+
+metadata:
+  priority: high
+  version: 1.0.0
+  tags:
+    - nextjs
+    - app-router
+    - routing
+    - performance
+</rule>
