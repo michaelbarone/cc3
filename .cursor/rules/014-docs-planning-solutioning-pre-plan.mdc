@@ -103,10 +103,42 @@ actions:
             - Security validation
 
          d) Documentation Planning:
-            - Code documentation
-            - API documentation
-            - Architecture updates
-            - Knowledge transfer
+            - Documentation Impact Analysis:
+              - Project Memory Updates:
+                - Required /docs/features/ updates
+                - Architecture documentation changes
+                - API documentation modifications
+                - Component documentation updates
+
+              - Working Memory Integration:
+                - Link task plan to affected feature docs
+                - Track documentation debt in progress history
+                - Document component changes in real-time
+                - Reference architectural decisions
+
+              - Documentation Templates:
+                - Identify required template updates
+                - Follow template standards from /docs/templates/
+                - Document any template deviations
+                - Propose template improvements
+
+            - Documentation Update Strategy:
+              - Pre-implementation updates
+              - During-implementation tracking
+              - Post-implementation verification
+              - Cross-reference validation
+
+            - Documentation Dependencies:
+              - Feature documentation links
+              - Component documentation references
+              - API documentation connections
+              - Architecture documentation ties
+
+            - Documentation Review Plan:
+              - Template compliance check
+              - Cross-reference validation
+              - Link verification process
+              - Content accuracy review
 
          e) Specialized Testing:
             - For API issues: Follow api_debugging_methodology test patterns
