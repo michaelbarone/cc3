@@ -113,15 +113,19 @@ function UrlItem({
   // Use the longPress hook
   const longPressHandlers = useLongPress({
     onClick: () => {
-      // Create a mock event since we're in a callback that doesn't provide the event
-      const mockEvent = { stopPropagation: () => {} } as React.MouseEvent;
-      onUrlClick(mockEvent);
+      onUrlClick({ stopPropagation: () => {} } as React.MouseEvent);
     },
     onLongPress,
     duration: 800,
     disabled: !isLoaded,
     visualFeedback: true,
   });
+
+  // Handle regular click
+  const handleClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onUrlClick(e);
+  };
 
   const commonIconStyles = {
     width: 24,
@@ -168,6 +172,7 @@ function UrlItem({
               opacity: 0.8,
             },
           }}
+          onClick={handleClick}
           {...longPressHandlers}
         >
           <Box sx={commonBoxStyles}>
@@ -198,6 +203,7 @@ function UrlItem({
           overflow: "hidden",
         }}
         data-url-id={url.id}
+        onClick={handleClick}
         {...longPressHandlers}
       >
         <ListItemIcon sx={{ minWidth: 36 }}>

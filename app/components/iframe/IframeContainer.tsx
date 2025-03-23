@@ -1,7 +1,7 @@
 "use client";
 
-import { useRef, useEffect, useImperativeHandle, forwardRef } from "react";
 import { Box, useMediaQuery } from "@mui/material";
+import { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
 import { useIframeContext } from "./state/IframeContext";
 
 // Types for props
@@ -84,10 +84,11 @@ const IframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
         return;
       }
 
-      // Clear any existing iframes
-      container.innerHTML = "";
+      // Track existing and needed iframe IDs
+      const existingIframeIds = new Set(Object.keys(iframeRefs.current));
+      const neededIframeIds = new Set<string>();
 
-      // Create iframes for all URLs
+      // Create or update iframes for all URLs
       urlGroups.forEach((group) => {
         if (!group?.urls?.length) return;
 
@@ -98,9 +99,28 @@ const IframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
           }
 
           const { id: urlId, url, urlMobile } = urlData;
+          neededIframeIds.add(urlId);
           const effectiveUrl = isMobile && urlMobile ? urlMobile : url;
 
-          // Create wrapper div
+          // If iframe already exists, just update its data-src if needed
+          if (existingIframeIds.has(urlId)) {
+            const existingIframe = iframeRefs.current[urlId];
+            const currentDataSrc = existingIframe.getAttribute("data-src");
+            if (currentDataSrc !== effectiveUrl) {
+              existingIframe.setAttribute("data-src", effectiveUrl);
+              // Only update src if this is the active iframe and it's currently loaded
+              if (
+                urlId === activeUrlId &&
+                existingIframe.src &&
+                existingIframe.src !== "about:blank"
+              ) {
+                existingIframe.src = effectiveUrl;
+              }
+            }
+            return;
+          }
+
+          // Create wrapper div for new iframe
           const wrapper = document.createElement("div");
           wrapper.setAttribute("data-iframe-container", urlId);
           wrapper.style.position = "absolute";
@@ -113,7 +133,7 @@ const IframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
           wrapper.style.visibility = urlId === activeUrlId ? "visible" : "hidden";
           wrapper.style.zIndex = urlId === activeUrlId ? "1" : "0";
 
-          // Create iframe
+          // Create new iframe
           const iframe = document.createElement("iframe");
           iframe.setAttribute("data-iframe-id", urlId);
           iframe.setAttribute("data-src", effectiveUrl);
@@ -155,6 +175,17 @@ const IframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
             iframe.src = effectiveUrl;
           }
         });
+      });
+
+      // Remove any iframes that are no longer needed
+      existingIframeIds.forEach((urlId) => {
+        if (!neededIframeIds.has(urlId)) {
+          const iframe = iframeRefs.current[urlId];
+          if (iframe && iframe.parentElement) {
+            iframe.parentElement.remove();
+          }
+          delete iframeRefs.current[urlId];
+        }
       });
 
       // Update container position when our container moves

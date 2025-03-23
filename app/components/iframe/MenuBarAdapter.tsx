@@ -74,13 +74,17 @@ export function MenuBarAdapter({ urlGroups, menuPosition }: MenuBarAdapterProps)
       return null; // Hide selector when no groups or menuPosition is undefined
     }
 
+    // Filter out groups with no URLs
+    const visibleGroups = urlGroups.filter((group) => group.urls.length > 0);
+
     return (
       <MenuBar
-        urlGroups={urlGroups}
+        urlGroups={visibleGroups}
         loadedUrlIds={loadedUrlIds}
         activeUrlId={activeUrlId}
         onUrlClick={handleUrlClick}
         onUrlReload={handleUrlReload}
+        onUrlUnload={handleUrlUnload}
         menuPosition={menuPosition}
       />
     );
