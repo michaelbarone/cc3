@@ -6,7 +6,13 @@ const publicPaths = ["/", "/login", "/api/auth/login", "/api/auth/register"];
 // Paths that require admin access
 const adminPaths = ["/admin", "/admin/users", "/admin/url-groups"];
 
-export function middleware(request: NextRequest) {
+// Add interface before the middleware function
+interface JWTPayload {
+  isAdmin: boolean;
+  [key: string]: boolean | string | number | undefined; // Standard JWT claim types
+}
+
+export function middleware(request: NextRequest): Promise<NextResponse> | NextResponse {
   const { pathname } = request.nextUrl;
 
   // Skip middleware for public paths
@@ -30,7 +36,9 @@ export function middleware(request: NextRequest) {
     try {
       // Using weak JWT verification just for the middleware
       // Full verification happens in the route handlers
-      const payload = JSON.parse(Buffer.from(authCookie.value.split(".")[1], "base64").toString());
+      const payload = JSON.parse(
+        Buffer.from(authCookie.value.split(".")[1], "base64").toString(),
+      ) as JWTPayload;
 
       // If not admin, redirect to home page
       if (!payload.isAdmin) {
