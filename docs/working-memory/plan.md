@@ -11,6 +11,7 @@ This document serves as the main project plan and tracks the status of all tasks
 - **Key Milestones**:
   - [X] Visual Design Updates
   - [X] User Experience Improvements
+  - [ ] first run experience, allow admin to restore backup from login page only prior to first login
   - [ ] Accessibility Enhancements
   - [ ] Performance Optimization
 - **Priority**: High

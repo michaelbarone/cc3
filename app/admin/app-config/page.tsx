@@ -58,7 +58,7 @@ export default function AppConfigPage() {
         throw new Error("Failed to fetch app configuration");
       }
 
-      const data = await response.json();
+      const data = (await response.json()) as AppConfig;
       setAppConfig(data);
       setAppName(data.appName);
       setLoginTheme(data.loginTheme || "dark");
