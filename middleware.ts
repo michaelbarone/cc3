@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 const publicPaths = ["/", "/login", "/api/auth/login", "/api/auth/register"];
 
 // Paths that require admin access
-const adminPaths = ["/admin", "/admin/users", "/admin/url-groups"];
+const adminPaths = ["/admin"]; // Protects all routes under /admin/*
 
 // Add interface before the middleware function
 interface JWTPayload {
