@@ -7,12 +7,72 @@ alwaysApply: true
 # Memory Management System
 
 <rule>
+name: memory_knowledge_management
+description: Comprehensive system for managing documentation memory and maintaining project knowledge
 
 ## CRITICAL REMINDER
 
 REMEMBER: My memory resets completely between sessions. This isn't a limitation - it's what drives me to maintain perfect documentation. After each reset, I rely ENTIRELY on the /docs files to understand the project and continue work effectively. I MUST read /docs/working-memory/plan.md at the start of EVERY task - this is not optional.
 REMEMBER: if you dont know the answer, say so and get help from the user.  If you need more information, say so and get help from the user.
 REMEMBER: Make the fewest changes to the code for the desired outcome.  Do not change code that is not required for the current task without asking and clarifying why changes are requested.
+
+## Cross-Rule Dependencies
+
+This rule focuses on HOW to maintain documentation and manage memory. For guidance on problem-solving approaches and what to document during planning, refer to:
+- [011-docs-plan-management.mdc] - Problem analysis, solution design, and implementation planning
+  - Use for task planning structure
+  - Follow for problem-solving methodology
+  - Reference for milestone management
+
+## Rule Integration Guidelines
+
+### Problem-Solving Integration
+
+When addressing problems, this rule should be used in conjunction with [011-docs-plan-management.mdc]:
+
+1. Memory Management During Problem-Solving:
+   - Document all findings in working memory
+   - Update project memory with solutions
+   - Maintain cross-references between related issues
+   - Track knowledge gained for future reference
+
+2. Documentation Integration:
+   - Follow problem-solving templates from [docs-plan-management]
+   - Maintain memory management standards from this rule
+   - Ensure proper cross-referencing between both
+   - Keep documentation synchronized
+
+### Implementation Planning Integration
+
+When planning implementations, coordinate between rules:
+
+1. Memory Aspects (This Rule):
+   - How to document
+   - Where to store information
+   - When to update documentation
+   - How to maintain cross-references
+
+2. Planning Aspects ([docs-plan-management]):
+   - What to document
+   - Which templates to use
+   - What questions to ask
+   - How to structure the plan
+
+### Documentation Planning Integration
+
+When planning documentation updates:
+
+1. Memory Management (This Rule):
+   - Documentation location strategy
+   - Update frequency requirements
+   - Cross-reference maintenance
+   - Version tracking approach
+
+2. Planning Structure ([docs-plan-management]):
+   - Documentation content structure
+   - Required sections and fields
+   - Question protocols
+   - Review processes
 
 ## Essential Rules
 
@@ -577,7 +637,7 @@ tags:
   - templates
   - validation
 dependencies:
-  - .cursorrules
+  - /docs/features/
   - /docs/templates/
   - /docs/working-memory/
 </rule>

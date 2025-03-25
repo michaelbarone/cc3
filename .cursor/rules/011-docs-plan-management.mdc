@@ -1,15 +1,155 @@
 ---
 description: Standardized approach for problem analysis, solution design, and implementation planning
-globs: **/docs/working-memory/**/*.md
+globs: **/docs/{working-memory,features,templates}/**/*.md
 alwaysApply: false
 ---
 
-# Problem-Solving Approach and plan management
-# Structured methodology for addressing issues and implementing features based on project plans
+# Problem-Solving Approach and Plan Management
 
 <rule>
 name: problem_solving_approach
-description: Framework for analyzing problems and designing solutions
+description: Framework for analyzing problems, designing solutions, and structuring documentation content
+
+## Cross-Rule Dependencies
+
+This rule focuses on WHAT to document and how to structure problem-solving approaches. For guidance on documentation management and memory systems, refer to:
+- [010-docs-memory-knowledge-management.mdc] - Memory management and documentation maintenance
+  - Use for documentation storage strategy
+  - Follow for memory management practices
+  - Reference for cross-referencing standards
+
+## Documentation Integration
+
+When creating documentation, coordinate between rules:
+
+1. Content Structure (This Rule):
+   - What information to capture
+   - Required sections and fields
+   - Analysis frameworks
+   - Solution templates
+
+2. Memory Management ([docs-memory-knowledge-management]):
+   - Where to store documentation
+   - How to maintain versions
+   - When to update documentation
+   - Cross-reference management
+
+## Problem Analysis Phase Integration
+
+When analyzing problems:
+
+1. Analysis Structure (This Rule):
+   - Problem statement format
+   - Required analysis sections
+   - Impact assessment framework
+   - Solution evaluation criteria
+
+2. Documentation Management ([docs-memory-knowledge-management]):
+   - Working memory updates
+   - Project memory integration
+   - Cross-reference tracking
+   - Version management
+
+## Implementation Planning Integration
+
+When planning implementations:
+
+1. Planning Structure (This Rule):
+   - Milestone definition format
+   - Task breakdown approach
+   - Risk assessment framework
+   - Testing strategy structure
+
+2. Memory Management ([docs-memory-knowledge-management]):
+   - Documentation update strategy
+   - Progress tracking approach
+   - Cross-reference maintenance
+   - Version control practices
+
+## Documentation Standards
+
+### Component Documentation
+```typescript
+/**
+ * LoginForm Component
+ * @component
+ * @description Handles user authentication through form submission
+ *
+ * @example
+ * ```tsx
+ * <LoginForm
+ *   onSuccess={handleSuccess}
+ *   redirectPath="/dashboard"
+ * />
+ * ```
+ */
+interface LoginFormProps {
+  /** Callback fired when login succeeds */
+  onSuccess: (user: User) => void;
+  /** Path to redirect after successful login */
+  redirectPath?: string;
+}
+```
+
+### State Management Documentation
+```typescript
+/**
+ * Authentication State
+ * @typedef {Object} AuthState
+ *
+ * @example
+ * ```tsx
+ * const [authState, dispatch] = useReducer(authReducer, initialState);
+ * ```
+ */
+interface AuthState {
+  /** Current user object, null if not authenticated */
+  user: User | null;
+  /** Loading state for auth operations */
+  loading: boolean;
+  /** Last error message if any */
+  error?: string;
+}
+```
+
+### Type Documentation Requirements
+1. Required Documentation:
+   - Every exported type must have JSDoc comment
+   - Each field must have inline JSDoc
+   - Include value ranges for numeric fields
+   - Document optional fields
+   - Explain type relationships
+   - Note validation requirements
+   - Document default values
+   - Include usage examples
+
+2. Code Sample Guidelines:
+   - Always precede code with explanatory text
+   - Include parameter descriptions
+   - Explain return values
+   - Add usage examples where helpful
+   - Keep code samples focused and minimal
+
+## Problem-Solving Approach
+
+1. Documentation Issue Analysis:
+   - Identify affected documentation
+   - List impacted components
+   - Check cross-references
+   - Verify template compliance
+
+2. Solution Design:
+   - Plan documentation updates
+   - Consider cross-reference impacts
+   - Evaluate template changes
+   - Plan validation steps
+
+3. Implementation Steps:
+   - Update affected documents
+   - Validate cross-references
+   - Verify template compliance
+   - Update timestamps
+
 filters:
   - type: file_extension
     pattern: "\\.md$"
@@ -438,7 +578,8 @@ actions:
             - ⏭️ Next: Begin accessibility enhancements
             ```
 
-examples:
+## Examples
+
   - input: |
       // Problem: API authentication failing
       // Using api_debugging_methodology:
