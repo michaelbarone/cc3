@@ -22,6 +22,7 @@ import {
 } from "@mui/material";
 import { useRouter, useSearchParams } from "next/navigation";
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import RestoreBackup from "../components/backup/RestoreBackup";
 import { useAuth } from "../lib/auth/auth-context";
 
 // Types for user tile
@@ -30,6 +31,8 @@ interface UserTile {
   username: string;
   avatarUrl: string | null;
   requiresPassword: boolean;
+  isAdmin: boolean;
+  lastLoginAt?: string;
 }
 
 // Type for app config
@@ -47,6 +50,7 @@ export default function LoginPage() {
   const justLoggedOut = searchParams.get("logout") === "true";
   const { login, user, loading, setUser } = useAuth();
   const theme = useTheme();
+  const [isFirstRun, setIsFirstRun] = useState(false);
 
   // Add effect to handle redirect for authenticated users
   useEffect(() => {
@@ -60,6 +64,23 @@ export default function LoginPage() {
       }
     }
   }, [loading, user, justLoggedOut, router, redirectPath, setUser]);
+
+  // Add effect to check if this is first run
+  useEffect(() => {
+    const checkFirstRun = async () => {
+      try {
+        const response = await fetch("/api/auth/first-run");
+        if (response.ok) {
+          const data = await response.json();
+          setIsFirstRun(data.isFirstRun);
+        }
+      } catch (error) {
+        console.error("Failed to check first run status:", error);
+      }
+    };
+
+    checkFirstRun();
+  }, []);
 
   // State for theme configuration
   const [currentTheme, setCurrentTheme] = useState<"light" | "dark">("dark");
@@ -134,9 +155,25 @@ export default function LoginPage() {
         if (usersResponse.ok) {
           const usersData = await usersResponse.json();
           setUsers(usersData);
+
+          // Check if we're in first run (exactly one admin user who has never logged in)
+          const adminUsers = usersData.filter((u: UserTile) => u.isAdmin);
+          const isFirstRun =
+            usersData.length === 1 && adminUsers.length === 1 && !adminUsers[0].lastLoginAt;
+
+          if (isFirstRun) {
+            // During first run, use default config
+            setAppConfig({
+              appName: "Dashboard",
+              appLogo: null,
+              loginTheme: "light",
+              registrationEnabled: false,
+            });
+            return;
+          }
         }
 
-        // Fetch app configuration
+        // If not first run, fetch app configuration
         const configResponse = await fetch("/api/admin/app-config");
         if (configResponse.ok) {
           const configData = await configResponse.json();
@@ -144,6 +181,13 @@ export default function LoginPage() {
         }
       } catch (error) {
         console.error("Error fetching data:", error);
+        // Set default config on error
+        setAppConfig({
+          appName: "Dashboard",
+          appLogo: null,
+          loginTheme: "dark",
+          registrationEnabled: false,
+        });
       }
     }
 
@@ -228,6 +272,12 @@ export default function LoginPage() {
   // Toggle password visibility
   const handleTogglePasswordVisibility = () => {
     setShowPassword(!showPassword);
+  };
+
+  // Handle backup restore completion
+  const handleRestoreComplete = () => {
+    // Reload the page to refresh the database state
+    window.location.reload();
   };
 
   return (
@@ -518,6 +568,9 @@ export default function LoginPage() {
                 </Grid>
               ))}
             </Grid>
+
+            {/* Add RestoreBackup component */}
+            {isFirstRun && <RestoreBackup onRestoreComplete={handleRestoreComplete} />}
           </Box>
 
           {/* Error Messages */}

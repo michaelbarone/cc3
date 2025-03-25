@@ -18,8 +18,8 @@ JSON Configuration:
 ```
 
 After disabling the editer, add the following rule files to the .cursor/rules directory:
-- ###-docs-memory-knowledge-management.mdc
-- ###-docs-plan-management.mdc
+- 010-docs-memory-knowledge-management.mdc
+- 011-docs-plan-management.mdc
 
 > 
 > #### Deprecation Notice ⚠️

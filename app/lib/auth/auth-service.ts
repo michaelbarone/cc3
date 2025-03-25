@@ -1,6 +1,6 @@
 import { prisma } from "../db/prisma";
-import { verifyPassword, hashPassword } from "./password";
-import { generateToken, setAuthCookie, removeAuthCookie, JwtPayload } from "./jwt";
+import { generateToken, JwtPayload, removeAuthCookie, setAuthCookie } from "./jwt";
+import { hashPassword, verifyPassword } from "./password";
 
 interface LoginResult {
   success: boolean;
@@ -90,7 +90,10 @@ export async function loginUser(username: string, password?: string): Promise<Lo
     // Update last active timestamp
     await prisma.user.update({
       where: { id: user.id },
-      data: { updatedAt: new Date() },
+      data: {
+        updatedAt: new Date(),
+        lastLoginAt: new Date(),
+      },
     });
 
     return {
