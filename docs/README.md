@@ -8,10 +8,6 @@ This directory contains all project documentation, planning materials, and worki
 
 Copy the section of `cursor_setting.md` into your cursor settings User Rules section and customize as needed
 
-Copy and rename the `.cursorrules.example` into the root directory as `.cursorrules`.  customize as needed
-
-- .cursorrules are deprecated and this will be updated soon.
-
 NOTE: to prevent cursor IDE from changing or possibly disabling triggers of rules, update your user settings .json file with this to disable the built in mdc editor:
 JSON Configuration:
 
@@ -21,7 +17,17 @@ JSON Configuration:
     }
 ```
 
-Add the ###-docs-* rule files to the .cursor/rules directory.
+After disabling the editer, add the following rule files to the .cursor/rules directory:
+- ###-docs-memory-knowledge-management.mdc
+- ###-docs-plan-management.mdc
+
+> 
+> #### Deprecation Notice ⚠️
+> 
+> Copy and rename the `.cursorrules.example` into the root directory as `.cursorrules`.  customize as needed
+>
+>  `.cursorrules` are deprecated and will be removed soon.  Use the .cursor/rules files outlined above.
+
 
 ## Project Setup
 
@@ -108,6 +114,80 @@ To quickly add tasks to the Future Tasks section in plan.md, use these prompts:
 2. **Include realistic effort estimates**: Use consistent units (days/weeks)
 3. **Regularly review and update**: Keep the Future Tasks section current
 4. **Add technical details**: Include enough information to start work later
+
+## Managing Task Milestones
+
+To add or update milestones for active tasks in plan.md, use these prompts:
+
+1. **Add a new milestone to an existing task**:
+
+   ```shell
+   Add a new milestone to the "[Task Name]" task in plan.md:
+   Milestone: [Milestone Name]
+   Description: [Brief description]
+   Dependencies: [Any dependencies or prerequisites]
+   ```
+
+   ```shell
+   Add a new milestone to the "[Task Name]" task in plan.md:
+   [Milestone Name]
+   clarify anything needed
+   ```
+
+2. **Add multiple milestones**:
+
+   ```shell
+   Add the following milestones to the "[Task Name]" task:
+
+   Milestone 1:
+   - Name: [Milestone Name]
+   - Description: [Brief description]
+   - Dependencies: [List any dependencies]
+
+   Milestone 2:
+   - Name: [Milestone Name]
+   - Description: [Brief description]
+   - Dependencies: [List any dependencies]
+   ```
+
+3. **Update milestone status**:
+
+   ```shell
+   Update the status of milestone "[Milestone Name]" in the "[Task Name]" task:
+   Status: [X] Completed
+   Progress: [Add any relevant progress notes]
+   ```
+
+4. **Reorder milestones**:
+
+   ```shell
+   Reorder the milestones in "[Task Name]" task to match this sequence:
+   1. [First Milestone]
+   2. [Second Milestone]
+   3. [Third Milestone]
+   ```
+
+### Tips for Managing Milestones
+
+1. **Clear Dependencies**:
+   - List any prerequisites for each milestone
+   - Note dependencies on other tasks or milestones
+   - Include external dependencies
+
+2. **Progress Tracking**:
+   - Use [X] for completed milestones
+   - Keep descriptions concise but clear
+   - Update progress notes regularly
+
+3. **Logical Ordering**:
+   - Order milestones by dependency chain
+   - Group related milestones together
+   - Consider critical path items
+
+4. **Regular Reviews**:
+   - Review milestone progress weekly
+   - Update status and notes promptly
+   - Adjust timelines as needed
 
 ## Creating New Plans
 

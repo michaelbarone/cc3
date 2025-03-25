@@ -4,8 +4,8 @@ globs: **/docs/working-memory/**/*.md
 alwaysApply: false
 ---
 
-# Problem-Solving Approach
-# Structured methodology for addressing issues and implementing features
+# Problem-Solving Approach and plan management
+# Structured methodology for addressing issues and implementing features based on project plans
 
 <rule>
 name: problem_solving_approach
