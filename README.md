@@ -36,6 +36,19 @@ npx prisma generate
 npx prisma migrate dev
 ```
 
+### First Run
+
+On first run, the application will:
+1. Create an admin user without a password for initial access
+2. Present two options:
+   - Start fresh with a new installation
+   - Restore from an existing backup (if you have one)
+
+If you choose to restore from a backup:
+- The backup must be a valid .zip file created by the application
+- The restore must be done before the first admin login
+- The backup will replace the initial database and uploaded files
+
 ### Development Server
 
 Run the development server:
