@@ -4,6 +4,7 @@
 - Existing login page needs visual and UX improvements
 - Building upon previous login page implementation
 - Focus on enhancing user experience and modern design principles
+- Adding first run experience for backup restoration
 
 ## Requirements
 
@@ -34,20 +35,35 @@
   - [ ] Implement lazy loading for non-critical elements
   - [ ] Add loading skeleton for better perceived performance
 
+- [ ] First Run Experience - Backup Restore
+  - [ ] Add backup restore section below user tiles
+  - [ ] Implement file selection and upload functionality
+  - [ ] Reuse existing admin page backup import logic
+  - [ ] Add "Start from a backup" guidance text
+  - [ ] Implement page reload after successful restore
+  - [ ] Create future task for security enhancements:
+    - Backup source validation
+    - File size limits
+    - Restoration logging
+    - Trust verification
+
 ## Affected Components
 - `/app/login/page.tsx`
 - `/app/components/auth/LoginForm.tsx`
 - `/app/components/ui/Button.tsx`
 - `/app/styles/auth.css`
+- `/app/components/backup/RestoreBackup.tsx` (new)
+- `/app/api/backup/restore` (reuse)
 
 ## Dependencies
 - Requires existing login functionality
 - Uses shadcn/ui components
 - Needs updated design assets
+- Requires existing backup restore functionality from admin page
 
 ## Current Status
 
-### 2025-03-19 16:30
+### 2025-03-23 16:45
 
 **Status**: In Progress
 
@@ -56,13 +72,18 @@
   - User experience improvements implemented
   - Authentication redirect handling fixed
   - Accessibility enhancements completed with Grid2 migration
-- What's not: Performance optimizations pending
+- What's not:
+  - Performance optimizations pending
+  - First run backup restore functionality pending
 - Blocking issues: None
-- Next actions: Begin performance optimization phase
+- Next actions:
+  - Begin performance optimization phase
+  - Implement first run backup restore
 - Documentation updates needed:
   - [ ] Update component documentation
   - [ ] Update UI/UX guidelines
   - [ ] Update accessibility documentation
+  - [ ] Document first run backup restore functionality
 
 ## Progress History
 

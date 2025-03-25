@@ -90,19 +90,121 @@ actions:
             - Critical path identification
             - Milestone definition
 
-         b) Risk Management:
+         b) Milestone Addition Protocol:
+            1. Required Questions:
+               - Scope Definition:
+                 ```markdown
+                 - When should this milestone be available/active?
+                 - What triggers this milestone to start/end?
+                 - Are there any prerequisites or conditions?
+                 - Should this block other functionality?
+                 ```
+
+               - Feature Requirements:
+                 ```markdown
+                 - What specific functionality is needed?
+                 - What UI/UX elements are required?
+                 - Can we reuse existing functionality?
+                 - What new components need to be created?
+                 ```
+
+               - Security & Performance:
+                 ```markdown
+                 - Are there security implications?
+                 - Should we implement immediate security measures?
+                 - Should we create future security tasks?
+                 - Are there performance considerations?
+                 ```
+
+               - User Experience:
+                 ```markdown
+                 - What guidance/documentation is needed?
+                 - What error states should we handle?
+                 - What happens after milestone completion?
+                 - Do we need cancellation/rollback?
+                 ```
+
+            2. Documentation Updates:
+               - Task Plan (.plan):
+                 ```markdown
+                 - Add to Requirements section with subtasks
+                 - Update Affected Components
+                 - Add new Dependencies
+                 - Update Current Status
+                 - Add Progress History entry
+                 - Update Documentation needs
+                 ```
+
+               - Project Plan (plan.md):
+                 ```markdown
+                 - Add milestone with clear description
+                 - Update Progress section
+                 - Note any dependencies or blockers
+                 - Include implementation approach
+                 ```
+
+            3. Critical Rules:
+               - ALWAYS ask all required questions before adding milestone
+               - NEVER add milestone without updating both .plan and plan.md
+               - ALWAYS consider security implications
+               - ALWAYS check for reusable functionality
+               - ALWAYS document future tasks for deferred work
+               - ALWAYS document task relationships:
+                 - Link future tasks to relevant active tasks
+                 - Link future tasks to completed tasks they build upon
+                 - Include brief explanations of relationships
+                 - Update relationships when tasks move between states
+
+            4. Examples:
+               <example>
+               # Good: Comprehensive Milestone Addition
+               1. Asked all required questions
+               2. Updated both .plan and plan.md
+               3. Included implementation details
+               4. Noted security considerations
+               5. Documented dependencies
+
+               ## Questions Asked:
+               - When is milestone active?
+               - What functionality needed?
+               - Security implications?
+               - User experience details?
+
+               ## Updates Made:
+               - Added detailed requirements
+               - Updated affected components
+               - Noted dependencies
+               - Created security followup
+               </example>
+
+               <example type="invalid">
+               # Bad: Incomplete Milestone Addition
+               1. Added milestone without questions
+               2. Updated only plan.md
+               3. No implementation details
+               4. No security consideration
+               5. Missing dependencies
+
+               ## Missing:
+               - No scope definition
+               - No security review
+               - Incomplete documentation
+               - No dependency check
+               </example>
+
+         c) Risk Management:
             - Potential blockers
             - Mitigation strategies
             - Fallback plans
             - Recovery procedures
 
-         c) Testing Strategy:
+         d) Testing Strategy:
             - Test coverage requirements
             - Test case definition
             - Performance benchmarks
             - Security validation
 
-         d) Documentation Planning:
+         e) Documentation Planning:
             - Documentation Impact Analysis:
               - Project Memory Updates:
                 - Required /docs/features/ updates
@@ -140,7 +242,7 @@ actions:
               - Link verification process
               - Content accuracy review
 
-         e) Specialized Testing:
+         f) Specialized Testing:
             - For API issues: Follow api_debugging_methodology test patterns
               ```ruby
               # Example API test structure from api_debugging_methodology
@@ -167,6 +269,17 @@ actions:
          - [X] Completed task
          - [ ] Incomplete task
          - [X] Another completed task
+
+         ## Future Tasks
+
+         ### [Task Name]
+         - **Description**: [Clear task description]
+         - **Priority**: [High/Medium/Low]
+         - **Estimated Effort**: [Duration]
+         - **Related Tasks**:
+           - Active: [Task Name] (explanation of relationship)
+           - Completed: [Task Name] (explanation of relationship)
+           - Future: [Task Name] (explanation of relationship)
 
          ## Problem Analysis
 

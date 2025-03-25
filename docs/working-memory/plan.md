@@ -11,12 +11,12 @@ This document serves as the main project plan and tracks the status of all tasks
 - **Key Milestones**:
   - [X] Visual Design Updates
   - [X] User Experience Improvements
-  - [ ] first run experience, allow admin to restore backup from login page only prior to first login
   - [ ] Accessibility Enhancements
   - [ ] Performance Optimization
+  - [ ] First Run Experience - Backup Restore (Add backup restore option before first admin login)
 - **Priority**: High
 - **Target**: Next UI update cycle
-- **Progress**: Completed visual design and UX improvements, including authentication redirect handling. Moving on to accessibility enhancements.
+- **Progress**: Completed visual design and UX improvements, including authentication redirect handling. Moving on to accessibility enhancements and first run backup restore functionality. Will reuse existing admin backup restore logic for DRY implementation.
 
 ### Testing Framework Implementation (In Progress)
 - **Location**: `/docs/working-memory/open/testing-framework`
@@ -43,16 +43,28 @@ This document serves as the main project plan and tracks the status of all tasks
 - **Description**: Optimize iframe loading and switching, implement lazy loading
 - **Priority**: Medium
 - **Estimated Effort**: 1 week
+- **Related Tasks**:
+  - Active: Testing Framework Implementation (for performance testing integration)
+  - Completed: IframeContainer Refactor (builds upon existing container optimizations)
+  - Completed: State Management (relates to iframe state handling)
 
 ### Security & Monitoring
 - **Description**: Implement container security measures, add security scanning
 - **Priority**: High
 - **Estimated Effort**: 2 weeks
+- **Related Tasks**:
+  - Completed: Containerization (extends container security)
+  - Completed: Admin Configuration (builds upon existing security measures)
+  - Completed: Database Export/Import System (relates to data security)
 
 ### User Features
 - **Description**: Add password recovery option, user activity monitoring
 - **Priority**: Low
 - **Estimated Effort**: 1 week
+- **Related Tasks**:
+  - Active: Login Page UI Updates (extends user authentication features)
+  - Completed: User Settings (builds upon user management functionality)
+  - Completed: Admin Configuration (relates to user management capabilities)
 
 ## Closed Tasks
 
