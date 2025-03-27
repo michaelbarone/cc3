@@ -1,7 +1,7 @@
-import { NextResponse } from "next/server";
 import { verifyToken } from "@/app/lib/auth/jwt";
 import { prisma } from "@/app/lib/db/prisma";
 import { cookies } from "next/headers";
+import { NextResponse } from "next/server";
 
 // Get all URLs (admin only)
 export async function GET() {
@@ -78,7 +78,7 @@ export async function POST(request: Request) {
         url,
         urlMobile: urlMobile || null,
         iconPath: iconPath || null,
-        idleTimeoutMinutes: idleTimeout || null,
+        idleTimeoutMinutes: idleTimeout ? Number(idleTimeout) : 10,
       },
     });
 

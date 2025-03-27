@@ -61,7 +61,7 @@ export async function PUT(request: NextRequest, props: Props): Promise<NextRespo
       return NextResponse.json({ error: "URL not found" }, { status: 404 });
     }
 
-    const { title, url, urlMobile, iconPath, idleTimeout } = requestData;
+    const { title, url, urlMobile, iconPath, idleTimeoutMinutes } = requestData;
 
     // Validate input
     if (!title || title.trim().length === 0) {
@@ -72,6 +72,18 @@ export async function PUT(request: NextRequest, props: Props): Promise<NextRespo
       return NextResponse.json({ error: "URL is required" }, { status: 400 });
     }
 
+    // Convert idleTimeoutMinutes to number or use default
+    let timeoutMinutes = 10; // Default
+    if (idleTimeoutMinutes !== undefined && idleTimeoutMinutes !== null) {
+      timeoutMinutes = Number(idleTimeoutMinutes);
+      if (isNaN(timeoutMinutes) || timeoutMinutes < 0) {
+        return NextResponse.json(
+          { error: "Idle timeout must be a non-negative number" },
+          { status: 400 },
+        );
+      }
+    }
+
     // Update URL
     const updatedUrl = await prisma.url.update({
       where: { id },
@@ -80,7 +92,7 @@ export async function PUT(request: NextRequest, props: Props): Promise<NextRespo
         url,
         urlMobile: urlMobile || null,
         iconPath: iconPath || null,
-        idleTimeoutMinutes: idleTimeout || null,
+        idleTimeoutMinutes: timeoutMinutes,
       },
     });
 

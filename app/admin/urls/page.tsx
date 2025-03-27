@@ -35,7 +35,7 @@ interface Url {
   url: string;
   urlMobile: string | null;
   iconPath: string | null;
-  idleTimeout: number | null;
+  idleTimeoutMinutes: number | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -56,7 +56,7 @@ export default function UrlManagement() {
     url: "",
     urlMobile: "",
     iconPath: "",
-    idleTimeout: 10,
+    idleTimeoutMinutes: 10,
   });
 
   // Snackbar state
@@ -98,7 +98,7 @@ export default function UrlManagement() {
         url: url.url,
         urlMobile: url.urlMobile || "",
         iconPath: url.iconPath || "",
-        idleTimeout: url.idleTimeout || 10,
+        idleTimeoutMinutes: url.idleTimeoutMinutes || 10,
       });
     } else {
       setSelectedUrl(null);
@@ -107,7 +107,7 @@ export default function UrlManagement() {
         url: "",
         urlMobile: "",
         iconPath: "",
-        idleTimeout: 10,
+        idleTimeoutMinutes: 10,
       });
     }
 
@@ -120,7 +120,10 @@ export default function UrlManagement() {
 
   const handleFormChange = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = event.target;
-    setFormValues((prev) => ({ ...prev, [name]: value }));
+    setFormValues((prev) => ({
+      ...prev,
+      [name]: name === "idleTimeoutMinutes" ? Number(value) || 0 : value,
+    }));
   };
 
   const handleSubmit = async () => {
@@ -128,18 +131,23 @@ export default function UrlManagement() {
       let response;
       let successMessage = "";
 
+      const submitData = {
+        ...formValues,
+        idleTimeoutMinutes: Number(formValues.idleTimeoutMinutes) || 10,
+      };
+
       if (dialogType === "create") {
         response = await fetch("/api/admin/urls", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(formValues),
+          body: JSON.stringify(submitData),
         });
         successMessage = "URL created successfully";
       } else if (dialogType === "edit" && selectedUrl) {
         response = await fetch(`/api/admin/urls/${selectedUrl.id}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(formValues),
+          body: JSON.stringify(submitData),
         });
         successMessage = "URL updated successfully";
       } else if (dialogType === "delete" && selectedUrl) {
@@ -166,44 +174,6 @@ export default function UrlManagement() {
       setSnackbar({
         open: true,
         message: err instanceof Error ? err.message : "An unknown error occurred",
-        severity: "error",
-      });
-    }
-  };
-
-  // Handle icon upload
-  const handleIconUpload = (iconUrl: string) => {
-    setFormValues({
-      ...formValues,
-      iconPath: iconUrl,
-    });
-  };
-
-  // Handle icon deletion
-  const handleIconDelete = async () => {
-    if (!formValues.iconPath) return;
-
-    try {
-      const response = await fetch(
-        `/api/admin/icons?iconPath=${encodeURIComponent(formValues.iconPath)}`,
-        {
-          method: "DELETE",
-        },
-      );
-
-      if (!response.ok) {
-        throw new Error("Failed to delete icon");
-      }
-
-      setFormValues({
-        ...formValues,
-        iconPath: "",
-      });
-    } catch (error) {
-      console.error("Error deleting icon:", error);
-      setSnackbar({
-        open: true,
-        message: "Failed to delete icon",
         severity: "error",
       });
     }
@@ -260,20 +230,123 @@ export default function UrlManagement() {
             <TableBody>
               {urls.map((url) => (
                 <TableRow key={url.id}>
-                  <TableCell>
-                    {url.iconPath && (
-                      <Box
-                        component="img"
-                        src={url.iconPath}
-                        alt={url.title}
-                        sx={{ width: 24, height: 24, objectFit: "contain" }}
+                  <TableCell sx={{ width: 120, padding: 2 }}>
+                    <Box
+                      sx={{
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        "& .MuiIconButton-root": {
+                          opacity: 0.7,
+                          transition: "opacity 0.2s",
+                          "&:hover": {
+                            opacity: 1,
+                          },
+                        },
+                        "& > *": {
+                          // Target direct children
+                          marginTop: -1,
+                          marginLeft: -1,
+                        },
+                      }}
+                    >
+                      <IconUpload
+                        size={64}
+                        iconUrl={url.iconPath}
+                        onUploadSuccess={async (iconUrl) => {
+                          try {
+                            const response = await fetch(`/api/admin/urls/${url.id}`, {
+                              method: "PUT",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({
+                                title: url.title,
+                                url: url.url,
+                                urlMobile: url.urlMobile,
+                                iconPath: iconUrl,
+                                idleTimeoutMinutes: Number(url.idleTimeoutMinutes) || 10,
+                              }),
+                            });
+
+                            if (!response.ok) {
+                              throw new Error("Failed to update URL icon");
+                            }
+
+                            // Refresh the URLs list
+                            fetchUrls();
+
+                            // Show success message
+                            setSnackbar({
+                              open: true,
+                              message: "Icon updated successfully",
+                              severity: "success",
+                            });
+                          } catch (err) {
+                            setSnackbar({
+                              open: true,
+                              message: "Failed to update URL icon",
+                              severity: "error",
+                            });
+                          }
+                        }}
+                        onUploadError={(error) =>
+                          setSnackbar({
+                            open: true,
+                            message: error,
+                            severity: "error",
+                          })
+                        }
+                        onDelete={async () => {
+                          try {
+                            // First delete the icon file
+                            const deleteIconResponse = await fetch(
+                              `/api/admin/icons?iconPath=${encodeURIComponent(url.iconPath || "")}`,
+                              {
+                                method: "DELETE",
+                              },
+                            );
+
+                            if (!deleteIconResponse.ok) {
+                              throw new Error("Failed to delete icon file");
+                            }
+
+                            // Then update the URL record
+                            const updateUrlResponse = await fetch(`/api/admin/urls/${url.id}`, {
+                              method: "PUT",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({
+                                ...url,
+                                iconPath: null,
+                              }),
+                            });
+
+                            if (!updateUrlResponse.ok) {
+                              throw new Error("Failed to update URL");
+                            }
+
+                            // Refresh the URLs list
+                            fetchUrls();
+
+                            // Show success message
+                            setSnackbar({
+                              open: true,
+                              message: "Icon removed successfully",
+                              severity: "success",
+                            });
+                          } catch (err) {
+                            setSnackbar({
+                              open: true,
+                              message: err instanceof Error ? err.message : "Failed to delete icon",
+                              severity: "error",
+                            });
+                          }
+                        }}
                       />
-                    )}
+                    </Box>
                   </TableCell>
                   <TableCell>{url.title}</TableCell>
                   <TableCell>{url.url}</TableCell>
                   <TableCell>{url.urlMobile || "-"}</TableCell>
-                  <TableCell>{url.idleTimeout || "-"}</TableCell>
+                  <TableCell>{url.idleTimeoutMinutes || "-"}</TableCell>
                   <TableCell>
                     <IconButton size="small" onClick={() => handleOpenDialog("edit", url)}>
                       <EditIcon fontSize="small" />
@@ -301,7 +374,7 @@ export default function UrlManagement() {
         <DialogTitle>{dialogType === "create" ? "Create New URL" : "Edit URL"}</DialogTitle>
         <DialogContent>
           <Grid container spacing={2} sx={{ mt: 1 }}>
-            <Grid item xs={12} sm={9}>
+            <Grid item xs={12}>
               <TextField
                 autoFocus
                 margin="dense"
@@ -311,25 +384,6 @@ export default function UrlManagement() {
                 variant="outlined"
                 value={formValues.title}
                 onChange={handleFormChange}
-              />
-            </Grid>
-            <Grid
-              item
-              xs={12}
-              sm={3}
-              sx={{ display: "flex", justifyContent: "center", alignItems: "center" }}
-            >
-              <IconUpload
-                iconUrl={formValues.iconPath || null}
-                onUploadSuccess={handleIconUpload}
-                onUploadError={(error) =>
-                  setSnackbar({
-                    open: true,
-                    message: error,
-                    severity: "error",
-                  })
-                }
-                onDelete={handleIconDelete}
               />
             </Grid>
             <Grid item xs={12}>
@@ -357,14 +411,14 @@ export default function UrlManagement() {
             <Grid item xs={12}>
               <TextField
                 margin="dense"
-                name="idleTimeout"
+                name="idleTimeoutMinutes"
                 label="Idle Timeout (minutes)"
                 type="number"
                 inputProps={{ min: 0 }}
                 helperText="Minutes before iframe is unloaded when inactive. Set to 0 to disable auto-unloading."
                 fullWidth
                 variant="outlined"
-                value={formValues.idleTimeout}
+                value={formValues.idleTimeoutMinutes}
                 onChange={handleFormChange}
               />
             </Grid>

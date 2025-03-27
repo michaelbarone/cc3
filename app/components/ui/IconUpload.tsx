@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useRef, ChangeEvent } from "react";
-import { Box, Avatar, IconButton, CircularProgress, Typography, Tooltip } from "@mui/material";
-import PhotoCameraIcon from "@mui/icons-material/PhotoCamera";
 import DeleteIcon from "@mui/icons-material/Delete";
 import ImageIcon from "@mui/icons-material/Image";
+import PhotoCameraIcon from "@mui/icons-material/PhotoCamera";
+import { Avatar, Box, CircularProgress, IconButton, Tooltip, Typography } from "@mui/material";
+import { ChangeEvent, useRef, useState } from "react";
 
 interface IconUploadProps {
   size?: number;

@@ -1,6 +1,5 @@
 "use client";
 
-import IconUpload from "@/app/components/ui/IconUpload";
 import AddIcon from "@mui/icons-material/Add";
 import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
 import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
@@ -97,7 +96,6 @@ export default function UrlGroupManagement() {
     title: "",
     url: "",
     urlMobile: "",
-    iconPath: "",
     displayOrder: 0,
     idleTimeoutMinutes: 10,
   });
@@ -180,7 +178,6 @@ export default function UrlGroupManagement() {
           title: "",
           url: "",
           urlMobile: "",
-          iconPath: "",
           displayOrder: maxOrder + 1,
           idleTimeoutMinutes: 10,
         });
@@ -204,7 +201,6 @@ export default function UrlGroupManagement() {
           title: url.title,
           url: url.url,
           urlMobile: url.urlMobile || "",
-          iconPath: url.iconPath || "",
           displayOrder: url.displayOrder,
           idleTimeoutMinutes: url.idleTimeoutMinutes,
         });
@@ -241,19 +237,26 @@ export default function UrlGroupManagement() {
 
   const handleUrlOrderChange = async (groupId: string, urlId: string, direction: "up" | "down") => {
     try {
+      console.log(`Attempting to reorder URL ${urlId} ${direction} in group ${groupId}`);
+
       const response = await fetch(`/api/admin/url-groups/${groupId}/urls/${urlId}/reorder`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ direction }),
       });
 
+      console.log("Reorder response status:", response.status);
+      const data = await response.json();
+      console.log("Reorder response data:", data);
+
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData?.error || "Operation failed");
+        throw new Error(data?.error || "Operation failed");
       }
 
+      console.log("Reorder successful, fetching updated URL groups");
       fetchUrlGroups();
     } catch (err) {
+      console.error("Error during reorder:", err);
       setSnackbar({
         open: true,
         message: err instanceof Error ? err.message : "An unknown error occurred",
@@ -473,45 +476,6 @@ export default function UrlGroupManagement() {
       setSnackbar({
         open: true,
         message: err instanceof Error ? err.message : "Failed to save user assignments",
-        severity: "error",
-      });
-    }
-  };
-
-  // Handle icon upload
-  const handleIconUpload = (iconUrl: string) => {
-    setUrlFormValues({
-      ...urlFormValues,
-      iconPath: iconUrl,
-    });
-  };
-
-  // Handle icon deletion
-  const handleIconDelete = async () => {
-    if (!urlFormValues.iconPath) return;
-
-    try {
-      const response = await fetch(
-        `/api/admin/icons?iconPath=${encodeURIComponent(urlFormValues.iconPath)}`,
-        {
-          method: "DELETE",
-        },
-      );
-
-      if (!response.ok) {
-        throw new Error("Failed to delete icon");
-      }
-
-      // Clear icon path
-      setUrlFormValues({
-        ...urlFormValues,
-        iconPath: "",
-      });
-    } catch (error) {
-      console.error("Error deleting icon:", error);
-      setSnackbar({
-        open: true,
-        message: "Failed to delete icon",
         severity: "error",
       });
     }
@@ -760,7 +724,10 @@ export default function UrlGroupManagement() {
                                     <IconButton
                                       edge="end"
                                       aria-label="move up"
-                                      onClick={() => handleUrlOrderChange(group.id, url.id, "up")}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleUrlOrderChange(group.id, url.id, "up");
+                                      }}
                                       disabled={index === 0}
                                       size="small"
                                     >
@@ -773,7 +740,10 @@ export default function UrlGroupManagement() {
                                     <IconButton
                                       edge="end"
                                       aria-label="move down"
-                                      onClick={() => handleUrlOrderChange(group.id, url.id, "down")}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleUrlOrderChange(group.id, url.id, "down");
+                                      }}
                                       disabled={index === group.urls.length - 1}
                                       size="small"
                                     >
@@ -874,7 +844,7 @@ export default function UrlGroupManagement() {
         <DialogTitle>{dialogType === "createUrl" ? "Add New URL" : "Edit URL"}</DialogTitle>
         <DialogContent>
           <Grid container spacing={2} sx={{ mt: 1 }}>
-            <Grid item xs={12} sm={9}>
+            <Grid item xs={12}>
               <TextField
                 autoFocus
                 margin="dense"
@@ -884,25 +854,6 @@ export default function UrlGroupManagement() {
                 variant="outlined"
                 value={urlFormValues.title}
                 onChange={handleUrlFormChange}
-              />
-            </Grid>
-            <Grid
-              item
-              xs={12}
-              sm={3}
-              sx={{ display: "flex", justifyContent: "center", alignItems: "center" }}
-            >
-              <IconUpload
-                iconUrl={urlFormValues.iconPath || null}
-                onUploadSuccess={handleIconUpload}
-                onUploadError={(error) =>
-                  setSnackbar({
-                    open: true,
-                    message: error,
-                    severity: "error",
-                  })
-                }
-                onDelete={handleIconDelete}
               />
             </Grid>
             <Grid item xs={12}>

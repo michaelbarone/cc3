@@ -1,0 +1,120 @@
+# URL Group Management Refactor
+
+*Updated: 2025-03-26 23:23*
+
+## Overview
+This task involves refactoring the URL group management system to improve the handling of URL ordering within groups and enable URLs to belong to multiple groups with different orders.
+
+## Current Issues
+1. URL order is managed at the URL level instead of the group level
+2. URLs can only belong to one group
+3. Order management implementation appears to be broken
+
+## Required Changes
+
+### 1. Schema Changes
+- Create new `UrlsInGroups` join table to replace current direct relationship
+- Add `displayOrder` to the join table instead of the `Url` table
+- Remove `urlGroupId` and `displayOrder` from `Url` table
+- Update relationships in Prisma schema
+
+```prisma
+model UrlsInGroups {
+  url         Url      @relation(fields: [urlId], references: [id], onDelete: Cascade)
+  urlId       String
+  group       UrlGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  groupId     String
+  displayOrder Int     @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@id([urlId, groupId])
+  @@index([groupId, displayOrder])
+}
+```
+
+### 2. API Updates
+- Update `/api/admin/url-groups/[id]/urls/[urlId]/reorder` endpoint
+- Modify URL group endpoints to work with new schema
+- Update URL creation/editing endpoints
+- Add endpoints for managing URL-group relationships
+
+### 3. Frontend Updates
+- Update URL group management page to handle multiple group assignments
+- Modify URL ordering UI to reflect new data structure
+- Update forms and dialogs for URL management
+- Add UI for managing URL-group relationships
+
+### 4. Data Migration
+- Create migration script to:
+  1. Create new `UrlsInGroups` table
+  2. Migrate existing relationships and orders
+  3. Remove old columns from `Url` table
+  4. Add necessary indexes for performance
+
+## Implementation Steps
+
+1. Schema Update
+   - [ ] Create new Prisma schema with `UrlsInGroups` table
+   - [ ] Generate and test migration
+   - [ ] Update Prisma client
+
+2. Backend Changes
+   - [ ] Update URL group API endpoints
+   - [ ] Modify reorder endpoint logic
+   - [ ] Add new endpoints for URL-group management
+   - [ ] Update URL CRUD operations
+
+3. Frontend Updates
+   - [ ] Modify URL group management page
+   - [ ] Update URL ordering components
+   - [ ] Add UI for managing URL-group relationships
+   - [ ] Update forms and dialogs
+
+4. Testing
+   - [ ] Test URL ordering in multiple groups
+   - [ ] Verify data integrity
+   - [ ] Test UI functionality
+   - [ ] Performance testing
+
+## Technical Considerations
+
+1. Performance
+   - Add proper indexes for efficient ordering
+   - Optimize queries for URL group fetching
+   - Consider pagination for large groups
+
+2. Data Integrity
+   - Ensure proper cascade deletion
+   - Maintain order consistency
+   - Handle edge cases (e.g., duplicate assignments)
+
+3. Migration
+   - Create backup before migration
+   - Test migration with production-like data
+   - Plan for rollback if needed
+
+## Dependencies
+- Prisma ORM
+- Next.js API routes
+- React components
+- Material UI
+
+## Risks
+1. Data loss during migration
+2. Performance impact with multiple group assignments
+3. UI complexity increase
+4. Backward compatibility issues
+
+## Success Criteria
+1. URLs can belong to multiple groups
+2. Each URL can have different orders in different groups
+3. Order management works correctly
+4. Migration completes without data loss
+5. UI remains intuitive and responsive
+
+## Notes
+- Consider implementing batch operations for efficiency
+- May need to update caching strategy
+- Consider adding API endpoints for bulk operations
+- Document new schema relationships

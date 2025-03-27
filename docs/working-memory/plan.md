@@ -1,8 +1,24 @@
 # Project Plan
 
+*Updated: 2025-03-26 23:45*
+
 This document serves as the main project plan and tracks the status of all tasks related to the project.
 
 ## Active Tasks
+
+### URL Group Management Refactor (In Progress)
+- **Location**: `/docs/working-memory/open/url-group-management-refactor-20250326`
+- **Status**: In Progress
+- **Description**: Refactoring URL group management to support multiple group assignments and improve order management
+- **Key Milestones**:
+  - [ ] Schema Update with UrlsInGroups table
+  - [ ] Migration Script Implementation
+  - [ ] API Endpoint Updates
+  - [ ] Frontend Component Updates
+  - [ ] Testing and Validation
+- **Priority**: High
+- **Target**: Next Development Cycle
+- **Progress**: Initial planning completed, schema changes designed, awaiting implementation
 
 ### Login Page UI Updates (In Progress)
 - **Location**: `/docs/working-memory/open/login-ui-update-20250319`
