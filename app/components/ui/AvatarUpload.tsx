@@ -1,16 +1,19 @@
 "use client";
 
-import { useState, useRef, ChangeEvent } from "react";
-import { Box, Avatar, IconButton, CircularProgress, Typography, Tooltip } from "@mui/material";
-import PhotoCameraIcon from "@mui/icons-material/PhotoCamera";
-import DeleteIcon from "@mui/icons-material/Delete";
 import { useAuth } from "@/app/lib/auth/auth-context";
+import DeleteIcon from "@mui/icons-material/Delete";
+import PhotoCameraIcon from "@mui/icons-material/PhotoCamera";
+import { Avatar, Box, CircularProgress, IconButton, Tooltip, Typography } from "@mui/material";
+import { ChangeEvent, useRef, useState } from "react";
 
 interface AvatarUploadProps {
   size?: number;
   editable?: boolean;
   onUploadSuccess?: (avatarUrl: string) => void;
   onUploadError?: (error: string) => void;
+  adminMode?: boolean;
+  userId?: string;
+  initialAvatarUrl?: string;
 }
 
 export default function AvatarUpload({
@@ -18,6 +21,9 @@ export default function AvatarUpload({
   editable = true,
   onUploadSuccess,
   onUploadError,
+  adminMode = false,
+  userId,
+  initialAvatarUrl,
 }: AvatarUploadProps) {
   const { user, updateUser } = useAuth();
   const [isUploading, setIsUploading] = useState(false);
@@ -25,7 +31,11 @@ export default function AvatarUpload({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Get user initials for fallback avatar
-  const initials = user?.username ? user.username.substring(0, 2).toUpperCase() : "?";
+  const initials = adminMode
+    ? userId?.substring(0, 2).toUpperCase() || "?"
+    : user?.username
+      ? user.username.substring(0, 2).toUpperCase()
+      : "?";
 
   // Handle file selection
   const handleFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
@@ -56,7 +66,10 @@ export default function AvatarUpload({
       const formData = new FormData();
       formData.append("avatar", file);
 
-      const response = await fetch("/api/user/avatar", {
+      // Use different endpoints for admin and user modes
+      const endpoint = adminMode ? `/api/admin/users/${userId}/avatar` : "/api/user/avatar";
+
+      const response = await fetch(endpoint, {
         method: "POST",
         body: formData,
       });
@@ -68,7 +81,7 @@ export default function AvatarUpload({
       const data = await response.json();
 
       // Update user with new avatar URL
-      if (updateUser && data.avatarUrl && user) {
+      if (!adminMode && updateUser && data.avatarUrl && user) {
         updateUser({
           ...user,
           avatarUrl: data.avatarUrl,
@@ -94,13 +107,17 @@ export default function AvatarUpload({
 
   // Handle avatar deletion
   const handleDeleteAvatar = async () => {
-    if (!user?.avatarUrl) return;
+    const currentAvatarUrl = adminMode ? initialAvatarUrl : user?.avatarUrl;
+    if (!currentAvatarUrl) return;
 
     setIsUploading(true);
     setError(null);
 
     try {
-      const response = await fetch("/api/user/avatar", {
+      // Use different endpoints for admin and user modes
+      const endpoint = adminMode ? `/api/admin/users/${userId}/avatar` : "/api/user/avatar";
+
+      const response = await fetch(endpoint, {
         method: "DELETE",
       });
 
@@ -109,7 +126,7 @@ export default function AvatarUpload({
       }
 
       // Update user with null avatar URL
-      if (updateUser && user) {
+      if (!adminMode && updateUser && user) {
         updateUser({
           ...user,
           avatarUrl: undefined,
@@ -148,8 +165,8 @@ export default function AvatarUpload({
 
       {/* Avatar */}
       <Avatar
-        src={user?.avatarUrl || undefined}
-        alt={user?.username || "User"}
+        src={(adminMode ? initialAvatarUrl : user?.avatarUrl) || undefined}
+        alt={adminMode ? "User" : user?.username || "User"}
         sx={{
           width: size,
           height: size,
@@ -159,7 +176,7 @@ export default function AvatarUpload({
         }}
         onClick={handleAvatarClick}
       >
-        {!user?.avatarUrl && initials}
+        {!(adminMode ? initialAvatarUrl : user?.avatarUrl) && initials}
       </Avatar>
 
       {/* Upload overlay (when editable) */}
@@ -188,7 +205,7 @@ export default function AvatarUpload({
             </IconButton>
           </Tooltip>
 
-          {user?.avatarUrl && (
+          {(adminMode ? initialAvatarUrl : user?.avatarUrl) && (
             <Tooltip title="Remove avatar">
               <IconButton
                 size="small"

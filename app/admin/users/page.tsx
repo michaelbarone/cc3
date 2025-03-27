@@ -1,10 +1,12 @@
 "use client";
 
+import AvatarUpload from "@/app/components/ui/AvatarUpload";
 import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
 import {
   Alert,
+  Avatar,
   Box,
   Button,
   Chip,
@@ -37,6 +39,7 @@ interface User {
   isAdmin: boolean;
   createdAt: string;
   updatedAt: string;
+  avatarUrl?: string | null;
 }
 
 export default function UserManagement() {
@@ -212,6 +215,7 @@ export default function UserManagement() {
         <Table>
           <TableHead>
             <TableRow>
+              <TableCell>Avatar</TableCell>
               <TableCell>Username</TableCell>
               <TableCell>Role</TableCell>
               <TableCell>Password</TableCell>
@@ -222,6 +226,15 @@ export default function UserManagement() {
           <TableBody>
             {users.map((user) => (
               <TableRow key={user.id}>
+                <TableCell>
+                  <Avatar
+                    src={user.avatarUrl || undefined}
+                    alt={user.username}
+                    sx={{ width: 40, height: 40 }}
+                  >
+                    {user.username.substring(0, 2).toUpperCase()}
+                  </Avatar>
+                </TableCell>
                 <TableCell>{user.username}</TableCell>
                 <TableCell>
                   {user.isAdmin ? (
@@ -260,50 +273,75 @@ export default function UserManagement() {
       <Dialog open={openDialog && dialogType !== "delete"} onClose={handleCloseDialog}>
         <DialogTitle>{dialogType === "create" ? "Create New User" : "Edit User"}</DialogTitle>
         <DialogContent>
-          <TextField
-            autoFocus
-            margin="dense"
-            name="username"
-            label="Username"
-            fullWidth
-            variant="outlined"
-            value={formValues.username}
-            onChange={handleFormChange}
-            sx={{ mb: 2 }}
-          />
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            {dialogType === "edit" && selectedUser && (
+              <Box sx={{ display: "flex", justifyContent: "center", mb: 2 }}>
+                <AvatarUpload
+                  size={100}
+                  editable={true}
+                  adminMode={true}
+                  userId={selectedUser.id}
+                  initialAvatarUrl={selectedUser.avatarUrl || undefined}
+                  onUploadSuccess={(avatarUrl) => {
+                    setSelectedUser({ ...selectedUser, avatarUrl });
+                    // Update the users list with the new avatar
+                    setUsers((prevUsers) =>
+                      prevUsers.map((u) => (u.id === selectedUser.id ? { ...u, avatarUrl } : u)),
+                    );
+                  }}
+                  onUploadError={(error) => {
+                    setSnackbar({
+                      open: true,
+                      message: error,
+                      severity: "error",
+                    });
+                  }}
+                />
+              </Box>
+            )}
 
-          <FormControlLabel
-            control={
-              <Switch
-                checked={formValues.hasPassword}
-                onChange={handleFormChange}
-                name="hasPassword"
-              />
-            }
-            label="Requires Password"
-            sx={{ mb: 2 }}
-          />
-
-          {formValues.hasPassword && (
             <TextField
+              autoFocus
               margin="dense"
-              name="password"
-              label="Password"
-              type="password"
+              name="username"
+              label="Username"
               fullWidth
               variant="outlined"
-              value={formValues.password}
+              value={formValues.username}
               onChange={handleFormChange}
-              sx={{ mb: 2 }}
             />
-          )}
 
-          <FormControlLabel
-            control={
-              <Switch checked={formValues.isAdmin} onChange={handleFormChange} name="isAdmin" />
-            }
-            label="Admin Access"
-          />
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={formValues.hasPassword}
+                  onChange={handleFormChange}
+                  name="hasPassword"
+                />
+              }
+              label="Requires Password"
+            />
+
+            {formValues.hasPassword && (
+              <TextField
+                margin="dense"
+                name="password"
+                label="Password"
+                type="password"
+                fullWidth
+                variant="outlined"
+                value={formValues.password}
+                onChange={handleFormChange}
+              />
+            )}
+
+            <FormControlLabel
+              control={
+                <Switch checked={formValues.isAdmin} onChange={handleFormChange} name="isAdmin" />
+              }
+              label="Admin Access"
+            />
+          </Box>
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseDialog}>Cancel</Button>
