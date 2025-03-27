@@ -33,6 +33,46 @@ Key Features:
 - Registration control
 - Settings persistence
 
+### UserManagement
+
+Purpose: Manages user accounts and their avatars in the admin interface.
+
+```typescript
+interface User {
+  id: string;
+  username: string;
+  passwordHash: string | null;
+  isAdmin: boolean;
+  createdAt: string;
+  updatedAt: string;
+  avatarUrl?: string | null;
+}
+
+const UserManagement: React.FC = () => {
+  // Component implementation
+};
+```
+
+Key Features:
+- User list with avatars
+- Create/edit/delete users
+- Password management
+- Admin role toggle
+- Avatar upload and management
+- Real-time avatar preview
+- Error handling with Snackbar notifications
+
+Usage Example:
+```typescript
+function AdminUserPage() {
+  return (
+    <AdminLayout title="User Management">
+      <UserManagement />
+    </AdminLayout>
+  );
+}
+```
+
 ### AdminDashboard
 
 Purpose: Main dashboard for system statistics and monitoring.

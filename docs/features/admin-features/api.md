@@ -276,6 +276,43 @@ interface UpdatePreferencesResponse {
 }
 ```
 
+## User Management Endpoints
+
+### POST /api/admin/users/[id]/avatar
+
+Uploads an avatar for a specific user.
+
+```typescript
+// Request Type
+// Multipart form data with 'avatar' file field
+
+// Response Type
+interface AvatarUploadResponse {
+  success: boolean;
+  avatarUrl?: string;
+  error?: string;
+}
+```
+
+Key Features:
+- Maximum file size: 2MB
+- Supported formats: Image files only
+- Automatic WebP conversion
+- Image optimization (250x250px)
+- Old avatar cleanup
+
+### DELETE /api/admin/users/[id]/avatar
+
+Removes a user's avatar.
+
+```typescript
+// Response Type
+interface AvatarDeleteResponse {
+  success: boolean;
+  error?: string;
+}
+```
+
 ## Common Types
 
 ### Error Response
