@@ -4,8 +4,26 @@ import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 
 type Props = {
-  params: Promise<{ id: string }>;
+  params: { id: string };
 };
+
+interface UrlInGroup {
+  id: string;
+  title: string;
+  url: string;
+  iconPath: string | null;
+  idleTimeoutMinutes: number | null;
+  displayOrder: number;
+}
+
+interface UrlGroup {
+  id: string;
+  name: string;
+  description: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+  urls: UrlInGroup[];
+}
 
 // GET - Fetch a specific URL group with its URLs
 export async function GET(request: NextRequest, props: Props): Promise<NextResponse> {
@@ -24,25 +42,44 @@ export async function GET(request: NextRequest, props: Props): Promise<NextRespo
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const { id } = await props.params;
+    const { id } = props.params;
 
-    // Get the URL group with its URLs
-    const urlGroup = await prisma.urlGroup.findUnique({
-      where: { id },
-      include: {
-        urls: {
-          orderBy: {
-            displayOrder: "asc",
-          },
-        },
-      },
-    });
+    // First get the URL group
+    const urlGroup = await prisma.$queryRaw<UrlGroup[]>`
+      SELECT
+        g.id,
+        g.name,
+        g.description,
+        g.createdAt,
+        g.updatedAt,
+        JSON_GROUP_ARRAY(
+          JSON_OBJECT(
+            'id', u.id,
+            'title', u.title,
+            'url', u.url,
+            'iconPath', u.iconPath,
+            'idleTimeoutMinutes', u.idleTimeoutMinutes,
+            'displayOrder', uig.displayOrder
+          )
+        ) as urls
+      FROM UrlGroup g
+      LEFT JOIN urls_in_groups uig ON g.id = uig.groupId
+      LEFT JOIN Url u ON uig.urlId = u.id
+      WHERE g.id = ${id}
+      GROUP BY g.id
+    `;
 
-    if (!urlGroup) {
+    if (urlGroup.length === 0) {
       return NextResponse.json({ error: "URL group not found" }, { status: 404 });
     }
 
-    return NextResponse.json(urlGroup);
+    // Combine the results
+    const response: UrlGroup = {
+      ...urlGroup[0],
+      urls: urlGroup[0].urls,
+    };
+
+    return NextResponse.json(response);
   } catch (error) {
     console.error("Error fetching URL group:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
@@ -66,7 +103,7 @@ export async function PUT(request: NextRequest, props: Props): Promise<NextRespo
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const { id } = await props.params;
+    const { id } = props.params;
 
     // Check if URL group exists
     const existingUrlGroup = await prisma.urlGroup.findUnique({
@@ -118,7 +155,7 @@ export async function DELETE(request: NextRequest, props: Props): Promise<NextRe
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const { id } = await props.params;
+    const { id } = props.params;
 
     // Check if URL group exists
     const existingUrlGroup = await prisma.urlGroup.findUnique({

@@ -1,4 +1,4 @@
-import { prisma } from "./prisma";
+import { prisma } from "@/app/lib/db/prisma";
 import { initializeDatabase } from "./init";
 
 // Initialize database and export client

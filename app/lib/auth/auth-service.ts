@@ -6,6 +6,7 @@ interface LoginResult {
   success: boolean;
   message?: string;
   requiresPassword?: boolean;
+  token?: string;
   user?: {
     id: string;
     username: string;
@@ -98,6 +99,7 @@ export async function loginUser(username: string, password?: string): Promise<Lo
 
     return {
       success: true,
+      token,
       user: {
         id: user.id,
         username: user.username,

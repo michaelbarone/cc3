@@ -1,7 +1,7 @@
+import { prisma } from "@/app/lib/db/prisma";
+import { execSync } from "child_process";
 import fs from "fs";
 import path from "path";
-import { execSync } from "child_process";
-import { prisma, getPrisma } from "./prisma";
 import { main as seedDatabase } from "../../prisma/seed";
 
 // Flag to ensure we only try to initialize once per process
@@ -32,7 +32,6 @@ function createRequiredDirectories() {
 // Function to check if database exists and is accessible
 async function checkDatabase(): Promise<boolean> {
   try {
-    const prisma = await getPrisma();
     await prisma.$queryRaw`SELECT 1`;
     return true;
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -71,9 +70,6 @@ export async function initializeDatabase() {
       execSync("npx prisma migrate deploy", { stdio: "inherit" });
     }
 
-    // Get a fresh client
-    const prisma = await getPrisma();
-
     // Check if we need to seed
     const userCount = await prisma.user.count();
 
@@ -89,8 +85,6 @@ export async function initializeDatabase() {
     throw error;
   } finally {
     isInitializing = false;
-    const prisma = await getPrisma();
-    await prisma.$disconnect();
   }
 }
 
@@ -117,48 +111,81 @@ export async function seedTestData() {
       },
     });
 
-    // Create 5 URLs with realistic examples
+    // Create URLs without group associations first
     const urls = [
       {
         title: "GitHub Dashboard",
         url: "https://github.com",
         urlMobile: "https://github.com/mobile",
-        displayOrder: 0,
         idleTimeoutMinutes: 30,
-        urlGroupId: devGroup.id,
       },
       {
         title: "Jenkins CI",
         url: "https://jenkins.example.com",
-        displayOrder: 1,
         idleTimeoutMinutes: 15,
-        urlGroupId: devGroup.id,
       },
       {
         title: "Grafana Metrics",
         url: "https://grafana.example.com",
-        displayOrder: 0,
         idleTimeoutMinutes: 5,
-        urlGroupId: monitoringGroup.id,
       },
       {
         title: "Kibana Logs",
         url: "https://kibana.example.com",
-        displayOrder: 1,
         idleTimeoutMinutes: 10,
-        urlGroupId: monitoringGroup.id,
       },
       {
         title: "Prometheus Alerts",
         url: "https://prometheus.example.com",
-        displayOrder: 2,
         idleTimeoutMinutes: 2,
-        urlGroupId: monitoringGroup.id,
       },
     ];
 
-    // Create all URLs
-    await Promise.all(urls.map((url) => prisma.url.create({ data: url })));
+    // Create all URLs and store their IDs
+    const createdUrls = await Promise.all(
+      urls.map((urlData) => prisma.url.create({ data: urlData })),
+    );
+
+    // Create URL-Group relationships with display orders
+    await Promise.all([
+      // Development Tools group URLs
+      prisma.urlsInGroups.create({
+        data: {
+          urlId: createdUrls[0].id, // GitHub
+          groupId: devGroup.id,
+          displayOrder: 0,
+        },
+      }),
+      prisma.urlsInGroups.create({
+        data: {
+          urlId: createdUrls[1].id, // Jenkins
+          groupId: devGroup.id,
+          displayOrder: 1,
+        },
+      }),
+      // Monitoring group URLs
+      prisma.urlsInGroups.create({
+        data: {
+          urlId: createdUrls[2].id, // Grafana
+          groupId: monitoringGroup.id,
+          displayOrder: 0,
+        },
+      }),
+      prisma.urlsInGroups.create({
+        data: {
+          urlId: createdUrls[3].id, // Kibana
+          groupId: monitoringGroup.id,
+          displayOrder: 1,
+        },
+      }),
+      prisma.urlsInGroups.create({
+        data: {
+          urlId: createdUrls[4].id, // Prometheus
+          groupId: monitoringGroup.id,
+          displayOrder: 2,
+        },
+      }),
+    ]);
 
     // Assign groups to admin user if they exist
     const admin = await prisma.user.findFirst({

@@ -1,41 +1,37 @@
 "use client";
 
-import { useLongPress } from "@/app/lib/hooks/useLongPress";
 import { useUserPreferences } from "@/app/lib/hooks/useUserPreferences";
-import { useIframeState } from "@/app/lib/state/iframe-state-context";
-import { Url, UrlGroup } from "@/app/lib/types";
-import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
-import ExpandLess from "@mui/icons-material/ExpandLess";
-import ExpandMore from "@mui/icons-material/ExpandMore";
-import FolderIcon from "@mui/icons-material/Folder";
+import { useSelectedGroup } from "@/app/lib/state/selected-group-context";
+import { Url } from "@/app/lib/types";
+import { ArrowDropDown as ArrowDropDownIcon, Folder as FolderIcon } from "@mui/icons-material";
 import {
-  Badge,
   Box,
   Button,
-  Collapse,
-  List,
-  ListItemButton,
   ListItemIcon,
   ListItemText,
   Menu,
   MenuItem,
-  Tooltip,
-  Typography,
   useMediaQuery,
   useTheme,
 } from "@mui/material";
-import { Theme } from "@mui/material/styles";
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { LongPressProgress } from "./LongPressProgress";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { UrlItem } from "./UrlItem";
 
 interface MenuBarProps {
-  urlGroups: UrlGroup[];
+  urlGroups: Array<{
+    id: string;
+    name: string;
+    urls: Array<{
+      url: Url;
+      displayOrder: number;
+    }>;
+  }>;
   activeUrlId: string | null;
   loadedUrlIds?: string[];
   onUrlClick: (url: Url) => void;
-  onUrlReload?: (url: Url) => void;
-  onUrlUnload?: (url: Url) => void;
-  menuPosition?: "side" | "top";
+  onUrlReload: (url: Url) => void;
+  onUrlUnload: (url: Url) => void;
+  menuPosition?: "top" | "side";
 }
 
 /**
@@ -87,282 +83,173 @@ const getUrlStatus = (
   }
 };
 
-// Common URL item component that works for both side and top menu layouts
-function UrlItem({
-  url,
-  isActive,
-  isLoaded,
-  tooltipText,
-  onUrlClick,
-  onLongPress,
-  menuPosition,
-  theme,
-}: {
-  url: Url;
-  isActive: boolean;
-  isLoaded: boolean;
-  tooltipText: string;
-  onUrlClick: (e: React.MouseEvent) => void;
-  onLongPress: () => void;
-  menuPosition: "side" | "top";
-  theme: Theme;
-}) {
-  const { isLongPressing, longPressProgress, longPressUrlId } = useIframeState();
-  const isLongPressingThis = isLongPressing && longPressUrlId === url.id;
+// Update the helper function with more detailed debugging
+const convertUrlToOldFormat = (
+  urlInGroup:
+    | {
+        url: {
+          id: string;
+          title: string;
+          url: string;
+          urlMobile: string | null;
+          iconPath: string | null;
+          idleTimeoutMinutes: number | null;
+          createdAt: Date;
+          updatedAt: Date;
+        };
+        displayOrder: number;
+      }
+    | undefined,
+): Url | null => {
+  if (!urlInGroup) return null;
+  if (!urlInGroup.url) return null;
+  if (!urlInGroup.url.id || !urlInGroup.url.title || !urlInGroup.url.url) return null;
 
-  // Use the longPress hook
-  const longPressHandlers = useLongPress({
-    onClick: () => {
-      onUrlClick({ stopPropagation: () => {} } as React.MouseEvent);
-    },
-    onLongPress,
-    duration: 800,
-    disabled: !isLoaded,
-    visualFeedback: true,
-  });
-
-  // Handle regular click
-  const handleClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    onUrlClick(e);
+  return {
+    ...urlInGroup.url,
+    displayOrder: urlInGroup.displayOrder,
+    createdAt: urlInGroup.url.createdAt.toISOString(),
+    updatedAt: urlInGroup.url.updatedAt.toISOString(),
+    idleTimeoutMinutes: urlInGroup.url.idleTimeoutMinutes,
   };
+};
 
-  const commonIconStyles = {
-    width: 24,
-    height: 24,
-    objectFit: "contain" as const,
-  };
-
-  const commonBadgeStyles = {
-    position: "absolute" as const,
-    top: -2,
-    right: -2,
-    "& .MuiBadge-badge": {
-      backgroundColor: theme.palette.success.main,
-      width: 8,
-      height: 8,
-      minWidth: 8,
-      borderRadius: "50%",
-      opacity: 0.8,
-    },
-  };
-
-  const commonBoxStyles = {
-    position: "relative" as const,
-    display: "flex",
-    alignItems: "center",
-  };
-
-  if (menuPosition === "top") {
-    return (
-      <Tooltip title={tooltipText}>
-        <Button
-          data-url-id={url.id}
-          sx={{
-            mx: 0.5,
-            textTransform: "none",
-            borderBottom: isActive ? `2px solid ${theme.palette.primary.main}` : "none",
-            borderRadius: 0,
-            color: isActive ? theme.palette.primary.main : theme.palette.text.primary,
-            fontWeight: isActive ? "bold" : "normal",
-            backgroundColor: "transparent",
-            position: "relative",
-            overflow: "hidden",
-            "&:hover": {
-              opacity: 0.8,
-            },
-          }}
-          onClick={handleClick}
-          {...longPressHandlers}
-        >
-          <Box sx={commonBoxStyles}>
-            {url.iconPath ? (
-              <Box component="img" src={url.iconPath} alt={url.title} sx={commonIconStyles} />
-            ) : (
-              url.title
-            )}
-            {isLoaded && (
-              <Badge color="success" variant="dot" overlap="circular" sx={commonBadgeStyles} />
-            )}
-          </Box>
-          <LongPressProgress isActive={isLongPressingThis} progress={longPressProgress} />
-        </Button>
-      </Tooltip>
-    );
-  }
-
-  return (
-    <Tooltip title={tooltipText} placement="right">
-      <ListItemButton
-        sx={{
-          pl: 4,
-          borderLeft: "none",
-          borderRight: isActive ? `4px solid ${theme.palette.primary.main}` : "none",
-          bgcolor: "inherit",
-          position: "relative",
-          overflow: "hidden",
-        }}
-        data-url-id={url.id}
-        onClick={handleClick}
-        {...longPressHandlers}
-      >
-        <ListItemIcon sx={{ minWidth: 36 }}>
-          <Box sx={commonBoxStyles}>
-            {url.iconPath ? (
-              <Box component="img" src={url.iconPath} alt={url.title} sx={commonIconStyles} />
-            ) : null}
-            {isLoaded && (
-              <Badge color="success" variant="dot" overlap="circular" sx={commonBadgeStyles} />
-            )}
-          </Box>
-        </ListItemIcon>
-        <ListItemText
-          primary={url.title}
-          primaryTypographyProps={{
-            color: isActive ? "primary" : "inherit",
-            fontWeight: isActive ? "bold" : "normal",
-          }}
-        />
-        <LongPressProgress isActive={isLongPressingThis} progress={longPressProgress} />
-      </ListItemButton>
-    </Tooltip>
-  );
-}
-
-export default function MenuBar({
+export function MenuBar({
   urlGroups,
   activeUrlId,
   loadedUrlIds = [],
   onUrlClick,
   onUrlReload,
   onUrlUnload,
-  menuPosition: propMenuPosition = undefined,
+  menuPosition = "top",
 }: MenuBarProps) {
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
-  const { preferences, loading: preferencesLoading } = useUserPreferences();
-  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
-  const [groupMenuAnchorEl, setGroupMenuAnchorEl] = useState<null | HTMLElement>(null);
-  const [activeGroupId, setActiveGroupId] = useState<string | null>(null);
-  const previousActiveUrlId = useRef<string | null>(null);
+  const { selectedGroupId, setSelectedGroupId } = useSelectedGroup();
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const isSmallScreen = useMediaQuery(theme.breakpoints.down("sm"));
+  const { preferences } = useUserPreferences();
   const [isLongPressInProgress, setIsLongPressInProgress] = useState(false);
 
-  // Determine effective menu position
-  const menuPosition = useMemo(() => {
-    if (isMobile) return "side";
-    if (propMenuPosition === "top" || propMenuPosition === "side") return propMenuPosition;
-    if (propMenuPosition === undefined) return preferences?.menuPosition || "side";
-    return preferences?.menuPosition || "side";
-  }, [isMobile, propMenuPosition, preferences?.menuPosition]);
-
-  // Handle active URL group management
-  useEffect(() => {
-    if (activeUrlId && activeUrlId !== previousActiveUrlId.current) {
-      previousActiveUrlId.current = activeUrlId;
-      const activeGroup = urlGroups.find((group) =>
-        group.urls.some((url) => url.id === activeUrlId),
-      );
-
-      if (activeGroup && menuPosition) {
-        if (menuPosition === "side") {
-          setOpenGroups((prev) => ({
-            ...prev,
-            [activeGroup.id]: true,
-          }));
-        } else {
-          setActiveGroupId(activeGroup.id);
-        }
-      }
+  // Get the currently selected group
+  const selectedGroup = useMemo(() => {
+    // If we have a selectedGroupId and it exists in urlGroups, use it
+    if (selectedGroupId) {
+      const selected = urlGroups.find((group) => group.id === selectedGroupId);
+      if (selected) return selected;
     }
-  }, [activeUrlId, urlGroups, menuPosition]);
 
-  // Handle group toggle
-  const handleGroupToggle = useCallback(
+    // Otherwise use the first group
+    return urlGroups[0];
+  }, [urlGroups, selectedGroupId]);
+
+  // Select first group by default or use last selected group
+  useEffect(() => {
+    if (!urlGroups.length) return;
+
+    // Only set the first group if we don't have a valid selection
+    if (!selectedGroupId || !urlGroups.find((g) => g.id === selectedGroupId)) {
+      setSelectedGroupId(urlGroups[0].id);
+    }
+  }, [urlGroups, selectedGroupId, setSelectedGroupId]);
+
+  const handleGroupSelect = useCallback(
     (groupId: string) => {
-      if (menuPosition === "side") {
-        setOpenGroups((prev) => ({
-          ...prev,
-          [groupId]: !prev[groupId],
-        }));
-      } else {
-        setActiveGroupId((prev) => (prev === groupId ? null : groupId));
+      // Verify the group exists before setting it
+      if (urlGroups.some((g) => g.id === groupId)) {
+        setSelectedGroupId(groupId);
+        setAnchorEl(null);
       }
     },
-    [menuPosition],
+    [setSelectedGroupId, urlGroups],
   );
 
-  // Handle group menu
-  const handleGroupMenuOpen = useCallback(
-    (event: React.MouseEvent<HTMLElement>, groupId: string) => {
-      event.stopPropagation();
-      setGroupMenuAnchorEl(event.currentTarget);
-      setActiveGroupId(groupId);
-    },
-    [],
-  );
+  const handleGroupMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
 
-  const handleGroupMenuClose = useCallback(() => {
-    setGroupMenuAnchorEl(null);
-  }, []);
+  const handleGroupMenuClose = () => {
+    setAnchorEl(null);
+  };
 
-  // Memoize URL click handler
-  const handleUrlClick = useCallback(
-    (url: Url) => {
-      if (isLongPressInProgress) {
-        return;
-      }
+  const getUrlStatus = (urlId: string): string => {
+    const isActive = urlId === activeUrlId;
+    const isLoaded = loadedUrlIds.includes(urlId);
+    return isActive
+      ? isLoaded
+        ? "active-loaded"
+        : "active-unloaded"
+      : isLoaded
+        ? "inactive-loaded"
+        : "inactive-unloaded";
+  };
 
-      if (activeUrlId === url.id) {
-        if (onUrlReload) onUrlReload(url);
-      } else {
-        onUrlClick(url);
+  const getTooltipText = (url: Url, status: string): string => {
+    const statusText =
+      status === "active-loaded"
+        ? "Active"
+        : status === "active-unloaded"
+          ? "Loading..."
+          : status === "inactive-loaded"
+            ? "Loaded"
+            : "Not Loaded";
+    return `${url.title} (${statusText})`;
+  };
 
-        if (menuPosition === "top") {
-          const groupContainingUrl = urlGroups.find((group) =>
-            group.urls.some((groupUrl) => groupUrl.id === url.id),
-          );
-          if (groupContainingUrl) {
-            setActiveGroupId(groupContainingUrl.id);
-          }
-        }
-      }
-    },
-    [activeUrlId, isLongPressInProgress, menuPosition, onUrlClick, onUrlReload, urlGroups],
-  );
+  const handleUrlLongPress = (url: Url) => {
+    setIsLongPressInProgress(true);
+    onUrlReload(url);
+    setTimeout(() => setIsLongPressInProgress(false), 1000);
+  };
 
-  // Memoize long press handler
-  const handleUrlLongPress = useCallback(
-    (url: Url) => {
-      if (!onUrlUnload) return;
+  // Render the group selector
+  const renderGroupSelector = () => {
+    const otherGroups = urlGroups.filter((group) => group.id !== selectedGroup?.id);
 
-      setIsLongPressInProgress(true);
+    return (
+      <>
+        <Button
+          onClick={handleGroupMenuOpen}
+          sx={{
+            color: "inherit",
+            textTransform: "none",
+            minWidth: "auto",
+            px: 1,
+          }}
+        >
+          <ListItemIcon sx={{ minWidth: "auto", mr: 1 }}>
+            <FolderIcon fontSize="small" />
+          </ListItemIcon>
+          <ListItemText primary={selectedGroup?.name || "Select Group"} />
+          <ArrowDropDownIcon />
+        </Button>
+        <Menu
+          anchorEl={anchorEl}
+          open={Boolean(anchorEl)}
+          onClose={handleGroupMenuClose}
+          anchorOrigin={{
+            vertical: "bottom",
+            horizontal: "left",
+          }}
+        >
+          {otherGroups.map((group) => (
+            <MenuItem key={group.id} onClick={() => handleGroupSelect(group.id)}>
+              {group.name}
+            </MenuItem>
+          ))}
+        </Menu>
+      </>
+    );
+  };
 
-      if (loadedUrlIds.includes(url.id)) {
-        onUrlUnload(url);
-      }
+  // Render URLs for the selected group
+  const renderUrls = () => {
+    if (!selectedGroup) return null;
 
-      setTimeout(() => {
-        setIsLongPressInProgress(false);
-      }, 500);
-    },
-    [loadedUrlIds, onUrlUnload],
-  );
-
-  // Memoize URL item renderer
-  const renderUrlItem = useCallback(
-    (url: Url) => {
-      const urlStatus = getUrlStatus(url.id, activeUrlId, loadedUrlIds);
-      const isActive = urlStatus.startsWith("active");
-      const isLoaded = urlStatus === "active-loaded" || urlStatus === "inactive-loaded";
-
-      let tooltipText = "";
-      if (isActive && isLoaded)
-        tooltipText = "Currently active (click to reload, long press to unload)";
-      else if (isActive && !isLoaded)
-        tooltipText = "Currently active but unloaded (click to reload)";
-      else if (!isActive && isLoaded)
-        tooltipText = "Loaded in background (click to view, long press to unload)";
-      else tooltipText = "Currently unloaded (click to load and view)";
+    return selectedGroup.urls.map((urlInGroup) => {
+      const url = urlInGroup.url;
+      const status = getUrlStatus(url.id);
+      const isActive = status.startsWith("active");
+      const isLoaded = status.endsWith("loaded");
 
       return (
         <UrlItem
@@ -370,160 +257,48 @@ export default function MenuBar({
           url={url}
           isActive={isActive}
           isLoaded={isLoaded}
-          tooltipText={tooltipText}
-          onUrlClick={() => {
-            handleUrlClick(url);
-          }}
+          tooltipText={getTooltipText(url, status)}
+          onUrlClick={() => onUrlClick(url)}
           onLongPress={() => handleUrlLongPress(url)}
           menuPosition={menuPosition}
           theme={theme}
         />
       );
-    },
-    [activeUrlId, loadedUrlIds, menuPosition, theme, handleUrlClick, handleUrlLongPress],
-  );
+    });
+  };
 
-  // Render top menu layout
-  if (!preferencesLoading && menuPosition === "top") {
-    // Find group containing active URL first (prioritize it)
-    const activeUrlGroup = activeUrlId
-      ? urlGroups.find((group) => group.urls.some((url) => url.id === activeUrlId))
-      : null;
+  // Determine effective menu position
+  const menuPositionEffective = useMemo(() => {
+    if (isSmallScreen) return "side";
+    if (menuPosition === "top" || menuPosition === "side") return menuPosition;
+    return preferences?.menuPosition || "side";
+  }, [isSmallScreen, menuPosition, preferences?.menuPosition]);
 
-    // Use the group containing the active URL, or fall back to activeGroupId selection
-    const activeGroup = activeUrlGroup || urlGroups.find((group) => group.id === activeGroupId);
-
-    return (
-      <Box sx={{ display: "flex", flexDirection: "row", alignItems: "center", width: "100%" }}>
-        {/* Group selector - only show dropdown if multiple groups exist */}
-        <Box sx={{ display: "flex", alignItems: "center", mr: 2 }}>
-          {urlGroups.length > 1 ? (
-            <Button
-              onClick={(event) => handleGroupMenuOpen(event, activeGroup?.id || "")}
-              endIcon={<ArrowDropDownIcon />}
-              sx={{ textTransform: "none" }}
-            >
-              <FolderIcon sx={{ mr: 1 }} />
-              {activeGroup?.name || "Select Group"}
-            </Button>
-          ) : (
-            <Box sx={{ display: "flex", alignItems: "center", px: 2 }}>
-              <FolderIcon sx={{ mr: 1, color: theme.palette.text.secondary }} />
-              <Typography variant="body1" color="text.secondary">
-                {urlGroups[0]?.name}
-              </Typography>
-            </Box>
-          )}
-          {urlGroups.length > 1 && (
-            <Menu
-              anchorEl={groupMenuAnchorEl}
-              open={Boolean(groupMenuAnchorEl)}
-              onClose={handleGroupMenuClose}
-              PaperProps={{
-                sx: {
-                  maxWidth: "80vw",
-                  maxHeight: "60vh",
-                  overflowX: "hidden",
-                },
-              }}
-            >
-              {urlGroups
-                .filter((group) => group.id !== activeGroup?.id) // Filter out the currently selected group
-                .map((group) => (
-                  <Box key={group.id} sx={{ p: 1 }}>
-                    <Box
-                      sx={{
-                        display: "flex",
-                        flexDirection: "row",
-                        alignItems: "center",
-                        flexWrap: "wrap",
-                      }}
-                    >
-                      <MenuItem
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          handleGroupToggle(group.id);
-                        }}
-                        sx={{
-                          fontWeight: "bold",
-                          pl: 1,
-                          pr: 2,
-                          mr: 1,
-                          borderRight: `1px solid ${theme.palette.divider}`,
-                        }}
-                      >
-                        <FolderIcon sx={{ mr: 1 }} />
-                        {group.name}
-                      </MenuItem>
-
-                      {group.urls.map((url) => renderUrlItem(url))}
-                    </Box>
-
-                    {group.id !==
-                      urlGroups.filter((g) => g.id !== activeGroup?.id).slice(-1)[0].id && (
-                      <Box sx={{ my: 1, borderBottom: `1px solid ${theme.palette.divider}` }} />
-                    )}
-                  </Box>
-                ))}
-            </Menu>
-          )}
-        </Box>
-
-        {/* URLs in active group */}
-        <Box
-          sx={{
-            display: "flex",
-            flexGrow: 1,
-            overflow: "auto",
-            whiteSpace: "nowrap",
-            alignItems: "center",
-            px: 2,
-            gap: 1,
-          }}
-        >
-          {activeGroup?.urls.map((url) => renderUrlItem(url))}
-        </Box>
-      </Box>
-    );
-  }
-
-  // Render top menu layout
-  if (!preferencesLoading && menuPosition === "side") {
-    return (
-      <List
+  return (
+    <Box
+      sx={{
+        display: "flex",
+        flexDirection: menuPositionEffective === "side" ? "column" : "row",
+        alignItems: menuPositionEffective === "side" ? "stretch" : "center",
+        bgcolor: "transparent",
+        borderBottom: "none",
+        borderRight:
+          menuPositionEffective === "side" ? `1px solid ${theme.palette.divider}` : "none",
+        p: 1,
+      }}
+    >
+      {menuPositionEffective === "top" && renderGroupSelector()}
+      <Box
         sx={{
-          width: "100%",
-          bgcolor: "background.default",
-          p: 1,
-          height: "100%",
-          overflow: "auto",
+          display: "flex",
+          flexDirection: menuPositionEffective === "side" ? "column" : "row",
+          flexGrow: 1,
+          overflowX: menuPositionEffective === "top" ? "auto" : "visible",
+          overflowY: menuPositionEffective === "side" ? "auto" : "visible",
         }}
-        component="nav"
       >
-        {urlGroups.length > 0 &&
-          urlGroups.map((group) => (
-            <Box key={group.id}>
-              <ListItemButton onClick={() => handleGroupToggle(group.id)}>
-                <ListItemIcon>
-                  <FolderIcon />
-                </ListItemIcon>
-                <ListItemText
-                  primary={group.name}
-                  primaryTypographyProps={{
-                    fontWeight: "medium",
-                    component: "div",
-                  }}
-                />
-                {openGroups[group.id] ? <ExpandLess /> : <ExpandMore />}
-              </ListItemButton>
-              <Collapse in={openGroups[group.id] ?? false} timeout="auto" unmountOnExit>
-                <List component="div" disablePadding>
-                  {group.urls.map((url) => renderUrlItem(url))}
-                </List>
-              </Collapse>
-            </Box>
-          ))}
-      </List>
-    );
-  }
+        {renderUrls()}
+      </Box>
+    </Box>
+  );
 }

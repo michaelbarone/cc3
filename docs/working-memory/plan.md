@@ -55,6 +55,29 @@ This document serves as the main project plan and tracks the status of all tasks
 
 ## Future Tasks
 
+### Database Version Migration Support
+- **Description**: Implement version awareness for database backups and automatic migration during restore
+- **Priority**: High
+- **Estimated Effort**: 1 week
+- **Key Requirements**:
+  - Version Tracking:
+    - Utilize Prisma's migration history for version tracking
+    - Include migration version metadata in backup files
+  - Migration Process:
+    - Implement step-by-step migration through versions
+    - Execute migrations sequentially during restore
+  - Version Metadata Options:
+    1. Include latest migration name in backup JSON metadata
+    2. Store migration timestamp in backup metadata
+    3. Create version hash from migration history
+  - User Experience:
+    - Add confirmation modal for backup recommendation before restore
+    - Display user-friendly progress and error messages
+    - Provide clear version mismatch notifications
+- **Related Tasks**:
+  - Completed: Database Export/Import System (extends existing backup/restore functionality)
+  - Completed: App Initialization (relates to database setup process)
+
 ### Performance Optimization
 - **Description**: Optimize iframe loading and switching, implement lazy loading
 - **Priority**: Medium

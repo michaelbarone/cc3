@@ -1,14 +1,18 @@
-import { NextResponse } from "next/server";
 import { verifyToken } from "@/app/lib/auth/jwt";
 import { prisma } from "@/app/lib/db/prisma";
+import { NextResponse } from "next/server";
 
 // Define a type for a URL
 interface Url {
   id: string;
   title: string;
   url: string;
+  urlMobile: string | null;
   iconPath: string | null;
+  idleTimeoutMinutes: number | null;
   displayOrder: number;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 // Define a type for a URL group
@@ -16,6 +20,8 @@ interface UrlGroup {
   id: string;
   name: string;
   description: string | null;
+  createdAt: Date;
+  updatedAt: Date;
   urls: Url[];
 }
 
@@ -24,11 +30,19 @@ interface UserUrlGroupItem {
     id: string;
     name: string;
     description: string | null;
+    createdAt: Date;
+    updatedAt: Date;
     urls: {
-      id: string;
-      title: string;
-      url: string;
-      iconPath: string | null;
+      url: {
+        id: string;
+        title: string;
+        url: string;
+        urlMobile: string | null;
+        iconPath: string | null;
+        idleTimeoutMinutes: number | null;
+        createdAt: Date;
+        updatedAt: Date;
+      };
       displayOrder: number;
     }[];
   };
@@ -42,7 +56,7 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Fetch all URL groups assigned to the user
+    // Fetch all URL groups assigned to the user with their URLs
     const userUrlGroups = await prisma.user.findUnique({
       where: { id: user.id },
       select: {
@@ -51,6 +65,9 @@ export async function GET() {
             urlGroup: {
               include: {
                 urls: {
+                  include: {
+                    url: true,
+                  },
                   orderBy: {
                     displayOrder: "asc",
                   },
@@ -66,21 +83,27 @@ export async function GET() {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    // Transform the data to a more frontend-friendly format
+    // Transform the data to match the expected format
     const urlGroups = userUrlGroups.userUrlGroups.map((item: UserUrlGroupItem) => {
       const { urlGroup } = item;
       return {
         id: urlGroup.id,
         name: urlGroup.name,
         description: urlGroup.description,
-        urls: urlGroup.urls.map((url) => ({
-          id: url.id,
-          title: url.title,
-          url: url.url,
-          iconPath: url.iconPath,
-          displayOrder: url.displayOrder,
+        createdAt: urlGroup.createdAt,
+        updatedAt: urlGroup.updatedAt,
+        urls: urlGroup.urls.map((urlInGroup) => ({
+          id: urlInGroup.url.id,
+          title: urlInGroup.url.title,
+          url: urlInGroup.url.url,
+          urlMobile: urlInGroup.url.urlMobile,
+          iconPath: urlInGroup.url.iconPath,
+          idleTimeoutMinutes: urlInGroup.url.idleTimeoutMinutes,
+          displayOrder: urlInGroup.displayOrder,
+          createdAt: urlInGroup.url.createdAt,
+          updatedAt: urlInGroup.url.updatedAt,
         })),
-      } as UrlGroup;
+      };
     });
 
     return NextResponse.json({ urlGroups });

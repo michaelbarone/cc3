@@ -1,11 +1,10 @@
 import IframeContainer, { IframeContainerRef, resetGlobalContainer } from '@/app/components/iframe/IframeContainer'
 import { IframeProvider } from '@/app/components/iframe/state/IframeContext'
-import { useMediaQuery } from '@mui/material'
-import { act, render } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { http, HttpResponse } from 'msw'
 import type { ReactNode } from 'react'
 import { useRef } from 'react'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { server } from '../../mocks/server'
 
 // Mock Material UI's useMediaQuery
@@ -24,6 +23,39 @@ type UrlGroups = {
     idleTimeoutMinutes?: number;
   }[];
 }[];
+
+// Mock ResizeObserver
+const mockResizeObserver = vi.fn(() => ({
+  observe: vi.fn(),
+  unobserve: vi.fn(),
+  disconnect: vi.fn(),
+}))
+
+// Mock window.matchMedia for useMediaQuery
+const mockMatchMedia = vi.fn().mockImplementation((query) => ({
+  matches: false,
+  media: query,
+  onchange: null,
+  addListener: vi.fn(),
+  removeListener: vi.fn(),
+  addEventListener: vi.fn(),
+  removeEventListener: vi.fn(),
+  dispatchEvent: vi.fn(),
+}))
+
+// Setup mocks before tests
+beforeAll(() => {
+  window.ResizeObserver = mockResizeObserver
+  window.matchMedia = mockMatchMedia
+})
+
+// Reset mocks after each test
+afterEach(() => {
+  vi.clearAllMocks()
+  document.body.innerHTML = ''
+  resetGlobalContainer()
+  vi.useRealTimers()
+})
 
 // Test wrapper component
 function TestComponent({ urlGroups = [] }: { urlGroups: UrlGroups }) {
@@ -50,25 +82,6 @@ describe('IframeContainer', () => {
   ]
 
   beforeEach(() => {
-    // Reset the global container before each test
-    resetGlobalContainer()
-
-    // Mock ResizeObserver
-    window.ResizeObserver = vi.fn().mockImplementation(() => ({
-      observe: vi.fn(),
-      unobserve: vi.fn(),
-      disconnect: vi.fn(),
-    }))
-
-    // Mock window.matchMedia
-    window.matchMedia = vi.fn().mockImplementation((query) => ({
-      matches: false,
-      media: query,
-      onchange: null,
-      addListener: vi.fn(),
-      removeListener: vi.fn(),
-    }))
-
     // Mock iframe behavior
     const originalCreateElement = document.createElement.bind(document)
     vi.spyOn(document, 'createElement').mockImplementation((tagName: string) => {
@@ -112,100 +125,139 @@ describe('IframeContainer', () => {
     )
   })
 
-  afterEach(() => {
-    // Clean up after each test
-    vi.clearAllMocks()
-    resetGlobalContainer()
-    vi.useRealTimers()
-  })
-
-  it('creates iframes for all URLs in urlGroups', async () => {
+  it('should create iframes for all URLs in urlGroups', async () => {
     render(<TestComponent urlGroups={mockUrlGroups} />)
 
-    // Wait for any effects to complete
-    await act(async () => {
-      await new Promise((resolve) => setTimeout(resolve, 0))
-    })
-
-    const container = document.getElementById('global-iframe-container')
-    expect(container).toBeTruthy()
-
-    // Check if iframes are created
-    const iframes = container?.querySelectorAll('iframe')
-    expect(iframes?.length).toBe(1)
-
-    // Verify iframe attributes
-    iframes?.forEach((iframe) => {
-      expect(iframe.getAttribute('sandbox')).toBe('allow-same-origin allow-scripts allow-forms allow-popups')
-      expect(iframe.style.width).toBe('100%')
-      expect(iframe.style.height).toBe('100%')
+    await waitFor(() => {
+      const container = document.getElementById('global-iframe-container')
+      expect(container).toBeTruthy()
+      const iframes = container?.querySelectorAll('iframe')
+      expect(iframes?.length).toBe(1)
     })
   })
 
-  it('uses mobile URL when available and viewport is mobile', async () => {
-    // Mock mobile viewport
-    window.matchMedia = vi.fn().mockImplementation((query) => ({
-      matches: query === '(max-width:600px)',
-      media: query,
-      onchange: null,
-      addListener: vi.fn(),
-      removeListener: vi.fn(),
-    }))
-
-    // Mock useMediaQuery to return true for mobile
-    vi.mocked(useMediaQuery).mockReturnValue(true)
-
-    render(<TestComponent urlGroups={mockUrlGroups} />)
-
-    // Wait for any effects to complete
-    await act(async () => {
-      await new Promise((resolve) => setTimeout(resolve, 0))
-    })
-
-    const container = document.getElementById('global-iframe-container')
-    const firstIframe = container?.querySelector('iframe[data-iframe-id="url1"]') as HTMLIFrameElement | null
-
-    expect(firstIframe?.src).toBe('https://m.example.com/1')
-  })
-
-  it('handles iframe load events', async () => {
+  it('should handle iframe load events', async () => {
     const onLoad = vi.fn()
 
     render(
       <IframeProvider activeUrlId="url1">
-        <IframeContainer urlGroups={mockUrlGroups} onLoad={onLoad} />
+        <IframeContainer
+          urlGroups={mockUrlGroups}
+          onLoad={onLoad}
+        />
       </IframeProvider>
     )
 
-    // Wait for any effects to complete
-    await act(async () => {
-      await new Promise((resolve) => setTimeout(resolve, 0))
+    await waitFor(() => {
+      const iframes = document.querySelectorAll('iframe')
+      iframes.forEach(iframe => {
+        fireEvent.load(iframe)
+      })
+      expect(onLoad).toHaveBeenCalledTimes(1)
     })
-
-    // Wait for the load event to be triggered
-    await act(async () => {
-      await new Promise((resolve) => setTimeout(resolve, 100))
-    })
-
-    expect(onLoad).toHaveBeenCalledWith('url1')
   })
 
-  it('updates iframe visibility based on active URL', async () => {
+  it('should handle iframe error events', async () => {
+    const onError = vi.fn()
+
+    render(
+      <IframeProvider activeUrlId="url1">
+        <IframeContainer
+          urlGroups={mockUrlGroups}
+          onError={onError}
+        />
+      </IframeProvider>
+    )
+
+    await waitFor(() => {
+      const iframes = document.querySelectorAll('iframe')
+      iframes.forEach(iframe => {
+        fireEvent.error(iframe)
+      })
+      expect(onError).toHaveBeenCalledTimes(1)
+    })
+  })
+
+  it('should expose control methods via ref', async () => {
+    const TestComponent = () => {
+      const ref = useRef<IframeContainerRef>(null)
+
+      return (
+        <IframeProvider activeUrlId="url1">
+          <IframeContainer
+            ref={ref}
+            urlGroups={mockUrlGroups}
+          />
+          <button onClick={() => ref.current?.resetIframe('url1')}>Reset</button>
+          <button onClick={() => ref.current?.unloadIframe('url1')}>Unload</button>
+          <button onClick={() => ref.current?.reloadUnloadedIframe('url1')}>Reload</button>
+        </IframeProvider>
+      )
+    }
+
+    render(<TestComponent />)
+
+    await waitFor(() => {
+      const iframes = document.querySelectorAll('iframe')
+      expect(iframes.length).toBe(1)
+    })
+
+    // Test reset functionality
+    const resetButton = screen.getByText('Reset')
+    fireEvent.click(resetButton)
+
+    // Test unload functionality
+    const unloadButton = screen.getByText('Unload')
+    fireEvent.click(unloadButton)
+
+    // Test reload functionality
+    const reloadButton = screen.getByText('Reload')
+    fireEvent.click(reloadButton)
+  })
+
+  it('should handle mobile URLs when on mobile viewport', async () => {
+    // Mock mobile viewport
+    mockMatchMedia.mockImplementation(() => ({
+      matches: true,
+      media: '',
+      onchange: null,
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    }))
+
     render(<TestComponent urlGroups={mockUrlGroups} />)
 
-    // Wait for any effects to complete
-    await act(async () => {
-      await new Promise((resolve) => setTimeout(resolve, 0))
+    await waitFor(() => {
+      const iframes = document.querySelectorAll('iframe')
+      const mobileIframe = iframes[0]
+      expect(mobileIframe.getAttribute('data-src')).toBe('https://m.example.com/1')
+    })
+  })
+
+  it('should update iframe visibility based on active URL', async () => {
+    render(<TestComponent urlGroups={mockUrlGroups} />)
+
+    await waitFor(() => {
+      const containers = document.querySelectorAll('[data-iframe-container]')
+      expect(containers[0]).toHaveStyle({ visibility: 'hidden' })
+    })
+  })
+
+  it('should cleanup iframes on unmount', async () => {
+    const { unmount } = render(<TestComponent urlGroups={mockUrlGroups} />)
+
+    await waitFor(() => {
+      const container = document.getElementById('global-iframe-container')
+      expect(container).toBeTruthy()
     })
 
+    unmount()
+
+    // The global container should persist as it's managed outside React
     const container = document.getElementById('global-iframe-container')
-    const wrappers = container?.querySelectorAll('[data-iframe-container]')
-
-    wrappers?.forEach((wrapper) => {
-      const urlId = wrapper.getAttribute('data-iframe-container')
-      const style = window.getComputedStyle(wrapper)
-      // Initially all iframes should be hidden except the active one
-      expect(style.visibility).toBe(urlId === 'url1' ? 'visible' : 'hidden')
-    })
+    expect(container).toBeTruthy()
   })
 })

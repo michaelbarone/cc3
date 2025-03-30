@@ -1,10 +1,8 @@
 import { verifyToken } from "@/app/lib/auth/jwt";
 import { hashPassword } from "@/app/lib/auth/password";
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "@/app/lib/db/prisma";
 import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
-
-const prisma = new PrismaClient();
 
 type Props = {
   params: Promise<{ id: string }>;
@@ -48,8 +46,6 @@ export async function GET(request: NextRequest, props: Props): Promise<NextRespo
   } catch (error) {
     console.error("Error fetching user:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
-  } finally {
-    await prisma.$disconnect();
   }
 }
 
@@ -122,8 +118,6 @@ export async function PUT(request: NextRequest, props: Props): Promise<NextRespo
   } catch (error) {
     console.error("Error updating user:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
-  } finally {
-    await prisma.$disconnect();
   }
 }
 

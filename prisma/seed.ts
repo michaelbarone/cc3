@@ -1,9 +1,8 @@
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "@/app/lib/db/prisma";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 
-const prisma = new PrismaClient();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -105,18 +104,27 @@ export async function main() {
 
         console.log("Created example group:", exampleGroup);
 
-        // Create the URL using urlGroupId
+        // Create the URL without group association
         const exampleUrl = await prisma.url.create({
           data: {
             title: "Example Website",
             url: "https://example.com",
-            displayOrder: 0,
             idleTimeoutMinutes: 10,
-            urlGroupId: exampleGroup.id,
           },
         });
 
         console.log("Created example URL:", exampleUrl);
+
+        // Create the URL-Group relationship with display order
+        await prisma.urlsInGroups.create({
+          data: {
+            urlId: exampleUrl.id,
+            groupId: exampleGroup.id,
+            displayOrder: 0,
+          },
+        });
+
+        console.log("Created URL-Group relationship");
 
         // Assign the group to the admin user
         if (adminUser) {
@@ -134,7 +142,11 @@ export async function main() {
         const verifySetup = await prisma.urlGroup.findFirst({
           where: { id: exampleGroup.id },
           include: {
-            urls: true,
+            urls: {
+              include: {
+                url: true,
+              },
+            },
             userUrlGroups: {
               include: {
                 user: true,
@@ -158,8 +170,6 @@ export async function main() {
   } catch (error) {
     console.error("Error seeding database:", error);
     process.exit(1);
-  } finally {
-    await prisma.$disconnect();
   }
 }
 

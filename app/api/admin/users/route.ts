@@ -1,26 +1,15 @@
-import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
 import { verifyToken } from "@/app/lib/auth/jwt";
-import { cookies } from "next/headers";
 import { hashPassword } from "@/app/lib/auth/password";
-
-const prisma = new PrismaClient();
+import { prisma } from "@/app/lib/db/prisma";
+import { NextResponse } from "next/server";
 
 // GET - Fetch all users
 export async function GET() {
   try {
-    // Verify admin access
-    const cookieStore = await cookies();
-    const token = cookieStore.get("auth_token")?.value;
-
-    if (!token) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
     const userData = await verifyToken();
 
     if (!userData || !userData.isAdmin) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     // Get all users from database
@@ -32,26 +21,16 @@ export async function GET() {
   } catch (error) {
     console.error("Error fetching users:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
-  } finally {
-    await prisma.$disconnect();
   }
 }
 
 // POST - Create a new user
 export async function POST(request: Request) {
   try {
-    // Verify admin access
-    const cookieStore = await cookies();
-    const token = cookieStore.get("auth_token")?.value;
-
-    if (!token) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
     const userData = await verifyToken();
 
     if (!userData || !userData.isAdmin) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     // Parse request body
@@ -90,7 +69,5 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error("Error creating user:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
-  } finally {
-    await prisma.$disconnect();
   }
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { createContext, ReactNode, useContext, useEffect, useState } from "react";
 import { Url } from "../types";
 
 // Constants for localStorage keys
@@ -11,7 +11,7 @@ const STORAGE_KEYS = {
   KNOWN_URL_IDS: "iframe-state-known-url-ids",
 };
 
-interface IframeStateContextType {
+export interface IframeStateContextType {
   activeUrlId: string | null;
   activeUrl: Url | null;
   loadedUrlIds: string[];
@@ -32,243 +32,153 @@ interface IframeStateContextType {
   updateLongPressProgress: (progress: number) => void;
 }
 
-const IframeStateContext = createContext<IframeStateContextType | undefined>(undefined);
+// Create the context
+export const IframeStateContext = createContext<IframeStateContextType | null>(null);
 
+// Provider component
+export function IframeStateProvider({ children }: { children: ReactNode }) {
+  const [activeUrlId, setActiveUrlId] = useState<string | null>(null);
+  const [activeUrl, setActiveUrl] = useState<Url | null>(null);
+  const [loadedUrlIds, setLoadedUrlIds] = useState<string[]>([]);
+  const [knownUrlIds, setKnownUrlIds] = useState<Set<string>>(new Set());
+  const [isLongPressing, setIsLongPressing] = useState(false);
+  const [longPressProgress, setLongPressProgress] = useState(0);
+  const [longPressUrlId, setLongPressUrlId] = useState<string | null>(null);
+
+  // Load state from localStorage on mount
+  useEffect(() => {
+    const storedActiveUrlId = localStorage.getItem(STORAGE_KEYS.ACTIVE_URL_ID);
+    const storedActiveUrl = localStorage.getItem(STORAGE_KEYS.ACTIVE_URL);
+    const storedLoadedUrlIds = localStorage.getItem(STORAGE_KEYS.LOADED_URL_IDS);
+    const storedKnownUrlIds = localStorage.getItem(STORAGE_KEYS.KNOWN_URL_IDS);
+
+    if (storedActiveUrlId) setActiveUrlId(storedActiveUrlId);
+    if (storedActiveUrl) setActiveUrl(JSON.parse(storedActiveUrl));
+    if (storedLoadedUrlIds) setLoadedUrlIds(JSON.parse(storedLoadedUrlIds));
+    if (storedKnownUrlIds) setKnownUrlIds(new Set(JSON.parse(storedKnownUrlIds)));
+  }, []);
+
+  // Save state to localStorage whenever it changes
+  useEffect(() => {
+    if (activeUrlId) localStorage.setItem(STORAGE_KEYS.ACTIVE_URL_ID, activeUrlId);
+    if (activeUrl) localStorage.setItem(STORAGE_KEYS.ACTIVE_URL, JSON.stringify(activeUrl));
+    if (loadedUrlIds.length)
+      localStorage.setItem(STORAGE_KEYS.LOADED_URL_IDS, JSON.stringify(loadedUrlIds));
+    if (knownUrlIds.size)
+      localStorage.setItem(STORAGE_KEYS.KNOWN_URL_IDS, JSON.stringify(Array.from(knownUrlIds)));
+  }, [activeUrlId, activeUrl, loadedUrlIds, knownUrlIds]);
+
+  const handleSetActiveUrl = (url: Url) => {
+    setActiveUrlId(url.id);
+    setActiveUrl(url);
+    setKnownUrlIds((prev) => {
+      const newSet = new Set<string>();
+      Array.from(prev).forEach((id) => newSet.add(id));
+      newSet.add(url.id);
+      return newSet;
+    });
+
+    // Add to loaded URLs if not already loaded
+    if (!loadedUrlIds.includes(url.id)) {
+      setLoadedUrlIds((prev) => [...prev, url.id]);
+    }
+  };
+
+  const handleResetIframe = (urlId: string) => {
+    if (urlId === activeUrlId) {
+      setActiveUrlId(null);
+      setActiveUrl(null);
+    }
+    setLoadedUrlIds((prev) => prev.filter((id) => id !== urlId));
+  };
+
+  const handleUnloadIframe = (urlId: string) => {
+    setLoadedUrlIds((prev) => prev.filter((id) => id !== urlId));
+  };
+
+  const handleReloadIframe = (urlId: string) => {
+    handleUnloadIframe(urlId);
+    // The iframe will be reloaded by the IframeContainer when it detects the URL is unloaded
+  };
+
+  const handleAddLoadedUrlId = (urlId: string) => {
+    setLoadedUrlIds((prev) => [...prev, urlId]);
+    setKnownUrlIds((prev) => {
+      const newSet = new Set<string>();
+      Array.from(prev).forEach((id) => newSet.add(id));
+      newSet.add(urlId);
+      return newSet;
+    });
+  };
+
+  const handleRemoveLoadedUrlId = (urlId: string) => {
+    setLoadedUrlIds((prev) => prev.filter((id) => id !== urlId));
+  };
+
+  const handleUpdateBrowserHistory = (urlId: string) => {
+    // Update browser history with the new URL ID
+    const newUrl = new URL(window.location.href);
+    newUrl.searchParams.set("urlId", urlId);
+    window.history.pushState({}, "", newUrl);
+  };
+
+  const handleSaveToPersistence = async (urlId: string) => {
+    try {
+      const response = await fetch("/api/settings/last-active-url", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ urlId }),
+      });
+      if (!response.ok) throw new Error("Failed to save last active URL");
+    } catch (error) {
+      console.error("Error saving last active URL:", error);
+    }
+  };
+
+  const handleStartLongPress = (urlId: string) => {
+    setIsLongPressing(true);
+    setLongPressUrlId(urlId);
+  };
+
+  const handleEndLongPress = () => {
+    setIsLongPressing(false);
+    setLongPressUrlId(null);
+    setLongPressProgress(0);
+  };
+
+  const handleUpdateLongPressProgress = (progress: number) => {
+    setLongPressProgress(progress);
+  };
+
+  const value: IframeStateContextType = {
+    activeUrlId,
+    activeUrl,
+    loadedUrlIds,
+    knownUrlIds,
+    setActiveUrl: handleSetActiveUrl,
+    resetIframe: handleResetIframe,
+    unloadIframe: handleUnloadIframe,
+    reloadIframe: handleReloadIframe,
+    addLoadedUrlId: handleAddLoadedUrlId,
+    removeLoadedUrlId: handleRemoveLoadedUrlId,
+    updateBrowserHistory: handleUpdateBrowserHistory,
+    saveToPersistence: handleSaveToPersistence,
+    isLongPressing,
+    longPressProgress,
+    longPressUrlId,
+    startLongPress: handleStartLongPress,
+    endLongPress: handleEndLongPress,
+    updateLongPressProgress: handleUpdateLongPressProgress,
+  };
+
+  return <IframeStateContext.Provider value={value}>{children}</IframeStateContext.Provider>;
+}
+
+// Custom hook to use the iframe state
 export function useIframeState() {
   const context = useContext(IframeStateContext);
   if (!context) {
     throw new Error("useIframeState must be used within an IframeStateProvider");
   }
   return context;
-}
-
-interface IframeStateProviderProps {
-  children: ReactNode;
-}
-
-export function IframeStateProvider({ children }: IframeStateProviderProps) {
-  // Initialize state from localStorage if available
-  const [activeUrlId, setActiveUrlId] = useState<string | null>(() => {
-    if (typeof window === "undefined") return null;
-
-    // First check URL params
-    const url = new URL(window.location.href);
-    const urlParam = url.searchParams.get("url");
-    if (urlParam) return urlParam;
-
-    // Then check localStorage
-    const stored = localStorage.getItem(STORAGE_KEYS.ACTIVE_URL_ID);
-    return stored ? stored : null;
-  });
-
-  const [activeUrl, setActiveUrlObject] = useState<Url | null>(() => {
-    if (typeof window === "undefined") return null;
-    const stored = localStorage.getItem(STORAGE_KEYS.ACTIVE_URL);
-    return stored ? JSON.parse(stored) : null;
-  });
-
-  const [loadedUrlIds, setLoadedUrlIds] = useState<string[]>(() => {
-    if (typeof window === "undefined") return [];
-    const stored = localStorage.getItem(STORAGE_KEYS.LOADED_URL_IDS);
-    return stored ? JSON.parse(stored) : [];
-  });
-
-  const [knownUrlIds, setKnownUrlIds] = useState<Set<string>>(() => {
-    if (typeof window === "undefined") return new Set();
-    const stored = localStorage.getItem(STORAGE_KEYS.KNOWN_URL_IDS);
-    return new Set(stored ? JSON.parse(stored) : []);
-  });
-
-  // Add long press state
-  const [isLongPressing, setIsLongPressing] = useState(false);
-  const [longPressProgress, setLongPressProgress] = useState(0);
-  const [longPressUrlId, setLongPressUrlId] = useState<string | null>(null);
-
-  // Ensure active URL is loaded when initialized from storage/params
-  useEffect(() => {
-    if (activeUrlId && activeUrl) {
-      // Update browser history if needed
-      const url = new URL(window.location.href);
-      const urlParam = url.searchParams.get("url");
-      if (urlParam !== activeUrlId) {
-        updateBrowserHistory(activeUrlId);
-      }
-
-      // Save to server
-      saveToPersistence(activeUrlId);
-    }
-  }, []);
-
-  // Persist state changes to localStorage
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    if (activeUrlId) {
-      localStorage.setItem(STORAGE_KEYS.ACTIVE_URL_ID, activeUrlId);
-    } else {
-      localStorage.removeItem(STORAGE_KEYS.ACTIVE_URL_ID);
-    }
-  }, [activeUrlId]);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    if (activeUrl) {
-      localStorage.setItem(STORAGE_KEYS.ACTIVE_URL, JSON.stringify(activeUrl));
-    } else {
-      localStorage.removeItem(STORAGE_KEYS.ACTIVE_URL);
-    }
-  }, [activeUrl]);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    localStorage.setItem(STORAGE_KEYS.LOADED_URL_IDS, JSON.stringify(loadedUrlIds));
-  }, [loadedUrlIds]);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    localStorage.setItem(STORAGE_KEYS.KNOWN_URL_IDS, JSON.stringify(Array.from(knownUrlIds)));
-  }, [knownUrlIds]);
-
-  // Helper: Update URL in browser history
-  const updateBrowserHistory = (urlId: string) => {
-    const newUrl = new URL(window.location.href);
-    newUrl.searchParams.set("url", urlId);
-    window.history.pushState({}, "", newUrl.toString());
-  };
-
-  // Helper: Save to server persistence
-  const saveToPersistence = async (urlId: string): Promise<void> => {
-    try {
-      const response = await fetch("/api/users/last-active-url", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ urlId }),
-      });
-
-      if (!response.ok) {
-        console.error("Failed to update last active URL");
-      }
-    } catch (error) {
-      console.error("Error updating last active URL:", error);
-    }
-  };
-
-  // Listen for browser navigation (back/forward)
-  useEffect(() => {
-    const handlePopState = () => {
-      const url = new URL(window.location.href);
-      const urlId = url.searchParams.get("url");
-
-      if (urlId && urlId !== activeUrlId) {
-        // We need to find the URL object to update it properly
-        // This will be handled by the consuming component
-        console.log("Browser navigation detected, URL ID:", urlId);
-      }
-    };
-
-    window.addEventListener("popstate", handlePopState);
-    return () => {
-      window.removeEventListener("popstate", handlePopState);
-    };
-  }, [activeUrlId]);
-
-  // Update known URL IDs when loadedUrlIds changes
-  useEffect(() => {
-    setKnownUrlIds((prev) => {
-      const newSet = new Set(prev);
-      loadedUrlIds.forEach((id) => newSet.add(id));
-      return newSet;
-    });
-  }, [loadedUrlIds]);
-
-  // Set active URL (both ID and object)
-  const setActiveUrl = (url: Url) => {
-    setActiveUrlId(url.id);
-    setActiveUrlObject(url);
-
-    // Update browser history
-    updateBrowserHistory(url.id);
-
-    // Save to server
-    saveToPersistence(url.id);
-  };
-
-  // Reset iframe (reload)
-  const resetIframe = (urlId: string) => {
-    // This is a placeholder - actual implementation will be handled by iframe component
-    console.log("Reset iframe:", urlId);
-  };
-
-  // Unload iframe
-  const unloadIframe = (urlId: string) => {
-    // This is a placeholder - actual implementation will be handled by iframe component
-    console.log("Unload iframe:", urlId);
-
-    // Remove from loaded URLs
-    removeLoadedUrlId(urlId);
-  };
-
-  // Reload iframe
-  const reloadIframe = (urlId: string) => {
-    // This is a placeholder - actual implementation will be handled by iframe component
-    console.log("Reload iframe:", urlId);
-  };
-
-  // Add URL ID to loaded URLs
-  const addLoadedUrlId = (urlId: string) => {
-    setLoadedUrlIds((prev) => {
-      if (!prev.includes(urlId)) {
-        return [...prev, urlId];
-      }
-      return prev;
-    });
-  };
-
-  // Remove URL ID from loaded URLs
-  const removeLoadedUrlId = (urlId: string) => {
-    setLoadedUrlIds((prev) => prev.filter((id) => id !== urlId));
-  };
-
-  // Long press methods
-  const startLongPress = (urlId: string) => {
-    setIsLongPressing(true);
-    setLongPressUrlId(urlId);
-    setLongPressProgress(0);
-  };
-
-  const endLongPress = () => {
-    setIsLongPressing(false);
-    setLongPressUrlId(null);
-    setLongPressProgress(0);
-  };
-
-  const updateLongPressProgress = (progress: number) => {
-    setLongPressProgress(progress);
-  };
-
-  const value = {
-    activeUrlId,
-    activeUrl,
-    loadedUrlIds,
-    knownUrlIds,
-    setActiveUrl,
-    resetIframe,
-    unloadIframe,
-    reloadIframe,
-    addLoadedUrlId,
-    removeLoadedUrlId,
-    updateBrowserHistory,
-    saveToPersistence,
-    isLongPressing,
-    longPressProgress,
-    longPressUrlId,
-    startLongPress,
-    endLongPress,
-    updateLongPressProgress,
-  };
-
-  return <IframeStateContext.Provider value={value}>{children}</IframeStateContext.Provider>;
 }

@@ -1,381 +1,174 @@
-# URL Management & IFrame Container Architecture
+# URL Management Architecture
 
-## System Design
+## System Architecture
 
-### Component Architecture
-```
-/app/
-├── components/
-│   ├── url/                  # URL management components
-│   │   ├── menu/            # URL menu components
-│   │   │   ├── group.tsx    # URL group component
-│   │   │   └── item.tsx     # URL menu item
-│   │   └── iframe/          # IFrame components
-│   │       ├── container.tsx # IFrame container
-│   │       └── overlay.tsx   # Loading/error overlay
-│   └── common/              # Shared components
-└── hooks/                   # Custom hooks
-    ├── useIframeState.ts   # IFrame state management
-    ├── useLongPress.ts     # Long press detection
-    └── useUrlMenu.ts       # Menu state management
-```
-
-### State Management Flow
+### Component Overview
 ```mermaid
-stateDiagram-v2
-    [*] --> inactive_unloaded: Initial State
-    inactive_unloaded --> active_loaded: Click URL
-    active_loaded --> inactive_loaded: Select Different URL
-    inactive_loaded --> active_loaded: Reselect URL
-    inactive_loaded --> inactive_unloaded: Timeout/Reset
-    active_loaded --> active_unloaded: Load Error
-    active_unloaded --> active_loaded: Retry Load
-    active_loaded --> inactive_unloaded: Long Press Reset
+graph TD
+    A[URL Management UI] --> B[URL Service Layer]
+    B --> C[Database Layer]
+    B --> D[URL Validation Service]
+    A --> E[Group Management UI]
+    E --> F[Group Service Layer]
+    F --> C
+    G[Admin API] --> B
+    G --> F
 ```
 
-### Data Models
+## Core Components
 
-```typescript
-interface UrlGroup {
-  id: string;
-  name: string;
-  description?: string;
-  display_order: number;
-  created_at: Date;
-  updated_at: Date;
-}
+### 1. Data Layer
+- **Prisma ORM**: Primary database interface
+- **Models**: 
+  - `Url`
+  - `UrlGroup`
+  - `UrlsInGroups`
+  - `UserUrlGroup`
+- **Indexes**: Optimized for group-based queries and ordering
 
-interface Url {
-  id: string;
-  group_id: string;
-  title: string;
-  url: string;
-  mobile_url?: string;
-  icon_path?: string;
-  display_order: number;
-  idle_timeout?: number;
-  created_at: Date;
-  updated_at: Date;
-}
+### 2. Service Layer
+- **URL Service**: Handles URL CRUD operations
+- **Group Service**: Manages group operations
+- **Relationship Service**: Handles URL-group relationships
+- **Validation Service**: URL format and accessibility checks
 
-interface IframeState {
-  url: string;
-  isLoaded: boolean;
-  isVisible: boolean;
-  error?: string;
-  lastActive: Date;
-}
+### 3. API Layer
+- **REST Endpoints**: Admin and user operations
+- **GraphQL Schema**: (Future implementation)
+- **Middleware**: Authentication and validation
 
-interface MenuState {
-  activeUrl: string | null;
-  loadedUrls: Set<string>;
-  expandedGroups: Set<string>;
-}
-```
+### 4. UI Components
+- **URL Management**: URL CRUD interface
+- **Group Management**: Group organization interface
+- **Batch Operations**: Bulk action interface
+- **Order Management**: Display order interface
 
-## Technical Decisions
+## Data Flow
 
-### IFrame State Management
-- Custom React context for state
-- Reducer pattern for actions
-- URL-specific state tracking
-- Efficient state updates
-- Memory leak prevention
-
-### IFrame Lifecycle Management
-#### State Transition System
-The iframe container implements a sophisticated state machine for managing iframe lifecycles:
-
+### URL Creation Flow
 ```mermaid
-flowchart TD
-    A[Initial State] --> B[inactive-unloaded]
-    B -- "User clicks URL" --> C[active-unloaded]
-    C -- "Content loads successfully" --> D[active-loaded]
-    D -- "User selects different URL" --> E[inactive-loaded]
-    E -- "User reselects URL" --> D
-    E -- "Idle timeout/Manual reset" --> B
-    D -- "Long press reset" --> B
-    D -- "Long press unload" --> C
-    C -- "Load error" --> F[active-error]
-    F -- "Retry load" --> C
+sequenceDiagram
+    participant U as User
+    participant A as API
+    participant S as Service
+    participant D as Database
+    
+    U->>A: Create URL Request
+    A->>S: Validate URL
+    S->>D: Store URL
+    D-->>S: URL Created
+    S->>A: Success Response
+    A-->>U: URL Details
 ```
 
-#### Core Hooks System
-The iframe lifecycle management relies on three specialized hooks that work together:
+### Group Assignment Flow
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant A as API
+    participant S as Service
+    participant D as Database
+    
+    U->>A: Assign URL to Group
+    A->>S: Validate Assignment
+    S->>D: Create Relationship
+    D-->>S: Relationship Created
+    S->>A: Success Response
+    A-->>U: Updated Group Details
+```
 
-1. **useGlobalIframeContainer**
-   - Creates a singleton DOM container outside React's render tree
-   - Manages iframe DOM elements directly for performance
-   - Handles iframe creation, removal, and visibility
-   - Maintains wrapper elements for positioning and z-index management
-   - Interface:
-     ```typescript
-     interface UseGlobalIframeContainerReturn {
-       createIframe: (urlId: string, url: string) => HTMLIFrameElement;
-       removeIframe: (urlId: string) => void;
-       updateIframeVisibility: (urlId: string, isVisible: boolean) => void;
-       updateContainerPosition: (rect: DOMRect) => void;
-     }
-     ```
+## State Management
 
-2. **useIframeLifecycle**
-   - Manages the loading, unloading, and resetting of iframes
-   - Handles iframe events (load, error)
-   - Updates state based on iframe lifecycle events
-   - Provides methods for content manipulation
-   - Interface:
-     ```typescript
-     interface UseIframeLifecycleReturn {
-       loadIframe: (urlId: string, url: string) => void;
-       unloadIframe: (urlId: string) => void;
-       resetIframe: (urlId: string) => void;
-     }
-     ```
+### URL States
+- **Unassigned**: URL exists but not in any group
+- **Assigned**: URL belongs to one or more groups
+- **Ordered**: URL has display order in group
+- **Mobile Configured**: URL has mobile variant
 
-3. **useIframeVisibility**
-   - Controls iframe visibility based on active state
-   - Manages status transitions between active and inactive states
-   - Preserves loaded/unloaded state during visibility changes
-   - Interface:
-     ```typescript
-     interface UseIframeVisibilityReturn {
-       showIframe: () => void;
-       hideIframe: () => void;
-     }
-     ```
-
-#### Lifecycle Events and Handlers
-The iframe lifecycle includes several key events:
-
-| Event | Handler | State Transition | Action |
-|-------|---------|------------------|--------|
-| URL Selection | `onUrlSelect` | inactive-unloaded → active-unloaded | Set iframe src, show iframe |
-| Load Complete | `handleLoad` | active-unloaded → active-loaded | Update status, record activity |
-| Load Error | `handleError` | active-unloaded → active-error | Set error state, display error message |
-| URL Deselection | `onUrlDeselect` | active-loaded → inactive-loaded | Hide iframe but maintain content |
-| Manual Unload | `handleLongPress` | active-loaded → active-unloaded | Clear iframe src to free memory while keeping iframe visible |
-| Manual Reset | `resetIframe` | any → inactive-unloaded | Clear src, reset state |
-| Idle Timeout | `handleIdleTimeout` | inactive-loaded → inactive-unloaded | Clear content after timeout |
-
-#### Memory and Resource Management
-The iframe lifecycle system includes several optimizations:
-
-1. **Content Caching**
-   - Inactive iframes preserve their content for quick reactivation
-   - Loaded content is stored in memory until explicitly unloaded
-
-2. **Resource Limits**
-   - Configurable maximum number of cached iframes
-   - Automatic unloading of least recently used iframes
-   - Prioritization based on activity timestamps
-
-3. **Error Recovery**
-   - Automatic retry for transient errors
-   - Manual reset capability
-   - Error state preservation for diagnostics
-
-4. **Event Cleanup**
-   - Proper removal of event listeners
-   - DOM element cleanup on unmount
-   - Memory leak prevention
-
-5. **Performance Optimizations**
-   - Direct DOM manipulation outside React render cycles
-   - Batch updates for state changes
-   - Deferred loading for inactive URLs
-
-### URL Menu Organization
-- Collapsible group structure
-- State-based rendering
-- Efficient updates
-- Mobile responsiveness
-- Keyboard accessibility
-
-### IFrame Loading Strategy
-- Lazy loading by default
-- State-based visibility
-- Error boundary protection
-- Resource cleanup
-- Performance optimization
+### Group States
+- **Empty**: Group with no URLs
+- **Populated**: Group containing URLs
+- **User Assigned**: Group associated with users
 
 ## Performance Considerations
 
-### IFrame Management
-```typescript
-const iframeConfig = {
-  // Memory management settings
-  maxCachedFrames: 5,
-  cleanupInterval: 300000, // 5 minutes
-  
-  // Loading settings
-  loadTimeout: 30000,
-  retryAttempts: 3,
-  retryDelay: 1000,
-  
-  // Resource settings
-  preloadThreshold: 2,
-  unloadThreshold: 10
-};
-```
+### Database Optimization
+- Indexed queries for group operations
+- Efficient relationship management
+- Batch operation support
 
-### State Updates
-```typescript
-// Batch update optimization
-const batchedStateUpdate = (updates: Partial<IframeState>[]) => {
-  return {
-    type: 'BATCH_UPDATE',
-    payload: updates
-  };
-};
+### Caching Strategy
+- URL metadata caching
+- Group structure caching
+- Display order caching
 
-// Selective re-rendering
-const shouldComponentUpdate = (
-  prevProps: IframeProps,
-  nextProps: IframeProps
-) => {
-  return (
-    prevProps.url !== nextProps.url ||
-    prevProps.isVisible !== nextProps.isVisible ||
-    prevProps.isLoaded !== nextProps.isLoaded
-  );
-};
-```
+### Query Optimization
+- Selective loading of relationships
+- Pagination for large groups
+- Efficient ordering updates
 
-## Error Handling
+## Security Model
 
-### IFrame Error Boundary
-```typescript
-class IframeErrorBoundary extends React.Component<
-  PropsWithChildren<{
-    onError: (error: Error) => void;
-  }>
-> {
-  static getDerivedStateFromError(error: Error) {
-    return { hasError: true, error };
-  }
+### Access Control
+- Role-based access control
+- Group-level permissions
+- URL-level restrictions
 
-  componentDidCatch(error: Error, info: ErrorInfo) {
-    this.props.onError(error);
-    // Log error details
-  }
-}
-```
+### Data Validation
+- URL format validation
+- Group name uniqueness
+- Display order constraints
 
-### Error Recovery Strategy
-1. Automatic retry for transient errors
-2. Manual reset option via long press
-3. Error state persistence
-4. User feedback
-5. Logging and monitoring
+### Error Handling
+- Graceful failure handling
+- Detailed error messages
+- Transaction rollback support
 
-## State Synchronization
+## Scalability
 
-### URL Menu and IFrame Sync
-```typescript
-interface SyncState {
-  activeUrl: string | null;
-  loadedUrls: Set<string>;
-  errors: Map<string, string>;
-}
+### Horizontal Scaling
+- Stateless service design
+- Distributed caching support
+- Load balancing ready
 
-const syncManager = {
-  // State updates
-  updateMenuState: (state: Partial<SyncState>) => void;
-  updateIframeState: (state: Partial<SyncState>) => void;
-  
-  // Event handlers
-  onUrlActivated: (url: string) => void;
-  onIframeLoaded: (url: string) => void;
-  onIframeError: (url: string, error: string) => void;
-  
-  // Cleanup
-  cleanup: () => void;
-};
-```
-
-## Initialization Process
-
-1. URL Group Setup
-   - Load URL group configuration
-   - Initialize menu state
-   - Set up event listeners
-   - Configure error boundaries
-
-2. IFrame Container Setup
-   - Initialize state management
-   - Set up visibility tracking
-   - Configure error handling
-   - Initialize cleanup routines
-
-3. State Management Setup
-   - Create state context
-   - Initialize reducers
-   - Set up synchronization
-   - Configure persistence
-
-## Configuration Requirements
-
-### Environment Variables
-```env
-MAX_CACHED_FRAMES=5
-CLEANUP_INTERVAL=300000
-LOAD_TIMEOUT=30000
-RETRY_ATTEMPTS=3
-PRELOAD_THRESHOLD=2
-```
-
-### Feature Flags
-```typescript
-const featureFlags = {
-  enableDragAndDrop: false,
-  enableAutoValidation: false,
-  enableCrossOrigin: false,
-  enableAutoMobileDetection: true
-};
-```
-
-## Security Considerations
-
-1. IFrame Security
-   - Sandbox attributes
-   - CSP configuration
-   - Cross-origin handling
-   - Script injection prevention
-
-2. URL Validation
-   - Input sanitization
-   - Protocol validation
-   - Domain whitelisting
-   - XSS prevention
-
-3. Resource Management
-   - Memory limits
-   - CPU usage monitoring
-   - Network throttling
-   - Error rate tracking
+### Vertical Scaling
+- Efficient database indexes
+- Optimized query patterns
+- Resource utilization monitoring
 
 ## Monitoring and Logging
 
-### Metrics Collection
-```typescript
-interface IframeMetrics {
-  loadTime: number;
-  errorRate: number;
-  memoryUsage: number;
-  activeTime: number;
-}
+### Metrics
+- URL operation latency
+- Group operation performance
+- Error rates and types
 
-const metricsCollector = {
-  trackLoadTime: (url: string, duration: number) => void;
-  trackError: (url: string, error: string) => void;
-  trackMemoryUsage: (usage: number) => void;
-  trackActiveTime: (url: string, duration: number) => void;
-};
-```
+### Logging
+- Operation audit trail
+- Error tracking
+- Performance monitoring
 
-### Performance Monitoring
-1. Load time tracking
-2. Error rate monitoring
-3. Memory usage tracking
-4. CPU utilization
-5. Network requests 
+## Future Enhancements
+
+### Planned Features
+- GraphQL API support
+- Real-time updates
+- Advanced search capabilities
+- Drag-and-drop reordering
+
+### Technical Debt
+- Schema optimization
+- Cache implementation
+- Error handling refinement
+
+## Integration Points
+
+### External Systems
+- Authentication service
+- Monitoring systems
+- Backup services
+
+### Internal Systems
+- User management
+- Configuration service
+- Notification system

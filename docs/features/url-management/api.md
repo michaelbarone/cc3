@@ -1,363 +1,449 @@
-# URL Management & IFrame Container API
+# URL Management API Documentation
 
-## API Overview
+## Base URL
+All URLs referenced are relative to: `/api/admin`
 
-This document details the API endpoints for URL group management, URL operations, and state management.
+## Authentication
+All endpoints require authentication using JWT tokens.
+Include the token in the Authorization header:
+```
+Authorization: Bearer <jwt_token>
+```
 
-## URL Group Endpoints
+## Endpoints
 
-### GET /api/url-groups
+### URL Management
 
-Retrieves all URL groups for the current user.
+#### List URLs
+```http
+GET /urls
+```
 
-```typescript
-// Response Type
-interface UrlGroupListResponse {
-  groups: Array<{
-    id: string;
-    name: string;
-    description?: string;
-    display_order: number;
-    urls: Url[];
-  }>;
+Query Parameters:
+- `page` (optional): Page number for pagination (default: 1)
+- `limit` (optional): Items per page (default: 10)
+- `search` (optional): Search term for URL title or address
+
+Response:
+```json
+{
+  "urls": [
+    {
+      "id": "string",
+      "title": "string",
+      "url": "string",
+      "urlMobile": "string?",
+      "iconPath": "string?",
+      "idleTimeoutMinutes": "number",
+      "createdAt": "string",
+      "updatedAt": "string"
+    }
+  ],
+  "total": "number",
+  "page": "number",
+  "limit": "number"
 }
 ```
 
-### POST /api/url-groups
+#### Create URL
+```http
+POST /urls
+```
 
-Creates a new URL group.
-
-```typescript
-// Request Type
-interface CreateUrlGroupRequest {
-  name: string;
-  description?: string;
-  display_order?: number;
-}
-
-// Response Type
-interface CreateUrlGroupResponse {
-  success: boolean;
-  group?: {
-    id: string;
-    name: string;
-    description?: string;
-    display_order: number;
-  };
-  error?: string;
+Request Body:
+```json
+{
+  "title": "string",
+  "url": "string",
+  "urlMobile": "string?",
+  "idleTimeoutMinutes": "number?"
 }
 ```
 
-### PATCH /api/url-groups/[id]
-
-Updates an existing URL group.
-
-```typescript
-// Request Type
-interface UpdateUrlGroupRequest {
-  name?: string;
-  description?: string;
-  display_order?: number;
-}
-
-// Response Type
-interface UpdateUrlGroupResponse {
-  success: boolean;
-  group?: {
-    id: string;
-    name: string;
-    description?: string;
-    display_order: number;
-  };
-  error?: string;
+Response:
+```json
+{
+  "id": "string",
+  "title": "string",
+  "url": "string",
+  "urlMobile": "string?",
+  "iconPath": "string?",
+  "idleTimeoutMinutes": "number",
+  "createdAt": "string",
+  "updatedAt": "string"
 }
 ```
 
-### DELETE /api/url-groups/[id]
+#### Update URL
+```http
+PUT /urls/:id
+```
 
-Deletes a URL group.
-
-```typescript
-// Response Type
-interface DeleteUrlGroupResponse {
-  success: boolean;
-  error?: string;
+Request Body:
+```json
+{
+  "title": "string?",
+  "url": "string?",
+  "urlMobile": "string?",
+  "idleTimeoutMinutes": "number?"
 }
 ```
 
-## URL Management Endpoints
-
-### GET /api/urls
-
-Retrieves URLs for a specific group.
-
-```typescript
-// Query Parameters
-interface GetUrlsQuery {
-  group_id?: string;
-  include_mobile?: boolean;
-}
-
-// Response Type
-interface UrlListResponse {
-  urls: Array<{
-    id: string;
-    group_id: string;
-    title: string;
-    url: string;
-    mobile_url?: string;
-    icon_path?: string;
-    display_order: number;
-    idle_timeout?: number;
-  }>;
+Response:
+```json
+{
+  "id": "string",
+  "title": "string",
+  "url": "string",
+  "urlMobile": "string?",
+  "iconPath": "string?",
+  "idleTimeoutMinutes": "number",
+  "createdAt": "string",
+  "updatedAt": "string"
 }
 ```
 
-### POST /api/urls
+#### Delete URL
+```http
+DELETE /urls/:id
+```
 
-Creates a new URL.
+Response: 204 No Content
 
-```typescript
-// Request Type
-interface CreateUrlRequest {
-  group_id: string;
-  title: string;
-  url: string;
-  mobile_url?: string;
-  icon_path?: string;
-  display_order?: number;
-  idle_timeout?: number;
-}
+### Group Management
 
-// Response Type
-interface CreateUrlResponse {
-  success: boolean;
-  url?: Url;
-  error?: string;
+#### List Groups
+```http
+GET /url-groups
+```
+
+Query Parameters:
+- `page` (optional): Page number for pagination (default: 1)
+- `limit` (optional): Items per page (default: 10)
+- `search` (optional): Search term for group name
+
+Response:
+```json
+{
+  "groups": [
+    {
+      "id": "string",
+      "name": "string",
+      "description": "string?",
+      "createdAt": "string",
+      "updatedAt": "string",
+      "urlCount": "number"
+    }
+  ],
+  "total": "number",
+  "page": "number",
+  "limit": "number"
 }
 ```
 
-### PATCH /api/urls/[id]
+#### Create Group
+```http
+POST /url-groups
+```
 
-Updates an existing URL.
-
-```typescript
-// Request Type
-interface UpdateUrlRequest {
-  title?: string;
-  url?: string;
-  mobile_url?: string;
-  icon_path?: string;
-  display_order?: number;
-  idle_timeout?: number;
-}
-
-// Response Type
-interface UpdateUrlResponse {
-  success: boolean;
-  url?: Url;
-  error?: string;
+Request Body:
+```json
+{
+  "name": "string",
+  "description": "string?"
 }
 ```
 
-### DELETE /api/urls/[id]
-
-Deletes a URL.
-
-```typescript
-// Response Type
-interface DeleteUrlResponse {
-  success: boolean;
-  error?: string;
+Response:
+```json
+{
+  "id": "string",
+  "name": "string",
+  "description": "string?",
+  "createdAt": "string",
+  "updatedAt": "string"
 }
 ```
 
-## State Management Endpoints
+#### Update Group
+```http
+PUT /url-groups/:id
+```
 
-### GET /api/urls/state
-
-Retrieves the current state of URLs.
-
-```typescript
-// Response Type
-interface UrlStateResponse {
-  states: Array<{
-    url: string;
-    isLoaded: boolean;
-    isVisible: boolean;
-    error?: string;
-    lastActive: string;
-  }>;
+Request Body:
+```json
+{
+  "name": "string?",
+  "description": "string?"
 }
 ```
 
-### POST /api/urls/state
-
-Updates URL states.
-
-```typescript
-// Request Type
-interface UpdateUrlStateRequest {
-  states: Array<{
-    url: string;
-    isLoaded?: boolean;
-    isVisible?: boolean;
-    error?: string;
-  }>;
-}
-
-// Response Type
-interface UpdateUrlStateResponse {
-  success: boolean;
-  states?: Array<{
-    url: string;
-    isLoaded: boolean;
-    isVisible: boolean;
-    error?: string;
-    lastActive: string;
-  }>;
-  error?: string;
+Response:
+```json
+{
+  "id": "string",
+  "name": "string",
+  "description": "string?",
+  "createdAt": "string",
+  "updatedAt": "string"
 }
 ```
 
-## Icon Management Endpoints
+#### Delete Group
+```http
+DELETE /url-groups/:id
+```
 
-### POST /api/urls/[id]/icon
+Response: 204 No Content
 
-Uploads an icon for a URL.
+### URL-Group Relationships
 
-```typescript
-// Request Type
-// Multipart form data with 'icon' file field
+#### List URLs in Group
+```http
+GET /url-groups/:id/urls
+```
 
-// Response Type
-interface IconUploadResponse {
-  success: boolean;
-  icon_path?: string;
-  error?: string;
+Query Parameters:
+- `page` (optional): Page number for pagination (default: 1)
+- `limit` (optional): Items per page (default: 10)
+
+Response:
+```json
+{
+  "urls": [
+    {
+      "id": "string",
+      "title": "string",
+      "url": "string",
+      "urlMobile": "string?",
+      "iconPath": "string?",
+      "idleTimeoutMinutes": "number",
+      "displayOrder": "number",
+      "createdAt": "string",
+      "updatedAt": "string"
+    }
+  ],
+  "total": "number",
+  "page": "number",
+  "limit": "number"
 }
 ```
 
-### DELETE /api/urls/[id]/icon
+#### Add URL to Group
+```http
+POST /url-groups/:id/urls
+```
 
-Removes a URL's icon.
-
-```typescript
-// Response Type
-interface IconDeleteResponse {
-  success: boolean;
-  error?: string;
+Request Body:
+```json
+{
+  "urlId": "string",
+  "displayOrder": "number?"
 }
 ```
 
-## Common Types
-
-### URL Type
-
-```typescript
-interface Url {
-  id: string;
-  group_id: string;
-  title: string;
-  url: string;
-  mobile_url?: string;
-  icon_path?: string;
-  display_order: number;
-  idle_timeout?: number;
-  created_at: Date;
-  updated_at: Date;
+Response:
+```json
+{
+  "urlId": "string",
+  "groupId": "string",
+  "displayOrder": "number",
+  "createdAt": "string",
+  "updatedAt": "string"
 }
 ```
 
-## Error Handling
+#### Update URL in Group
+```http
+PUT /url-groups/:groupId/urls/:urlId
+```
 
-All endpoints follow a consistent error response format:
-
-```typescript
-interface ErrorResponse {
-  success: false;
-  error: string;
-  code?: string;
-  details?: Record<string, any>;
+Request Body:
+```json
+{
+  "displayOrder": "number"
 }
 ```
 
-Common error codes:
-- `NOT_FOUND`: URL or group not found
-- `VALIDATION_ERROR`: Invalid request data
-- `DUPLICATE_ERROR`: URL already exists
-- `ORDER_CONFLICT`: Display order conflict
-- `ICON_ERROR`: Icon upload/processing error
+Response:
+```json
+{
+  "urlId": "string",
+  "groupId": "string",
+  "displayOrder": "number",
+  "createdAt": "string",
+  "updatedAt": "string"
+}
+```
 
-## URL Management Flow
+#### Remove URL from Group
+```http
+DELETE /url-groups/:groupId/urls/:urlId
+```
 
-1. Client requests URL groups from `/api/url-groups`
-2. Groups are displayed in menu structure
-3. URLs within groups are loaded from `/api/urls`
-4. State changes are tracked via `/api/urls/state`
-5. Icons are managed through icon endpoints
-6. Updates are synchronized across clients
+Response: 204 No Content
 
-## Security Considerations
+### Batch Operations
 
-1. URL Validation
-   - URL format validation
-   - Protocol restrictions
-   - Domain validation
-   - XSS prevention
+#### Batch Add URLs to Group
+```http
+POST /url-groups/:id/urls/batch
+```
 
-2. Icon Security
-   - File type validation
-   - Size restrictions
-   - Malware scanning
-   - Storage security
+Request Body:
+```json
+{
+  "operation": "add",
+  "urls": [
+    {
+      "urlId": "string",
+      "displayOrder": "number?"
+    }
+  ]
+}
+```
 
-3. Access Control
-   - User permissions
-   - Group access
-   - Rate limiting
-   - Audit logging
+Response:
+```json
+{
+  "success": true,
+  "added": "number"
+}
+```
 
-## Testing
+#### Batch Remove URLs from Group
+```http
+POST /url-groups/:id/urls/batch
+```
 
-Example test cases for each endpoint:
+Request Body:
+```json
+{
+  "operation": "remove",
+  "urlIds": ["string"]
+}
+```
 
-```typescript
-describe('URL Management API', () => {
-  describe('POST /api/urls', () => {
-    it('should create a new URL successfully', async () => {
-      const response = await fetch('/api/urls', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          group_id: 'test-group',
-          title: 'Test URL',
-          url: 'https://example.com'
-        })
-      });
-      
-      expect(response.status).toBe(200);
-      const data = await response.json();
-      expect(data.success).toBe(true);
-      expect(data.url).toBeDefined();
-    });
+Response:
+```json
+{
+  "success": true,
+  "removed": "number"
+}
+```
 
-    it('should validate URL format', async () => {
-      const response = await fetch('/api/urls', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          group_id: 'test-group',
-          title: 'Invalid URL',
-          url: 'invalid-url'
-        })
-      });
-      
-      expect(response.status).toBe(400);
-      const data = await response.json();
-      expect(data.success).toBe(false);
-      expect(data.error).toBe('VALIDATION_ERROR');
-    });
-  });
-});
-``` 
+#### Batch Reorder URLs in Group
+```http
+POST /url-groups/:id/urls/batch
+```
+
+Request Body:
+```json
+{
+  "operation": "reorder",
+  "orders": [
+    {
+      "urlId": "string",
+      "displayOrder": "number"
+    }
+  ]
+}
+```
+
+Response:
+```json
+{
+  "success": true,
+  "updated": "number"
+}
+```
+
+## Error Responses
+
+### 400 Bad Request
+```json
+{
+  "error": "ValidationError",
+  "message": "Invalid request parameters",
+  "details": {
+    "field": ["error message"]
+  }
+}
+```
+
+### 401 Unauthorized
+```json
+{
+  "error": "Unauthorized",
+  "message": "Authentication required"
+}
+```
+
+### 403 Forbidden
+```json
+{
+  "error": "Forbidden",
+  "message": "Insufficient permissions"
+}
+```
+
+### 404 Not Found
+```json
+{
+  "error": "NotFound",
+  "message": "Resource not found"
+}
+```
+
+### 409 Conflict
+```json
+{
+  "error": "Conflict",
+  "message": "Resource already exists"
+}
+```
+
+### 500 Internal Server Error
+```json
+{
+  "error": "InternalServerError",
+  "message": "An unexpected error occurred"
+}
+```
+
+## Rate Limiting
+
+- Rate limit: 100 requests per minute per IP
+- Rate limit headers included in responses:
+  - `X-RateLimit-Limit`: Maximum requests per window
+  - `X-RateLimit-Remaining`: Remaining requests in current window
+  - `X-RateLimit-Reset`: Time until window reset (Unix timestamp)
+
+## Pagination
+
+All list endpoints support pagination with the following parameters:
+- `page`: Page number (1-based)
+- `limit`: Items per page (default: 10, max: 100)
+
+Response includes:
+- `total`: Total number of items
+- `page`: Current page number
+- `limit`: Items per page
+- `data`: Array of items for current page
+
+## Filtering and Sorting
+
+### Common Query Parameters
+- `search`: Search term for text fields
+- `sortBy`: Field to sort by
+- `sortOrder`: Sort direction ('asc' or 'desc')
+- `startDate`: Filter by creation date range start
+- `endDate`: Filter by creation date range end
+
+## Versioning
+
+Current API version: v1
+Include version in Accept header:
+```
+Accept: application/json; version=1
+```

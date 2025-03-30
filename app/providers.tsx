@@ -1,5 +1,6 @@
 "use client";
 
+import { SessionProvider } from "next-auth/react";
 import { ReactNode } from "react";
 import { IframeStateProvider } from "./lib/state/iframe-state-context";
 
@@ -8,5 +9,9 @@ interface ProvidersProps {
 }
 
 export function Providers({ children }: ProvidersProps) {
-  return <IframeStateProvider>{children}</IframeStateProvider>;
+  return (
+    <SessionProvider>
+      <IframeStateProvider>{children}</IframeStateProvider>
+    </SessionProvider>
+  );
 }

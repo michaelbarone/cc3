@@ -220,20 +220,30 @@ const IframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
     useEffect(() => {
       if (!activeUrlId) return;
 
-      // Update visibility
+      // Update visibility and ensure proper loading
       Object.entries(iframeRefs.current).forEach(([urlId, iframe]) => {
         const wrapper = iframe.parentElement;
+        const isActive = urlId === activeUrlId;
+
         if (wrapper) {
-          wrapper.style.visibility = urlId === activeUrlId ? "visible" : "hidden";
-          wrapper.style.zIndex = urlId === activeUrlId ? "1" : "0";
+          // Force a reflow by accessing offsetHeight
+          wrapper.offsetHeight;
+
+          // Update visibility and z-index
+          wrapper.style.display = isActive ? "block" : "none";
+          wrapper.style.visibility = isActive ? "visible" : "hidden";
+          wrapper.style.zIndex = isActive ? "1" : "0";
+          wrapper.style.pointerEvents = isActive ? "auto" : "none";
+
+          // If this is the active iframe, ensure it's loaded
+          if (isActive) {
+            const dataSrc = iframe.getAttribute("data-src");
+            if (dataSrc && (!iframe.src || iframe.src === "about:blank")) {
+              iframe.src = dataSrc;
+            }
+          }
         }
       });
-
-      // Load active iframe if needed
-      const activeIframe = iframeRefs.current[activeUrlId];
-      if (activeIframe && (!activeIframe.src || activeIframe.src === "about:blank")) {
-        activeIframe.src = activeIframe.getAttribute("data-src") || "";
-      }
     }, [activeUrlId]);
 
     // Expose methods via ref

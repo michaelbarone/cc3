@@ -1,6 +1,5 @@
 import { verifyToken } from "@/app/lib/auth/jwt";
 import { prisma } from "@/app/lib/db/prisma";
-import { Url } from "@prisma/client";
 import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -8,6 +7,17 @@ interface Props {
   params: {
     id: string;
     urlId: string;
+  };
+}
+
+interface UrlInGroup {
+  urlId: string;
+  groupId: string;
+  displayOrder: number;
+  url: {
+    id: string;
+    title: string;
+    url: string;
   };
 }
 
@@ -28,7 +38,7 @@ export async function POST(request: NextRequest, props: Props): Promise<NextResp
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const { id: urlGroupId, urlId } = props.params;
+    const { id: groupId, urlId } = props.params;
     const { direction } = await request.json();
 
     // Validate direction
@@ -36,47 +46,46 @@ export async function POST(request: NextRequest, props: Props): Promise<NextResp
       return NextResponse.json({ error: "Invalid direction" }, { status: 400 });
     }
 
-    // Get all URLs in the group ordered by displayOrder
-    const urls = await prisma.url.findMany({
-      where: { urlGroupId },
-      orderBy: { displayOrder: "asc" },
-    });
+    const currentOrder = await prisma.$queryRaw<{ displayOrder: number }[]>`
+      SELECT displayOrder
+      FROM urls_in_groups
+      WHERE urlId = ${urlId}
+      AND groupId = ${groupId}
+    `;
 
-    // Find the current URL and its index
-    const currentIndex = urls.findIndex((url: Url) => url.id === urlId);
-    if (currentIndex === -1) {
-      return NextResponse.json({ error: "URL not found in group" }, { status: 404 });
+    // Get the URLs to swap with
+    const swapOrder = await prisma.$queryRaw<{ urlId: string; displayOrder: number }[]>`
+      SELECT urlId, displayOrder
+      FROM urls_in_groups
+      WHERE groupId = ${groupId}
+      AND displayOrder ${direction === "up" ? "<" : ">"} ${currentOrder[0].displayOrder}
+      ORDER BY displayOrder ${direction === "up" ? "DESC" : "ASC"}
+      LIMIT 1
+    `;
+
+    if (swapOrder.length === 0) {
+      return NextResponse.json({ message: "No URLs to swap with" });
     }
 
-    // Calculate target index
-    const targetIndex = direction === "up" ? currentIndex - 1 : currentIndex + 1;
-
-    // Validate target index
-    if (targetIndex < 0 || targetIndex >= urls.length) {
-      return NextResponse.json({ error: "Cannot move URL further" }, { status: 400 });
-    }
-
-    // Swap display orders
-    const currentUrl = urls[currentIndex];
-    const targetUrl = urls[targetIndex];
-
-    // Update both URLs in a transaction
+    // Perform the swap
     await prisma.$transaction([
-      prisma.url.update({
-        where: { id: currentUrl.id },
-        data: { displayOrder: targetUrl.displayOrder },
-      }),
-      prisma.url.update({
-        where: { id: targetUrl.id },
-        data: { displayOrder: currentUrl.displayOrder },
-      }),
+      prisma.$executeRaw`
+        UPDATE urls_in_groups
+        SET displayOrder = ${swapOrder[0].displayOrder}
+        WHERE urlId = ${urlId}
+        AND groupId = ${groupId}
+      `,
+      prisma.$executeRaw`
+        UPDATE urls_in_groups
+        SET displayOrder = ${currentOrder[0].displayOrder}
+        WHERE urlId = ${swapOrder[0].urlId}
+        AND groupId = ${groupId}
+      `,
     ]);
 
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Error reordering URL:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
-  } finally {
-    await prisma.$disconnect();
   }
 }

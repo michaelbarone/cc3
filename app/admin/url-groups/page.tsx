@@ -48,8 +48,16 @@ interface Url {
   url: string;
   urlMobile: string | null;
   iconPath: string | null;
-  displayOrder: number;
   idleTimeoutMinutes: number;
+}
+
+interface UrlInGroup {
+  url: Url;
+  urlId: string;
+  groupId: string;
+  displayOrder: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
 interface UrlGroup {
@@ -58,7 +66,7 @@ interface UrlGroup {
   description: string | null;
   createdAt: string;
   updatedAt: string;
-  urls: Url[];
+  urls: UrlInGroup[];
 }
 
 interface User {
@@ -96,7 +104,6 @@ export default function UrlGroupManagement() {
     title: "",
     url: "",
     urlMobile: "",
-    displayOrder: 0,
     idleTimeoutMinutes: 10,
   });
 
@@ -126,6 +133,9 @@ export default function UrlGroupManagement() {
     values: typeof urlFormValues;
     groupId: string;
   } | null>(null);
+
+  const [selectedUrlsForBatch, setSelectedUrlsForBatch] = useState<Set<string>>(new Set());
+  const [batchOperationInProgress, setBatchOperationInProgress] = useState(false);
 
   const fetchUrlGroups = async () => {
     try {
@@ -172,13 +182,10 @@ export default function UrlGroupManagement() {
           description: group.description || "",
         });
       } else if (type === "createUrl") {
-        const maxOrder = group.urls.reduce((max, url) => Math.max(max, url.displayOrder), -1);
-
         setUrlFormValues({
           title: "",
           url: "",
           urlMobile: "",
-          displayOrder: maxOrder + 1,
           idleTimeoutMinutes: 10,
         });
       }
@@ -201,7 +208,6 @@ export default function UrlGroupManagement() {
           title: url.title,
           url: url.url,
           urlMobile: url.urlMobile || "",
-          displayOrder: url.displayOrder,
           idleTimeoutMinutes: url.idleTimeoutMinutes,
         });
       }
@@ -237,29 +243,29 @@ export default function UrlGroupManagement() {
 
   const handleUrlOrderChange = async (groupId: string, urlId: string, direction: "up" | "down") => {
     try {
-      console.log(`Attempting to reorder URL ${urlId} ${direction} in group ${groupId}`);
-
-      const response = await fetch(`/api/admin/url-groups/${groupId}/urls/${urlId}/reorder`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ direction }),
-      });
-
-      console.log("Reorder response status:", response.status);
-      const data = await response.json();
-      console.log("Reorder response data:", data);
+      const response = await fetch(
+        `/api/admin/url-groups/${groupId}/urls/${urlId}/reorder?direction=${direction}`,
+        {
+          method: "PUT",
+        },
+      );
 
       if (!response.ok) {
-        throw new Error(data?.error || "Operation failed");
+        throw new Error("Failed to reorder URL");
       }
 
-      console.log("Reorder successful, fetching updated URL groups");
-      fetchUrlGroups();
-    } catch (err) {
-      console.error("Error during reorder:", err);
+      // Refresh the URL groups to get updated order
+      await fetchUrlGroups();
+
       setSnackbar({
         open: true,
-        message: err instanceof Error ? err.message : "An unknown error occurred",
+        message: "URL order updated successfully",
+        severity: "success",
+      });
+    } catch (err) {
+      setSnackbar({
+        open: true,
+        message: err instanceof Error ? err.message : "Failed to reorder URL",
         severity: "error",
       });
     }
@@ -267,79 +273,130 @@ export default function UrlGroupManagement() {
 
   const handleSubmit = async () => {
     try {
-      let response;
-      let successMessage = "";
+      if (dialogType === "createGroup" || dialogType === "editGroup") {
+        const method = dialogType === "createGroup" ? "POST" : "PUT";
+        const url =
+          dialogType === "createGroup"
+            ? "/api/admin/url-groups"
+            : `/api/admin/url-groups/${selectedGroup?.id}`;
 
-      // Handle group operations
-      if (dialogType === "createGroup") {
-        response = await fetch("/api/admin/url-groups", {
-          method: "POST",
+        const response = await fetch(url, {
+          method,
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(groupFormValues),
         });
-        successMessage = "URL group created successfully";
-      } else if (dialogType === "editGroup" && selectedGroup) {
-        response = await fetch(`/api/admin/url-groups/${selectedGroup.id}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(groupFormValues),
-        });
-        successMessage = "URL group updated successfully";
-      } else if (dialogType === "deleteGroup" && selectedGroup) {
-        response = await fetch(`/api/admin/url-groups/${selectedGroup.id}`, {
-          method: "DELETE",
-        });
-        successMessage = "URL group deleted successfully";
-      }
 
-      // Handle URL operations
-      else if (dialogType === "createUrl" && selectedGroup) {
-        response = await fetch(`/api/admin/url-groups/${selectedGroup.id}/urls`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(urlFormValues),
-        });
-
-        if (response.status === 409) {
-          const data = await response.json();
-          setSimilarUrls(data.matches);
-          setPendingUrlSubmit({
-            values: urlFormValues,
-            groupId: selectedGroup.id,
-          });
-          setShowSimilarUrlsDialog(true);
-          return;
+        if (!response.ok) {
+          throw new Error("Failed to save URL group");
         }
 
-        successMessage = "URL created successfully";
-      } else if (dialogType === "editUrl" && selectedGroup && selectedUrl) {
-        response = await fetch(`/api/admin/url-groups/${selectedGroup.id}/urls/${selectedUrl.id}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(urlFormValues),
+        setSnackbar({
+          open: true,
+          message: `URL group ${dialogType === "createGroup" ? "created" : "updated"} successfully`,
+          severity: "success",
         });
-        successMessage = "URL updated successfully";
-      } else if (dialogType === "deleteUrl" && selectedGroup && selectedUrl) {
-        response = await fetch(`/api/admin/url-groups/${selectedGroup.id}/urls/${selectedUrl.id}`, {
+      } else if (dialogType === "createUrl" || dialogType === "editUrl") {
+        if (!selectedGroup) {
+          throw new Error("No group selected");
+        }
+
+        // For creating a new URL
+        if (dialogType === "createUrl") {
+          const response = await fetch(`/api/admin/url-groups/${selectedGroup.id}/urls`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(urlFormValues),
+          });
+
+          if (response.status === 409) {
+            // Handle similar URLs
+            const data = await response.json();
+            setSimilarUrls(data.similarUrls);
+            setShowSimilarUrlsDialog(true);
+            setPendingUrlSubmit({
+              values: urlFormValues,
+              groupId: selectedGroup.id,
+            });
+            return;
+          }
+
+          if (!response.ok) {
+            throw new Error("Failed to create URL");
+          }
+
+          setSnackbar({
+            open: true,
+            message: "URL created successfully",
+            severity: "success",
+          });
+        } else {
+          // For editing an existing URL
+          if (!selectedUrl) {
+            throw new Error("No URL selected");
+          }
+
+          const response = await fetch(
+            `/api/admin/url-groups/${selectedGroup.id}/urls/${selectedUrl.id}`,
+            {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(urlFormValues),
+            },
+          );
+
+          if (!response.ok) {
+            throw new Error("Failed to update URL");
+          }
+
+          setSnackbar({
+            open: true,
+            message: "URL updated successfully",
+            severity: "success",
+          });
+        }
+      } else if (dialogType === "deleteGroup") {
+        if (!selectedGroup) {
+          throw new Error("No group selected");
+        }
+
+        const response = await fetch(`/api/admin/url-groups/${selectedGroup.id}`, {
           method: "DELETE",
         });
-        successMessage = "URL deleted successfully";
+
+        if (!response.ok) {
+          throw new Error("Failed to delete URL group");
+        }
+
+        setSnackbar({
+          open: true,
+          message: "URL group deleted successfully",
+          severity: "success",
+        });
+      } else if (dialogType === "deleteUrl") {
+        if (!selectedGroup || !selectedUrl) {
+          throw new Error("No group or URL selected");
+        }
+
+        const response = await fetch(
+          `/api/admin/url-groups/${selectedGroup.id}/urls/${selectedUrl.id}`,
+          {
+            method: "DELETE",
+          },
+        );
+
+        if (!response.ok) {
+          throw new Error("Failed to delete URL");
+        }
+
+        setSnackbar({
+          open: true,
+          message: "URL deleted successfully",
+          severity: "success",
+        });
       }
 
-      if (!response?.ok) {
-        const errorData = await response?.json();
-        throw new Error(errorData?.error || "Operation failed");
-      }
-
-      // Show success message
-      setSnackbar({
-        open: true,
-        message: successMessage,
-        severity: "success",
-      });
-
-      // Refresh data
-      fetchUrlGroups();
+      // Refresh the URL groups
+      await fetchUrlGroups();
       handleCloseDialog();
     } catch (err) {
       setSnackbar({
@@ -351,21 +408,26 @@ export default function UrlGroupManagement() {
   };
 
   const handleForceUrlSubmit = async () => {
-    if (!pendingUrlSubmit) return;
-
     try {
-      const response = await fetch(
-        `/api/admin/url-groups/${pendingUrlSubmit.groupId}/urls?force=true`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(pendingUrlSubmit.values),
+      if (!pendingUrlSubmit) {
+        throw new Error("No pending URL submission");
+      }
+
+      const { values, groupId } = pendingUrlSubmit;
+
+      const response = await fetch(`/api/admin/url-groups/${groupId}/urls`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
         },
-      );
+        body: JSON.stringify({
+          ...values,
+          force: true,
+        }),
+      });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData?.error || "Operation failed");
+        throw new Error("Failed to create URL");
       }
 
       setSnackbar({
@@ -374,15 +436,18 @@ export default function UrlGroupManagement() {
         severity: "success",
       });
 
-      fetchUrlGroups();
-      handleCloseDialog();
+      // Reset state
       setShowSimilarUrlsDialog(false);
       setPendingUrlSubmit(null);
       setSimilarUrls([]);
+
+      // Refresh the URL groups
+      await fetchUrlGroups();
+      handleCloseDialog();
     } catch (err) {
       setSnackbar({
         open: true,
-        message: err instanceof Error ? err.message : "An unknown error occurred",
+        message: err instanceof Error ? err.message : "Failed to create URL",
         severity: "error",
       });
     }
@@ -552,36 +617,93 @@ export default function UrlGroupManagement() {
     }
   };
 
-  if (loading && urlGroups.length === 0) {
+  const handleBatchSelect = (urlId: string) => {
+    setSelectedUrlsForBatch((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(urlId)) {
+        newSet.delete(urlId);
+      } else {
+        newSet.add(urlId);
+      }
+      return newSet;
+    });
+  };
+
+  const handleBatchOperation = async (
+    groupId: string,
+    operation: "moveToTop" | "moveToBottom" | "remove",
+  ) => {
+    if (selectedUrlsForBatch.size === 0) return;
+
+    try {
+      setBatchOperationInProgress(true);
+      const response = await fetch(`/api/admin/url-groups/${groupId}/urls/batch`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          urlIds: Array.from(selectedUrlsForBatch),
+          operation,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to perform batch operation");
+      }
+
+      // Refresh the URL groups to get updated order
+      await fetchUrlGroups();
+
+      setSnackbar({
+        open: true,
+        message: "Batch operation completed successfully",
+        severity: "success",
+      });
+
+      // Clear selection after successful operation
+      setSelectedUrlsForBatch(new Set());
+    } catch (err) {
+      setSnackbar({
+        open: true,
+        message: err instanceof Error ? err.message : "Failed to perform batch operation",
+        severity: "error",
+      });
+    } finally {
+      setBatchOperationInProgress(false);
+    }
+  };
+
+  if (loading) {
     return (
-      <Box
-        sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh" }}
-      >
+      <Box sx={{ p: 3 }}>
         <CircularProgress />
       </Box>
     );
   }
 
+  if (error) {
+    return (
+      <Alert severity="error" sx={{ mb: 2 }}>
+        {error}
+      </Alert>
+    );
+  }
+
   return (
-    <Box>
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
-        <Typography variant="h4">URL Group Management</Typography>
+    <Box sx={{ p: 3 }}>
+      <Box sx={{ mb: 3, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <Typography variant="h4" component="h1">
+          URL Groups
+        </Typography>
         <Button
           variant="contained"
           startIcon={<AddIcon />}
           onClick={() => handleOpenDialog("createGroup")}
         >
-          Add URL Group
+          Create Group
         </Button>
       </Box>
 
-      {error && (
-        <Alert severity="error" sx={{ mb: 3 }}>
-          {error}
-        </Alert>
-      )}
-
-      {urlGroups.length === 0 && !loading ? (
+      {urlGroups.length === 0 ? (
         <Paper sx={{ p: 3, textAlign: "center" }}>
           <Typography variant="body1">
             No URL groups found. Create your first group to get started.
@@ -663,7 +785,7 @@ export default function UrlGroupManagement() {
                       startIcon={<LinkIcon />}
                       onClick={() => {
                         setSelectedGroup(group);
-                        setSelectedUrls(group.urls);
+                        setSelectedUrls(group.urls.map((u) => u.url));
                         handleOpenUrlSelectionDialog();
                       }}
                       size="small"
@@ -678,115 +800,162 @@ export default function UrlGroupManagement() {
                         <ListItemText primary="No URLs in this group" />
                       </ListItem>
                     ) : (
-                      group.urls
-                        .sort((a, b) => a.displayOrder - b.displayOrder)
-                        .map((url, index) => (
-                          <Box key={url.id}>
-                            <ListItem>
-                              <ListItemText
-                                primary={
-                                  <Box sx={{ display: "flex", alignItems: "center" }}>
-                                    <Box sx={{ mr: 1 }}>
-                                      {url.iconPath ? (
-                                        <img
-                                          src={url.iconPath}
-                                          alt={url.title}
-                                          width={16}
-                                          height={16}
-                                        />
-                                      ) : (
-                                        <LinkIcon fontSize="small" />
+                      <>
+                        {selectedUrlsForBatch.size > 0 && (
+                          <ListItem>
+                            <Box sx={{ display: "flex", gap: 1, width: "100%" }}>
+                              <Button
+                                variant="outlined"
+                                size="small"
+                                onClick={() => handleBatchOperation(group.id, "moveToTop")}
+                                disabled={batchOperationInProgress}
+                              >
+                                Move to Top
+                              </Button>
+                              <Button
+                                variant="outlined"
+                                size="small"
+                                onClick={() => handleBatchOperation(group.id, "moveToBottom")}
+                                disabled={batchOperationInProgress}
+                              >
+                                Move to Bottom
+                              </Button>
+                              <Button
+                                variant="outlined"
+                                size="small"
+                                color="error"
+                                onClick={() => handleBatchOperation(group.id, "remove")}
+                                disabled={batchOperationInProgress}
+                              >
+                                Remove Selected
+                              </Button>
+                              <Button
+                                variant="outlined"
+                                size="small"
+                                onClick={() => setSelectedUrlsForBatch(new Set())}
+                                disabled={batchOperationInProgress}
+                              >
+                                Clear Selection
+                              </Button>
+                            </Box>
+                          </ListItem>
+                        )}
+                        {group.urls
+                          .sort((a, b) => a.displayOrder - b.displayOrder)
+                          .map((url, index) => (
+                            <React.Fragment key={url.url.id}>
+                              <ListItem>
+                                <Checkbox
+                                  edge="start"
+                                  checked={selectedUrlsForBatch.has(url.url.id)}
+                                  onChange={() => handleBatchSelect(url.url.id)}
+                                  sx={{ mr: 1 }}
+                                />
+                                <ListItemText
+                                  primary={
+                                    <Box sx={{ display: "flex", alignItems: "center" }}>
+                                      <Box sx={{ mr: 1 }}>
+                                        {url.url.iconPath ? (
+                                          <img
+                                            src={url.url.iconPath}
+                                            alt={url.url.title}
+                                            width={16}
+                                            height={16}
+                                          />
+                                        ) : (
+                                          <LinkIcon fontSize="small" />
+                                        )}
+                                      </Box>
+                                      {url.url.title}
+                                    </Box>
+                                  }
+                                  secondary={
+                                    <Box>
+                                      <Typography variant="body2" component="div">
+                                        {url.url.url}
+                                      </Typography>
+                                      {url.url.urlMobile && (
+                                        <Typography
+                                          variant="body2"
+                                          color="text.secondary"
+                                          component="div"
+                                        >
+                                          Mobile: {url.url.urlMobile}
+                                        </Typography>
                                       )}
                                     </Box>
-                                    {url.title}
-                                  </Box>
-                                }
-                                secondary={
-                                  <Box>
-                                    <Typography variant="body2" component="div">
-                                      {url.url}
-                                    </Typography>
-                                    {url.urlMobile && (
-                                      <Typography
-                                        variant="body2"
-                                        color="text.secondary"
-                                        component="div"
+                                  }
+                                />
+                                <ListItemSecondaryAction>
+                                  <Tooltip title="Move Up">
+                                    <span>
+                                      <IconButton
+                                        edge="end"
+                                        aria-label="move up"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleUrlOrderChange(group.id, url.url.id, "up");
+                                        }}
+                                        disabled={index === 0}
+                                        size="small"
                                       >
-                                        Mobile: {url.urlMobile}
-                                      </Typography>
-                                    )}
-                                  </Box>
-                                }
-                              />
-                              <ListItemSecondaryAction>
-                                <Tooltip title="Move Up">
-                                  <span>
+                                        <ArrowUpwardIcon fontSize="small" />
+                                      </IconButton>
+                                    </span>
+                                  </Tooltip>
+                                  <Tooltip title="Move Down">
+                                    <span>
+                                      <IconButton
+                                        edge="end"
+                                        aria-label="move down"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleUrlOrderChange(group.id, url.url.id, "down");
+                                        }}
+                                        disabled={index === group.urls.length - 1}
+                                        size="small"
+                                      >
+                                        <ArrowDownwardIcon fontSize="small" />
+                                      </IconButton>
+                                    </span>
+                                  </Tooltip>
+                                  <Tooltip title="Preview URL">
                                     <IconButton
                                       edge="end"
-                                      aria-label="move up"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleUrlOrderChange(group.id, url.id, "up");
-                                      }}
-                                      disabled={index === 0}
+                                      aria-label="preview"
+                                      onClick={() => window.open(url.url.url, "_blank")}
                                       size="small"
                                     >
-                                      <ArrowUpwardIcon fontSize="small" />
+                                      <VisibilityIcon fontSize="small" />
                                     </IconButton>
-                                  </span>
-                                </Tooltip>
-                                <Tooltip title="Move Down">
-                                  <span>
+                                  </Tooltip>
+                                  <Tooltip title="Edit URL">
                                     <IconButton
                                       edge="end"
-                                      aria-label="move down"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleUrlOrderChange(group.id, url.id, "down");
-                                      }}
-                                      disabled={index === group.urls.length - 1}
+                                      aria-label="edit"
+                                      onClick={() => handleOpenDialog("editUrl", group, url.url)}
                                       size="small"
                                     >
-                                      <ArrowDownwardIcon fontSize="small" />
+                                      <EditIcon fontSize="small" />
                                     </IconButton>
-                                  </span>
-                                </Tooltip>
-                                <Tooltip title="Preview URL">
-                                  <IconButton
-                                    edge="end"
-                                    aria-label="preview"
-                                    onClick={() => window.open(url.url, "_blank")}
-                                    size="small"
-                                  >
-                                    <VisibilityIcon fontSize="small" />
-                                  </IconButton>
-                                </Tooltip>
-                                <Tooltip title="Edit URL">
-                                  <IconButton
-                                    edge="end"
-                                    aria-label="edit"
-                                    onClick={() => handleOpenDialog("editUrl", group, url)}
-                                    size="small"
-                                  >
-                                    <EditIcon fontSize="small" />
-                                  </IconButton>
-                                </Tooltip>
-                                <Tooltip title="Delete URL">
-                                  <IconButton
-                                    edge="end"
-                                    aria-label="delete"
-                                    onClick={() => handleOpenDialog("deleteUrl", group, url)}
-                                    color="error"
-                                    size="small"
-                                  >
-                                    <DeleteIcon fontSize="small" />
-                                  </IconButton>
-                                </Tooltip>
-                              </ListItemSecondaryAction>
-                            </ListItem>
-                            {index < group.urls.length - 1 && <Divider component="li" />}
-                          </Box>
-                        ))
+                                  </Tooltip>
+                                  <Tooltip title="Delete URL">
+                                    <IconButton
+                                      edge="end"
+                                      aria-label="delete"
+                                      onClick={() => handleOpenDialog("deleteUrl", group, url.url)}
+                                      color="error"
+                                      size="small"
+                                    >
+                                      <DeleteIcon fontSize="small" />
+                                    </IconButton>
+                                  </Tooltip>
+                                </ListItemSecondaryAction>
+                              </ListItem>
+                              {index < group.urls.length - 1 && <Divider component="li" />}
+                            </React.Fragment>
+                          ))}
+                      </>
                     )}
                   </List>
                 </AccordionDetails>

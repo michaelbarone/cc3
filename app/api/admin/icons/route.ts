@@ -47,21 +47,29 @@ export async function POST(request: NextRequest) {
     const filename = `icon-${Date.now()}.webp`;
     const filepath = path.join(process.cwd(), "public/icons", filename);
 
-    // Create icons directory if it doesn't exist
-    await fs.mkdir(path.join(process.cwd(), "public/icons"), { recursive: true });
+    try {
+      // Create icons directory if it doesn't exist
+      await fs.mkdir(path.join(process.cwd(), "public/icons"), { recursive: true });
 
-    // Process and save the image
-    const buffer = Buffer.from(await iconFile.arrayBuffer());
-    await sharp(buffer)
-      .resize(60, 60) // Resize to 60x60px
-      .webp({ quality: 80 }) // Convert to WebP format
-      .toFile(filepath);
+      // Process and save the image
+      const buffer = Buffer.from(await iconFile.arrayBuffer());
+      await sharp(buffer)
+        .resize(60, 60) // Resize to 60x60px
+        .webp({ quality: 80 }) // Convert to WebP format
+        .toFile(filepath);
 
-    // Public URL for the icon
-    const iconUrl = `/icons/${filename}`;
+      // Public URL for the icon
+      const iconUrl = `/icons/${filename}`;
 
-    return NextResponse.json({ iconUrl });
+      return NextResponse.json({ iconUrl });
+    } catch (error) {
+      console.error("Error processing icon:", error);
+      return NextResponse.json({ error: "Error processing icon" }, { status: 500 });
+    }
   } catch (error) {
+    if (error instanceof Error && error.message === "Unauthorized") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
     console.error("Error uploading icon:", error);
     return NextResponse.json({ error: "Error uploading icon" }, { status: 500 });
   }
@@ -97,13 +105,18 @@ export async function DELETE(request: NextRequest) {
       );
       await fs.access(fullIconPath);
       await fs.unlink(fullIconPath);
+      return NextResponse.json({ success: true });
     } catch (error) {
-      // Ignore errors if the file doesn't exist or can't be deleted
-      console.warn("Could not delete icon file:", error);
+      if (error instanceof Error && "code" in error && error.code === "ENOENT") {
+        return NextResponse.json({ error: "File not found" }, { status: 404 });
+      }
+      console.error("Error deleting icon file:", error);
+      return NextResponse.json({ error: "Error deleting icon" }, { status: 500 });
     }
-
-    return NextResponse.json({ success: true });
   } catch (error) {
+    if (error instanceof Error && error.message === "Unauthorized") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
     console.error("Error deleting icon:", error);
     return NextResponse.json({ error: "Error deleting icon" }, { status: 500 });
   }

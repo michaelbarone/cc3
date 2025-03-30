@@ -1,6 +1,4 @@
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+import { prisma } from "@/app/lib/db/prisma";
 
 async function testUrlCreation() {
   try {
@@ -59,8 +57,6 @@ async function testUrlCreation() {
     console.log("Final verification:", JSON.stringify(verifySetup, null, 2));
   } catch (error) {
     console.error("Error during test:", error);
-  } finally {
-    await prisma.$disconnect();
   }
 }
 

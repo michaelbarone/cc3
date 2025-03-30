@@ -8,7 +8,7 @@ export interface Url {
   urlMobile: string | null;
   iconPath: string | null;
   displayOrder: number;
-  idleTimeoutMinutes?: number;
+  idleTimeoutMinutes: number | null;
   createdAt?: string;
   updatedAt?: string;
 }
