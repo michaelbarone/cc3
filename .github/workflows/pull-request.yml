@@ -185,19 +185,19 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            echo "### 🧪 Test Results" > $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
             if [ "${{ job.status }}" = "success" ]; then
-              echo "✅ Tests completed successfully in ${{ steps.test.outputs.duration }} seconds" >> $GITHUB_STEP_SUMMARY
+              const output = `### 🧪 Test Results
+                ✅ Tests completed successfully in ${{ steps.test.outputs.duration }} seconds`;
             else
-              echo "❌ Tests failed" >> $GITHUB_STEP_SUMMARY
-              echo "Please check the test logs for more details." >> $GITHUB_STEP_SUMMARY
+              const output = `### 🧪 Test Results
+                ❌ Tests failed
+                Please check the test logs for more details.`;
             fi
             github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: $GITHUB_STEP_SUMMARY
+              body: output
             });
 
       - name: Post Coverage Comment
