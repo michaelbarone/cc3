@@ -1,0 +1,240 @@
+# E2E Test Coverage Expansion Plan
+
+## Context
+
+- Current E2E setup uses Playwright
+- Database seeding utilities in place
+- Basic smoke tests implemented
+- Need comprehensive coverage of critical paths
+
+## Critical User Journeys
+
+1. Authentication Flows
+   - First-time setup
+   - Regular user login/logout
+   - Password-protected login
+   - Session persistence
+   - Invalid credentials handling
+
+2. URL Management
+   - URL group creation/deletion
+   - URL addition/removal
+   - URL reordering
+   - Search functionality
+   - Mobile-specific URL handling
+
+3. User Settings
+   - Theme customization
+   - Language preferences
+   - Password protection settings
+   - Avatar management
+   - Menu position preferences
+
+4. Admin Operations
+   - User management
+   - System configuration
+   - Logo/favicon management
+   - Statistics dashboard
+   - Backup/restore functionality
+
+## Implementation Plan
+
+### Phase 1: Authentication & Core Navigation
+- [X] First-time setup flow
+  * Fresh installation detection
+  * Admin account creation
+  * Initial configuration
+  * Redirect to dashboard
+  * Form validation
+  * Error handling
+  * Route protection
+
+- [ ] Authentication flows
+  * Regular user login/logout
+  * Password-protected login
+  * Remember me functionality
+  * Invalid credentials handling
+  * Session expiry handling
+
+- [ ] Basic navigation
+  * Menu accessibility
+  * Route protection
+  * Breadcrumb navigation
+  * Mobile navigation
+  * Loading states
+
+### Phase 2: URL Management
+- [ ] URL group operations
+  * Create new group
+  * Edit group details
+  * Delete group
+  * Reorder groups
+  * Search functionality
+
+- [ ] URL operations
+  * Add URL to group
+  * Edit URL details
+  * Remove URL
+  * Move between groups
+  * URL validation
+
+- [ ] Mobile-specific features
+  * Mobile URL handling
+  * Touch interactions
+  * Responsive layout
+  * Gesture navigation
+
+### Phase 3: User Settings & Preferences
+- [ ] Theme customization
+  * Theme switching
+  * Color preference persistence
+  * System theme detection
+  * Custom theme settings
+
+- [ ] User preferences
+  * Language selection
+  * Menu position
+  * Avatar upload/removal
+  * Password protection
+  * Notification settings
+
+### Phase 4: Admin Features
+- [ ] User management
+  * User listing
+  * User creation
+  * Role management
+  * Bulk operations
+  * Search and filtering
+
+- [ ] System configuration
+  * Logo management
+  * Favicon settings
+  * Registration settings
+  * System defaults
+  * Feature toggles
+
+- [ ] Statistics & monitoring
+  * Dashboard loading
+  * Data visualization
+  * Export functionality
+  * Date range filtering
+  * Real-time updates
+
+## Test Implementation Strategy
+
+1. Test Structure
+   ```typescript
+   // Example test structure
+   test.describe('Feature: URL Management', () => {
+     test.beforeEach(async ({ page }) => {
+       await setupTestDatabase();
+       await login(page, 'admin');
+     });
+
+     test('creates and manages URL groups', async ({ page }) => {
+       // Test implementation
+     });
+   });
+   ```
+
+2. Helper Functions
+   - Create page object models
+   - Implement common workflows
+   - Add verification utilities
+   - Create test data helpers
+
+3. Test Data Management
+   - Use seeded test data
+   - Create specific test scenarios
+   - Implement cleanup routines
+   - Maintain data isolation
+
+4. Cross-browser Testing
+   - Desktop browsers (Chrome, Firefox, Safari)
+   - Mobile browsers
+   - Different viewport sizes
+   - Touch interactions
+
+## Performance Testing Integration
+
+1. Core Web Vitals
+   ```typescript
+   test('measures page load performance', async ({ page }) => {
+     const performanceTiming = await page.evaluate(() => ({
+       FCP: performance.getEntriesByName('first-contentful-paint')[0],
+       LCP: performance.getEntriesByName('largest-contentful-paint')[0],
+       FID: performance.getEntriesByName('first-input-delay')[0]
+     }));
+
+     expect(performanceTiming.FCP.duration).toBeLessThan(1000);
+     expect(performanceTiming.LCP.duration).toBeLessThan(2500);
+     expect(performanceTiming.FID.duration).toBeLessThan(100);
+   });
+   ```
+
+2. Network Performance
+   - Resource loading
+   - API response times
+   - Asset optimization
+   - Caching behavior
+
+3. Animation Performance
+   - Smooth transitions
+   - Scroll performance
+   - Touch responsiveness
+   - Frame rate monitoring
+
+## Accessibility Testing Integration
+
+1. Automated Checks
+   ```typescript
+   test('meets accessibility standards', async ({ page }) => {
+     const violations = await page.evaluate(async () => {
+       // Run axe-core
+       const results = await axe.run();
+       return results.violations;
+     });
+     expect(violations.length).toBe(0);
+   });
+   ```
+
+2. Manual Verification
+   - Keyboard navigation
+   - Screen reader compatibility
+   - Focus management
+   - ARIA implementation
+
+## Current Status (Updated 2025-03-31 17:00)
+
+#### Progress
+- ✓ Basic test infrastructure in place
+- ✓ Smoke tests implemented
+- ✓ Database seeding working
+- ✓ Authentication helpers created
+- ✓ First-time setup tests implemented:
+  * Admin account creation flow
+  * Initial settings configuration
+  * Form validation
+  * Error handling
+  * Route protection
+
+#### Next Actions
+1. Implement authentication flow tests
+2. Create page object models for login components
+3. Add basic navigation tests
+4. Add cross-browser configurations
+
+## Progress History
+
+### 2025-03-31 17:00 - Phase 1 Implementation Started
+- ✓ Created first-time setup test suite
+- ✓ Implemented comprehensive test cases:
+  * Happy path: Complete setup flow
+  * Validation: Required field checks
+  * Error handling: Network error scenarios
+  * Security: Protected route access
+- 🤔 Decisions:
+  * Using page.getByRole and page.getByLabel for better accessibility
+  * Implementing network error simulation
+  * Testing route protection during setup
+- ⏭️ Next: Implement authentication flow tests

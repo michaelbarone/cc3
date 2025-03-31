@@ -20,6 +20,9 @@
     "test:watch": "vitest watch",
     "test:coverage": "vitest run --coverage",
     "test:ui": "vitest --ui",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:debug": "playwright test --debug",
     "prepare": "husky"
   },
   "prisma": {
@@ -51,6 +54,7 @@
     "@commitlint/config-conventional": "^19.8.0",
     "@eslint/eslintrc": "^3",
     "@next/eslint-plugin-next": "^15.2.4",
+    "@playwright/test": "^1.51.1",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.2.0",
     "@testing-library/user-event": "^14.6.1",
@@ -77,6 +81,7 @@
     "msw": "^2.7.3",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
+    "tsx": "^4.19.3",
     "typescript": "^5",
     "vitest": "^3.0.9"
   },
