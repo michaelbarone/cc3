@@ -21,6 +21,7 @@ import {
   createTheme,
   useTheme,
 } from "@mui/material";
+import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import React, { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "../lib/auth/auth-context";
@@ -318,14 +319,14 @@ function LoginContent() {
                   mb: 2,
                 }}
               >
-                <img
+                <Image
                   src={appConfig.appLogo}
                   alt={`${appConfig.appName} logo`}
+                  fill
                   style={{
-                    width: "100%",
-                    height: "100%",
                     objectFit: "contain",
                   }}
+                  priority
                 />
               </Box>
             ) : null}
