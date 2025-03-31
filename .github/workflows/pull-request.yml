@@ -60,28 +60,24 @@ jobs:
           duration=$((end_time - start_time))
           echo "duration=$duration" >> $GITHUB_OUTPUT
 
-      - name: Create Build Summary
-        if: always()
-        run: |
-          echo "### 🏗️ Build Results" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          if [ "${{ job.status }}" = "success" ]; then
-            echo "✅ Build completed successfully in ${{ steps.build.outputs.duration }} seconds" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "❌ Build failed" >> $GITHUB_STEP_SUMMARY
-            echo "Please check the build logs for more details." >> $GITHUB_STEP_SUMMARY
-          fi
-
       - name: Post Build Comment
         if: always()
         uses: actions/github-script@v7
         with:
           script: |
+            if [ "${{ job.status }}" = "success" ]; then
+              const output = `### 🏗️ Build Results
+                ✅ Build completed successfully in ${{ steps.build.outputs.duration }} seconds`;
+            else
+              const output = `### 🏗️ Build Results
+                ❌ Build failed
+                Please check the build logs for more details.`;
+            fi
             github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: process.env.GITHUB_STEP_SUMMARY
+              body: output
             });
 
   lint:
@@ -113,31 +109,26 @@ jobs:
           echo "duration=$duration" >> $GITHUB_OUTPUT
           cat lint_output.txt
 
-      - name: Create Lint Summary
-        if: always()
-        run: |
-          echo "### 🔍 Lint Results" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          if [ "${{ job.status }}" = "success" ]; then
-            echo "✅ Lint passed successfully in ${{ steps.lint.outputs.duration }} seconds" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "❌ Lint failed" >> $GITHUB_STEP_SUMMARY
-            echo "### Lint Output" >> $GITHUB_STEP_SUMMARY
-            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-            cat lint_output.txt >> $GITHUB_STEP_SUMMARY
-            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-          fi
-
       - name: Post Lint Comment
         if: always()
         uses: actions/github-script@v7
         with:
           script: |
+            if [ "${{ job.status }}" = "success" ]; then
+              const output = `### 🔍 Lint Results
+                ✅ Lint passed successfully in ${{ steps.lint.outputs.duration }} seconds`;
+            else
+              const output = `### 🔍 Lint Results
+                ❌ Lint failed`;
+              "\`\`\`" >> output
+              cat lint_output.txt >> output
+              "\`\`\`" >> output
+            fi
             github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: process.env.GITHUB_STEP_SUMMARY
+              body: output
             });
 
   test:
@@ -174,11 +165,6 @@ jobs:
           name: coverage-report
           path: coverage/
           retention-days: 30
-
-      - name: Create Test Summary
-        if: always()
-        run: |
-
 
       - name: Post Test Summary Comment
         if: always()
