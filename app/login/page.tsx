@@ -1,5 +1,6 @@
 "use client";
 
+import RestoreBackup from "@/app/components/backup/RestoreBackup";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 import {
   Alert,
@@ -22,7 +23,6 @@ import {
 } from "@mui/material";
 import { useRouter, useSearchParams } from "next/navigation";
 import React, { Suspense, useEffect, useMemo, useRef, useState } from "react";
-import RestoreBackup from "../components/backup/RestoreBackup";
 import { useAuth } from "../lib/auth/auth-context";
 
 // Types for user tile
