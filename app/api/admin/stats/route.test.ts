@@ -29,9 +29,9 @@ describe("Admin Stats API", () => {
     isAdmin: true,
   };
 
-  const mockNonAdminUser = {
+  const mockRegularUser = {
     id: "user-id",
-    username: "user",
+    username: "testuser",
     isAdmin: false,
   };
 
@@ -47,7 +47,7 @@ describe("Admin Stats API", () => {
       // Mock database counts
       vi.mocked(prisma.user.count).mockResolvedValue(10);
       vi.mocked(prisma.urlGroup.count).mockResolvedValue(5);
-      vi.mocked(prisma.url.count).mockResolvedValue(20);
+      vi.mocked(prisma.url.count).mockResolvedValue(25);
 
       const response = await GET();
       const data = await response.json();
@@ -56,7 +56,7 @@ describe("Admin Stats API", () => {
       expect(data).toEqual({
         totalUsers: 10,
         totalUrlGroups: 5,
-        totalUrls: 20,
+        totalUrls: 25,
       });
 
       // Verify database calls
@@ -81,7 +81,7 @@ describe("Admin Stats API", () => {
     });
 
     it("should return 403 when authenticated as non-admin", async () => {
-      vi.mocked(verifyToken).mockResolvedValue(mockNonAdminUser);
+      vi.mocked(verifyToken).mockResolvedValue(mockRegularUser);
 
       const response = await GET();
       const data = await response.json();

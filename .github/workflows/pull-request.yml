@@ -75,7 +75,7 @@ jobs:
         env:
           DATABASE_URL: "file:./test.db"
         run: |
-          npm run dev:cleanup
+          npm run cleanup:dev
 
       - name: Post Build Comment
         if: always()
