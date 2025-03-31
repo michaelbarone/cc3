@@ -23,7 +23,7 @@
     "prepare": "husky"
   },
   "prisma": {
-    "seed": "ts-node prisma/seed.ts"
+    "seed": "npx tsx prisma/seed.ts"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
