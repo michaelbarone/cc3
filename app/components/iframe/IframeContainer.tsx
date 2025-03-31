@@ -131,6 +131,7 @@ const IframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
           wrapper.style.overflow = "hidden";
           wrapper.style.pointerEvents = "auto";
           wrapper.style.visibility = urlId === activeUrlId ? "visible" : "hidden";
+          wrapper.style.display = urlId === activeUrlId ? "block" : "none";
           wrapper.style.zIndex = urlId === activeUrlId ? "1" : "0";
 
           // Create new iframe
@@ -213,6 +214,20 @@ const IframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
       return () => {
         observer.disconnect();
         initialized.current = false;
+
+        // Remove all iframes
+        Object.values(iframeRefs.current).forEach((iframe) => {
+          if (iframe.parentElement) {
+            iframe.parentElement.remove();
+          }
+        });
+        iframeRefs.current = {};
+
+        // Only remove the global container if it's empty and this is the last instance
+        if (container && container.childNodes.length === 0) {
+          container.remove();
+          globalIframeContainer = null;
+        }
       };
     }, [urlGroups, activeUrlId, isMobile, onLoad, onError]);
 
@@ -235,43 +250,43 @@ const IframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
           wrapper.style.zIndex = isActive ? "1" : "0";
           wrapper.style.pointerEvents = isActive ? "auto" : "none";
 
-          // If this is the active iframe, ensure it's loaded
-          if (isActive) {
-            const dataSrc = iframe.getAttribute("data-src");
-            if (dataSrc && (!iframe.src || iframe.src === "about:blank")) {
-              iframe.src = dataSrc;
+          // Load the iframe content if it's active and not already loaded
+          if (isActive && (!iframe.src || iframe.src === "about:blank")) {
+            const effectiveUrl = iframe.getAttribute("data-src");
+            if (effectiveUrl) {
+              iframe.src = effectiveUrl;
             }
           }
         }
       });
     }, [activeUrlId]);
 
-    // Expose methods via ref
+    // Expose control methods via ref
     useImperativeHandle(
       ref,
       () => ({
         resetIframe: (urlId: string) => {
           const iframe = iframeRefs.current[urlId];
           if (iframe) {
-            const url = iframe.getAttribute("data-src");
-            if (url) {
-              iframe.src = url;
+            const dataSrc = iframe.getAttribute("data-src");
+            if (dataSrc) {
+              iframe.src = dataSrc;
             }
           }
         },
         unloadIframe: (urlId: string) => {
           const iframe = iframeRefs.current[urlId];
           if (iframe) {
-            iframe.src = "";
+            iframe.src = "about:blank";
             onUnload?.(urlId);
           }
         },
         reloadUnloadedIframe: (urlId: string) => {
           const iframe = iframeRefs.current[urlId];
-          if (iframe) {
-            const url = iframe.getAttribute("data-src");
-            if (url) {
-              iframe.src = url;
+          if (iframe && (!iframe.src || iframe.src === "about:blank")) {
+            const dataSrc = iframe.getAttribute("data-src");
+            if (dataSrc) {
+              iframe.src = dataSrc;
             }
           }
         },

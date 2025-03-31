@@ -1,5 +1,12 @@
-import { DELETE as deleteUser, GET as getUser, PUT as updateUser } from "@/app/api/admin/users/[id]/route";
-import { GET as getUserUrlGroups, PUT as updateUserUrlGroups } from "@/app/api/admin/users/[id]/url-groups/route";
+import {
+  DELETE as deleteUser,
+  GET as getUser,
+  PUT as updateUser,
+} from "@/app/api/admin/users/[id]/route";
+import {
+  GET as getUserUrlGroups,
+  PUT as updateUserUrlGroups,
+} from "@/app/api/admin/users/[id]/url-groups/route";
 import { POST as createUser, GET as getUsersList } from "@/app/api/admin/users/route";
 import { verifyToken } from "@/app/lib/auth/jwt";
 import { hashPassword } from "@/app/lib/auth/password";
@@ -289,9 +296,9 @@ describe("Admin User Management API", () => {
 
     it("should return user's URL groups when authenticated as admin", async () => {
       (prisma.userUrlGroup.findMany as any).mockResolvedValue(
-        mockUrlGroups.map(group => ({
+        mockUrlGroups.map((group) => ({
           urlGroup: group,
-        }))
+        })),
       );
 
       const response = await getUserUrlGroups(new NextRequest("http://localhost"), mockProps);
@@ -328,7 +335,7 @@ describe("Admin User Management API", () => {
         where: { userId: mockRegularUser.id },
       });
       expect(prisma.userUrlGroup.createMany).toHaveBeenCalledWith({
-        data: mockUrlGroupIds.map(groupId => ({
+        data: mockUrlGroupIds.map((groupId) => ({
           userId: mockRegularUser.id,
           urlGroupId: groupId,
         })),

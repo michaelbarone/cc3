@@ -102,8 +102,12 @@ export async function GET() {
   try {
     const userData = await verifyToken();
 
-    if (!userData || !userData.isAdmin) {
+    if (!userData) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    if (!userData.isAdmin) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     // User Statistics
@@ -306,6 +310,6 @@ export async function GET() {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
     console.error("Error fetching statistics:", error);
-    return NextResponse.json({ error: "Failed to fetch statistics" }, { status: 500 });
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }

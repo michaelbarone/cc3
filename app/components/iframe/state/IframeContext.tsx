@@ -1,7 +1,7 @@
 "use client";
 
-import { createContext, useContext, useReducer, ReactNode, useEffect } from "react";
 import { IframeState, IframeStatus } from "@/app/types/iframe";
+import { createContext, ReactNode, useContext, useEffect, useReducer } from "react";
 
 // Action types
 type IframeAction =
@@ -43,12 +43,12 @@ function iframeReducer(state: IframeContextState, action: IframeAction): IframeC
     if (!state.states[urlId]) {
       state.states[urlId] = {
         id: urlId,
-        status: "inactive-unloaded",
+        status: state.activeUrlId === urlId ? "active-unloaded" : "inactive-unloaded",
         error: null,
         lastActivity: Date.now(),
-        idleTimeout: 10, // Default 10 minutes
         url: "",
         urlMobile: null,
+        idleTimeout: 10, // Default 10 minutes
       };
     }
   };
@@ -158,30 +158,26 @@ function iframeReducer(state: IframeContextState, action: IframeAction): IframeC
       const { urlId } = action.payload;
       ensureUrlState(urlId);
 
-      // Update previous active URL to inactive state
-      const prevState = state.activeUrlId
-        ? {
-            ...state.states,
-            [state.activeUrlId]: {
-              ...state.states[state.activeUrlId],
-              status: state.states[state.activeUrlId].status.replace(
-                "active",
-                "inactive",
-              ) as IframeStatus,
-            },
-          }
-        : state.states;
+      // If there was a previous active URL, update its state
+      if (state.activeUrlId && state.states[state.activeUrlId]) {
+        state.states[state.activeUrlId] = {
+          ...state.states[state.activeUrlId],
+          status: state.states[state.activeUrlId].status.replace(
+            "active",
+            "inactive",
+          ) as IframeStatus,
+        };
+      }
 
       // Update new active URL
+      state.states[urlId] = {
+        ...state.states[urlId],
+        status: state.states[urlId].status.replace("inactive", "active") as IframeStatus,
+      };
+
       return {
+        ...state,
         activeUrlId: urlId,
-        states: {
-          ...prevState,
-          [urlId]: {
-            ...prevState[urlId],
-            status: prevState[urlId].status.replace("inactive", "active") as IframeStatus,
-          },
-        },
       };
     }
 

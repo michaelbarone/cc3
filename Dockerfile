@@ -14,7 +14,12 @@ RUN npm ci --only=production --no-audit
 FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
+# Copy source files, excluding test files and test config
 COPY . .
+RUN find . -name "*.test.*" -type f -delete && \
+    find . -name "__tests__" -type d -exec rm -rf {} + && \
+    find . -name "test" -type d -exec rm -rf {} + && \
+    rm -f vitest.config.ts
 
 # Generate Prisma client
 RUN npx prisma generate

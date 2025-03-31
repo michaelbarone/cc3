@@ -6,13 +6,19 @@ export default defineConfig({
   plugins: [react()],
   test: {
     environment: "happy-dom",
-    setupFiles: ["./__tests__/setup.ts"],
-    include: ["**/__tests__/**/*.test.{ts,tsx}"],
+    setupFiles: ["./test/setup.ts"],
+    include: [
+      "app/**/*.test.{ts,tsx}", // Co-located test files
+      "test/smoke.test.tsx", // Only include specific test utility files
+    ],
     exclude: [
       "**/node_modules/**",
       "**/dist/**",
       "**/cypress/**",
       "**/.{idea,git,cache,output,temp}/**",
+      "**/mocks/**", // Exclude mock files
+      "test/setup.ts", // Exclude setup file
+      "test/utils/**", // Exclude test utilities
     ],
     coverage: {
       provider: "v8",
@@ -25,7 +31,6 @@ export default defineConfig({
         "test/**",
         "vite.config.ts",
         "**/*.test.{ts,tsx}",
-        "**/__tests__/**",
         "**/mocks/**",
       ],
       include: ["app/**/*.{ts,tsx}", "lib/**/*.{ts,tsx}"],

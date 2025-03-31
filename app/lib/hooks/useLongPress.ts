@@ -92,8 +92,6 @@ export function useLongPress({
 
   const onMouseDown = useCallback(
     (e: React.MouseEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
       target.current = e.currentTarget as HTMLElement;
       const urlId = target.current.getAttribute("data-url-id");
       if (urlId) {
@@ -105,8 +103,6 @@ export function useLongPress({
 
   const onMouseUp = useCallback(
     (e: React.MouseEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
       handlePressEnd();
     },
     [handlePressEnd],
@@ -114,7 +110,6 @@ export function useLongPress({
 
   const onMouseLeave = useCallback(
     (e: React.MouseEvent) => {
-      e.preventDefault();
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
       }
@@ -127,8 +122,7 @@ export function useLongPress({
 
   const onTouchStart = useCallback(
     (e: React.TouchEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
+      e.preventDefault(); // Prevent scrolling
       target.current = e.currentTarget as HTMLElement;
       const urlId = target.current.getAttribute("data-url-id");
       if (urlId) {
@@ -140,8 +134,7 @@ export function useLongPress({
 
   const onTouchEnd = useCallback(
     (e: React.TouchEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
+      e.preventDefault(); // Prevent scrolling
       handlePressEnd();
     },
     [handlePressEnd],

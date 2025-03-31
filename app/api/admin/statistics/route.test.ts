@@ -113,7 +113,7 @@ describe("Statistics API Endpoints", () => {
 
       (prisma.url.aggregate as any).mockResolvedValue({ _count: { _all: 200 } });
       (prisma.$queryRaw as any).mockImplementation((query: any) => {
-        const queryStr = query?.values?.[0] ?? '';
+        const queryStr = query?.values?.[0] ?? "";
         if (queryStr.includes('"urlMobile"')) {
           return Promise.resolve([{ withMobile: BigInt(50), desktopOnly: BigInt(150) }]);
         }
@@ -187,11 +187,17 @@ describe("Statistics API Endpoints", () => {
       });
 
       // Verify BigInt values are converted to numbers
-      expect(typeof data.system.urls.withMobileVersion).toBe('number');
-      expect(typeof data.system.urls.desktopOnly).toBe('number');
-      expect(typeof data.system.urls.orphaned).toBe('number');
-      expect(data.activity.mostAccessedUrls.every((url: any) => typeof url.count === 'number')).toBe(true);
-      expect(data.urlGroups.mostAssigned.every((group: any) => typeof group.userCount === 'number' && typeof group.urlCount === 'number')).toBe(true);
+      expect(typeof data.system.urls.withMobileVersion).toBe("number");
+      expect(typeof data.system.urls.desktopOnly).toBe("number");
+      expect(typeof data.system.urls.orphaned).toBe("number");
+      expect(
+        data.activity.mostAccessedUrls.every((url: any) => typeof url.count === "number"),
+      ).toBe(true);
+      expect(
+        data.urlGroups.mostAssigned.every(
+          (group: any) => typeof group.userCount === "number" && typeof group.urlCount === "number",
+        ),
+      ).toBe(true);
     });
 
     it("should return 401 when not authenticated", async () => {

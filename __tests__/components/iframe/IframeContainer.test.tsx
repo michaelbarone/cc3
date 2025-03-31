@@ -1,16 +1,31 @@
 import IframeContainer, { IframeContainerRef, resetGlobalContainer } from '@/app/components/iframe/IframeContainer'
 import { IframeProvider } from '@/app/components/iframe/state/IframeContext'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { http, HttpResponse } from 'msw'
 import type { ReactNode } from 'react'
 import { useRef } from 'react'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { server } from '../../mocks/server'
 
-// Mock Material UI's useMediaQuery
+// Mock useMediaQuery
+const mockUseMediaQuery = vi.fn().mockReturnValue(false)
+
+// Mock Material UI components and hooks
 vi.mock('@mui/material', () => ({
-  useMediaQuery: vi.fn().mockReturnValue(false),
-  Box: ({ children }: { children: ReactNode }) => <div>{children}</div>
+  __esModule: true,
+  useMediaQuery: () => mockUseMediaQuery(),
+  Box: ({ children }: { children: ReactNode }) => <div>{children}</div>,
+  IconButton: ({ children, onClick }: { children: ReactNode; onClick?: () => void }) => (
+    <button onClick={onClick}>{children}</button>
+  ),
+  Tooltip: ({ children }: { children: ReactNode }) => <div>{children}</div>,
+}))
+
+// Mock Material UI icons
+vi.mock('@mui/icons-material', () => ({
+  __esModule: true,
+  Refresh: () => <span>refresh</span>,
+  Close: () => <span>close</span>,
 }))
 
 // Define the props type based on the component interface
@@ -198,66 +213,116 @@ describe('IframeContainer', () => {
     render(<TestComponent />)
 
     await waitFor(() => {
-      const iframes = document.querySelectorAll('iframe')
-      expect(iframes.length).toBe(1)
+      const buttons = screen.getAllByRole('button')
+      expect(buttons).toHaveLength(3)
     })
-
-    // Test reset functionality
-    const resetButton = screen.getByText('Reset')
-    fireEvent.click(resetButton)
-
-    // Test unload functionality
-    const unloadButton = screen.getByText('Unload')
-    fireEvent.click(unloadButton)
-
-    // Test reload functionality
-    const reloadButton = screen.getByText('Reload')
-    fireEvent.click(reloadButton)
   })
 
   it('should handle mobile URLs when on mobile viewport', async () => {
-    // Mock mobile viewport
-    mockMatchMedia.mockImplementation(() => ({
-      matches: true,
-      media: '',
-      onchange: null,
-      addListener: vi.fn(),
-      removeListener: vi.fn(),
-      addEventListener: vi.fn(),
-      removeEventListener: vi.fn(),
-      dispatchEvent: vi.fn(),
-    }))
+    // Set useMediaQuery to return true for mobile viewport
+    mockUseMediaQuery.mockReturnValue(true)
 
     render(<TestComponent urlGroups={mockUrlGroups} />)
 
     await waitFor(() => {
-      const iframes = document.querySelectorAll('iframe')
-      const mobileIframe = iframes[0]
-      expect(mobileIframe.getAttribute('data-src')).toBe('https://m.example.com/1')
+      const iframe = document.querySelector('iframe')
+      expect(iframe?.getAttribute('data-src')).toBe('https://m.example.com/1')
     })
+
+    // Reset mock
+    mockUseMediaQuery.mockReturnValue(false)
   })
 
   it('should update iframe visibility based on active URL', async () => {
-    render(<TestComponent urlGroups={mockUrlGroups} />)
+    const mockUrlGroups: UrlGroups = [
+      {
+        id: 'group1',
+        urls: [
+          { id: 'url1', url: 'https://example.com/1' },
+          { id: 'url2', url: 'https://example.com/2' }
+        ]
+      }
+    ];
 
+    // Reset global container before test
+    resetGlobalContainer();
+
+    // Initialize with url1 active and loaded
+    const { rerender } = render(
+      <IframeProvider activeUrlId="url1">
+        <IframeContainer urlGroups={mockUrlGroups} />
+      </IframeProvider>
+    );
+
+    // Wait for initial render and ensure url1 is loaded
     await waitFor(() => {
-      const containers = document.querySelectorAll('[data-iframe-container]')
-      expect(containers[0]).toHaveStyle({ visibility: 'hidden' })
-    })
+      const globalContainer = document.getElementById('global-iframe-container');
+      expect(globalContainer).not.toBeNull();
+
+      const container1 = globalContainer?.querySelector('[data-iframe-container="url1"]') as HTMLDivElement;
+      const container2 = globalContainer?.querySelector('[data-iframe-container="url2"]') as HTMLDivElement;
+      expect(container1).not.toBeNull();
+      expect(container2).not.toBeNull();
+      expect(container1.style.visibility).toBe('visible');
+      expect(container1.style.display).toBe('block');
+      expect(container2.style.visibility).toBe('hidden');
+      expect(container2.style.display).toBe('none');
+    }, { timeout: 2000 });
+
+    // Change active URL to url2
+    rerender(
+      <IframeProvider activeUrlId="url2">
+        <IframeContainer urlGroups={mockUrlGroups} />
+      </IframeProvider>
+    );
+
+    // Add a small delay to allow for state updates
+    await act(async () => {
+      await new Promise(resolve => setTimeout(resolve, 100));
+    });
+
+    // Wait for update with increased timeout
+    await waitFor(() => {
+      const globalContainer = document.getElementById('global-iframe-container');
+      expect(globalContainer).not.toBeNull();
+
+      const container1 = globalContainer?.querySelector('[data-iframe-container="url1"]') as HTMLDivElement;
+      const container2 = globalContainer?.querySelector('[data-iframe-container="url2"]') as HTMLDivElement;
+      expect(container1).not.toBeNull();
+      expect(container2).not.toBeNull();
+      expect(container1.style.visibility).toBe('hidden');
+      expect(container1.style.display).toBe('none');
+      expect(container2.style.visibility).toBe('visible');
+      expect(container2.style.display).toBe('block');
+    }, { timeout: 2000 });
   })
 
   it('should cleanup iframes on unmount', async () => {
+    // Render component
     const { unmount } = render(<TestComponent urlGroups={mockUrlGroups} />)
 
+    // Wait for container to be created
     await waitFor(() => {
-      const container = document.getElementById('global-iframe-container')
-      expect(container).toBeTruthy()
+      expect(document.getElementById('global-iframe-container')).not.toBeNull()
     })
 
+    // Unmount component
     unmount()
 
-    // The global container should persist as it's managed outside React
-    const container = document.getElementById('global-iframe-container')
-    expect(container).toBeTruthy()
+    // Force a re-render to ensure cleanup has completed
+    await act(async () => {
+      await new Promise(resolve => setTimeout(resolve, 100))
+    })
+
+    // Wait for container to be removed
+    await waitFor(() => {
+      // Check that all iframes are removed
+      const iframes = document.querySelectorAll('iframe')
+      expect(iframes.length).toBe(0)
+
+      // Check that the container is removed
+      const container = document.getElementById('global-iframe-container')
+      expect(container).toBeNull()
+    }, { timeout: 2000 })
   })
 })

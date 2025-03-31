@@ -1,4 +1,4 @@
-import { AuthProvider } from '@/app/providers/auth-provider'
+import { AuthProvider } from '@/app/lib/auth/auth-context'
 import { theme } from '@/app/theme'
 import { ThemeProvider } from '@mui/material/styles'
 import { render, RenderOptions } from '@testing-library/react'

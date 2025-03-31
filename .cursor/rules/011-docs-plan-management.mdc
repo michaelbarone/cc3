@@ -533,13 +533,109 @@ actions:
             - Must be updated in real-time as work progresses
             - Use [X] for completed items, [ ] for pending items
             - Include timestamps for all updates
+
+            Structure and Update Flow:
+            ```markdown
+            # Task Name
+
+            ## Current Status
+            ### YYYY-MM-DD HH:mm
+
+            **Status**: [Planning|In Progress|Completed|Blocked]
+            - What's working: [Current achievements]
+            - What's not: [Current challenges]
+            - Blocking issues: [If any]
+            - Next actions: [Immediate next steps]
+
+            ## Problem Analysis
+            [... analysis sections ...]
+
+            ## Implementation Steps
+            1. [ ] Step One
+               - [ ] Subtask A
+               - [X] Subtask B  # Mark as complete in-place
+
+            ## Progress History
+            ### YYYY-MM-DD HH:mm - Brief Title
+            - ✓ Completed: [Major milestone or achievement]
+            - 🤔 Decisions: [Key decisions made]
+            - ❌ Issues: [Problems encountered]
+            - 📚 Documentation: [Documentation updates]
+            - ⏭️ Next: [Next major focus]
+            ```
+
+            Update Rules:
+            1. Current Status:
+               - Update timestamp and status first
+               - Reflect current state of work
+               - List immediate achievements and challenges
+               - NEVER duplicate completed items here
+
+            2. Implementation Steps:
+               - Mark items complete with [X] in-place
+               - Update parent tasks when all subtasks complete
+               - DO NOT move or remove completed items
+               - Keep structure intact for clarity
+
+            3. Progress History:
+               - Add new entries at TOP
+               - Only record MAJOR milestones
+               - Keep entries concise
+               - Focus on decisions and learnings
+               - DO NOT duplicate task checklist here
+
+            Example of Correct Updates:
             ```markdown
             ## Current Status
-            ### 2025-03-19 15:45
+            ### 2025-03-30 21:30
 
             **Status**: In Progress
-            - [X] Visual Design Updates completed
-            - [ ] Accessibility Enhancements pending
+            - What's working: File structure reorganized
+            - What's not: Import paths need updating
+            - Blocking issues: None
+            - Next actions: Update configuration
+
+            ## Implementation Steps
+            1. [X] Preparation Phase
+               - [X] Document current structure
+               - [X] Analyze dependencies
+               - [X] Plan new organization
+
+            2. [ ] Configuration Updates
+               - [ ] Update test patterns
+               - [ ] Move setup files
+
+            ## Progress History
+            ### 2025-03-30 21:30 - Completed Preparation
+            - ✓ Completed: Preparation phase analysis
+            - 🤔 Decisions: Chose co-located test structure
+            - ❌ Issues: None encountered
+            - 📚 Documentation: Updated plan with findings
+            - ⏭️ Next: Begin configuration updates
+            ```
+
+            Example of Incorrect Updates:
+            ```markdown
+            ## Current Status
+            ### 2025-03-30 21:30
+
+            **Status**: In Progress
+            - What's working:
+              - [X] Document current structure  # DON'T duplicate checklist here
+              - [X] Analyze dependencies
+            - What's not: Import paths
+            - Next actions: Configuration
+
+            ## Implementation Steps
+            1. Preparation Phase  # DON'T remove structure
+               - Document current structure
+               - Analyze dependencies
+
+            ## Progress History
+            ### 2025-03-30 21:30 - Implementation Progress
+            - [X] Document current structure  # DON'T duplicate checklist here
+            - [X] Analyze dependencies
+            - [ ] Update configuration  # DON'T mix pending items
             ```
 
          b) Main Project Plan (plan.md):

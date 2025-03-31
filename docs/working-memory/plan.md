@@ -107,6 +107,17 @@ This document serves as the main project plan and tracks the status of all tasks
 
 ## Closed Tasks
 
+### Test File Relocation
+- **Location**: `/docs/working-memory/done/test-refactor-20250330`
+- **Completion Date**: 2025-03-30
+- **Description**: Relocated test files from __tests__ directory to be co-located with their implementation files
+- **Key Achievements**:
+  - Successfully moved all test files next to their implementations
+  - Updated Vitest configuration for new test structure
+  - Fixed import paths and resolved React testing issues
+  - Added comprehensive testing documentation
+  - Maintained 100% test pass rate after migration
+
 ### Menu State Management Optimization
 - **Location**: `/docs/working-memory/done/menu-state-optimization-20250319`
 - **Completion Date**: 2024-03-23

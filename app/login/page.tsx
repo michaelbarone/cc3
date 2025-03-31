@@ -217,7 +217,11 @@ export default function LoginPage() {
       await performLogin(selectedUser, password);
     } catch (err) {
       console.error("Auth error:", err);
-      setError("An unexpected error occurred");
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("An unexpected error occurred");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -228,10 +232,10 @@ export default function LoginPage() {
     try {
       await login(user.username, pwd);
       // Redirect to dashboard or requested page
-      router.push(redirectPath);
+      router.replace(redirectPath);
     } catch (error) {
       if (error instanceof Error) {
-        setError(error.message || "Login failed");
+        setError(error.message);
       } else {
         setError("Login failed");
       }
@@ -248,7 +252,7 @@ export default function LoginPage() {
       } catch (error) {
         // Only show error if login fails
         if (error instanceof Error) {
-          setError(error.message || "Login failed");
+          setError(error.message);
         } else {
           setError("Login failed");
         }
@@ -485,7 +489,7 @@ export default function LoginPage() {
                         <Box
                           component="form"
                           onSubmit={handleSubmit}
-                          aria-label={`Password form for ${selectedUser?.username}`}
+                          aria-label={`Password form for ${user.username}`}
                           sx={{
                             position: "absolute",
                             bottom: 0,

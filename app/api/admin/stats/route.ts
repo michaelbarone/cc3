@@ -6,8 +6,12 @@ export async function GET() {
   try {
     const userData = await verifyToken();
 
-    if (!userData || !userData.isAdmin) {
+    if (!userData) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    if (!userData.isAdmin) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     // Get counts from database

@@ -94,8 +94,10 @@ describe("URL Groups API", () => {
                 iconPath: "/icons/test1.png",
                 idleTimeoutMinutes: 30,
                 displayOrder: 1,
-                createdAt: mockUrlGroups.userUrlGroups[0].urlGroup.urls[0].url.createdAt.toISOString(),
-                updatedAt: mockUrlGroups.userUrlGroups[0].urlGroup.urls[0].url.updatedAt.toISOString(),
+                createdAt:
+                  mockUrlGroups.userUrlGroups[0].urlGroup.urls[0].url.createdAt.toISOString(),
+                updatedAt:
+                  mockUrlGroups.userUrlGroups[0].urlGroup.urls[0].url.updatedAt.toISOString(),
               },
               {
                 id: "url2",
@@ -105,8 +107,10 @@ describe("URL Groups API", () => {
                 iconPath: "/icons/test2.png",
                 idleTimeoutMinutes: null,
                 displayOrder: 2,
-                createdAt: mockUrlGroups.userUrlGroups[0].urlGroup.urls[1].url.createdAt.toISOString(),
-                updatedAt: mockUrlGroups.userUrlGroups[0].urlGroup.urls[1].url.updatedAt.toISOString(),
+                createdAt:
+                  mockUrlGroups.userUrlGroups[0].urlGroup.urls[1].url.createdAt.toISOString(),
+                updatedAt:
+                  mockUrlGroups.userUrlGroups[0].urlGroup.urls[1].url.updatedAt.toISOString(),
               },
             ],
           },
