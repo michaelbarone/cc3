@@ -171,11 +171,12 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
+            const output = `### 🧪 Test Results`;
             if ( "${{ job.status }}" == "success" ) {
-              const output = `### 🧪 Test Results
+              output = `### 🧪 Test Results
                 ✅ Tests completed successfully in ${{ steps.test.outputs.duration }} seconds`;
             } else {
-              const output = `### 🧪 Test Results
+              output = `### 🧪 Test Results
                 ❌ Tests failed
                 Please check the test logs for more details.`;
             }
