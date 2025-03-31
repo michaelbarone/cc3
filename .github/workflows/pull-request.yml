@@ -155,7 +155,7 @@ jobs:
         id: test
         run: |
           start_time=$(date +%s)
-          npm test:coverage
+          npm run test:coverage
           end_time=$(date +%s)
           duration=$((end_time - start_time))
           echo "duration=$duration" >> $GITHUB_OUTPUT
