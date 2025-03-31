@@ -8,7 +8,7 @@ export interface Url {
   urlMobile: string | null;
   iconPath: string | null;
   displayOrder: number;
-  idleTimeoutMinutes: number | null;
+  idleTimeoutMinutes?: number;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -16,7 +16,7 @@ export interface Url {
 export interface UrlGroup {
   id: string;
   name: string;
-  description: string | null;
+  description?: string;
   urls: Url[];
   createdAt?: string;
   updatedAt?: string;

@@ -21,7 +21,7 @@ import {
   useTheme,
 } from "@mui/material";
 import { useRouter, useSearchParams } from "next/navigation";
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import RestoreBackup from "../components/backup/RestoreBackup";
 import { useAuth } from "../lib/auth/auth-context";
 
@@ -43,7 +43,7 @@ interface AppConfig {
   registrationEnabled: boolean;
 }
 
-export default function LoginPage() {
+function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectPath = searchParams.get("redirect") || "/";
@@ -591,5 +591,13 @@ export default function LoginPage() {
         </Container>
       </ThemeProvider>
     </ThemeProvider>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <LoginContent />
+    </Suspense>
   );
 }

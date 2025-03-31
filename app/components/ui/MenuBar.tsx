@@ -93,7 +93,7 @@ const convertUrlToOldFormat = (
           url: string;
           urlMobile: string | null;
           iconPath: string | null;
-          idleTimeoutMinutes: number | null;
+          idleTimeoutMinutes?: number;
           createdAt: Date;
           updatedAt: Date;
         };

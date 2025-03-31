@@ -8,7 +8,7 @@ export const userHandlers = [
       users: mockUsers.map(user => ({
         id: user.id,
         username: user.username,
-        is_admin: user.is_admin
+        is_admin: user.isAdmin
       }))
     })
   }),

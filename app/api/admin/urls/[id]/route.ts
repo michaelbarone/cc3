@@ -1,22 +1,31 @@
 import { verifyToken } from "@/app/lib/auth/jwt";
 import { prisma } from "@/app/lib/db/prisma";
 import fs from "fs/promises";
+import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 import path from "path";
 
-type Props = {
+export interface RouteContext {
   params: Promise<{ id: string }>;
-};
+}
 
 // GET - Fetch a specific URL
-export async function GET(request: NextRequest, props: Props): Promise<NextResponse> {
+export async function GET(request: NextRequest, { params }: RouteContext): Promise<NextResponse> {
   try {
-    const userData = await verifyToken();
+    const cookieStore = await cookies();
+    const token = cookieStore.get("auth_token")?.value;
+
+    if (!token) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const userData = await verifyToken(token);
+
     if (!userData) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { id } = await props.params;
+    const { id } = await params;
 
     // Get the URL
     const url = await prisma.url.findUnique({
@@ -35,15 +44,22 @@ export async function GET(request: NextRequest, props: Props): Promise<NextRespo
 }
 
 // PUT - Update a URL
-export async function PUT(request: NextRequest, props: Props): Promise<NextResponse> {
+export async function PUT(request: NextRequest, { params }: RouteContext): Promise<NextResponse> {
   try {
-    const userData = await verifyToken();
+    const cookieStore = await cookies();
+    const token = cookieStore.get("auth_token")?.value;
+
+    if (!token) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const userData = await verifyToken(token);
 
     if (!userData || !userData.isAdmin) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const { id } = await props.params;
+    const { id } = await params;
 
     // Parse request body with error handling
     let requestData;
@@ -108,19 +124,27 @@ export async function PUT(request: NextRequest, props: Props): Promise<NextRespo
 // DELETE - Remove a URL
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: RouteContext,
   isTest: boolean = false,
 ): Promise<NextResponse> {
   try {
     // Skip auth verification in test mode
     if (!isTest) {
-      const isAdmin = await verifyToken(request);
-      if (!isAdmin) {
+      const cookieStore = await cookies();
+      const token = cookieStore.get("auth_token")?.value;
+
+      if (!token) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
+
+      const userData = await verifyToken(token);
+
+      if (!userData || !userData.isAdmin) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
       }
     }
 
-    const { id } = params;
+    const { id } = await params;
 
     // Get the URL to check if it has an icon
     const url = await prisma.url.findUnique({

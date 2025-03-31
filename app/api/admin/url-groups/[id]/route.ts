@@ -3,9 +3,9 @@ import { prisma } from "@/app/lib/db/prisma";
 import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 
-type Props = {
-  params: { id: string };
-};
+export interface RouteContext {
+  params: Promise<{ id: string }>;
+}
 
 interface UrlInGroup {
   id: string;
@@ -26,7 +26,7 @@ interface UrlGroup {
 }
 
 // GET - Fetch a specific URL group with its URLs
-export async function GET(request: NextRequest, props: Props): Promise<NextResponse> {
+export async function GET(request: NextRequest, { params }: RouteContext): Promise<NextResponse> {
   try {
     // Verify admin access
     const cookieStore = await cookies();
@@ -36,13 +36,13 @@ export async function GET(request: NextRequest, props: Props): Promise<NextRespo
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const userData = await verifyToken();
+    const userData = await verifyToken(token);
 
     if (!userData || !userData.isAdmin) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const { id } = props.params;
+    const { id } = await params;
 
     // First get the URL group
     const urlGroup = await prisma.$queryRaw<UrlGroup[]>`
@@ -87,7 +87,7 @@ export async function GET(request: NextRequest, props: Props): Promise<NextRespo
 }
 
 // PUT - Update a URL group
-export async function PUT(request: NextRequest, props: Props): Promise<NextResponse> {
+export async function PUT(request: NextRequest, { params }: RouteContext): Promise<NextResponse> {
   try {
     // Verify admin access
     const cookieStore = await cookies();
@@ -97,13 +97,13 @@ export async function PUT(request: NextRequest, props: Props): Promise<NextRespo
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const userData = await verifyToken();
+    const userData = await verifyToken(token);
 
     if (!userData || !userData.isAdmin) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const { id } = props.params;
+    const { id } = await params;
 
     // Check if URL group exists
     const existingUrlGroup = await prisma.urlGroup.findUnique({
@@ -139,7 +139,10 @@ export async function PUT(request: NextRequest, props: Props): Promise<NextRespo
 }
 
 // DELETE - Remove a URL group and all associated URLs
-export async function DELETE(request: NextRequest, props: Props): Promise<NextResponse> {
+export async function DELETE(
+  request: NextRequest,
+  { params }: RouteContext,
+): Promise<NextResponse> {
   try {
     // Verify admin access
     const cookieStore = await cookies();
@@ -149,13 +152,13 @@ export async function DELETE(request: NextRequest, props: Props): Promise<NextRe
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const userData = await verifyToken();
+    const userData = await verifyToken(token);
 
     if (!userData || !userData.isAdmin) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const { id } = props.params;
+    const { id } = await params;
 
     // Check if URL group exists
     const existingUrlGroup = await prisma.urlGroup.findUnique({

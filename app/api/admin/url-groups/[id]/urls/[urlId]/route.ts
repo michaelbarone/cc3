@@ -1,12 +1,13 @@
 import { verifyToken } from "@/app/lib/auth/jwt";
 import { db } from "@/app/lib/db";
+import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 
-interface Props {
-  params: {
+export interface RouteContext {
+  params: Promise<{
     id: string;
     urlId: string;
-  };
+  }>;
 }
 
 interface UrlInGroup {
@@ -16,15 +17,22 @@ interface UrlInGroup {
 }
 
 // PATCH - Update a URL in a group
-export async function PATCH(request: NextRequest, props: Props): Promise<NextResponse> {
+export async function PATCH(request: NextRequest, { params }: RouteContext): Promise<NextResponse> {
   try {
-    const isAdmin = await verifyToken(request);
+    const cookieStore = await cookies();
+    const token = cookieStore.get("auth_token")?.value;
 
-    if (!isAdmin) {
+    if (!token) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { id: groupId, urlId } = props.params;
+    const userData = await verifyToken(token);
+
+    if (!userData || !userData.isAdmin) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    const { id: groupId, urlId } = await params;
     const { displayOrder } = await request.json();
 
     // Check if the URL exists in the group
@@ -104,15 +112,25 @@ export async function PATCH(request: NextRequest, props: Props): Promise<NextRes
 }
 
 // DELETE - Remove a URL from a group
-export async function DELETE(request: NextRequest, props: Props): Promise<NextResponse> {
+export async function DELETE(
+  request: NextRequest,
+  { params }: RouteContext,
+): Promise<NextResponse> {
   try {
-    const isAdmin = await verifyToken(request);
+    const cookieStore = await cookies();
+    const token = cookieStore.get("auth_token")?.value;
 
-    if (!isAdmin) {
+    if (!token) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { id: groupId, urlId } = props.params;
+    const userData = await verifyToken(token);
+
+    if (!userData || !userData.isAdmin) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    const { id: groupId, urlId } = await params;
 
     // Check if the URL exists in the group
     const existingUrl = await db.urlsInGroups.findUnique({
@@ -170,15 +188,22 @@ export async function DELETE(request: NextRequest, props: Props): Promise<NextRe
 }
 
 // PUT - Update URL properties within a group
-export async function PUT(request: NextRequest, props: Props): Promise<NextResponse> {
+export async function PUT(request: NextRequest, { params }: RouteContext): Promise<NextResponse> {
   try {
-    const isAdmin = await verifyToken(request);
+    const cookieStore = await cookies();
+    const token = cookieStore.get("auth_token")?.value;
 
-    if (!isAdmin) {
+    if (!token) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { id: groupId, urlId } = props.params;
+    const userData = await verifyToken(token);
+
+    if (!userData || !userData.isAdmin) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    const { id: groupId, urlId } = await params;
     const { title, url, urlMobile, iconPath, idleTimeoutMinutes } = await request.json();
 
     // Check if the URL exists in the group

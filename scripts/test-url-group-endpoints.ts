@@ -57,7 +57,7 @@ async function main() {
       },
     );
 
-    const getResponse = await GET(getRequest, { params: { id: group.id } }, true);
+    const getResponse = await GET(getRequest, { params: Promise.resolve({ id: group.id }) }, true);
     const getResult = await getResponse.json();
 
     console.log("GET response:", getResult);
@@ -99,7 +99,11 @@ async function main() {
       },
     );
 
-    const deleteResponse = await DELETE(deleteRequest, { params: { id: group.id } }, true);
+    const deleteResponse = await DELETE(
+      deleteRequest,
+      { params: Promise.resolve({ id: group.id }) },
+      true,
+    );
     const deleteResult = await deleteResponse.json();
 
     console.log("DELETE response:", deleteResult);
@@ -125,7 +129,11 @@ async function main() {
       },
     );
 
-    const verifyResponse = await GET(verifyRequest, { params: { id: group.id } }, true);
+    const verifyResponse = await GET(
+      verifyRequest,
+      { params: Promise.resolve({ id: group.id }) },
+      true,
+    );
     const verifyResult = await verifyResponse.json();
 
     console.log("Verification GET response:", verifyResult);

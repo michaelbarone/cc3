@@ -1,11 +1,12 @@
 import { verifyToken } from "@/app/lib/auth/jwt";
 import { prisma } from "@/app/lib/db/prisma";
+import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 
-interface Props {
-  params: {
+export interface RouteContext {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 interface UrlInGroup {
@@ -17,16 +18,27 @@ interface UrlInGroup {
 // POST - Create a new URL within a URL group
 export async function POST(
   request: NextRequest,
-  props: Props,
+  { params }: RouteContext,
   isTest: boolean = false,
 ): Promise<NextResponse> {
   try {
     // Skip auth verification in test mode
-    if (!isTest && !(await verifyToken(request))) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!isTest) {
+      const cookieStore = await cookies();
+      const token = cookieStore.get("auth_token")?.value;
+
+      if (!token) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
+
+      const userData = await verifyToken(token);
+
+      if (!userData || !userData.isAdmin) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
     }
 
-    const { id: urlGroupId } = props.params;
+    const { id: urlGroupId } = await params;
 
     // Check if URL group exists
     const urlGroup = await prisma.urlGroup.findUnique({
@@ -146,15 +158,22 @@ export async function POST(
 }
 
 // PUT - Update URLs in a group
-export async function PUT(request: NextRequest, props: Props): Promise<NextResponse> {
+export async function PUT(request: NextRequest, { params }: RouteContext): Promise<NextResponse> {
   try {
-    const user = await verifyToken();
+    const cookieStore = await cookies();
+    const token = cookieStore.get("auth_token")?.value;
 
-    if (!user?.isAdmin) {
+    if (!token) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { id: groupId } = props.params;
+    const userData = await verifyToken(token);
+
+    if (!userData || !userData.isAdmin) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    const { id: groupId } = await params;
     const { urlIds } = await request.json();
 
     // Check if URL group exists
@@ -192,16 +211,27 @@ export async function PUT(request: NextRequest, props: Props): Promise<NextRespo
 // GET - List URLs in a group
 export async function GET(
   request: NextRequest,
-  { params }: Props,
+  { params }: RouteContext,
   isTest: boolean = false,
 ): Promise<NextResponse> {
   try {
     // Skip auth verification in test mode
-    if (!isTest && !(await verifyToken(request))) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!isTest) {
+      const cookieStore = await cookies();
+      const token = cookieStore.get("auth_token")?.value;
+
+      if (!token) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
+
+      const userData = await verifyToken(token);
+
+      if (!userData || !userData.isAdmin) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
     }
 
-    const { id: groupId } = params;
+    const { id: groupId } = await params;
 
     // First check if the group exists
     const group = await prisma.urlGroup.findUnique({
@@ -240,16 +270,27 @@ export async function GET(
 // DELETE - Remove URLs from a group
 export async function DELETE(
   request: NextRequest,
-  props: Props,
+  { params }: RouteContext,
   isTest: boolean = false,
 ): Promise<NextResponse> {
   try {
     // Skip auth verification in test mode
-    if (!isTest && !(await verifyToken(request))) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!isTest) {
+      const cookieStore = await cookies();
+      const token = cookieStore.get("auth_token")?.value;
+
+      if (!token) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
+
+      const userData = await verifyToken(token);
+
+      if (!userData || !userData.isAdmin) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
     }
 
-    const { id: groupId } = props.params;
+    const { id: groupId } = await params;
 
     // Check if URL group exists
     const urlGroup = await prisma.urlGroup.findUnique({

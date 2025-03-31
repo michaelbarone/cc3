@@ -83,7 +83,7 @@ async function main() {
       method: "DELETE",
     });
 
-    const response = await DELETE(mockRequest, { params: { id: url1.id } }, true);
+    const response = await DELETE(mockRequest, { params: Promise.resolve({ id: url1.id }) }, true);
     const result = await response.json();
 
     if (!response.ok) {

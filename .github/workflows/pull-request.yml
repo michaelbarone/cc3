@@ -65,11 +65,12 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
+            let output = `### 🏗️ Build Results`;
             if ( "${{ job.status }}" == "success" ) {
-              const output = `### 🏗️ Build Results
+              output = `### 🏗️ Build Results
                 ✅ Build completed successfully in ${{ steps.build.outputs.duration }} seconds`;
             } else {
-              const output = `### 🏗️ Build Results
+              output = `### 🏗️ Build Results
                 ❌ Build failed
                 Please check the build logs for more details.`;
             }
@@ -114,15 +115,16 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
+            let output = `### 🔍 Lint Results`;
             if ( "${{ job.status }}" == "success" ) {
-              const output = `### 🔍 Lint Results
+              output = `### 🔍 Lint Results
                 ✅ Lint passed successfully in ${{ steps.lint.outputs.duration }} seconds`;
             } else {
-              const output = `### 🔍 Lint Results
+              output = `### 🔍 Lint Results
                 ❌ Lint failed`;
-              "\`\`\`" >> output
-              cat lint_output.txt >> output
-              "\`\`\`" >> output
+              output += `\n\`\`\`\n`;
+              output += `cat lint_output.txt\n`;
+              output += `\`\`\`\n`;
             }
             github.rest.issues.createComment({
               issue_number: context.issue.number,

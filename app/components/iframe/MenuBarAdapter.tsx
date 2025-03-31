@@ -38,7 +38,7 @@ interface TransformedUrlGroup {
       url: string;
       urlMobile: string | null;
       iconPath: string | null;
-      idleTimeoutMinutes: number | null;
+      idleTimeoutMinutes?: number;
       displayOrder: number;
       createdAt: string;
       updatedAt: string;
@@ -132,7 +132,7 @@ export function MenuBarAdapter({ urlGroups, menuPosition }: MenuBarAdapterProps)
               url: url.url,
               urlMobile: url.urlMobile || null,
               iconPath: url.iconPath || null,
-              idleTimeoutMinutes: url.idleTimeoutMinutes || null,
+              idleTimeoutMinutes: url.idleTimeoutMinutes || undefined,
               displayOrder: url.displayOrder,
               createdAt: url.createdAt ? new Date(url.createdAt).toISOString() : "",
               updatedAt: url.updatedAt ? new Date(url.updatedAt).toISOString() : "",

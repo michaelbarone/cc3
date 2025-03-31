@@ -3,11 +3,11 @@ import { prisma } from "@/app/lib/db/prisma";
 import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 
-interface Props {
-  params: {
+export interface RouteContext {
+  params: Promise<{
     id: string;
     urlId: string;
-  };
+  }>;
 }
 
 interface UrlInGroup {
@@ -22,7 +22,7 @@ interface UrlInGroup {
 }
 
 // POST - Reorder a URL within a group
-export async function POST(request: NextRequest, props: Props): Promise<NextResponse> {
+export async function POST(request: NextRequest, { params }: RouteContext): Promise<NextResponse> {
   try {
     // Verify admin access
     const cookieStore = await cookies();
@@ -32,13 +32,13 @@ export async function POST(request: NextRequest, props: Props): Promise<NextResp
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const userData = await verifyToken();
+    const userData = await verifyToken(token);
 
     if (!userData || !userData.isAdmin) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const { id: groupId, urlId } = props.params;
+    const { id: groupId, urlId } = await params;
     const { direction } = await request.json();
 
     // Validate direction

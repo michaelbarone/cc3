@@ -1,5 +1,6 @@
 import { verifyToken } from "@/app/lib/auth/jwt";
 import { prisma } from "@/app/lib/db/prisma";
+import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 
 interface BatchOperation {
@@ -8,20 +9,30 @@ interface BatchOperation {
   displayOrder?: number;
 }
 
-interface Props {
-  params: {
+export interface RouteContext {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 // POST - Batch operations for URLs in a group
-export async function POST(request: NextRequest, { params }: Props): Promise<NextResponse> {
+export async function POST(request: NextRequest, { params }: RouteContext): Promise<NextResponse> {
   try {
     // Verify admin access
-    const token = await verifyToken();
-    if (!token?.isAdmin) {
+    const cookieStore = await cookies();
+    const token = cookieStore.get("auth_token")?.value;
+
+    if (!token) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+
+    const userData = await verifyToken(token);
+
+    if (!userData || !userData.isAdmin) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    const { id } = await params;
 
     const { operation, urlIds } = await request.json();
 
@@ -40,7 +51,7 @@ export async function POST(request: NextRequest, { params }: Props): Promise<Nex
 
     // Check if URL group exists
     const urlGroup = await prisma.urlGroup.findUnique({
-      where: { id: params.id },
+      where: { id: id },
     });
 
     if (!urlGroup) {
@@ -60,7 +71,7 @@ export async function POST(request: NextRequest, { params }: Props): Promise<Nex
       if (operation === "add") {
         // Get current maximum display order
         const maxDisplayOrder = await tx.urlsInGroups.aggregate({
-          where: { groupId: params.id },
+          where: { groupId: id },
           _max: { displayOrder: true },
         });
 
@@ -74,7 +85,7 @@ export async function POST(request: NextRequest, { params }: Props): Promise<Nex
               where: {
                 urlId_groupId: {
                   urlId,
-                  groupId: params.id,
+                  groupId: id,
                 },
               },
             });
@@ -83,7 +94,7 @@ export async function POST(request: NextRequest, { params }: Props): Promise<Nex
               return tx.urlsInGroups.create({
                 data: {
                   urlId,
-                  groupId: params.id,
+                  groupId: id,
                   displayOrder: displayOrder++,
                 },
               });
@@ -96,13 +107,13 @@ export async function POST(request: NextRequest, { params }: Props): Promise<Nex
         await tx.urlsInGroups.deleteMany({
           where: {
             urlId: { in: urlIds },
-            groupId: params.id,
+            groupId: id,
           },
         });
 
         // Reorder remaining URLs
         const remainingUrls = await tx.urlsInGroups.findMany({
-          where: { groupId: params.id },
+          where: { groupId: id },
           orderBy: { displayOrder: "asc" },
         });
 
@@ -112,7 +123,7 @@ export async function POST(request: NextRequest, { params }: Props): Promise<Nex
               where: {
                 urlId_groupId: {
                   urlId: url.urlId,
-                  groupId: params.id,
+                  groupId: id,
                 },
               },
               data: { displayOrder: index },
@@ -123,7 +134,7 @@ export async function POST(request: NextRequest, { params }: Props): Promise<Nex
         // Validate all URLs are in the group
         const existingUrls = await tx.urlsInGroups.findMany({
           where: {
-            groupId: params.id,
+            groupId: id,
             urlId: { in: urlIds },
           },
         });
@@ -139,7 +150,7 @@ export async function POST(request: NextRequest, { params }: Props): Promise<Nex
               where: {
                 urlId_groupId: {
                   urlId,
-                  groupId: params.id,
+                  groupId: id,
                 },
               },
               data: { displayOrder: index },
