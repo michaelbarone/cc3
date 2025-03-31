@@ -318,14 +318,14 @@ function LoginContent() {
                   mb: 2,
                 }}
               >
-                <img
+                <Image
                   src={appConfig.appLogo}
                   alt={`${appConfig.appName} logo`}
+                  fill
                   style={{
-                    width: "100%",
-                    height: "100%",
                     objectFit: "contain",
                   }}
+                  priority
                 />
               </Box>
             ) : null}
