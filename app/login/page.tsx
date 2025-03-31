@@ -21,6 +21,7 @@ import {
   createTheme,
   useTheme,
 } from "@mui/material";
+import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import React, { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "../lib/auth/auth-context";
