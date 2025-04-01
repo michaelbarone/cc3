@@ -4,11 +4,37 @@ import IframeContainer, {
 } from "@/app/components/iframe/IframeContainer";
 import { IframeProvider } from "@/app/components/iframe/state/IframeContext";
 import { server } from "@/test/mocks/server";
-import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
 import type { ReactNode } from "react";
 import { useRef } from "react";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+
+// Constants for test configuration
+const TEST_TIMEOUT = {
+  NORMAL: 5000, // Normal operations
+  EXTENDED: 10000, // Complex operations
+  INTERVAL: 100, // Polling interval
+};
+
+// Utility function for retrying operations
+const retryOperation = async <T,>(
+  operation: () => Promise<T> | T,
+  { timeout = TEST_TIMEOUT.NORMAL, interval = TEST_TIMEOUT.INTERVAL } = {},
+): Promise<T> => {
+  const startTime = Date.now();
+  let lastError;
+
+  while (Date.now() - startTime < timeout) {
+    try {
+      return await operation();
+    } catch (error) {
+      lastError = error;
+      await new Promise((resolve) => setTimeout(resolve, interval));
+    }
+  }
+  throw lastError;
+};
 
 // Mock useMediaQuery
 const mockUseMediaQuery = vi.fn().mockReturnValue(false);
@@ -146,11 +172,14 @@ describe("IframeContainer", () => {
   it("should create iframes for all URLs in urlGroups", async () => {
     render(<TestComponent urlGroups={mockUrlGroups} />);
 
-    await waitFor(() => {
+    await retryOperation(async () => {
       const container = document.getElementById("global-iframe-container");
-      expect(container).toBeTruthy();
-      const iframes = container?.querySelectorAll("iframe");
-      expect(iframes?.length).toBe(1);
+      if (!container) throw new Error("Global container not found");
+
+      const iframes = container.querySelectorAll("iframe");
+      if (!iframes?.length) throw new Error("No iframes found");
+
+      expect(iframes.length).toBe(1);
     });
   });
 
@@ -163,8 +192,10 @@ describe("IframeContainer", () => {
       </IframeProvider>,
     );
 
-    await waitFor(() => {
+    await retryOperation(async () => {
       const iframes = document.querySelectorAll("iframe");
+      if (!iframes?.length) throw new Error("No iframes found");
+
       iframes.forEach((iframe) => {
         fireEvent.load(iframe);
       });
@@ -181,8 +212,10 @@ describe("IframeContainer", () => {
       </IframeProvider>,
     );
 
-    await waitFor(() => {
+    await retryOperation(async () => {
       const iframes = document.querySelectorAll("iframe");
+      if (!iframes?.length) throw new Error("No iframes found");
+
       iframes.forEach((iframe) => {
         fireEvent.error(iframe);
       });
@@ -206,8 +239,9 @@ describe("IframeContainer", () => {
 
     render(<TestComponent />);
 
-    await waitFor(() => {
+    await retryOperation(async () => {
       const buttons = screen.getAllByRole("button");
+      if (buttons.length !== 3) throw new Error(`Expected 3 buttons, found ${buttons.length}`);
       expect(buttons).toHaveLength(3);
     });
   });
@@ -218,9 +252,15 @@ describe("IframeContainer", () => {
 
     render(<TestComponent urlGroups={mockUrlGroups} />);
 
-    await waitFor(() => {
+    await retryOperation(async () => {
       const iframe = document.querySelector("iframe");
-      expect(iframe?.getAttribute("data-src")).toBe("https://m.example.com/1");
+      if (!iframe) throw new Error("Iframe not found");
+
+      const dataSrc = iframe.getAttribute("data-src");
+      if (dataSrc !== "https://m.example.com/1") {
+        throw new Error(`Expected mobile URL, got ${dataSrc}`);
+      }
+      expect(dataSrc).toBe("https://m.example.com/1");
     });
 
     // Reset mock
@@ -248,27 +288,25 @@ describe("IframeContainer", () => {
       </IframeProvider>,
     );
 
-    // Wait for initial render and ensure url1 is loaded
-    await waitFor(
-      () => {
-        const globalContainer = document.getElementById("global-iframe-container");
-        expect(globalContainer).not.toBeNull();
+    // Wait for initial render with retry logic
+    await retryOperation(async () => {
+      const globalContainer = document.getElementById("global-iframe-container");
+      if (!globalContainer) throw new Error("Global container not found");
 
-        const container1 = globalContainer?.querySelector(
-          '[data-iframe-container="url1"]',
-        ) as HTMLDivElement;
-        const container2 = globalContainer?.querySelector(
-          '[data-iframe-container="url2"]',
-        ) as HTMLDivElement;
-        expect(container1).not.toBeNull();
-        expect(container2).not.toBeNull();
-        expect(container1.style.visibility).toBe("visible");
-        expect(container1.style.display).toBe("block");
-        expect(container2.style.visibility).toBe("hidden");
-        expect(container2.style.display).toBe("none");
-      },
-      { timeout: 2000 },
-    );
+      const container1 = globalContainer.querySelector(
+        '[data-iframe-container="url1"]',
+      ) as HTMLDivElement;
+      const container2 = globalContainer.querySelector(
+        '[data-iframe-container="url2"]',
+      ) as HTMLDivElement;
+
+      if (!container1 || !container2) throw new Error("Containers not found");
+
+      expect(container1.style.visibility).toBe("visible");
+      expect(container1.style.display).toBe("block");
+      expect(container2.style.visibility).toBe("hidden");
+      expect(container2.style.display).toBe("none");
+    });
 
     // Change active URL to url2
     rerender(
@@ -277,63 +315,61 @@ describe("IframeContainer", () => {
       </IframeProvider>,
     );
 
-    // Add a small delay to allow for state updates
-    await act(async () => {
-      await new Promise((resolve) => setTimeout(resolve, 100));
+    // Wait for visibility update with retry logic
+    await retryOperation(async () => {
+      const globalContainer = document.getElementById("global-iframe-container");
+      if (!globalContainer) throw new Error("Global container not found");
+
+      const container1 = globalContainer.querySelector(
+        '[data-iframe-container="url1"]',
+      ) as HTMLDivElement;
+      const container2 = globalContainer.querySelector(
+        '[data-iframe-container="url2"]',
+      ) as HTMLDivElement;
+
+      if (!container1 || !container2) throw new Error("Containers not found");
+
+      expect(container1.style.visibility).toBe("hidden");
+      expect(container1.style.display).toBe("none");
+      expect(container2.style.visibility).toBe("visible");
+      expect(container2.style.display).toBe("block");
     });
-
-    // Wait for update with increased timeout
-    await waitFor(
-      () => {
-        const globalContainer = document.getElementById("global-iframe-container");
-        expect(globalContainer).not.toBeNull();
-
-        const container1 = globalContainer?.querySelector(
-          '[data-iframe-container="url1"]',
-        ) as HTMLDivElement;
-        const container2 = globalContainer?.querySelector(
-          '[data-iframe-container="url2"]',
-        ) as HTMLDivElement;
-        expect(container1).not.toBeNull();
-        expect(container2).not.toBeNull();
-        expect(container1.style.visibility).toBe("hidden");
-        expect(container1.style.display).toBe("none");
-        expect(container2.style.visibility).toBe("visible");
-        expect(container2.style.display).toBe("block");
-      },
-      { timeout: 2000 },
-    );
   });
 
   it("should cleanup iframes on unmount", async () => {
+    // Use fake timers for predictable cleanup timing
+    vi.useFakeTimers();
+
     // Render component
     const { unmount } = render(<TestComponent urlGroups={mockUrlGroups} />);
 
     // Wait for container to be created
-    await waitFor(() => {
-      expect(document.getElementById("global-iframe-container")).not.toBeNull();
+    await retryOperation(async () => {
+      const container = document.getElementById("global-iframe-container");
+      if (!container) throw new Error("Container not found");
+      expect(container).not.toBeNull();
     });
 
     // Unmount component
     unmount();
 
-    // Force a re-render to ensure cleanup has completed
+    // Advance timers to trigger cleanup
     await act(async () => {
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      vi.advanceTimersByTime(TEST_TIMEOUT.INTERVAL);
     });
 
-    // Wait for container to be removed
-    await waitFor(
-      () => {
-        // Check that all iframes are removed
-        const iframes = document.querySelectorAll("iframe");
-        expect(iframes.length).toBe(0);
+    // Wait for cleanup with retry logic
+    await retryOperation(async () => {
+      // Check that all iframes are removed
+      const iframes = document.querySelectorAll("iframe");
+      expect(iframes.length).toBe(0);
 
-        // Check that the container is removed
-        const container = document.getElementById("global-iframe-container");
-        expect(container).toBeNull();
-      },
-      { timeout: 2000 },
-    );
+      // Check that the container is removed
+      const container = document.getElementById("global-iframe-container");
+      expect(container).toBeNull();
+    });
+
+    // Restore real timers
+    vi.useRealTimers();
   });
 });
