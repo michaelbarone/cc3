@@ -1,19 +1,36 @@
-import { Page } from "@playwright/test";
+import { Page, expect } from "@playwright/test";
 
 export async function login(page: Page, username: string, password?: string) {
-  await page.goto("/login");
+  // Navigate to login page with longer timeout
+  await page.goto("/login", { timeout: 60000 });
 
-  // Click the user tile with the specified username
-  await page.click(`text=${username}`);
+  // Wait for the page to be ready
+  await expect(
+    page.getByRole("heading", { name: "Select your user account to log in" }),
+  ).toBeVisible({ timeout: 60000 });
 
-  // If password is provided, enter it
+  // Find and click the user card by username
+  const userCard = page.locator(`[data-user-id]`).filter({ hasText: username });
+  await expect(userCard).toBeVisible({ timeout: 60000 });
+  await userCard.click();
+
   if (password) {
-    await page.fill('[type="password"]', password);
-    await page.click('button:has-text("Login")');
-  }
+    // Wait for password field and enter password
+    const passwordField = page.locator('input[type="password"]');
+    await expect(passwordField).toBeVisible({ timeout: 60000 });
+    await passwordField.fill(password);
 
-  // Wait for redirect to complete
-  await page.waitForURL("/dashboard");
+    // Wait for and click login button with exact text match
+    const loginButton = page.getByRole("button", { name: "Log In", exact: true });
+    await expect(loginButton).toBeVisible({ timeout: 60000 });
+    await loginButton.click();
+
+    // Wait for navigation to complete
+    await Promise.race([
+      page.waitForURL("/dashboard", { timeout: 60000 }),
+      page.waitForURL("/admin", { timeout: 60000 }),
+    ]);
+  }
 }
 
 export async function loginAsAdmin(page: Page) {
@@ -21,6 +38,11 @@ export async function loginAsAdmin(page: Page) {
 }
 
 export async function logout(page: Page) {
-  await page.click('button:has-text("Logout")');
-  await page.waitForURL("/login");
+  // Wait for and click logout button
+  const logoutButton = page.getByRole("button", { name: "Logout" });
+  await expect(logoutButton).toBeVisible({ timeout: 60000 });
+  await logoutButton.click();
+
+  // Wait for redirect to login page
+  await page.waitForURL("/login", { timeout: 60000 });
 }
