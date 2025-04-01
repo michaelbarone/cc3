@@ -1,0 +1,121 @@
+---
+description: Define standards for managing test data and fixtures across different test types
+globs: {e2e,test}/**/*.{ts,tsx}
+alwaysApply: true
+---
+
+# Test Data Management Standards
+
+## Context
+- Applies to all test data and fixtures
+- Supports both E2E and unit tests
+- Works with 053-playwright-e2e-standards.mdc
+- Integrates with 051-vitest-react-testing-lib-testing-standards.mdc
+
+## Critical Rules
+
+1. Test Data Organization:
+   ```typescript
+   // Required directory structure
+   test/
+   ├── fixtures/           # Shared test fixtures
+   │   ├── users.ts       # User data
+   │   └── responses/     # API responses
+   └── mocks/             # Mock implementations
+       └── handlers/      # API handlers
+
+   e2e/
+   ├── fixtures/          # E2E specific fixtures
+   └── data/             # Test data sets
+   ```
+
+2. Factory Functions:
+   ```typescript
+   // GOOD: Flexible factory function
+   function createTestUser(overrides = {}) {
+     return {
+       id: "test-id",
+       username: "testuser",
+       email: "test@example.com",
+       ...overrides
+     };
+   }
+
+   // BAD: Hard-coded test data
+   const testUser = {
+     id: "test-id",
+     username: "testuser"
+   };
+   ```
+
+3. Data Cleanup:
+   ```typescript
+   // GOOD: Comprehensive cleanup
+   afterEach(async () => {
+     await prisma.$transaction([
+       prisma.user.deleteMany({ where: { email: { startsWith: "test-" } } }),
+       prisma.session.deleteMany({ where: { userId: { startsWith: "test-" } } })
+     ]);
+   });
+
+   // BAD: Incomplete cleanup
+   afterEach(async () => {
+     await prisma.user.deleteMany();
+   });
+   ```
+
+## Examples
+
+<example>
+// Good: Complete test data management
+import { createTestUser } from "../fixtures/users";
+import { createTestGroup } from "../fixtures/groups";
+
+describe("User Management", () => {
+  let testUser;
+  let testGroup;
+
+  beforeEach(async () => {
+    testUser = createTestUser({ role: "admin" });
+    testGroup = createTestGroup({ owner: testUser });
+
+    await prisma.$transaction([
+      prisma.user.create({ data: testUser }),
+      prisma.group.create({ data: testGroup })
+    ]);
+  });
+
+  afterEach(async () => {
+    await prisma.$transaction([
+      prisma.group.deleteMany({ where: { id: testGroup.id } }),
+      prisma.user.deleteMany({ where: { id: testUser.id } })
+    ]);
+  });
+
+  test("user can manage group", async () => {
+    // Test implementation
+  });
+});
+</example>
+
+<example type="invalid">
+// Bad: Poor test data management
+describe("User Tests", () => {
+  test("user management", () => {
+    const user = { name: "test" };  // Hard-coded, no cleanup
+    // Test implementation
+  });
+});
+</example>
+
+## Dependencies
+- 053-playwright-e2e-standards.mdc
+- 051-vitest-react-testing-lib-testing-standards.mdc
+
+metadata:
+  priority: high
+  version: 1.0.0
+  tags:
+    - testing
+    - data
+    - fixtures

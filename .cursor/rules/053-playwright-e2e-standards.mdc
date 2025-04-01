@@ -1,0 +1,96 @@
+---
+description: Define standards for Playwright E2E testing patterns and best practices
+globs: e2e/**/*.{ts,tsx}
+alwaysApply: true
+---
+
+# Playwright E2E Testing Standards
+
+## Context
+- Applies to all Playwright E2E tests
+- Works in conjunction with 051-vitest-react-testing-lib-testing-standards.mdc
+- Supports 010-docs-memory-knowledge-management.mdc for test documentation
+
+## Critical Rules
+
+1. Page Navigation:
+   ```typescript
+   // GOOD: Use explicit wait conditions
+   await page.goto("/login", { waitUntil: "domcontentloaded" });
+   await page.waitForSelector("#element", { state: "visible" });
+
+   // BAD: Relying on network idle or fixed timeouts
+   await page.goto("/login", { waitUntil: "networkidle" });
+   await page.waitForTimeout(5000);
+   ```
+
+2. Selector Priority (Most to Least Preferred):
+   ```typescript
+   // 1. Role-based (most reliable)
+   await page.getByRole("button", { name: "Submit" });
+
+   // 2. Test ID
+   await page.locator("[data-testid=submit-button]");
+
+   // 3. Text content (last resort)
+   await page.locator("text=Submit");
+   ```
+
+3. Error Handling:
+   ```typescript
+   try {
+     await page.click("#button");
+   } catch (error) {
+     console.error("Failed state:", await page.content());
+     throw error;
+   }
+   ```
+
+4. Test Isolation:
+   ```typescript
+   test.beforeEach(async ({ page }) => {
+     await setupTestData();
+   });
+
+   test.afterEach(async ({ page }) => {
+     await cleanupTestData();
+   });
+   ```
+
+## Examples
+
+<example>
+// Good: Complete test with proper selectors and error handling
+test("user login journey", async ({ page }) => {
+  await page.goto("/login", { waitUntil: "domcontentloaded" });
+
+  await page.getByRole("textbox", { name: "Username" }).fill("testuser");
+  await page.getByRole("button", { name: "Login" }).click();
+
+  await expect(page).toHaveURL("/dashboard");
+  await expect(page.getByRole("heading", { name: "Welcome" })).toBeVisible();
+});
+</example>
+
+<example type="invalid">
+// Bad: Unreliable selectors and no error handling
+test("user login", async ({ page }) => {
+  await page.goto("/login");
+  await page.locator(".login-button").click();
+  await page.waitForTimeout(2000);
+  expect(page.url()).toContain("dashboard");
+});
+</example>
+
+## Dependencies
+- 051-vitest-react-testing-lib-testing-standards.mdc
+- 054-test-data-management.mdc
+- 055-test-debugging-standards.mdc
+
+metadata:
+  priority: high
+  version: 1.0.0
+  tags:
+    - testing
+    - e2e
+    - playwright
