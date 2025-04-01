@@ -40,6 +40,7 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
+import Image from "next/image";
 import React, { useEffect, useState } from "react";
 
 interface Url {
@@ -856,11 +857,12 @@ export default function UrlGroupManagement() {
                                     <Box sx={{ display: "flex", alignItems: "center" }}>
                                       <Box sx={{ mr: 1 }}>
                                         {url.url.iconPath ? (
-                                          <img
+                                          <Image
                                             src={url.url.iconPath}
                                             alt={url.url.title}
                                             width={16}
                                             height={16}
+                                            style={{ maxWidth: "100%", height: "auto" }}
                                           />
                                         ) : (
                                           <LinkIcon fontSize="small" />
@@ -1196,12 +1198,12 @@ export default function UrlGroupManagement() {
                 <li {...props}>
                   <Box sx={{ display: "flex", alignItems: "center" }}>
                     {option.iconPath ? (
-                      <img
+                      <Image
                         src={option.iconPath}
                         alt={option.title}
                         width={16}
                         height={16}
-                        style={{ marginRight: 8 }}
+                        style={{ maxWidth: "100%", height: "auto", marginRight: 8 }}
                       />
                     ) : (
                       <LinkIcon fontSize="small" sx={{ mr: 1 }} />
