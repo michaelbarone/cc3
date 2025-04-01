@@ -1,6 +1,6 @@
 import { test as base, expect, type Page } from "@playwright/test";
 import { ChildProcess, execSync, spawn } from "child_process";
-import { resetDatabaseForFirstTimeSetup } from "../helpers/db";
+import { resetDatabaseForFirstTimeSetup } from "../../helpers/db";
 
 const test = base.extend<{}>({});
 

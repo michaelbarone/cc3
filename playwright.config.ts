@@ -1,62 +1,51 @@
-import { PlaywrightTestConfig, devices } from "@playwright/test";
+import { defineConfig, devices } from "@playwright/test";
 
-const config: PlaywrightTestConfig = {
+export default defineConfig({
   testDir: "./e2e",
+  timeout: 60000,
+  expect: {
+    timeout: 20000,
+  },
+  fullyParallel: true,
+  retries: 2,
+  workers: process.env.CI ? 1 : undefined,
+  reporter: "html",
   use: {
     baseURL: "http://localhost:3000",
-    screenshot: "only-on-failure",
-    video: "retain-on-failure",
-    trace: "retain-on-failure",
+    trace: "on-first-retry",
+    video: "on-first-retry",
+    actionTimeout: 20000,
+    navigationTimeout: 30000,
   },
   projects: [
     {
       name: "Desktop Chrome",
-      use: {
-        browserName: "chromium",
-        viewport: { width: 1280, height: 720 },
-      },
+      use: { ...devices["Desktop Chrome"] },
     },
     {
       name: "Desktop Firefox",
-      use: {
-        browserName: "firefox",
-        viewport: { width: 1280, height: 720 },
-      },
+      use: { ...devices["Desktop Firefox"] },
     },
     {
       name: "Desktop Safari",
-      use: {
-        browserName: "webkit",
-        viewport: { width: 1280, height: 720 },
-      },
+      use: { ...devices["Desktop Safari"] },
     },
     {
       name: "Mobile Chrome",
-      use: {
-        ...devices["Pixel 5"],
-        browserName: "chromium",
-      },
+      use: { ...devices["Pixel 5"] },
     },
     {
       name: "Mobile Safari",
-      use: {
-        ...devices["iPhone 13"],
-        browserName: "webkit",
-      },
+      use: { ...devices["iPhone 12"] },
     },
   ],
-  // Run tests in files in parallel
-  fullyParallel: true,
-  // Fail the build on CI if you accidentally left test.only in the source code
-  forbidOnly: !!process.env.CI,
-  // Retry on CI only
-  retries: process.env.CI ? 2 : 0,
-  // Reporter configuration
-  reporter: [["html"], ["list"]],
-  // Global timeout for the entire test run
-  globalTimeout: process.env.CI ? 60 * 60 * 1000 : undefined,
-  // Individual test timeout
-  timeout: 30000,
-};
-
-export default config;
+  webServer: {
+    command: "npm run dev",
+    url: "http://localhost:3000",
+    reuseExistingServer: !process.env.CI,
+    timeout: 120000,
+    stdout: "pipe",
+    stderr: "pipe",
+  },
+  globalSetup: "./e2e/global-setup.ts",
+});
