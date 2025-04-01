@@ -16,7 +16,7 @@ export interface Url {
 export interface UrlGroup {
   id: string;
   name: string;
-  description: string | null;
+  description?: string;
   urls: Url[];
   createdAt?: string;
   updatedAt?: string;

@@ -29,22 +29,34 @@ model UrlGroup {
   description   String?
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
-  urls          Url[]
+  urls          UrlsInGroups[]
   userUrlGroups UserUrlGroup[]
 }
 
 model Url {
-  id                 String   @id @default(uuid())
-  urlGroupId         String?
+  id                 String        @id @default(uuid())
   title              String
   url                String
   urlMobile          String?
   iconPath           String?
-  displayOrder       Int      @default(0)
-  idleTimeoutMinutes Int      @default(10)
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
-  urlGroup           UrlGroup? @relation(fields: [urlGroupId], references: [id], onDelete: SetNull)
+  idleTimeoutMinutes Int          @default(10)
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+  urlGroups          UrlsInGroups[]
+}
+
+model UrlsInGroups {
+  url         Url      @relation(fields: [urlId], references: [id], onDelete: Cascade)
+  urlId       String
+  group       UrlGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  groupId     String
+  displayOrder Int     @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@id([urlId, groupId])
+  @@index([groupId, displayOrder])
+  @@map("urls_in_groups")
 }
 
 model UserUrlGroup {

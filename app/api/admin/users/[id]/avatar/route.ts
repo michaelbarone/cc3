@@ -1,9 +1,14 @@
 import { verifyToken } from "@/app/lib/auth/jwt";
 import { prisma } from "@/app/lib/db/prisma";
 import fs from "fs/promises";
+import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 import path from "path";
 import sharp from "sharp";
+
+interface RouteContext {
+  params: Promise<{ id: string }>;
+}
 
 // We can't use the Route Handler API's bodyParser
 export const config = {
@@ -13,17 +18,26 @@ export const config = {
 };
 
 // POST /api/admin/users/[id]/avatar - Upload avatar for a specific user
-export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(request: NextRequest, context: RouteContext) {
   try {
-    // Verify admin access
-    const tokenPayload = await verifyToken();
-    if (!tokenPayload || !tokenPayload.isAdmin) {
+    // Get token from cookies
+    const cookieStore = await cookies();
+    const token = cookieStore.get("token")?.value;
+    if (!token) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // Verify admin access
+    const tokenPayload = await verifyToken(token);
+    if (!tokenPayload || !tokenPayload.isAdmin) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    const { id } = await context.params;
+
     // Get the target user data from the database
     const user = await prisma.user.findUnique({
-      where: { id: params.id },
+      where: { id },
       select: {
         id: true,
         username: true,
@@ -88,7 +102,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
 
     // Update the user record with the new avatar URL
     await prisma.user.update({
-      where: { id: user.id },
+      where: { id },
       data: { avatarUrl },
     });
 
@@ -100,17 +114,26 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
 }
 
 // DELETE /api/admin/users/[id]/avatar - Delete avatar for a specific user
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, context: RouteContext) {
   try {
-    // Verify admin access
-    const tokenPayload = await verifyToken();
-    if (!tokenPayload || !tokenPayload.isAdmin) {
+    // Get token from cookies
+    const cookieStore = await cookies();
+    const token = cookieStore.get("token")?.value;
+    if (!token) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // Verify admin access
+    const tokenPayload = await verifyToken(token);
+    if (!tokenPayload || !tokenPayload.isAdmin) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    const { id } = await context.params;
+
     // Get the target user data from the database
     const user = await prisma.user.findUnique({
-      where: { id: params.id },
+      where: { id },
       select: {
         id: true,
         avatarUrl: true,
@@ -142,7 +165,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
 
     // Update the user record to remove the avatar URL
     await prisma.user.update({
-      where: { id: user.id },
+      where: { id },
       data: { avatarUrl: null },
     });
 

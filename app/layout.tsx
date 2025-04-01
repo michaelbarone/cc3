@@ -1,3 +1,5 @@
+import { IframeStateProvider } from "@/app/lib/state/iframe-state-context";
+import { SelectedGroupProvider } from "@/app/lib/state/selected-group-context";
 import { getPrismaClient } from "@/lib/db/provider";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
@@ -41,11 +43,15 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
-        <AuthProvider>
-          <ThemeProvider>
-            <Providers>{children}</Providers>
-          </ThemeProvider>
-        </AuthProvider>
+        <Providers>
+          <AuthProvider>
+            <ThemeProvider>
+              <SelectedGroupProvider>
+                <IframeStateProvider>{children}</IframeStateProvider>
+              </SelectedGroupProvider>
+            </ThemeProvider>
+          </AuthProvider>
+        </Providers>
       </body>
     </html>
   );

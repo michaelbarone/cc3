@@ -131,6 +131,7 @@ const IframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
           wrapper.style.overflow = "hidden";
           wrapper.style.pointerEvents = "auto";
           wrapper.style.visibility = urlId === activeUrlId ? "visible" : "hidden";
+          wrapper.style.display = urlId === activeUrlId ? "block" : "none";
           wrapper.style.zIndex = urlId === activeUrlId ? "1" : "0";
 
           // Create new iframe
@@ -213,6 +214,20 @@ const IframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
       return () => {
         observer.disconnect();
         initialized.current = false;
+
+        // Remove all iframes
+        Object.values(iframeRefs.current).forEach((iframe) => {
+          if (iframe.parentElement) {
+            iframe.parentElement.remove();
+          }
+        });
+        iframeRefs.current = {};
+
+        // Only remove the global container if it's empty and this is the last instance
+        if (container && container.childNodes.length === 0) {
+          container.remove();
+          globalIframeContainer = null;
+        }
       };
     }, [urlGroups, activeUrlId, isMobile, onLoad, onError]);
 
@@ -220,48 +235,58 @@ const IframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
     useEffect(() => {
       if (!activeUrlId) return;
 
-      // Update visibility
+      // Update visibility and ensure proper loading
       Object.entries(iframeRefs.current).forEach(([urlId, iframe]) => {
         const wrapper = iframe.parentElement;
+        const isActive = urlId === activeUrlId;
+
         if (wrapper) {
-          wrapper.style.visibility = urlId === activeUrlId ? "visible" : "hidden";
-          wrapper.style.zIndex = urlId === activeUrlId ? "1" : "0";
+          // Force a reflow by accessing offsetHeight
+          wrapper.offsetHeight;
+
+          // Update visibility and z-index
+          wrapper.style.display = isActive ? "block" : "none";
+          wrapper.style.visibility = isActive ? "visible" : "hidden";
+          wrapper.style.zIndex = isActive ? "1" : "0";
+          wrapper.style.pointerEvents = isActive ? "auto" : "none";
+
+          // Load the iframe content if it's active and not already loaded
+          if (isActive && (!iframe.src || iframe.src === "about:blank")) {
+            const effectiveUrl = iframe.getAttribute("data-src");
+            if (effectiveUrl) {
+              iframe.src = effectiveUrl;
+            }
+          }
         }
       });
-
-      // Load active iframe if needed
-      const activeIframe = iframeRefs.current[activeUrlId];
-      if (activeIframe && (!activeIframe.src || activeIframe.src === "about:blank")) {
-        activeIframe.src = activeIframe.getAttribute("data-src") || "";
-      }
     }, [activeUrlId]);
 
-    // Expose methods via ref
+    // Expose control methods via ref
     useImperativeHandle(
       ref,
       () => ({
         resetIframe: (urlId: string) => {
           const iframe = iframeRefs.current[urlId];
           if (iframe) {
-            const url = iframe.getAttribute("data-src");
-            if (url) {
-              iframe.src = url;
+            const dataSrc = iframe.getAttribute("data-src");
+            if (dataSrc) {
+              iframe.src = dataSrc;
             }
           }
         },
         unloadIframe: (urlId: string) => {
           const iframe = iframeRefs.current[urlId];
           if (iframe) {
-            iframe.src = "";
+            iframe.src = "about:blank";
             onUnload?.(urlId);
           }
         },
         reloadUnloadedIframe: (urlId: string) => {
           const iframe = iframeRefs.current[urlId];
-          if (iframe) {
-            const url = iframe.getAttribute("data-src");
-            if (url) {
-              iframe.src = url;
+          if (iframe && (!iframe.src || iframe.src === "about:blank")) {
+            const dataSrc = iframe.getAttribute("data-src");
+            if (dataSrc) {
+              iframe.src = dataSrc;
             }
           }
         },

@@ -263,3 +263,43 @@ Container resources are constrained to:
 ## License
 
 [MIT License](LICENSE)
+
+## Testing
+
+### Test Organization
+Tests are co-located with their implementation files following the pattern:
+```
+app/
+├── components/
+│   ├── Component.tsx
+│   └── Component.test.tsx
+├── lib/
+│   ├── util.ts
+│   └── util.test.ts
+└── api/
+    ├── route.ts
+    └── route.test.ts
+```
+
+### Test Utilities
+Common test utilities and mocks are located in the `test/` directory:
+```
+test/
+├── mocks/
+│   ├── handlers/
+│   └── server.ts
+├── utils/
+│   └── test-utils.tsx
+└── setup.ts
+```
+
+### Running Tests
+- Run all tests: `npm test`
+- Run tests in watch mode: `npm test -- --watch`
+- Run tests with coverage: `npm test -- --coverage`
+
+### Testing Standards
+- Use React Testing Library for component tests
+- Follow Testing Library best practices (queries, user events)
+- Mock external dependencies using MSW
+- Maintain test isolation and cleanup

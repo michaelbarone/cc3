@@ -172,6 +172,13 @@ When planning documentation updates:
    - Validate documentation links
    - Verify template compliance
    - Maintain timestamp accuracy
+   - ALWAYS get timestamp from system using:
+      ```powershell
+      Get-Date -Format "yyyy-MM-dd HH:mm"
+      ```
+      ```bash
+      date "+%Y-%m-%d %H:%M"
+      ```
 
 ## Problem-Solving Approach
 
@@ -192,6 +199,13 @@ When planning documentation updates:
    - Validate cross-references
    - Verify template compliance
    - Update timestamps
+   - ALWAYS get timestamp from system using:
+      ```powershell
+      Get-Date -Format "yyyy-MM-dd HH:mm"
+      ```
+      ```bash
+      date "+%Y-%m-%d %H:%M"
+      ```
 
 ## Git Integration
 
@@ -287,12 +301,26 @@ When planning documentation updates:
    - Templates must be followed
    - Timestamps must be current
    - Cross-references must be accurate
+   - ALWAYS get timestamp from system using:
+      ```powershell
+      Get-Date -Format "yyyy-MM-dd HH:mm"
+      ```
+      ```bash
+      date "+%Y-%m-%d %H:%M"
+      ```
 
 2. Task Completion Criteria:
    - Documentation is updated
    - Templates are followed
    - Cross-references are valid
    - Timestamps are current
+   - ALWAYS get timestamp from system using:
+      ```powershell
+      Get-Date -Format "yyyy-MM-dd HH:mm"
+      ```
+      ```bash
+      date "+%Y-%m-%d %H:%M"
+      ```
 
 3. Quality Metrics:
    - No broken links
@@ -307,6 +335,13 @@ When planning documentation updates:
    - Use current timestamps
    - Follow templates exactly
    - Validate cross-references
+   - ALWAYS get timestamp from system using:
+      ```powershell
+      Get-Date -Format "yyyy-MM-dd HH:mm"
+      ```
+      ```bash
+      date "+%Y-%m-%d %H:%M"
+      ```
 
 2. Never:
    - Skip documentation updates
@@ -562,7 +597,7 @@ When planning documentation updates:
 
 2. Example Usage:
    ```markdown
-   ### $(Get-Date -Format "yyyy-MM-dd HH:mm") - Feature Update
+   ### [insert date] - Feature Update
 
    - ✓ Completed: Task details
    - 🤔 Decisions: Decision details

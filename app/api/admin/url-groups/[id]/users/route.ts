@@ -1,6 +1,5 @@
 import { verifyToken } from "@/app/lib/auth/jwt";
 import { prisma } from "@/app/lib/db/prisma";
-import { PrismaClient } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 
 type Props = {
@@ -43,9 +42,8 @@ export async function GET(request: NextRequest, props: Props): Promise<NextRespo
       },
     });
 
-    // Extract just the user information
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const users = assignments.map((assignment: any) => assignment.user);
+    // Extract just the user information with proper typing
+    const users = assignments.map((assignment) => assignment.user);
 
     return NextResponse.json(users);
   } catch (error) {
@@ -90,27 +88,20 @@ export async function PUT(request: NextRequest, props: Props): Promise<NextRespo
     }
 
     // Update assignments in a transaction
-    await prisma.$transaction(
-      async (
-        tx: Omit<
-          PrismaClient,
-          "$connect" | "$disconnect" | "$on" | "$transaction" | "$use" | "$extends"
-        >,
-      ) => {
-        // Remove all existing assignments
-        await tx.userUrlGroup.deleteMany({
-          where: { urlGroupId: id },
-        });
+    await prisma.$transaction(async (tx) => {
+      // Remove all existing assignments
+      await tx.userUrlGroup.deleteMany({
+        where: { urlGroupId: id },
+      });
 
-        // Create new assignments
-        await tx.userUrlGroup.createMany({
-          data: userIds.map((userId: string) => ({
-            userId,
-            urlGroupId: id,
-          })),
-        });
-      },
-    );
+      // Create new assignments
+      await tx.userUrlGroup.createMany({
+        data: userIds.map((userId: string) => ({
+          userId,
+          urlGroupId: id,
+        })),
+      });
+    });
 
     return NextResponse.json({ success: true });
   } catch (error) {

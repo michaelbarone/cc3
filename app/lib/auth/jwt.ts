@@ -2,8 +2,8 @@ import jwt from "jsonwebtoken";
 import { cookies } from "next/headers";
 
 // JWT Secret should be in environment variables in a real application
-const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
-const JWT_EXPIRY = "7d"; // 7 days
+const JWT_SECRET = process.env.JWT_SECRET || "default_secret";
+const JWT_EXPIRY = "24h"; // 24 hours
 const COOKIE_NAME = "auth_token";
 
 export interface JwtPayload {
@@ -24,14 +24,14 @@ export function generateToken(payload: JwtPayload): string {
  */
 export async function setAuthCookie(token: string): Promise<void> {
   const cookieStore = await cookies();
-  await cookieStore.set({
+  cookieStore.set({
     name: COOKIE_NAME,
     value: token,
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "strict",
     path: "/",
-    maxAge: 7 * 24 * 60 * 60, // 7 days in seconds
+    maxAge: 24 * 60 * 60, // 24 hours in seconds
   });
 }
 
@@ -40,25 +40,23 @@ export async function setAuthCookie(token: string): Promise<void> {
  */
 export async function removeAuthCookie(): Promise<void> {
   const cookieStore = await cookies();
-  await cookieStore.delete(COOKIE_NAME);
+  cookieStore.delete(COOKIE_NAME);
 }
 
 /**
  * Verify and decode the JWT token from cookies
+ * @param token Optional token string. If not provided, will attempt to get from cookies
+ * @returns The decoded JWT payload or null if invalid
  */
-export async function verifyToken(): Promise<JwtPayload | null> {
-  const cookieStore = await cookies();
-  const token = cookieStore.get(COOKIE_NAME)?.value;
-
-  if (!token) {
-    return null;
-  }
-
+export async function verifyToken(token?: string): Promise<JwtPayload | null> {
   try {
+    if (!token) {
+      const cookieStore = await cookies();
+      token = cookieStore.get(COOKIE_NAME)?.value;
+      if (!token) return null;
+    }
     return jwt.verify(token, JWT_SECRET) as JwtPayload;
-  } catch {
-    // Token is invalid or expired
-    await removeAuthCookie();
+  } catch (error) {
     return null;
   }
 }

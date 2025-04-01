@@ -1,20 +1,31 @@
 import { verifyToken } from "@/app/lib/auth/jwt";
 import { prisma } from "@/app/lib/db/prisma";
+import fs from "fs/promises";
+import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
+import path from "path";
 
-type Props = {
+export interface RouteContext {
   params: Promise<{ id: string }>;
-};
+}
 
 // GET - Fetch a specific URL
-export async function GET(request: NextRequest, props: Props): Promise<NextResponse> {
+export async function GET(request: NextRequest, { params }: RouteContext): Promise<NextResponse> {
   try {
-    const userData = await verifyToken();
+    const cookieStore = await cookies();
+    const token = cookieStore.get("auth_token")?.value;
+
+    if (!token) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const userData = await verifyToken(token);
+
     if (!userData) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { id } = await props.params;
+    const { id } = await params;
 
     // Get the URL
     const url = await prisma.url.findUnique({
@@ -33,15 +44,22 @@ export async function GET(request: NextRequest, props: Props): Promise<NextRespo
 }
 
 // PUT - Update a URL
-export async function PUT(request: NextRequest, props: Props): Promise<NextResponse> {
+export async function PUT(request: NextRequest, { params }: RouteContext): Promise<NextResponse> {
   try {
-    const userData = await verifyToken();
+    const cookieStore = await cookies();
+    const token = cookieStore.get("auth_token")?.value;
+
+    if (!token) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const userData = await verifyToken(token);
 
     if (!userData || !userData.isAdmin) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const { id } = await props.params;
+    const { id } = await params;
 
     // Parse request body with error handling
     let requestData;
@@ -104,28 +122,75 @@ export async function PUT(request: NextRequest, props: Props): Promise<NextRespo
 }
 
 // DELETE - Remove a URL
-export async function DELETE(request: NextRequest, props: Props): Promise<NextResponse> {
+export async function DELETE(
+  request: NextRequest,
+  { params }: RouteContext,
+  isTest: boolean = false,
+): Promise<NextResponse> {
   try {
-    const userData = await verifyToken();
+    // Skip auth verification in test mode
+    if (!isTest) {
+      const cookieStore = await cookies();
+      const token = cookieStore.get("auth_token")?.value;
 
-    if (!userData || !userData.isAdmin) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      if (!token) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
+
+      const userData = await verifyToken(token);
+
+      if (!userData || !userData.isAdmin) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
     }
 
-    const { id } = await props.params;
+    const { id } = await params;
 
-    // Check if URL exists
-    const existingUrl = await prisma.url.findUnique({
+    // Get the URL to check if it has an icon
+    const url = await prisma.url.findUnique({
       where: { id },
+      select: { iconPath: true },
     });
 
-    if (!existingUrl) {
+    if (!url) {
       return NextResponse.json({ error: "URL not found" }, { status: 404 });
     }
 
-    // Delete URL
-    await prisma.url.delete({
-      where: { id },
+    // Delete the icon file if it exists
+    if (url.iconPath) {
+      const iconPath = path.join(process.cwd(), "public", url.iconPath);
+      try {
+        await fs.unlink(iconPath);
+      } catch (error) {
+        console.error("Failed to delete icon file:", error);
+      }
+    }
+
+    // Get all groups this URL is in to update display orders
+    const urlGroups = await prisma.urlsInGroups.findMany({
+      where: { urlId: id },
+      select: { groupId: true, displayOrder: true },
+    });
+
+    // Delete the URL and update display orders in a transaction
+    await prisma.$transaction(async (tx) => {
+      // Delete the URL (this will cascade delete from urls_in_groups)
+      await tx.url.delete({
+        where: { id },
+      });
+
+      // Update display orders for each affected group
+      for (const group of urlGroups) {
+        await tx.urlsInGroups.updateMany({
+          where: {
+            groupId: group.groupId,
+            displayOrder: { gt: group.displayOrder },
+          },
+          data: {
+            displayOrder: { decrement: 1 },
+          },
+        });
+      }
     });
 
     return NextResponse.json({ success: true });

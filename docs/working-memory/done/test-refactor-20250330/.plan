@@ -1,0 +1,121 @@
+# Test File Relocation Plan
+
+## Current Status
+### 2025-03-30 22:45
+
+**Status**: Complete
+- What's working: All tests passing, documentation updated
+- What's not: None - all tasks complete
+- Blocking issues: None
+- Next actions: Ready for final review and close
+
+## Problem Analysis
+
+### Issue Description
+- What: Tests are currently located in a separate __tests__ directory instead of next to their implementation files
+- Why: Co-location improves maintainability and discoverability
+- Who: Development team
+- When: Ongoing development and maintenance
+- Type: Test Organization Refactor
+
+### System Impact
+- Components:
+  - Test configuration (vitest.config.ts)
+  - Test setup (__tests__/setup.ts)
+  - Test files in __tests__ directory
+  - Mock files and utilities
+
+### Root Cause
+- Current structure follows older testing pattern
+- Need to modernize test organization for better maintainability
+
+## Solution Design
+
+### Implementation Steps
+1. [X] Preparation Phase
+   - [X] Document current test file locations
+   - [X] Create new directory structure
+   - [X] Move test files to new locations
+
+2. [X] Configuration Updates
+   - [X] Update Vitest test patterns
+   - [X] Verify setup file paths
+   - [X] Update coverage configuration
+
+3. [X] Verification Phase
+   - [X] Run full test suite
+   - [X] Fix any broken imports
+   - [X] Update documentation
+
+### Risk Mitigation
+- Risks:
+  1. Test breakage during migration
+     - Mitigation: Move files systematically and verify after each move
+     - Fallback: Restore from backup if needed
+
+  2. Import path issues
+     - Mitigation: Update paths carefully and verify
+     - Fallback: Use search/replace for bulk updates
+
+### Testing Strategy
+- Run tests after each file move
+- Verify coverage remains unchanged
+- Check for any new test failures
+- Validate mock imports still work
+
+## Progress History
+### 2025-03-30 22:45 - Documentation Updates Complete
+- ✓ Completed: Updated README.md with new test organization
+- 🤔 Decisions: Documented test structure, utilities, and standards
+- ❌ Issues: None
+- 📚 Documentation: Added comprehensive testing documentation
+- ⏭️ Next: Task ready for closure
+
+### 2025-03-30 22:30 - Test Suite Verification
+- ✓ Completed: Full test suite execution
+- 🤔 Decisions: All tests working as expected in new locations
+- ❌ Issues: None - all 83 tests passed across 19 test files
+- 📚 Documentation: Updated plan with test results
+- ⏭️ Next: Complete final documentation updates
+
+### 2025-03-30 22:15 - Build Configuration Updates
+- ✓ Completed: Updated Next.js and Docker configurations to handle test files
+- 🤔 Decisions:
+  * Added explicit test file exclusions in Next.js config
+  * Added test file cleanup step in Dockerfile builder stage
+  * Maintained strict TypeScript and ESLint checks
+- ❌ Issues: None encountered
+- 📚 Documentation: Updated configurations for production builds
+- ⏭️ Next: Run test suite to verify changes
+
+### 2025-03-30 22:00 - Configuration Updates Complete
+- ✓ Completed: Updated Vitest configuration for co-located tests
+- 🤔 Decisions: Maintained existing coverage thresholds
+- ❌ Issues: None encountered
+- 📚 Documentation: Updated plan with configuration changes
+- ⏭️ Next: Run test suite to verify changes
+
+### 2025-03-30 21:30 - Completed Preparation
+- ✓ Completed: Preparation phase analysis
+- 🤔 Decisions: Chose co-located test structure
+- ❌ Issues: None encountered
+- 📚 Documentation: Updated plan with findings
+- ⏭️ Next: Begin configuration updates
+
+### 2025-03-30 20:57 - Initial Plan Creation
+- ✓ Completed: Created task plan
+- 🤔 Decisions: Initial structure and approach defined
+- ❌ Issues: None yet
+- 📚 Documentation: Created initial plan
+- ⏭️ Next: Begin preparation phase
+
+## Dependencies
+- vitest.config.ts
+- __tests__/setup.ts
+- Test files in __tests__ directory
+- Mock files and utilities
+
+## Documentation Updates Needed
+- [X] Update README.md with new test organization
+- [X] Update any documentation referencing test locations
+- [X] Document new test file placement convention

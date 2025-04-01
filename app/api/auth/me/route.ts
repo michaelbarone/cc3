@@ -1,6 +1,6 @@
-import { NextResponse } from "next/server";
-import { verifyToken } from "@/app/lib/auth/jwt";
+import { removeAuthCookie, verifyToken } from "@/app/lib/auth/jwt";
 import { prisma } from "@/app/lib/db/prisma";
+import { NextResponse } from "next/server";
 
 export async function GET() {
   try {
@@ -26,6 +26,8 @@ export async function GET() {
     });
 
     if (!userData) {
+      // If user from token not found in database, clear the cookie
+      await removeAuthCookie();
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 

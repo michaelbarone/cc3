@@ -1,4 +1,5 @@
 import eslint from "@eslint/js";
+import nextPlugin from "@next/eslint-plugin-next";
 import tseslint from "@typescript-eslint/eslint-plugin";
 import tsParser from "@typescript-eslint/parser";
 import prettier from "eslint-config-prettier";
@@ -37,6 +38,7 @@ export default [
       react: reactPlugin,
       "react-hooks": reactHooksPlugin,
       prettier: prettierPlugin,
+      "@next/next": nextPlugin,
     },
     languageOptions: {
       ecmaVersion: 2021,
@@ -87,6 +89,9 @@ export default [
       "@typescript-eslint/no-unsafe-return": "warn",
       "@typescript-eslint/restrict-template-expressions": "warn",
       "@typescript-eslint/unbound-method": "warn",
+      "@next/next/no-html-link-for-pages": "error",
+      "@next/next/no-img-element": "error",
+      "@next/next/no-unwanted-polyfillio": "warn",
     },
     settings: {
       react: {

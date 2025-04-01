@@ -3,7 +3,6 @@
 #project
 **/app.db
 **/app.db*
-**/backup/*
 public/icons/*
 public/logos/*
 public/avatars/*

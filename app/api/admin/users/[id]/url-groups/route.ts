@@ -1,6 +1,5 @@
 import { verifyToken } from "@/app/lib/auth/jwt";
 import { prisma } from "@/app/lib/db/prisma";
-import { PrismaClient } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 
 type Props = {
@@ -66,29 +65,22 @@ export async function PUT(request: NextRequest, props: Props): Promise<NextRespo
     }
 
     // Update URL group assignments in a transaction
-    await prisma.$transaction(
-      async (
-        tx: Omit<
-          PrismaClient,
-          "$connect" | "$disconnect" | "$on" | "$transaction" | "$use" | "$extends"
-        >,
-      ) => {
-        // Remove all existing assignments
-        await tx.userUrlGroup.deleteMany({
-          where: { userId: id },
-        });
+    await prisma.$transaction(async (tx) => {
+      // Remove all existing assignments
+      await tx.userUrlGroup.deleteMany({
+        where: { userId: id },
+      });
 
-        // Create new assignments
-        if (urlGroupIds && urlGroupIds.length > 0) {
-          await tx.userUrlGroup.createMany({
-            data: urlGroupIds.map((groupId: string) => ({
-              userId: id,
-              urlGroupId: groupId,
-            })),
-          });
-        }
-      },
-    );
+      // Create new assignments
+      if (urlGroupIds && urlGroupIds.length > 0) {
+        await tx.userUrlGroup.createMany({
+          data: urlGroupIds.map((groupId: string) => ({
+            userId: id,
+            urlGroupId: groupId,
+          })),
+        });
+      }
+    });
 
     return NextResponse.json({ success: true });
   } catch (error) {

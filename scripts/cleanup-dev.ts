@@ -1,8 +1,6 @@
-import { PrismaClient } from "@prisma/client";
 import fs from "fs";
 import path from "path";
-
-const prisma = new PrismaClient();
+import { prisma } from "../app/lib/db/prisma";
 
 // Function to recreate directory
 function recreateDirectory(dirPath: string) {
@@ -15,21 +13,36 @@ function recreateDirectory(dirPath: string) {
 
 async function cleanupDev() {
   try {
-    // 1. Delete the development database
+    console.log("Starting cleanup process...");
+
+    // 1. Ensure database is disconnected first
+    console.log("Disconnecting from database...");
+    await prisma.$disconnect();
+
+    // 2. Delete the development database
     const dbPath = path.join(process.cwd(), "prisma", "data", "app.db");
     if (fs.existsSync(dbPath)) {
       console.log("Removing development database...");
-      await prisma.$disconnect(); // Ensure database connection is closed
-      fs.unlinkSync(dbPath);
+      try {
+        fs.unlinkSync(dbPath);
+        console.log("Database file removed successfully!");
+      } catch (err) {
+        console.error("Error removing database file:", err);
+        throw err;
+      }
+    } else {
+      console.log("No database file found at:", dbPath);
     }
 
-    // Ensure the data directory exists for future database creation
+    // 3. Ensure the data directory exists for future database creation
     const dataDir = path.join(process.cwd(), "prisma", "data");
     if (!fs.existsSync(dataDir)) {
+      console.log("Creating data directory...");
       fs.mkdirSync(dataDir, { recursive: true });
     }
 
-    // 2. Clean public directories
+    // 4. Clean public directories
+    console.log("Cleaning public directories...");
     const publicDirs = [
       path.join(process.cwd(), "public", "uploads"),
       path.join(process.cwd(), "public", "icons"),
@@ -39,36 +52,67 @@ async function cleanupDev() {
     ];
 
     // Recreate each directory
-    publicDirs.forEach((dir) => {
-      recreateDirectory(dir);
-    });
+    for (const dir of publicDirs) {
+      try {
+        recreateDirectory(dir);
+        console.log(`Successfully cleaned directory: ${dir}`);
+      } catch (err) {
+        console.error(`Error cleaning directory ${dir}:`, err);
+        throw err;
+      }
+    }
 
-    // 3. Delete SQLite journal files if they exist
+    // 5. Delete SQLite journal files if they exist
     const journalPath = path.join(process.cwd(), "prisma", "data", "app.db-journal");
     if (fs.existsSync(journalPath)) {
       console.log("Removing database journal...");
-      fs.unlinkSync(journalPath);
+      try {
+        fs.unlinkSync(journalPath);
+        console.log("Database journal removed successfully!");
+      } catch (err) {
+        console.error("Error removing database journal:", err);
+        throw err;
+      }
     }
 
-    // 4. Clean .next directory
+    // 6. Clean .next directory
     const nextDir = path.join(process.cwd(), ".next");
     if (fs.existsSync(nextDir)) {
       console.log("Removing Next.js build directory...");
-      fs.rmSync(nextDir, { recursive: true, force: true });
-      console.log(".next directory removed successfully!");
+      try {
+        fs.rmSync(nextDir, { recursive: true, force: true });
+        console.log(".next directory removed successfully!");
+      } catch (err) {
+        console.error("Error removing .next directory:", err);
+        throw err;
+      }
     }
 
-    console.log("Development resources cleaned successfully!");
-    console.log(
-      "Optional: Run `npm run db:migrate` and `npm run db:seed` to manually reinitialize the database.",
-    );
-    console.log(
-      "Run `npm run dev` to automatically reinitialize the database and start the development server.",
-    );
+    console.log("\nDevelopment resources cleaned successfully!");
+    console.log("\nNext steps:");
+    console.log("1. Run 'npm run db:migrate' to initialize the database schema");
+    console.log("2. Run 'npm run db:seed' to populate with initial data");
+    console.log("3. Run 'npm run dev' to start the development server");
   } catch (error) {
-    console.error("Error cleaning development resources:", error);
+    console.error("\nError during cleanup:", error);
+    console.log("\nTroubleshooting steps:");
+    console.log("1. Ensure no processes are using the database file");
+    console.log("2. Check file permissions in the project directories");
+    console.log("3. Try running the terminal as administrator");
     process.exit(1);
+  } finally {
+    // Ensure database is always disconnected
+    try {
+      await prisma.$disconnect();
+    } catch (err) {
+      console.error("Error disconnecting from database:", err);
+    }
   }
 }
 
-cleanupDev();
+// Run the cleanup
+console.log("Starting development cleanup script...");
+cleanupDev().catch((err) => {
+  console.error("Fatal error during cleanup:", err);
+  process.exit(1);
+});

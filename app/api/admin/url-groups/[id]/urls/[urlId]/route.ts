@@ -1,103 +1,24 @@
 import { verifyToken } from "@/app/lib/auth/jwt";
-import { PrismaClient } from "@prisma/client";
+import { db } from "@/app/lib/db";
 import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 
-const prisma = new PrismaClient();
-
-type Props = {
-  params: Promise<{ id: string; urlId: string }>;
-};
-
-// PATCH - Update a URL
-export async function PATCH(request: NextRequest, props: Props): Promise<NextResponse> {
-  try {
-    // Verify admin access
-    const cookieStore = await cookies();
-    const token = cookieStore.get("auth_token")?.value;
-
-    if (!token) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const userData = await verifyToken();
-
-    if (!userData || !userData.isAdmin) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
-
-    const { id: urlGroupId, urlId } = await props.params;
-
-    // Check if URL group exists
-    const urlGroup = await prisma.urlGroup.findUnique({
-      where: { id: urlGroupId },
-    });
-
-    if (!urlGroup) {
-      return NextResponse.json({ error: "URL group not found" }, { status: 404 });
-    }
-
-    // Check if URL exists in the group
-    const existingUrl = await prisma.url.findFirst({
-      where: {
-        id: urlId,
-        urlGroupId,
-      },
-    });
-
-    if (!existingUrl) {
-      return NextResponse.json({ error: "URL not found in this group" }, { status: 404 });
-    }
-
-    // Parse request body
-    const { title, url, iconPath, displayOrder, idleTimeoutMinutes } = await request.json();
-
-    // Validate required input
-    if (!title || title.trim().length === 0) {
-      return NextResponse.json({ error: "Title is required" }, { status: 400 });
-    }
-
-    if (!url || url.trim().length === 0) {
-      return NextResponse.json({ error: "URL is required" }, { status: 400 });
-    }
-
-    // Convert idleTimeoutMinutes to number or use default
-    let timeoutMinutes = 10; // Default
-    if (idleTimeoutMinutes !== undefined) {
-      timeoutMinutes = Number(idleTimeoutMinutes);
-      if (isNaN(timeoutMinutes) || timeoutMinutes < 0) {
-        return NextResponse.json(
-          { error: "Idle timeout must be a non-negative number" },
-          { status: 400 },
-        );
-      }
-    }
-
-    // Update URL
-    const updatedUrl = await prisma.url.update({
-      where: { id: urlId },
-      data: {
-        title,
-        url,
-        iconPath: iconPath || null,
-        displayOrder: displayOrder || existingUrl.displayOrder,
-        idleTimeoutMinutes: timeoutMinutes,
-      },
-    });
-
-    return NextResponse.json(updatedUrl);
-  } catch (error) {
-    console.error("Error updating URL:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
-  } finally {
-    await prisma.$disconnect();
-  }
+export interface RouteContext {
+  params: Promise<{
+    id: string;
+    urlId: string;
+  }>;
 }
 
-// DELETE - Remove a URL from a group
-export async function DELETE(request: NextRequest, props: Props): Promise<NextResponse> {
+interface UrlInGroup {
+  urlId: string;
+  groupId: string;
+  displayOrder: number;
+}
+
+// PATCH - Update a URL in a group
+export async function PATCH(request: NextRequest, { params }: RouteContext): Promise<NextResponse> {
   try {
-    // Verify admin access
     const cookieStore = await cookies();
     const token = cookieStore.get("auth_token")?.value;
 
@@ -105,36 +26,231 @@ export async function DELETE(request: NextRequest, props: Props): Promise<NextRe
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const userData = await verifyToken();
+    const userData = await verifyToken(token);
 
     if (!userData || !userData.isAdmin) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const { id: urlGroupId, urlId } = await props.params;
+    const { id: groupId, urlId } = await params;
+    const { displayOrder } = await request.json();
 
-    // Check if URL exists in the specified group
-    const existingUrl = await prisma.url.findFirst({
+    // Check if the URL exists in the group
+    const existingUrl = await db.urlsInGroups.findUnique({
       where: {
-        id: urlId,
-        urlGroupId,
+        urlId_groupId: {
+          urlId,
+          groupId,
+        },
       },
     });
 
     if (!existingUrl) {
-      return NextResponse.json({ error: "URL not found in this group" }, { status: 404 });
+      return NextResponse.json({ error: "URL not found in group" }, { status: 404 });
     }
 
-    // Delete URL
-    await prisma.url.delete({
-      where: { id: urlId },
+    // Validate input
+    if (typeof displayOrder !== "number" || displayOrder < 0) {
+      return NextResponse.json({ error: "Invalid display order" }, { status: 400 });
+    }
+
+    // Update URL position in a transaction
+    await db.$transaction(async (tx) => {
+      // Get all URLs in the group
+      const urls = await tx.urlsInGroups.findMany({
+        where: { groupId },
+        orderBy: { displayOrder: "asc" },
+      });
+
+      // Remove the URL being updated from the list
+      const otherUrls = urls.filter((url: { urlId: string }) => url.urlId !== urlId);
+
+      // Insert the URL at the new position
+      const updatedUrls: UrlInGroup[] = [];
+      let currentOrder = 0;
+
+      for (const url of otherUrls) {
+        if (currentOrder === displayOrder) {
+          currentOrder++;
+        }
+        updatedUrls.push({
+          urlId: url.urlId,
+          groupId,
+          displayOrder: currentOrder,
+        });
+        currentOrder++;
+      }
+
+      // Add the updated URL at its new position
+      updatedUrls.splice(displayOrder, 0, {
+        urlId,
+        groupId,
+        displayOrder,
+      });
+
+      // Update all URLs with their new positions
+      for (const url of updatedUrls) {
+        await tx.urlsInGroups.update({
+          where: {
+            urlId_groupId: {
+              urlId: url.urlId,
+              groupId,
+            },
+          },
+          data: {
+            displayOrder: url.displayOrder,
+          },
+        });
+      }
     });
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Error deleting URL:", error);
+    console.error("Error updating URL position:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
-  } finally {
-    await prisma.$disconnect();
+  }
+}
+
+// DELETE - Remove a URL from a group
+export async function DELETE(
+  request: NextRequest,
+  { params }: RouteContext,
+): Promise<NextResponse> {
+  try {
+    const cookieStore = await cookies();
+    const token = cookieStore.get("auth_token")?.value;
+
+    if (!token) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const userData = await verifyToken(token);
+
+    if (!userData || !userData.isAdmin) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    const { id: groupId, urlId } = await params;
+
+    // Check if the URL exists in the group
+    const existingUrl = await db.urlsInGroups.findUnique({
+      where: {
+        urlId_groupId: {
+          urlId,
+          groupId,
+        },
+      },
+    });
+
+    if (!existingUrl) {
+      return NextResponse.json({ error: "URL not found in group" }, { status: 404 });
+    }
+
+    // Delete URL and reorder remaining URLs in a transaction
+    await db.$transaction(async (tx) => {
+      // Delete the URL from the group
+      await tx.urlsInGroups.delete({
+        where: {
+          urlId_groupId: {
+            urlId,
+            groupId,
+          },
+        },
+      });
+
+      // Get remaining URLs in the group
+      const remainingUrls = await tx.urlsInGroups.findMany({
+        where: { groupId },
+        orderBy: { displayOrder: "asc" },
+      });
+
+      // Update display order for remaining URLs
+      for (let i = 0; i < remainingUrls.length; i++) {
+        await tx.urlsInGroups.update({
+          where: {
+            urlId_groupId: {
+              urlId: remainingUrls[i].urlId,
+              groupId,
+            },
+          },
+          data: {
+            displayOrder: i,
+          },
+        });
+      }
+    });
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Error removing URL from group:", error);
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+  }
+}
+
+// PUT - Update URL properties within a group
+export async function PUT(request: NextRequest, { params }: RouteContext): Promise<NextResponse> {
+  try {
+    const cookieStore = await cookies();
+    const token = cookieStore.get("auth_token")?.value;
+
+    if (!token) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const userData = await verifyToken(token);
+
+    if (!userData || !userData.isAdmin) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    const { id: groupId, urlId } = await params;
+    const { title, url, urlMobile, iconPath, idleTimeoutMinutes } = await request.json();
+
+    // Check if the URL exists in the group
+    const existingUrlInGroup = await db.urlsInGroups.findUnique({
+      where: {
+        urlId_groupId: {
+          urlId,
+          groupId,
+        },
+      },
+      include: {
+        url: true,
+      },
+    });
+
+    if (!existingUrlInGroup) {
+      return NextResponse.json({ error: "URL not found in group" }, { status: 404 });
+    }
+
+    // Validate required fields
+    if (!title || !url) {
+      return NextResponse.json({ error: "Title and URL are required" }, { status: 400 });
+    }
+
+    // Update URL properties in a transaction
+    const updatedUrl = await db.$transaction(async (tx) => {
+      // Update the URL properties
+      const result = await tx.url.update({
+        where: { id: urlId },
+        data: {
+          title,
+          url,
+          urlMobile: urlMobile || null,
+          iconPath: iconPath || null,
+          idleTimeoutMinutes: idleTimeoutMinutes || null,
+        },
+      });
+
+      return result;
+    });
+
+    return NextResponse.json({
+      success: true,
+      url: updatedUrl,
+    });
+  } catch (error) {
+    console.error("Error updating URL properties:", error);
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
