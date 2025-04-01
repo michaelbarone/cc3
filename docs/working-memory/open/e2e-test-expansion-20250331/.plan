@@ -6,6 +6,7 @@
 - Database seeding utilities in place
 - Basic smoke tests implemented
 - Need comprehensive coverage of critical paths
+- Moving all E2E tests from main testing framework to dedicated test suites
 
 ## Critical User Journeys
 
@@ -15,6 +16,8 @@
    - Password-protected login
    - Session persistence
    - Invalid credentials handling
+   - Cookie handling and async methods
+   - Session expiry scenarios
 
 2. URL Management
    - URL group creation/deletion
@@ -22,6 +25,8 @@
    - URL reordering
    - Search functionality
    - Mobile-specific URL handling
+   - Drag-and-drop operations
+   - Bulk operations
 
 3. User Settings
    - Theme customization
@@ -29,6 +34,8 @@
    - Password protection settings
    - Avatar management
    - Menu position preferences
+   - Cookie persistence
+   - Preference sync across sessions
 
 4. Admin Operations
    - User management
@@ -36,6 +43,16 @@
    - Logo/favicon management
    - Statistics dashboard
    - Backup/restore functionality
+   - File operations validation
+   - Error state handling
+
+5. Performance & Infrastructure
+   - Response time tracking
+   - Memory usage monitoring
+   - File operation metrics
+   - Network request monitoring
+   - Resource usage tracking
+   - Animation performance
 
 ## Implementation Plan
 
@@ -55,6 +72,8 @@
   * Remember me functionality
   * Invalid credentials handling
   * Session expiry handling
+  * Cookie persistence testing
+  * Async authentication methods
 
 - [ ] Basic navigation
   * Menu accessibility
@@ -62,6 +81,7 @@
   * Breadcrumb navigation
   * Mobile navigation
   * Loading states
+  * Error boundary testing
 
 ### Phase 2: URL Management
 - [ ] URL group operations
@@ -70,6 +90,8 @@
   * Delete group
   * Reorder groups
   * Search functionality
+  * Bulk operations
+  * Error handling
 
 - [ ] URL operations
   * Add URL to group
@@ -77,12 +99,14 @@
   * Remove URL
   * Move between groups
   * URL validation
+  * Performance metrics
 
 - [ ] Mobile-specific features
   * Mobile URL handling
   * Touch interactions
   * Responsive layout
   * Gesture navigation
+  * Performance on mobile devices
 
 ### Phase 3: User Settings & Preferences
 - [ ] Theme customization
@@ -90,6 +114,7 @@
   * Color preference persistence
   * System theme detection
   * Custom theme settings
+  * Performance impact testing
 
 - [ ] User preferences
   * Language selection
@@ -97,6 +122,8 @@
   * Avatar upload/removal
   * Password protection
   * Notification settings
+  * Cookie persistence
+  * Cross-browser compatibility
 
 ### Phase 4: Admin Features
 - [ ] User management
@@ -105,6 +132,7 @@
   * Role management
   * Bulk operations
   * Search and filtering
+  * Performance with large datasets
 
 - [ ] System configuration
   * Logo management
@@ -112,6 +140,7 @@
   * Registration settings
   * System defaults
   * Feature toggles
+  * File operation validation
 
 - [ ] Statistics & monitoring
   * Dashboard loading
@@ -119,6 +148,29 @@
   * Export functionality
   * Date range filtering
   * Real-time updates
+  * Performance metrics
+
+### Phase 5: Cross-browser Testing
+- [ ] Desktop browsers
+  * Chrome configuration
+  * Firefox configuration
+  * Safari configuration
+  * Edge configuration
+  * CSS feature detection
+
+- [ ] Mobile browsers
+  * Chrome mobile
+  * Safari mobile
+  * Responsive design
+  * Touch interactions
+  * Gesture support
+
+- [ ] Performance testing
+  * Load time measurements
+  * Resource usage monitoring
+  * Network request tracking
+  * Animation performance
+  * Core Web Vitals
 
 ## Test Implementation Strategy
 
@@ -142,18 +194,23 @@
    - Implement common workflows
    - Add verification utilities
    - Create test data helpers
+   - Add cookie handling utilities
+   - Add performance measurement helpers
 
 3. Test Data Management
    - Use seeded test data
    - Create specific test scenarios
    - Implement cleanup routines
    - Maintain data isolation
+   - Handle file operations
+   - Manage test assets
 
 4. Cross-browser Testing
-   - Desktop browsers (Chrome, Firefox, Safari)
+   - Desktop browsers (Chrome, Firefox, Safari, Edge)
    - Mobile browsers
    - Different viewport sizes
    - Touch interactions
+   - CSS feature detection
 
 ## Performance Testing Integration
 
@@ -177,32 +234,30 @@
    - API response times
    - Asset optimization
    - Caching behavior
+   - Error state handling
 
 3. Animation Performance
    - Smooth transitions
    - Scroll performance
    - Touch responsiveness
    - Frame rate monitoring
+   - Mobile performance
 
-## Accessibility Testing Integration
+## Test Assets Management
 
-1. Automated Checks
-   ```typescript
-   test('meets accessibility standards', async ({ page }) => {
-     const violations = await page.evaluate(async () => {
-       // Run axe-core
-       const results = await axe.run();
-       return results.violations;
-     });
-     expect(violations.length).toBe(0);
-   });
-   ```
+1. Create test assets:
+   - [ ] Valid test images (PNG, JPG, WebP)
+   - [ ] Oversized test files
+   - [ ] Invalid file types
+   - [ ] Mock data files
+   - [ ] Test configuration files
 
-2. Manual Verification
-   - Keyboard navigation
-   - Screen reader compatibility
-   - Focus management
-   - ARIA implementation
+2. File Operation Tests:
+   - [ ] App logo management
+   - [ ] Favicon management
+   - [ ] User avatar handling
+   - [ ] Backup/restore operations
+   - [ ] Error handling scenarios
 
 ## Current Status (Updated 2025-03-31 17:00)
 
@@ -223,6 +278,8 @@
 2. Create page object models for login components
 3. Add basic navigation tests
 4. Add cross-browser configurations
+5. Set up test asset management
+6. Implement performance monitoring
 
 ## Progress History
 
