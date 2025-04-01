@@ -169,11 +169,10 @@ jobs:
       - name: Install Dependencies
         run: npm ci
 
-      - name: Run Tests with Coverage
+      - name: Run Tests
         id: test
         run: |
           start_time=$(date +%s)
-          # npm run test:coverage
           npm run test
           end_time=$(date +%s)
           duration=$((end_time - start_time))

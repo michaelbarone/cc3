@@ -1,5 +1,6 @@
 import { GET } from "@/app/api/health/route";
 import { prisma } from "@/app/lib/db/prisma";
+import fs from "fs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock dependencies
@@ -9,9 +10,22 @@ vi.mock("@/app/lib/db/prisma", () => ({
   },
 }));
 
+// Mock fs
+vi.mock("fs", () => ({
+  default: {
+    accessSync: vi.fn(),
+    constants: {
+      R_OK: 4,
+      W_OK: 2,
+    },
+  },
+}));
+
 describe("Health Check API", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // Default to successful filesystem check
+    vi.mocked(fs.accessSync).mockImplementation(() => undefined);
   });
 
   it("returns healthy status when all systems are operational", async () => {
@@ -43,6 +57,8 @@ describe("Health Check API", () => {
   it("returns unhealthy status when database connection fails", async () => {
     const mockQueryRaw = vi.fn().mockRejectedValueOnce(new Error("Database connection failed"));
     vi.mocked(prisma.$queryRaw).mockImplementation(mockQueryRaw);
+    // Ensure filesystem check passes
+    vi.mocked(fs.accessSync).mockImplementation(() => undefined);
 
     const response = await GET();
     const data = await response.json();
@@ -111,6 +127,11 @@ describe("Health Check API", () => {
     const mockQueryRaw = vi.fn().mockRejectedValueOnce(new Error("Database connection failed"));
     vi.mocked(prisma.$queryRaw).mockImplementation(mockQueryRaw);
 
+    // Mock filesystem check to fail
+    vi.mocked(fs.accessSync).mockImplementation(() => {
+      throw new Error("ENOENT: no such file or directory");
+    });
+
     // Mock process.memoryUsage to simulate high memory usage
     const originalMemoryUsage = process.memoryUsage;
     const mockMemoryUsage = vi.fn().mockReturnValue({
@@ -131,7 +152,7 @@ describe("Health Check API", () => {
       timestamp: expect.any(String),
       checks: {
         database: false,
-        filesystem: true,
+        filesystem: false,
         memory: false,
       },
       version: expect.any(String),
