@@ -49,39 +49,49 @@ export function IframeStateProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const storedActiveUrlId = localStorage.getItem(STORAGE_KEYS.ACTIVE_URL_ID);
     const storedActiveUrl = localStorage.getItem(STORAGE_KEYS.ACTIVE_URL);
-    const storedLoadedUrlIds = localStorage.getItem(STORAGE_KEYS.LOADED_URL_IDS);
     const storedKnownUrlIds = localStorage.getItem(STORAGE_KEYS.KNOWN_URL_IDS);
 
+    // Clear any stored loadedUrlIds to ensure fresh state
+    localStorage.removeItem(STORAGE_KEYS.LOADED_URL_IDS);
+    setLoadedUrlIds([]);
+
     if (storedActiveUrlId) setActiveUrlId(storedActiveUrlId);
-    if (storedActiveUrl) setActiveUrl(JSON.parse(storedActiveUrl));
-    if (storedLoadedUrlIds) setLoadedUrlIds(JSON.parse(storedLoadedUrlIds));
+    if (storedActiveUrl) {
+      const url = JSON.parse(storedActiveUrl);
+      setActiveUrl(url);
+      // Only set the active URL as loaded
+      setLoadedUrlIds([url.id]);
+    }
     if (storedKnownUrlIds) setKnownUrlIds(new Set(JSON.parse(storedKnownUrlIds)));
   }, []);
 
-  // Save state to localStorage whenever it changes
+  // Save state to localStorage whenever it changes, but NOT loadedUrlIds
   useEffect(() => {
     if (activeUrlId) localStorage.setItem(STORAGE_KEYS.ACTIVE_URL_ID, activeUrlId);
     if (activeUrl) localStorage.setItem(STORAGE_KEYS.ACTIVE_URL, JSON.stringify(activeUrl));
-    if (loadedUrlIds.length)
-      localStorage.setItem(STORAGE_KEYS.LOADED_URL_IDS, JSON.stringify(loadedUrlIds));
     if (knownUrlIds.size)
       localStorage.setItem(STORAGE_KEYS.KNOWN_URL_IDS, JSON.stringify(Array.from(knownUrlIds)));
-  }, [activeUrlId, activeUrl, loadedUrlIds, knownUrlIds]);
+  }, [activeUrlId, activeUrl, knownUrlIds]);
 
   const handleSetActiveUrl = (url: Url) => {
+    // First unload any currently loaded iframes
+    if (activeUrlId && activeUrlId !== url.id) {
+      setLoadedUrlIds((prev) => prev.filter((id) => id !== activeUrlId));
+    }
+
+    // Update active states
     setActiveUrlId(url.id);
     setActiveUrl(url);
-    setKnownUrlIds((prev) => {
-      const newSet = new Set<string>();
-      Array.from(prev).forEach((id) => newSet.add(id));
-      newSet.add(url.id);
-      return newSet;
-    });
 
-    // Add to loaded URLs if not already loaded
-    if (!loadedUrlIds.includes(url.id)) {
-      setLoadedUrlIds((prev) => [...prev, url.id]);
-    }
+    // Update known URLs
+    setKnownUrlIds((prev) => new Set(Array.from(prev).concat(url.id)));
+
+    // Set as loaded
+    setLoadedUrlIds([url.id]);
+
+    // Update browser history and persistence
+    handleUpdateBrowserHistory(url.id);
+    handleSaveToPersistence(url.id);
   };
 
   const handleResetIframe = (urlId: string) => {
@@ -93,12 +103,24 @@ export function IframeStateProvider({ children }: { children: ReactNode }) {
   };
 
   const handleUnloadIframe = (urlId: string) => {
+    // Remove from loaded URLs
     setLoadedUrlIds((prev) => prev.filter((id) => id !== urlId));
+
+    // Only clear active state if this was the active URL
+    if (urlId === activeUrlId) {
+      setActiveUrlId(null);
+      setActiveUrl(null);
+    }
   };
 
   const handleReloadIframe = (urlId: string) => {
-    handleUnloadIframe(urlId);
-    // The iframe will be reloaded by the IframeContainer when it detects the URL is unloaded
+    // Remove from loaded URLs
+    setLoadedUrlIds((prev) => prev.filter((id) => id !== urlId));
+
+    // Use requestAnimationFrame for smoother state updates
+    requestAnimationFrame(() => {
+      setLoadedUrlIds((prev) => [...prev, urlId]);
+    });
   };
 
   const handleAddLoadedUrlId = (urlId: string) => {
@@ -118,7 +140,11 @@ export function IframeStateProvider({ children }: { children: ReactNode }) {
   const handleUpdateBrowserHistory = (urlId: string) => {
     // Update browser history with the new URL ID
     const newUrl = new URL(window.location.href);
-    newUrl.searchParams.set("urlId", urlId);
+    // Remove any existing url or urlId parameters
+    newUrl.searchParams.delete("url");
+    newUrl.searchParams.delete("urlId");
+    // Add the new urlId parameter
+    newUrl.searchParams.set("url", urlId);
     window.history.pushState({}, "", newUrl);
   };
 

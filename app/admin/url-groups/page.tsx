@@ -41,7 +41,7 @@ import {
   Typography,
 } from "@mui/material";
 import Image from "next/image";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 
 interface Url {
   id: string;
@@ -263,6 +263,212 @@ export default function UrlGroupManagement() {
 
   const [selectedUrlsForBatch, setSelectedUrlsForBatch] = useState<Set<string>>(new Set());
   const [batchOperationInProgress, setBatchOperationInProgress] = useState(false);
+
+  const [activeUrlId, setActiveUrlId] = useState<string | null>(null);
+  const [activeUrl, setActiveUrl] = useState<Url | null>(null);
+  const [loadedUrlIds, setLoadedUrlIds] = useState<string[]>([]);
+  const [iframeRefs, setIframeRefs] = useState<Record<string, HTMLIFrameElement>>({});
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Create a singleton container for iframes outside of React
+  let globalIframeContainer: HTMLDivElement | null = null;
+
+  // Function to get or create the global iframe container
+  function getGlobalIframeContainer() {
+    if (!globalIframeContainer) {
+      globalIframeContainer = document.createElement("div");
+      globalIframeContainer.id = "global-iframe-container";
+      globalIframeContainer.style.position = "fixed";
+      globalIframeContainer.style.top = "0";
+      globalIframeContainer.style.left = "0";
+      globalIframeContainer.style.width = "100%";
+      globalIframeContainer.style.height = "100%";
+      globalIframeContainer.style.pointerEvents = "none";
+      globalIframeContainer.style.zIndex = "1000";
+
+      // Ensure the container is added to the body
+      if (document.body) {
+        document.body.appendChild(globalIframeContainer);
+      }
+    }
+    return globalIframeContainer;
+  }
+
+  // Create iframes on mount
+  useEffect(() => {
+    if (!document.body) {
+      console.error("Document body not available for iframe initialization");
+      return;
+    }
+
+    // Get or create the global container
+    const container = getGlobalIframeContainer();
+    if (!container) {
+      console.error("Failed to create global iframe container");
+      return;
+    }
+
+    // Track existing and needed iframe IDs
+    const existingIframeIds = new Set(Object.keys(iframeRefs));
+    const neededIframeIds = new Set<string>();
+
+    // Create or update iframes for all URLs
+    urlGroups.forEach((group) => {
+      if (!group?.urls?.length) return;
+
+      group.urls.forEach((urlData) => {
+        if (!urlData?.url?.url) {
+          console.warn("Invalid URL data", urlData);
+          return;
+        }
+
+        const { url } = urlData;
+        const urlId = url.id;
+        neededIframeIds.add(urlId);
+
+        // If iframe already exists, just update its data-src if needed
+        if (existingIframeIds.has(urlId)) {
+          const existingIframe = iframeRefs[urlId];
+          const currentDataSrc = existingIframe.getAttribute("data-src");
+          if (currentDataSrc !== url.url) {
+            existingIframe.setAttribute("data-src", url.url);
+            // Only update src if this is the active iframe and it's currently loaded
+            if (
+              urlId === activeUrlId &&
+              existingIframe.src &&
+              existingIframe.src !== "about:blank"
+            ) {
+              existingIframe.src = url.url;
+            }
+          }
+          return;
+        }
+
+        // Create wrapper div for new iframe
+        const wrapper = document.createElement("div");
+        wrapper.setAttribute("data-iframe-container", urlId);
+        wrapper.style.position = "absolute";
+        wrapper.style.top = "0";
+        wrapper.style.left = "0";
+        wrapper.style.width = "100%";
+        wrapper.style.height = "100%";
+        wrapper.style.overflow = "hidden";
+        wrapper.style.pointerEvents = "auto";
+        wrapper.style.visibility = urlId === activeUrlId ? "visible" : "hidden";
+        wrapper.style.display = urlId === activeUrlId ? "block" : "none";
+        wrapper.style.zIndex = urlId === activeUrlId ? "1" : "0";
+
+        // Create new iframe
+        const iframe = document.createElement("iframe");
+        iframe.setAttribute("data-iframe-id", urlId);
+        iframe.setAttribute("data-src", url.url);
+        iframe.title = `iframe-${urlId}`;
+        iframe.style.width = "100%";
+        iframe.style.height = "100%";
+        iframe.style.border = "none";
+        iframe.style.background = "#fff";
+        iframe.style.overflow = "hidden";
+        iframe.setAttribute("sandbox", "allow-same-origin allow-scripts allow-forms allow-popups");
+        iframe.setAttribute(
+          "allow",
+          "accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture",
+        );
+
+        // Store ref and add to DOM
+        setIframeRefs((prev) => ({ ...prev, [urlId]: iframe }));
+        wrapper.appendChild(iframe);
+        container.appendChild(wrapper);
+
+        // Load active iframe
+        if (urlId === activeUrlId) {
+          iframe.src = url.url;
+        }
+      });
+    });
+
+    // Remove any iframes that are no longer needed
+    existingIframeIds.forEach((urlId) => {
+      if (!neededIframeIds.has(urlId)) {
+        const iframe = iframeRefs[urlId];
+        if (iframe && iframe.parentElement) {
+          iframe.parentElement.remove();
+        }
+        setIframeRefs((prev) => {
+          const newRefs = { ...prev };
+          delete newRefs[urlId];
+          return newRefs;
+        });
+      }
+    });
+
+    // Update container position when our container moves
+    const observer = new ResizeObserver(() => {
+      if (containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect();
+        Object.values(iframeRefs).forEach((iframe) => {
+          if (iframe.parentElement) {
+            iframe.parentElement.style.position = "fixed";
+            iframe.parentElement.style.top = `${rect.top}px`;
+            iframe.parentElement.style.left = `${rect.left}px`;
+            iframe.parentElement.style.width = `${rect.width}px`;
+            iframe.parentElement.style.height = `${rect.height}px`;
+          }
+        });
+      }
+    });
+
+    if (containerRef.current) {
+      observer.observe(containerRef.current);
+    }
+
+    return () => {
+      observer.disconnect();
+
+      // Remove all iframes
+      Object.values(iframeRefs).forEach((iframe) => {
+        if (iframe.parentElement) {
+          iframe.parentElement.remove();
+        }
+      });
+      setIframeRefs({});
+
+      // Only remove the global container if it's empty
+      if (container && container.childNodes.length === 0) {
+        container.remove();
+        globalIframeContainer = null;
+      }
+    };
+  }, [urlGroups, activeUrlId]);
+
+  // Handle active URL changes
+  useEffect(() => {
+    if (!activeUrlId) return;
+
+    // Update visibility and ensure proper loading for all iframes
+    Object.entries(iframeRefs).forEach(([urlId, iframe]) => {
+      const wrapper = iframe.parentElement;
+      const isActive = urlId === activeUrlId;
+
+      if (wrapper) {
+        // Force a reflow
+        wrapper.offsetHeight;
+
+        // Update visibility and z-index
+        wrapper.style.display = isActive ? "block" : "none";
+        wrapper.style.visibility = isActive ? "visible" : "hidden";
+        wrapper.style.zIndex = isActive ? "1" : "0";
+        wrapper.style.pointerEvents = isActive ? "auto" : "none";
+
+        // Load the iframe content if it's active and not already loaded
+        if (isActive && (!iframe.src || iframe.src === "about:blank")) {
+          const effectiveUrl = iframe.getAttribute("data-src");
+          if (effectiveUrl) {
+            iframe.src = effectiveUrl;
+          }
+        }
+      }
+    });
+  }, [activeUrlId, iframeRefs]);
 
   const fetchUrlGroups = async () => {
     try {

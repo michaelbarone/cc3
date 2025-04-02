@@ -1,4 +1,3 @@
-import { IframeStateProvider } from "@/app/lib/state/iframe-state-context";
 import { SelectedGroupProvider } from "@/app/lib/state/selected-group-context";
 import { getPrismaClient } from "@/lib/db/provider";
 import type { Metadata } from "next";
@@ -46,9 +45,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <Providers>
           <AuthProvider>
             <ThemeProvider>
-              <SelectedGroupProvider>
-                <IframeStateProvider>{children}</IframeStateProvider>
-              </SelectedGroupProvider>
+              <SelectedGroupProvider>{children}</SelectedGroupProvider>
             </ThemeProvider>
           </AuthProvider>
         </Providers>

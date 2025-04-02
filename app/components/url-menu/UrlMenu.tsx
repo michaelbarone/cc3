@@ -22,9 +22,12 @@ interface UrlMenuProps {
       id: string;
       title: string;
       url: string;
-      urlMobile?: string | null;
-      iconPath?: string | null;
-      idleTimeoutMinutes?: number | null;
+      urlMobile: string | null;
+      iconPath: string | null;
+      idleTimeoutMinutes?: number;
+      displayOrder: number;
+      createdAt?: string;
+      updatedAt?: string;
     }>;
   }>;
   activeUrlId?: string | null;
@@ -42,6 +45,7 @@ export function UrlMenu({ urlGroups, activeUrlId: propActiveUrlId, onUrlSelect }
     loadedUrlIds,
     reloadIframe,
     unloadIframe,
+    setActiveUrl,
   } = useIframeState();
 
   // Use prop activeUrlId if provided, otherwise use context
@@ -100,9 +104,39 @@ export function UrlMenu({ urlGroups, activeUrlId: propActiveUrlId, onUrlSelect }
 
   const handleUrlClick = useCallback(
     (urlId: string) => {
-      onUrlSelect?.(urlId);
+      // Find the URL object from urlGroups
+      let selectedUrl = null;
+      for (const group of urlGroups) {
+        const url = group.urls.find((u) => u.id === urlId);
+        if (url) {
+          selectedUrl = url;
+          break;
+        }
+      }
+
+      if (!selectedUrl) {
+        console.warn("URL not found:", urlId);
+        return;
+      }
+
+      // If onUrlSelect is provided, use it
+      if (onUrlSelect) {
+        onUrlSelect(urlId);
+      }
+
+      // Always update the iframe state
+      if (activeUrlId === urlId) {
+        // If clicking the active URL, reload it
+        reloadIframe(urlId);
+      } else {
+        // If clicking a different URL, set it as active and ensure it's loaded
+        setActiveUrl(selectedUrl);
+        if (!loadedUrlIds.includes(urlId)) {
+          reloadIframe(urlId);
+        }
+      }
     },
-    [onUrlSelect],
+    [urlGroups, onUrlSelect, activeUrlId, loadedUrlIds, reloadIframe, setActiveUrl],
   );
 
   const handleLongPress = useCallback(
