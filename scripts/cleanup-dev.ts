@@ -18,7 +18,11 @@ async function cleanupDev() {
     // 1. Ensure database is disconnected first
     console.log("Disconnecting from database...");
     await prisma.$disconnect();
+  } catch (error) {
+    console.error("Error disconnecting from database:", error);
+  }
 
+  try {
     // 2. Delete the development database
     const dbPath = path.join(process.cwd(), "prisma", "data", "app.db");
     if (fs.existsSync(dbPath)) {

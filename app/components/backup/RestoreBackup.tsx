@@ -58,16 +58,16 @@ export default function RestoreBackup({
   };
 
   return (
-    <Card sx={{ mt: 4, width: "100%" }}>
-      <CardContent>
+    <Card sx={{ mt: 4, pb: 0, width: "100%", maxWidth: "350px", mx: "auto" }}>
+      <CardContent sx={{ pb: "0 !important", textAlign: "center" }}>
         <Typography variant="h6" gutterBottom>
           Restore from Backup
         </Typography>
         <Typography variant="body2" color="text.secondary" paragraph>
-          You can restore from a previous backup during first run setup.
+          You can restore from a previous app backup.
         </Typography>
 
-        <Box sx={{ display: "flex", gap: 2, mb: 3 }}>
+        <Box sx={{ display: "flex", gap: 2, mb: 3, justifyContent: "center" }}>
           <input
             type="file"
             accept=".zip"
@@ -87,7 +87,7 @@ export default function RestoreBackup({
 
         {/* Progress Indicator */}
         {isLoading && (
-          <Box sx={{ width: "100%", mt: 2 }}>
+          <Box sx={{ width: "100%", mt: 2, textAlign: "center" }}>
             <LinearProgress />
             <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
               Restoring backup...
@@ -97,14 +97,14 @@ export default function RestoreBackup({
 
         {/* Success Message */}
         {success && (
-          <Alert severity="success" sx={{ mt: 2 }}>
+          <Alert severity="success" sx={{ mt: 2, display: "flex", justifyContent: "center" }}>
             {success}
           </Alert>
         )}
 
         {/* Error Message */}
         {error && (
-          <Alert severity="error" sx={{ mt: 2 }}>
+          <Alert severity="error" sx={{ mt: 2, display: "flex", justifyContent: "center" }}>
             {error}
           </Alert>
         )}

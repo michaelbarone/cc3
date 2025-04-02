@@ -53,15 +53,26 @@ export async function POST(request: NextRequest, { params }: RouteContext): Prom
       AND groupId = ${groupId}
     `;
 
-    // Get the URLs to swap with
-    const swapOrder = await prisma.$queryRaw<{ urlId: string; displayOrder: number }[]>`
-      SELECT urlId, displayOrder
-      FROM urls_in_groups
-      WHERE groupId = ${groupId}
-      AND displayOrder ${direction === "up" ? "<" : ">"} ${currentOrder[0].displayOrder}
-      ORDER BY displayOrder ${direction === "up" ? "DESC" : "ASC"}
-      LIMIT 1
-    `;
+    let swapOrder;
+    if (direction === "up") {
+      swapOrder = await prisma.$queryRaw<{ urlId: string; displayOrder: number }[]>`
+        SELECT urlId, displayOrder
+        FROM urls_in_groups
+        WHERE groupId = ${groupId}
+        AND displayOrder < ${currentOrder[0].displayOrder}
+        ORDER BY displayOrder DESC
+        LIMIT 1
+      `;
+    } else {
+      swapOrder = await prisma.$queryRaw<{ urlId: string; displayOrder: number }[]>`
+        SELECT urlId, displayOrder
+        FROM urls_in_groups
+        WHERE groupId = ${groupId}
+        AND displayOrder > ${currentOrder[0].displayOrder}
+        ORDER BY displayOrder ASC
+        LIMIT 1
+      `;
+    }
 
     if (swapOrder.length === 0) {
       return NextResponse.json({ message: "No URLs to swap with" });

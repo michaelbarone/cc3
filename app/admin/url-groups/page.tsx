@@ -76,6 +76,132 @@ interface User {
   isAdmin: boolean;
 }
 
+// Add this component before the main UrlGroupManagement component
+const MemoizedUrlItem = React.memo(function UrlItem({
+  url,
+  index,
+  groupId,
+  totalUrls,
+  onOrderChange,
+  onEdit,
+  onDelete,
+  onSelect,
+  isSelected,
+}: {
+  url: UrlInGroup;
+  index: number;
+  groupId: string;
+  totalUrls: number;
+  onOrderChange: (groupId: string, urlId: string, direction: "up" | "down") => Promise<void>;
+  onEdit: (url: Url) => void;
+  onDelete: (url: Url) => void;
+  onSelect: (urlId: string) => void;
+  isSelected: boolean;
+}) {
+  return (
+    <ListItem>
+      <Checkbox
+        edge="start"
+        checked={isSelected}
+        onChange={() => onSelect(url.url.id)}
+        sx={{ mr: 1 }}
+      />
+      <ListItemText
+        primary={
+          <Box sx={{ display: "flex", alignItems: "center" }}>
+            <Box sx={{ mr: 1 }}>
+              {url.url.iconPath ? (
+                <Image
+                  src={url.url.iconPath}
+                  alt={url.url.title}
+                  width={16}
+                  height={16}
+                  style={{ maxWidth: "100%", height: "auto" }}
+                />
+              ) : (
+                <LinkIcon fontSize="small" />
+              )}
+            </Box>
+            {url.url.title}
+          </Box>
+        }
+        secondary={
+          <Box>
+            <Typography variant="body2" component="div">
+              {url.url.url}
+            </Typography>
+            {url.url.urlMobile && (
+              <Typography variant="body2" color="text.secondary" component="div">
+                Mobile: {url.url.urlMobile}
+              </Typography>
+            )}
+          </Box>
+        }
+      />
+      <ListItemSecondaryAction>
+        <Tooltip title="Move Up">
+          <span>
+            <IconButton
+              edge="end"
+              aria-label="move up"
+              onClick={(e) => {
+                e.stopPropagation();
+                onOrderChange(groupId, url.url.id, "up");
+              }}
+              disabled={index === 0}
+              size="small"
+            >
+              <ArrowUpwardIcon fontSize="small" />
+            </IconButton>
+          </span>
+        </Tooltip>
+        <Tooltip title="Move Down">
+          <span>
+            <IconButton
+              edge="end"
+              aria-label="move down"
+              onClick={(e) => {
+                e.stopPropagation();
+                onOrderChange(groupId, url.url.id, "down");
+              }}
+              disabled={index === totalUrls - 1}
+              size="small"
+            >
+              <ArrowDownwardIcon fontSize="small" />
+            </IconButton>
+          </span>
+        </Tooltip>
+        <Tooltip title="Preview URL">
+          <IconButton
+            edge="end"
+            aria-label="preview"
+            onClick={() => window.open(url.url.url, "_blank")}
+            size="small"
+          >
+            <VisibilityIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+        <Tooltip title="Edit URL">
+          <IconButton edge="end" aria-label="edit" onClick={() => onEdit(url.url)} size="small">
+            <EditIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+        <Tooltip title="Delete URL">
+          <IconButton
+            edge="end"
+            aria-label="delete"
+            onClick={() => onDelete(url.url)}
+            color="error"
+            size="small"
+          >
+            <DeleteIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+      </ListItemSecondaryAction>
+    </ListItem>
+  );
+});
+
 export default function UrlGroupManagement() {
   const [urlGroups, setUrlGroups] = useState<UrlGroup[]>([]);
   const [loading, setLoading] = useState(true);
@@ -244,26 +370,55 @@ export default function UrlGroupManagement() {
 
   const handleUrlOrderChange = async (groupId: string, urlId: string, direction: "up" | "down") => {
     try {
-      const response = await fetch(
-        `/api/admin/url-groups/${groupId}/urls/${urlId}/reorder?direction=${direction}`,
-        {
-          method: "PUT",
+      // Optimistically update the UI
+      setUrlGroups((prevGroups) => {
+        return prevGroups.map((group) => {
+          if (group.id !== groupId) return group;
+
+          const urls = [...group.urls];
+          const currentIndex = urls.findIndex((u) => u.url.id === urlId);
+          if (currentIndex === -1) return group;
+
+          const newIndex = direction === "up" ? currentIndex - 1 : currentIndex + 1;
+          if (newIndex < 0 || newIndex >= urls.length) return group;
+
+          // Swap the items
+          [urls[currentIndex], urls[newIndex]] = [urls[newIndex], urls[currentIndex]];
+
+          // Update display orders
+          urls[currentIndex].displayOrder = currentIndex;
+          urls[newIndex].displayOrder = newIndex;
+
+          return {
+            ...group,
+            urls,
+          };
+        });
+      });
+
+      // Make API call in background
+      const response = await fetch(`/api/admin/url-groups/${groupId}/urls/${urlId}/reorder`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
         },
-      );
+        body: JSON.stringify({ direction }),
+      });
 
       if (!response.ok) {
         throw new Error("Failed to reorder URL");
       }
 
-      // Refresh the URL groups to get updated order
-      await fetchUrlGroups();
-
+      // Only show success message, no need to refetch
       setSnackbar({
         open: true,
         message: "URL order updated successfully",
         severity: "success",
       });
     } catch (err) {
+      // On error, refresh the list to ensure consistency
+      await fetchUrlGroups();
+
       setSnackbar({
         open: true,
         message: err instanceof Error ? err.message : "Failed to reorder URL",
@@ -845,115 +1000,17 @@ export default function UrlGroupManagement() {
                           .sort((a, b) => a.displayOrder - b.displayOrder)
                           .map((url, index) => (
                             <React.Fragment key={url.url.id}>
-                              <ListItem>
-                                <Checkbox
-                                  edge="start"
-                                  checked={selectedUrlsForBatch.has(url.url.id)}
-                                  onChange={() => handleBatchSelect(url.url.id)}
-                                  sx={{ mr: 1 }}
-                                />
-                                <ListItemText
-                                  primary={
-                                    <Box sx={{ display: "flex", alignItems: "center" }}>
-                                      <Box sx={{ mr: 1 }}>
-                                        {url.url.iconPath ? (
-                                          <Image
-                                            src={url.url.iconPath}
-                                            alt={url.url.title}
-                                            width={16}
-                                            height={16}
-                                            style={{ maxWidth: "100%", height: "auto" }}
-                                          />
-                                        ) : (
-                                          <LinkIcon fontSize="small" />
-                                        )}
-                                      </Box>
-                                      {url.url.title}
-                                    </Box>
-                                  }
-                                  secondary={
-                                    <Box>
-                                      <Typography variant="body2" component="div">
-                                        {url.url.url}
-                                      </Typography>
-                                      {url.url.urlMobile && (
-                                        <Typography
-                                          variant="body2"
-                                          color="text.secondary"
-                                          component="div"
-                                        >
-                                          Mobile: {url.url.urlMobile}
-                                        </Typography>
-                                      )}
-                                    </Box>
-                                  }
-                                />
-                                <ListItemSecondaryAction>
-                                  <Tooltip title="Move Up">
-                                    <span>
-                                      <IconButton
-                                        edge="end"
-                                        aria-label="move up"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          handleUrlOrderChange(group.id, url.url.id, "up");
-                                        }}
-                                        disabled={index === 0}
-                                        size="small"
-                                      >
-                                        <ArrowUpwardIcon fontSize="small" />
-                                      </IconButton>
-                                    </span>
-                                  </Tooltip>
-                                  <Tooltip title="Move Down">
-                                    <span>
-                                      <IconButton
-                                        edge="end"
-                                        aria-label="move down"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          handleUrlOrderChange(group.id, url.url.id, "down");
-                                        }}
-                                        disabled={index === group.urls.length - 1}
-                                        size="small"
-                                      >
-                                        <ArrowDownwardIcon fontSize="small" />
-                                      </IconButton>
-                                    </span>
-                                  </Tooltip>
-                                  <Tooltip title="Preview URL">
-                                    <IconButton
-                                      edge="end"
-                                      aria-label="preview"
-                                      onClick={() => window.open(url.url.url, "_blank")}
-                                      size="small"
-                                    >
-                                      <VisibilityIcon fontSize="small" />
-                                    </IconButton>
-                                  </Tooltip>
-                                  <Tooltip title="Edit URL">
-                                    <IconButton
-                                      edge="end"
-                                      aria-label="edit"
-                                      onClick={() => handleOpenDialog("editUrl", group, url.url)}
-                                      size="small"
-                                    >
-                                      <EditIcon fontSize="small" />
-                                    </IconButton>
-                                  </Tooltip>
-                                  <Tooltip title="Delete URL">
-                                    <IconButton
-                                      edge="end"
-                                      aria-label="delete"
-                                      onClick={() => handleOpenDialog("deleteUrl", group, url.url)}
-                                      color="error"
-                                      size="small"
-                                    >
-                                      <DeleteIcon fontSize="small" />
-                                    </IconButton>
-                                  </Tooltip>
-                                </ListItemSecondaryAction>
-                              </ListItem>
+                              <MemoizedUrlItem
+                                url={url}
+                                index={index}
+                                groupId={group.id}
+                                totalUrls={group.urls.length}
+                                onOrderChange={handleUrlOrderChange}
+                                onEdit={(url) => handleOpenDialog("editUrl", group, url)}
+                                onDelete={(url) => handleOpenDialog("deleteUrl", group, url)}
+                                onSelect={handleBatchSelect}
+                                isSelected={selectedUrlsForBatch.has(url.url.id)}
+                              />
                               {index < group.urls.length - 1 && <Divider component="li" />}
                             </React.Fragment>
                           ))}
