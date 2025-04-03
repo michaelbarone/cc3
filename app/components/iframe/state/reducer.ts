@@ -1,4 +1,4 @@
-import { IframeState, IframeAction } from "@/app/types/iframe";
+import { IframeAction, IframeState } from "@/app/types/iframe";
 
 export interface IframeStateMap {
   [key: string]: IframeState;
@@ -6,82 +6,70 @@ export interface IframeStateMap {
 
 export function iframeReducer(state: IframeStateMap, action: IframeAction): IframeStateMap {
   switch (action.type) {
-    case "SET_STATUS": {
-      const { urlId, status } = action.payload;
-      return {
-        ...state,
-        [urlId]: {
-          ...state[urlId],
-          status,
-          // Reset error when changing status
-          error: null,
-          // Update activity timestamp when changing status
-          lastActivity: Date.now(),
-        },
-      };
+    case "INIT_URLS": {
+      const { urlGroups, initialUrlId } = action.payload;
+      const newState: IframeStateMap = {};
+      urlGroups.forEach((group) => {
+        group.urls.forEach((url) => {
+          newState[url.id] = {
+            urls: {
+              [url.id]: {
+                id: url.id,
+                url: url.url,
+                urlMobile: url.urlMobile || null,
+                isLoaded: false,
+                isVisible: false,
+                error: null,
+                retryCount: 0,
+              },
+            },
+            activeUrlId: null,
+            initialUrlId: null,
+          };
+        });
+      });
+      return newState;
     }
 
+    case "SELECT_URL":
+    case "LOAD_URL":
+    case "UNLOAD_URL":
     case "SET_ERROR": {
-      const { urlId, error } = action.payload;
-      return {
-        ...state,
-        [urlId]: {
-          ...state[urlId],
-          error,
-          // Update status if there's an error
-          status: error ? "active-unloaded" : state[urlId].status,
-          lastActivity: Date.now(),
-        },
-      };
-    }
-
-    case "UPDATE_ACTIVITY": {
       const { urlId } = action.payload;
-      return {
-        ...state,
-        [urlId]: {
-          ...state[urlId],
-          lastActivity: Date.now(),
-        },
-      };
-    }
+      const currentState = state[urlId];
+      if (!currentState) return state;
 
-    case "RESET_IFRAME": {
-      const { urlId } = action.payload;
-      return {
-        ...state,
-        [urlId]: {
-          ...state[urlId],
-          status: "active-unloaded",
-          error: null,
-          lastActivity: Date.now(),
-        },
-      };
-    }
+      const currentUrl = currentState.urls[urlId];
+      if (!currentUrl) return state;
 
-    case "SET_IDLE_TIMEOUT": {
-      const { urlId, timeout } = action.payload;
-      return {
-        ...state,
-        [urlId]: {
-          ...state[urlId],
-          idleTimeout: timeout,
-        },
+      const updatedUrl = {
+        ...currentUrl,
+        isLoaded:
+          action.type === "LOAD_URL"
+            ? true
+            : action.type === "UNLOAD_URL"
+              ? false
+              : currentUrl.isLoaded,
+        isVisible:
+          action.type === "SELECT_URL"
+            ? true
+            : action.type === "UNLOAD_URL"
+              ? false
+              : currentUrl.isVisible,
+        error:
+          action.type === "SET_ERROR"
+            ? action.payload.error
+            : action.type === "LOAD_URL"
+              ? null
+              : currentUrl.error,
       };
-    }
 
-    case "SET_URL": {
-      const { urlId, url, urlMobile } = action.payload;
       return {
         ...state,
         [urlId]: {
-          ...state[urlId],
-          url,
-          urlMobile,
-          // Reset status and error when changing URL
-          status: "inactive-unloaded",
-          error: null,
-          lastActivity: Date.now(),
+          ...currentState,
+          urls: { ...currentState.urls, [urlId]: updatedUrl },
+          activeUrlId: action.type === "SELECT_URL" ? urlId : currentState.activeUrlId,
         },
       };
     }

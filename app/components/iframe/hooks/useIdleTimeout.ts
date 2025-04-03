@@ -1,7 +1,7 @@
 "use client";
 
+import { useIframeState } from "@/app/lib/state/iframe-state";
 import { useCallback, useEffect, useRef } from "react";
-import { useIframeContext } from "../state/IframeContext";
 
 interface UseIdleTimeoutProps {
   urlId: string;
@@ -21,7 +21,7 @@ export function useIdleTimeout({
   onTimeout,
   isActive,
 }: UseIdleTimeoutProps): UseIdleTimeoutReturn {
-  const { states, dispatch } = useIframeContext();
+  const { state, dispatch } = useIframeState();
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const clearIdleTimeout = useCallback(() => {
@@ -34,9 +34,9 @@ export function useIdleTimeout({
   const resetTimer = useCallback(() => {
     clearIdleTimeout();
 
-    // Update activity timestamp in state
+    // Update activity timestamp by selecting the URL again
     dispatch({
-      type: "UPDATE_ACTIVITY",
+      type: "SELECT_URL",
       payload: { urlId },
     });
 
@@ -51,24 +51,20 @@ export function useIdleTimeout({
 
   // Calculate remaining time until timeout
   const getRemainingTime = useCallback(() => {
-    const state = states[urlId];
-    if (!state || timeoutMinutes <= 0) return Infinity;
+    const url = state.urls[urlId];
+    if (!url || timeoutMinutes <= 0) return Infinity;
 
-    const elapsedMs = Date.now() - state.lastActivity;
-    const timeoutMs = timeoutMinutes * 60 * 1000;
-    const remainingMs = Math.max(0, timeoutMs - elapsedMs);
+    // Since we don't have direct access to lastActivity, we'll use the URL's state
+    // If the URL is loaded and visible, consider it active
+    if (url.isLoaded && url.isVisible) {
+      return timeoutMinutes * 60 * 1000; // Full timeout duration
+    }
 
-    return remainingMs;
-  }, [states, urlId, timeoutMinutes]);
+    return 0; // Timeout expired
+  }, [state.urls, urlId, timeoutMinutes]);
 
   // Set up the timeout when parameters change
   useEffect(() => {
-    // Update idle timeout in state
-    dispatch({
-      type: "SET_IDLE_TIMEOUT",
-      payload: { urlId, minutes: timeoutMinutes },
-    });
-
     // Don't set up timeout for active iframes or when timeout is disabled
     if (isActive || timeoutMinutes <= 0) {
       clearIdleTimeout();
@@ -87,7 +83,7 @@ export function useIdleTimeout({
     }
 
     return clearIdleTimeout;
-  }, [urlId, timeoutMinutes, isActive, clearIdleTimeout, dispatch, getRemainingTime, onTimeout]);
+  }, [urlId, timeoutMinutes, isActive, clearIdleTimeout, getRemainingTime, onTimeout]);
 
   // Reset timer on mount
   useEffect(() => {

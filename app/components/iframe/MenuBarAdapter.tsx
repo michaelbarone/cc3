@@ -65,7 +65,13 @@ const MenuBarAdapter = memo(function MenuBarAdapter({
   menuPosition,
 }: MenuBarAdapterProps) {
   // Get URL management functions from the new hook
-  const { activeUrlId, urls, selectUrl, unloadUrl, reloadUrl } = useUrlManager(urlGroups);
+  const {
+    activeUrlId,
+    urls,
+    selectUrl,
+    unloadUrl,
+    // , reloadUrl // TODO: add reloadUrl
+  } = useUrlManager(urlGroups);
 
   // Add validation for urlGroups
   if (!Array.isArray(urlGroups)) {

@@ -10,7 +10,7 @@ import { useUrlManager } from "./useIframe";
  */
 export function useIframeManager(urlGroups: UrlGroup[] = []) {
   // Get state methods from hooks
-  const { activeUrlId, urls, selectUrl, unloadUrl, initializeUrls } = useUrlManager();
+  const { activeUrlId, urls, selectUrl, unloadUrl, initializeUrls } = useUrlManager(urlGroups);
 
   // Refs for iframes
   const iframeRefs = useRef<Record<string, HTMLIFrameElement | null>>({});
@@ -36,7 +36,7 @@ export function useIframeManager(urlGroups: UrlGroup[] = []) {
       {} as Record<string, Url & { isLoaded: boolean; isVisible: boolean }>,
     );
 
-    initializeUrls(urlsMap);
+    initializeUrls(urlGroups[0]?.urls[0]?.id || "");
   }, [urlGroups, initializeUrls]);
 
   // Find a URL by ID across all URL groups

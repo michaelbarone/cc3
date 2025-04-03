@@ -1,10 +1,10 @@
 "use client";
 
+import { Box, useMediaQuery } from "@mui/material";
 import { forwardRef, useEffect, useState } from "react";
-import { Box } from "@mui/material";
-import { useMediaQuery } from "@mui/material";
-import { LoadingOverlay, ErrorOverlay, UnloadedOverlay } from "./overlays";
-import { IframeStatus } from "@/app/types/iframe";
+import { ErrorOverlay, LoadingOverlay, UnloadedOverlay } from "./overlays";
+
+type IframeStatus = "active-loaded" | "active-unloaded" | "inactive-loaded" | "inactive-unloaded";
 
 interface IframeWrapperProps {
   id: string;
