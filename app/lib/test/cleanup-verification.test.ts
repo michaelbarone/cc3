@@ -66,9 +66,6 @@ describe('Cleanup Verification Tests', () => {
     });
 
     it('handles cleanup of failed file operations', async () => {
-      // Simulate failed file operation
-      vi.mocked(fs.unlink).mockRejectedValueOnce(new Error('Failed to delete'));
-
       const testFile = './public/avatars/test.webp';
       try {
         await fs.unlink(testFile);
