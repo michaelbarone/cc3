@@ -1,6 +1,5 @@
 /// <reference types="node" />
-import React, { useCallback, useRef } from "react";
-import { useIframeState } from "../state/iframe-state-context";
+import React, { useCallback, useRef, useState } from "react";
 
 interface UseLongPressOptions {
   onClick?: () => void;
@@ -17,6 +16,8 @@ interface UseLongPressResult {
   onMouseLeave: (e: React.MouseEvent) => void;
   onTouchStart: (e: React.TouchEvent) => void;
   onTouchEnd: (e: React.TouchEvent) => void;
+  progress: number;
+  isLongPressing: boolean;
 }
 
 export function useLongPress({
@@ -30,9 +31,8 @@ export function useLongPress({
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const target = useRef<HTMLElement | null>(null);
   const longPressTriggered = useRef<boolean>(false);
-
-  // Get iframe state context
-  const { startLongPress, endLongPress, updateLongPressProgress } = useIframeState();
+  const [progress, setProgress] = useState(0);
+  const [isLongPressing, setIsLongPressing] = useState(false);
 
   const handlePressStart = useCallback(
     (urlId: string) => {
@@ -51,28 +51,20 @@ export function useLongPress({
 
       // Start visual feedback
       if (visualFeedback) {
-        startLongPress(urlId);
+        setIsLongPressing(true);
         const updateProgress = () => {
           const elapsed = Date.now() - startTime;
-          const progress = Math.min((elapsed / duration) * 100, 100);
+          const newProgress = Math.min((elapsed / duration) * 100, 100);
 
-          if (progress < 100) {
-            updateLongPressProgress(progress);
+          if (newProgress < 100 && isLongPressing) {
+            setProgress(newProgress);
             requestAnimationFrame(updateProgress);
           }
         };
         requestAnimationFrame(updateProgress);
       }
     },
-    [
-      disabled,
-      duration,
-      onLongPress,
-      triggerHapticFeedback,
-      visualFeedback,
-      startLongPress,
-      updateLongPressProgress,
-    ],
+    [disabled, duration, onLongPress, triggerHapticFeedback, visualFeedback, isLongPressing],
   );
 
   const handlePressEnd = useCallback(() => {
@@ -82,13 +74,14 @@ export function useLongPress({
 
     // End visual feedback
     if (visualFeedback) {
-      endLongPress();
+      setIsLongPressing(false);
+      setProgress(0);
     }
 
     if (!disabled && !longPressTriggered.current && onClick) {
       onClick();
     }
-  }, [disabled, onClick, visualFeedback, endLongPress]);
+  }, [disabled, onClick, visualFeedback]);
 
   const onMouseDown = useCallback(
     (e: React.MouseEvent) => {
@@ -114,10 +107,11 @@ export function useLongPress({
         clearTimeout(timeoutRef.current);
       }
       if (visualFeedback) {
-        endLongPress();
+        setIsLongPressing(false);
+        setProgress(0);
       }
     },
-    [visualFeedback, endLongPress],
+    [visualFeedback],
   );
 
   const onTouchStart = useCallback(
@@ -146,5 +140,7 @@ export function useLongPress({
     onMouseLeave,
     onTouchStart,
     onTouchEnd,
+    progress,
+    isLongPressing,
   };
 }

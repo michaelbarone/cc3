@@ -1,39 +1,46 @@
-// Core iframe status type
-export type IframeStatus =
-  | "active-loaded"
-  | "active-unloaded"
-  | "inactive-loaded"
-  | "inactive-unloaded";
+// URL and Group Types
+export interface UrlGroup {
+  id: string;
+  name: string;
+  urls: Array<{
+    id: string;
+    url: string;
+    urlMobile?: string | null;
+  }>;
+}
 
-// Base iframe state interface
-export interface IframeState {
+// Core iframe state types
+export interface IframeUrl {
   id: string;
   url: string;
   urlMobile: string | null;
-  status: IframeStatus;
+  isLoaded: boolean;
+  isVisible: boolean;
   error: string | null;
-  lastActivity: number;
-  idleTimeout: number;
+  retryCount: number;
 }
 
-// Action types for state management
-export type IframeAction =
-  | { type: "SET_STATUS"; payload: { urlId: string; status: IframeStatus } }
-  | { type: "SET_ERROR"; payload: { urlId: string; error: string | null } }
-  | { type: "UPDATE_ACTIVITY"; payload: { urlId: string } }
-  | { type: "RESET_IFRAME"; payload: { urlId: string } }
-  | { type: "SET_IDLE_TIMEOUT"; payload: { urlId: string; timeout: number } }
-  | { type: "SET_URL"; payload: { urlId: string; url: string; urlMobile: string | null } };
-
-// Context value interface
-export interface IframeContextValue {
-  states: Record<string, IframeState>;
+export interface IframeState {
+  urls: Record<string, IframeUrl>;
   activeUrlId: string | null;
-  dispatch: (action: IframeAction) => void;
-  resetIframe: (urlId: string) => void;
-  unloadIframe: (urlId: string) => void;
-  reloadIframe: (urlId: string) => void;
-  getLoadedUrlIds: () => string[];
+  initialUrlId: string | null;
+}
+
+// Action types
+export type IframeAction =
+  | { type: "INIT_URLS"; payload: { urlGroups: UrlGroup[]; initialUrlId: string } }
+  | { type: "SELECT_URL"; payload: { urlId: string } }
+  | { type: "LOAD_URL"; payload: { urlId: string } }
+  | { type: "UNLOAD_URL"; payload: { urlId: string } }
+  | { type: "SET_ERROR"; payload: { urlId: string; error: string | null } };
+
+// Props types
+export interface IframeContainerProps {
+  urlGroups: UrlGroup[];
+  initialUrlId?: string;
+  onLoad?: (urlId: string) => void;
+  onError?: (urlId: string, error: string) => void;
+  onUnload?: (urlId: string) => void;
 }
 
 // Ref type for external control
@@ -42,28 +49,4 @@ export interface IframeContainerRef {
   unloadIframe: (urlId: string) => void;
   reloadUnloadedIframe: (urlId: string) => void;
   getLoadedUrlIds: () => string[];
-}
-
-// Props interface for the main container
-export interface IframeContainerProps {
-  activeUrlId: string | null;
-  activeUrl: {
-    id: string;
-    url: string;
-    urlMobile?: string | null;
-    idleTimeout?: number;
-  } | null;
-  onLoad?: (urlId: string) => void;
-  onError?: (urlId: string, error: string) => void;
-  onUnload?: (urlId: string) => void;
-  urlGroups?: Array<{
-    id: string;
-    name: string;
-    urls: Array<{
-      id: string;
-      url: string;
-      urlMobile?: string | null;
-      idleTimeout?: number;
-    }>;
-  }>;
 }

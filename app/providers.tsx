@@ -2,7 +2,7 @@
 
 import { SessionProvider } from "next-auth/react";
 import { ReactNode } from "react";
-import { IframeStateProvider } from "./lib/state/iframe-state-context";
+import { IframeProvider } from "./lib/state/iframe-state";
 
 interface ProvidersProps {
   children: ReactNode;
@@ -11,7 +11,7 @@ interface ProvidersProps {
 export function Providers({ children }: ProvidersProps) {
   return (
     <SessionProvider>
-      <IframeStateProvider>{children}</IframeStateProvider>
+      <IframeProvider>{children}</IframeProvider>
     </SessionProvider>
   );
 }

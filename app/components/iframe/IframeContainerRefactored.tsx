@@ -1,25 +1,16 @@
 "use client";
 
-import React, { Component, forwardRef, useRef, useImperativeHandle, ReactNode } from "react";
-import { Box, Typography, Button } from "@mui/material";
 import RefreshIcon from "@mui/icons-material/Refresh";
+import { Box, Button, Typography } from "@mui/material";
+import React, { Component, forwardRef, ReactNode, useRef } from "react";
 
-import { IframeWrapper } from "./IframeWrapper";
-import { useIframeState } from "@/app/lib/state/iframe-state-context";
+import { useIframeLifecycle } from "@/app/lib/hooks/useIframe";
 import { useGlobalIframeContainer } from "./hooks/useGlobalIframeContainer";
+import { IframeWrapper } from "./IframeWrapper";
 
 // Props interface for the main container
 export interface IframeContainerProps {
   activeUrlId: string | null;
-  activeUrl: {
-    id: string;
-    url: string;
-    urlMobile?: string | null;
-    idleTimeout?: number;
-  } | null;
-  onLoad?: (urlId: string) => void;
-  onError?: (urlId: string, error: string) => void;
-  onUnload?: (urlId: string) => void;
   urlGroups?: Array<{
     id: string;
     name: string;
@@ -30,13 +21,16 @@ export interface IframeContainerProps {
       idleTimeout?: number;
     }>;
   }>;
+  onLoad?: (urlId: string) => void;
+  onError?: (urlId: string, error: string) => void;
+  onUnload?: (urlId: string) => void;
 }
 
 // Define a ref type that exposes the iframe control methods
 export interface IframeContainerRef {
   resetIframe: (urlId: string) => void;
   unloadIframe: (urlId: string) => void;
-  reloadIframe: (urlId: string) => void;
+  reloadUnloadedIframe: (urlId: string) => void;
   getLoadedUrlIds: () => string[];
 }
 
@@ -140,24 +134,8 @@ const IframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
     // Container for local state references
     const containerRef = useRef<HTMLDivElement>(null);
 
-    // Get the iframe state context
-    const iframeState = useIframeState();
-    const { resetIframe, unloadIframe, reloadIframe, loadedUrlIds, addLoadedUrlId } = iframeState;
-
     // Setup the global container for iframes
     useGlobalIframeContainer();
-
-    // Expose methods via ref
-    useImperativeHandle(
-      ref,
-      () => ({
-        resetIframe: (urlId: string) => resetIframe(urlId),
-        unloadIframe: (urlId: string) => unloadIframe(urlId),
-        reloadIframe: (urlId: string) => reloadIframe(urlId),
-        getLoadedUrlIds: () => loadedUrlIds,
-      }),
-      [resetIframe, unloadIframe, reloadIframe, loadedUrlIds],
-    );
 
     // Extract all URLs from groups for tracking
     const allUrls = urlGroups.flatMap((group) => group.urls);
@@ -173,11 +151,9 @@ const IframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
           backgroundColor: "background.paper",
         }}
       >
-        {/* We don't render IframeWrappers directly when refactored fully */}
-        {/* This is a simplified implementation for the initial refactoring */}
         {allUrls.map((url) => {
           const urlId = url.id;
-          const isActive = urlId === activeUrlId;
+          const { isLoaded, isVisible, error, handleLoad, handleError } = useIframeLifecycle(urlId);
 
           return (
             <IframeWrapper
@@ -186,20 +162,18 @@ const IframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
               url={url.url}
               urlMobile={url.urlMobile || null}
               status={
-                isActive
-                  ? "active-loaded"
-                  : loadedUrlIds.includes(urlId)
-                    ? "inactive-loaded"
-                    : "inactive-unloaded"
+                isVisible ? "active-loaded" : isLoaded ? "inactive-loaded" : "inactive-unloaded"
               }
-              error={null}
-              isActive={isActive}
+              error={error}
+              isActive={urlId === activeUrlId}
               onLoad={() => {
-                addLoadedUrlId(urlId);
+                handleLoad();
                 onLoad?.(urlId);
               }}
-              onError={(error) => onError?.(urlId, error)}
-              onReload={() => reloadIframe(urlId)}
+              onError={(err) => {
+                handleError(err);
+                onError?.(urlId, err);
+              }}
             />
           );
         })}
@@ -208,15 +182,6 @@ const IframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
   },
 );
 
-/**
- * Export the error boundary wrapped component as default
- */
-export default forwardRef<IframeContainerRef, IframeContainerProps>(
-  function IframeContainerWithBoundary(props, ref) {
-    return (
-      <IframeContainerWithErrorBoundary {...props}>
-        <IframeContainer {...props} ref={ref} />
-      </IframeContainerWithErrorBoundary>
-    );
-  },
-);
+IframeContainer.displayName = "IframeContainer";
+
+export default IframeContainer;

@@ -14,7 +14,7 @@ import {
   useMediaQuery,
   useTheme,
 } from "@mui/material";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { UrlItem } from "./UrlItem";
 
 interface MenuBarProps {
@@ -114,7 +114,8 @@ const convertUrlToOldFormat = (
   };
 };
 
-export function MenuBar({
+// Memoize the MenuBar component
+export const MenuBar = memo(function MenuBar({
   urlGroups,
   activeUrlId,
   loadedUrlIds = [],
@@ -163,27 +164,30 @@ export function MenuBar({
     [setSelectedGroupId, urlGroups],
   );
 
-  const handleGroupMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+  const handleGroupMenuOpen = useCallback((event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
-  };
+  }, []);
 
-  const handleGroupMenuClose = () => {
+  const handleGroupMenuClose = useCallback(() => {
     setAnchorEl(null);
-  };
+  }, []);
 
-  const getUrlStatus = (urlId: string): string => {
-    const isActive = urlId === activeUrlId;
-    const isLoaded = loadedUrlIds.includes(urlId);
-    return isActive
-      ? isLoaded
-        ? "active-loaded"
-        : "active-unloaded"
-      : isLoaded
-        ? "inactive-loaded"
-        : "inactive-unloaded";
-  };
+  const getUrlStatus = useCallback(
+    (urlId: string): string => {
+      const isActive = urlId === activeUrlId;
+      const isLoaded = loadedUrlIds.includes(urlId);
+      return isActive
+        ? isLoaded
+          ? "active-loaded"
+          : "active-unloaded"
+        : isLoaded
+          ? "inactive-loaded"
+          : "inactive-unloaded";
+    },
+    [activeUrlId, loadedUrlIds],
+  );
 
-  const getTooltipText = (url: Url, status: string): string => {
+  const getTooltipText = useCallback((url: Url, status: string): string => {
     const statusText =
       status === "active-loaded"
         ? "Active"
@@ -193,16 +197,19 @@ export function MenuBar({
             ? "Loaded"
             : "Not Loaded";
     return `${url.title} (${statusText})`;
-  };
+  }, []);
 
-  const handleUrlLongPress = (url: Url) => {
-    setIsLongPressInProgress(true);
-    onUrlReload(url);
-    setTimeout(() => setIsLongPressInProgress(false), 1000);
-  };
+  const handleUrlLongPress = useCallback(
+    (url: Url) => {
+      setIsLongPressInProgress(true);
+      onUrlReload(url);
+      setTimeout(() => setIsLongPressInProgress(false), 1000);
+    },
+    [onUrlReload],
+  );
 
-  // Render the group selector
-  const renderGroupSelector = () => {
+  // Memoize the group selector render function
+  const renderGroupSelector = useMemo(() => {
     const otherGroups = urlGroups.filter((group) => group.id !== selectedGroup?.id);
 
     return (
@@ -239,10 +246,17 @@ export function MenuBar({
         </Menu>
       </>
     );
-  };
+  }, [
+    urlGroups,
+    selectedGroup,
+    anchorEl,
+    handleGroupMenuOpen,
+    handleGroupMenuClose,
+    handleGroupSelect,
+  ]);
 
-  // Render URLs for the selected group
-  const renderUrls = () => {
+  // Memoize the URLs render function
+  const renderedUrls = useMemo(() => {
     if (!selectedGroup) return null;
 
     return selectedGroup.urls.map((urlInGroup) => {
@@ -265,7 +279,15 @@ export function MenuBar({
         />
       );
     });
-  };
+  }, [
+    selectedGroup,
+    getUrlStatus,
+    getTooltipText,
+    onUrlClick,
+    handleUrlLongPress,
+    menuPosition,
+    theme,
+  ]);
 
   // Determine effective menu position
   const menuPositionEffective = useMemo(() => {
@@ -287,7 +309,7 @@ export function MenuBar({
         p: 1,
       }}
     >
-      {menuPositionEffective === "top" && renderGroupSelector()}
+      {menuPositionEffective === "top" && renderGroupSelector}
       <Box
         sx={{
           display: "flex",
@@ -297,8 +319,8 @@ export function MenuBar({
           overflowY: menuPositionEffective === "side" ? "auto" : "visible",
         }}
       >
-        {renderUrls()}
+        {renderedUrls}
       </Box>
     </Box>
   );
-}
+});
