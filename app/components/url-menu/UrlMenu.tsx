@@ -248,36 +248,40 @@ export function UrlMenu({ urlGroups, initialUrlId, onUrlSelect }: UrlMenuProps) 
       <List
         sx={{
           width: "100%",
-          bgcolor: "background.paper",
-          overflowY: "auto",
           flex: 1,
+          overflowY: "auto",
+          bgcolor: "background.paper",
         }}
         component="nav"
       >
-        {filteredGroups.map((group, index) => (
-          <Box key={group.id}>
-            <GroupHeader
-              ref={index === 0 ? firstGroupHeaderRef : undefined}
-              group={group}
-              isExpanded={expandedGroups.has(group.id)}
-              onToggle={handleGroupToggle}
-            />
-            <Collapse in={expandedGroups.has(group.id)} timeout="auto" unmountOnExit>
-              <List component="div" disablePadding>
-                {group.urls.map((url) => (
-                  <UrlMenuItem
-                    key={url.id}
-                    url={url as any}
-                    isActive={url.id === activeUrlId}
-                    isLoaded={urls[url.id]?.isLoaded ?? false}
-                    onUrlClick={handleUrlClick}
-                    onLongPress={handleUrlUnload}
-                  />
-                ))}
-              </List>
-            </Collapse>
-          </Box>
-        ))}
+        {filteredGroups.length === 0 ? (
+          <></>
+        ) : (
+          filteredGroups.map((group) => (
+            <Box key={group.id}>
+              <GroupHeader
+                ref={group === filteredGroups[0] ? firstGroupHeaderRef : undefined}
+                group={group}
+                isExpanded={expandedGroups.has(group.id)}
+                onToggle={handleGroupToggle}
+              />
+              <Collapse in={expandedGroups.has(group.id)} timeout="auto" unmountOnExit>
+                <List component="div" disablePadding aria-label={`${group.name} URLs`}>
+                  {group.urls.map((url) => (
+                    <UrlMenuItem
+                      key={url.id}
+                      url={url as any}
+                      isActive={url.id === activeUrlId}
+                      isLoaded={urls[url.id]?.isLoaded ?? false}
+                      onUrlClick={handleUrlClick}
+                      onLongPress={handleUrlUnload}
+                    />
+                  ))}
+                </List>
+              </Collapse>
+            </Box>
+          ))
+        )}
       </List>
     </Box>
   );

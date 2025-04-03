@@ -11,9 +11,11 @@ import {
   ListItemText,
   Menu,
   MenuItem,
+  Typography,
   useMediaQuery,
   useTheme,
 } from "@mui/material";
+import Image from "next/image";
 import React, { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { UrlItem } from "./UrlItem";
 
@@ -211,39 +213,181 @@ export const MenuBar = memo(function MenuBar({
   // Memoize the group selector render function
   const renderGroupSelector = useMemo(() => {
     const otherGroups = urlGroups.filter((group) => group.id !== selectedGroup?.id);
+    const hasMultipleGroups = urlGroups.length > 1;
 
     return (
       <>
-        <Button
-          onClick={handleGroupMenuOpen}
+        <Box
           sx={{
+            display: "flex",
+            alignItems: "center",
             color: "inherit",
-            textTransform: "none",
-            minWidth: "auto",
             px: 1,
           }}
         >
           <ListItemIcon sx={{ minWidth: "auto", mr: 1 }}>
             <FolderIcon fontSize="small" />
           </ListItemIcon>
-          <ListItemText primary={selectedGroup?.name || "Select Group"} />
-          <ArrowDropDownIcon />
-        </Button>
-        <Menu
-          anchorEl={anchorEl}
-          open={Boolean(anchorEl)}
-          onClose={handleGroupMenuClose}
-          anchorOrigin={{
-            vertical: "bottom",
-            horizontal: "left",
-          }}
-        >
-          {otherGroups.map((group) => (
-            <MenuItem key={group.id} onClick={() => handleGroupSelect(group.id)}>
-              {group.name}
-            </MenuItem>
-          ))}
-        </Menu>
+          {hasMultipleGroups ? (
+            <Button
+              onClick={handleGroupMenuOpen}
+              sx={{
+                color: "inherit",
+                textTransform: "none",
+                minWidth: "auto",
+                p: 0,
+              }}
+            >
+              <ListItemText primary={selectedGroup?.name || "Select Group"} />
+              <ArrowDropDownIcon />
+            </Button>
+          ) : (
+            <Typography
+              sx={{
+                fontWeight: "medium",
+              }}
+            >
+              {selectedGroup?.name || "Select Group"}
+            </Typography>
+          )}
+        </Box>
+        {hasMultipleGroups && (
+          <Menu
+            anchorEl={anchorEl}
+            open={Boolean(anchorEl)}
+            onClose={handleGroupMenuClose}
+            anchorOrigin={{
+              vertical: "bottom",
+              horizontal: "left",
+            }}
+            PaperProps={{
+              sx: {
+                maxWidth: "90vw",
+                maxHeight: "80vh",
+              },
+            }}
+          >
+            {otherGroups.map((group) => (
+              <Box
+                key={group.id}
+                sx={{
+                  display: "flex",
+                  flexDirection: "row",
+                  alignItems: "center",
+                  borderBottom: 1,
+                  borderColor: "divider",
+                  "&:last-child": {
+                    borderBottom: 0,
+                  },
+                }}
+              >
+                <MenuItem
+                  sx={{
+                    fontWeight: "bold",
+                    minWidth: "fit-content",
+                    borderRight: 1,
+                    borderColor: "divider",
+                    cursor: "default",
+                    backgroundColor: "transparent",
+                    "&:hover": {
+                      backgroundColor: "transparent",
+                    },
+                  }}
+                >
+                  <ListItemIcon sx={{ minWidth: "auto", mr: 1 }}>
+                    <FolderIcon fontSize="small" />
+                  </ListItemIcon>
+                  <ListItemText primary={group.name} />
+                </MenuItem>
+                <Box
+                  sx={{
+                    display: "flex",
+                    flexDirection: "row",
+                    overflowX: "auto",
+                    p: 1,
+                    gap: 1,
+                    "&::-webkit-scrollbar": {
+                      height: 6,
+                    },
+                    "&::-webkit-scrollbar-track": {
+                      backgroundColor: "transparent",
+                    },
+                    "&::-webkit-scrollbar-thumb": {
+                      backgroundColor: "primary.main",
+                      borderRadius: 3,
+                    },
+                  }}
+                >
+                  {group.urls.map((urlInGroup) => {
+                    const url = urlInGroup.url;
+                    const status = getUrlStatus(url.id);
+                    const isActive = status.startsWith("active");
+                    const isLoaded = status.endsWith("loaded");
+
+                    return (
+                      <Button
+                        key={url.id}
+                        onClick={() => {
+                          handleGroupSelect(group.id);
+                          onUrlClick(url);
+                          handleGroupMenuClose();
+                        }}
+                        sx={{
+                          minWidth: "auto",
+                          height: 40,
+                          px: 2,
+                          position: "relative",
+                          display: "flex",
+                          flexDirection: "row",
+                          alignItems: "center",
+                          gap: 1,
+                          borderRadius: 1,
+                          "&:hover": {
+                            backgroundColor: "action.hover",
+                          },
+                          "&::after": isLoaded
+                            ? {
+                                content: "''",
+                                position: "absolute",
+                                top: 4,
+                                right: 4,
+                                width: 8,
+                                height: 8,
+                                borderRadius: "50%",
+                                backgroundColor: "success.main",
+                                opacity: 0.8,
+                              }
+                            : undefined,
+                        }}
+                      >
+                        {url.iconPath ? (
+                          <Image
+                            src={url.iconPath}
+                            alt={url.title}
+                            width={20}
+                            height={20}
+                            style={{ maxWidth: "100%", height: "auto" }}
+                          />
+                        ) : (
+                          <Typography
+                            variant="body2"
+                            sx={{
+                              fontWeight: isActive ? "bold" : "normal",
+                              color: "text.primary",
+                              lineHeight: 1.2,
+                            }}
+                          >
+                            {url.title}
+                          </Typography>
+                        )}
+                      </Button>
+                    );
+                  })}
+                </Box>
+              </Box>
+            ))}
+          </Menu>
+        )}
       </>
     );
   }, [
@@ -253,6 +397,7 @@ export const MenuBar = memo(function MenuBar({
     handleGroupMenuOpen,
     handleGroupMenuClose,
     handleGroupSelect,
+    onUrlClick,
   ]);
 
   // Memoize the URLs render function

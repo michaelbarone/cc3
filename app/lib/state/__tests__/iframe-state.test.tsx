@@ -58,7 +58,7 @@ describe("IframeState", () => {
       url: "https://test1.com",
       urlMobile: null,
       isLoaded: false,
-      isVisible: false,
+      isVisible: true,
       error: null,
       retryCount: 0,
     });

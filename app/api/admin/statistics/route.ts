@@ -180,25 +180,25 @@ export async function GET(
     const themeDistribution = (await prisma.user.groupBy({
       by: ["themeMode"],
       _count: { _all: true },
-    })) as UserThemeStat[];
+    })) as unknown as UserThemeStat[];
 
     // Get menu position distribution
     const menuDistribution = (await prisma.user.groupBy({
       by: ["menuPosition"],
       _count: { _all: true },
-    })) as UserMenuStat[];
+    })) as unknown as UserMenuStat[];
 
     // Get admin ratio
     const adminRatio = (await prisma.user.groupBy({
       by: ["isAdmin"],
       _count: { _all: true },
-    })) as UserAdminStat[];
+    })) as unknown as UserAdminStat[];
 
     // Get password stats
     const passwordStats = (await prisma.user.groupBy({
       by: ["passwordHash"],
       _count: { _all: true },
-    })) as PasswordStat[];
+    })) as unknown as PasswordStat[];
 
     // Get active users count
     const activeUsers = await prisma.user.count({
@@ -280,10 +280,10 @@ export async function GET(
 
     // Get most accessed URLs
     const mostAccessedUrls = await prisma.$queryRaw<MostAccessedUrl[]>`
-      SELECT u.url, COUNT(*) as count
+      SELECT u.url, u.title, COUNT(*) as count
       FROM "User" usr
       JOIN "Url" u ON usr."lastActiveUrl" = u.url
-      GROUP BY u.url
+      GROUP BY u.url, u.title
       ORDER BY count DESC
       LIMIT 5
     `;
