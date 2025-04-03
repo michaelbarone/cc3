@@ -1,5 +1,5 @@
 import { UrlMenu } from "@/app/components/url-menu/UrlMenu";
-import { IframeStateContext, IframeStateContextType } from "@/app/lib/state/iframe-state-context";
+import { IframeProvider } from "@/app/lib/state/iframe-state";
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ReactNode } from "react";
@@ -54,39 +54,9 @@ const mockUrlGroups = [
   },
 ];
 
-// Mock IframeStateContext
-const createMockIframeState = (overrides = {}): IframeStateContextType => ({
-  activeUrlId: null,
-  activeUrl: null,
-  loadedUrlIds: [],
-  knownUrlIds: new Set<string>(),
-  setActiveUrl: vi.fn(),
-  resetIframe: vi.fn(),
-  unloadIframe: vi.fn(),
-  reloadIframe: vi.fn(),
-  addLoadedUrlId: vi.fn(),
-  removeLoadedUrlId: vi.fn(),
-  updateBrowserHistory: vi.fn(),
-  saveToPersistence: vi.fn(),
-  isLongPressing: false,
-  longPressProgress: 0,
-  longPressUrlId: null,
-  startLongPress: vi.fn(),
-  endLongPress: vi.fn(),
-  updateLongPressProgress: vi.fn(),
-  ...overrides,
-});
-
-// Updated TestWrapper to provide mock context
-const TestWrapper = ({
-  children,
-  contextValue,
-}: {
-  children: ReactNode;
-  contextValue?: IframeStateContextType;
-}) => {
-  const mockContext = contextValue || createMockIframeState();
-  return <IframeStateContext.Provider value={mockContext}>{children}</IframeStateContext.Provider>;
+// Updated TestWrapper to use IframeProvider
+const TestWrapper = ({ children }: { children: ReactNode }) => {
+  return <IframeProvider>{children}</IframeProvider>;
 };
 
 describe("UrlMenu", () => {

@@ -1,27 +1,43 @@
 "use client";
 
-import { useRef, useCallback, useEffect } from "react";
-import { useIframeState } from "../state/iframe-state-context";
+import { useCallback, useEffect, useRef } from "react";
 import { Url, UrlGroup } from "../types";
+import { useUrlManager } from "./useIframe";
 
 /**
  * Custom hook to manage iframe interactions and state.
  * Provides methods for working with iframes and manages the state.
  */
 export function useIframeManager(urlGroups: UrlGroup[] = []) {
-  // Get state methods from context
-  const {
-    activeUrlId,
-    activeUrl,
-    loadedUrlIds,
-    knownUrlIds,
-    setActiveUrl,
-    addLoadedUrlId,
-    removeLoadedUrlId,
-  } = useIframeState();
+  // Get state methods from hooks
+  const { activeUrlId, urls, selectUrl, unloadUrl, initializeUrls } = useUrlManager(urlGroups);
 
   // Refs for iframes
   const iframeRefs = useRef<Record<string, HTMLIFrameElement | null>>({});
+
+  // Derived state
+  const activeUrl = activeUrlId ? urls[activeUrlId] : null;
+  const loadedUrlIds = Object.keys(urls).filter((id) => urls[id].isLoaded);
+  const knownUrlIds = Object.keys(urls);
+
+  // Initialize URLs on mount
+  useEffect(() => {
+    const urlsMap = urlGroups.reduce(
+      (acc, group) => {
+        group.urls.forEach((url) => {
+          acc[url.id] = {
+            ...url,
+            isLoaded: false,
+            isVisible: false,
+          };
+        });
+        return acc;
+      },
+      {} as Record<string, Url & { isLoaded: boolean; isVisible: boolean }>,
+    );
+
+    initializeUrls(urlGroups[0]?.urls[0]?.id || "");
+  }, [urlGroups, initializeUrls]);
 
   // Find a URL by ID across all URL groups
   const findUrlById = useCallback(
@@ -44,10 +60,7 @@ export function useIframeManager(urlGroups: UrlGroup[] = []) {
       const urlId = url.searchParams.get("url");
 
       if (urlId && urlId !== activeUrlId) {
-        const url = findUrlById(urlId);
-        if (url) {
-          setActiveUrl(url);
-        }
+        selectUrl(urlId);
       }
     };
 
@@ -55,7 +68,7 @@ export function useIframeManager(urlGroups: UrlGroup[] = []) {
     return () => {
       window.removeEventListener("popstate", handlePopState);
     };
-  }, [activeUrlId, findUrlById, setActiveUrl]);
+  }, [activeUrlId, selectUrl]);
 
   // Handle URL click
   const handleUrlClick = useCallback(
@@ -73,10 +86,10 @@ export function useIframeManager(urlGroups: UrlGroup[] = []) {
         }
       } else {
         // Not active - make it active
-        setActiveUrl(url);
+        selectUrl(url.id);
       }
     },
-    [activeUrlId, loadedUrlIds, setActiveUrl],
+    [activeUrlId, loadedUrlIds, selectUrl],
   );
 
   // Reset (reload) an iframe
@@ -111,10 +124,10 @@ export function useIframeManager(urlGroups: UrlGroup[] = []) {
         iframeRefs.current[urlId] = null;
 
         // Update state
-        removeLoadedUrlId(urlId);
+        unloadUrl(urlId);
       }
     },
-    [removeLoadedUrlId],
+    [unloadUrl],
   );
 
   // Reload an unloaded iframe
@@ -135,17 +148,20 @@ export function useIframeManager(urlGroups: UrlGroup[] = []) {
   // Handle iframe load event
   const handleIframeLoad = useCallback(
     (urlId: string) => {
-      addLoadedUrlId(urlId);
+      const urlState = urls[urlId];
+      if (urlState) {
+        selectUrl(urlId);
+      }
     },
-    [addLoadedUrlId],
+    [urls, selectUrl],
   );
 
   // Handle iframe error event
   const handleIframeError = useCallback(
     (urlId: string) => {
-      removeLoadedUrlId(urlId);
+      unloadUrl(urlId);
     },
-    [removeLoadedUrlId],
+    [unloadUrl],
   );
 
   // Set iframe reference

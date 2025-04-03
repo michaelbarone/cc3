@@ -1,0 +1,179 @@
+---
+description: Define standards for debugging tests and handling test failures
+globs: {e2e,test}/**/*.{ts,tsx}
+alwaysApply: true
+---
+
+# Test Debugging Standards
+
+## Context
+- Applies to all test types (E2E, unit, integration)
+- Works with 053-playwright-e2e-standards.mdc
+- Integrates with 054-test-data-management.mdc
+
+## Critical Rules
+
+1. Error Logging:
+   ```typescript
+   // GOOD: Detailed error logging
+   try {
+     await page.click("[data-testid='submit']");
+   } catch (error) {
+     console.error("Failed to click submit button:", {
+       error,
+       url: page.url(),
+       html: await page.content(),
+       viewport: page.viewportSize()
+     });
+     throw error;
+   }
+
+   // BAD: Poor error handling
+   try {
+     await page.click("[data-testid='submit']");
+   } catch (error) {
+     console.error(error);
+     throw error;
+   }
+   ```
+
+2. Debug Helpers:
+   ```typescript
+   // GOOD: Reusable debug helpers
+   export async function debugElement(page: Page, selector: string) {
+     const element = await page.$(selector);
+     if (!element) {
+       console.log("Element not found:", selector);
+       console.log("Current URL:", page.url());
+       console.log("Page content:", await page.content());
+       return null;
+     }
+
+     const isVisible = await element.isVisible();
+     const isEnabled = await element.isEnabled();
+     console.log("Element state:", {
+       selector,
+       isVisible,
+       isEnabled,
+       boundingBox: await element.boundingBox()
+     });
+     return element;
+   }
+
+   // BAD: No debug helpers
+   const element = await page.$(selector);
+   await element.click();
+   ```
+
+3. Screenshot Capture:
+   ```typescript
+   // GOOD: Automated failure screenshots
+   test.afterEach(async ({ page }, testInfo) => {
+     if (testInfo.status !== "passed") {
+       await page.screenshot({
+         path: `test-results/${testInfo.title}/failure.png`,
+         fullPage: true
+       });
+     }
+   });
+
+   // BAD: No failure evidence
+   test.afterEach(async () => {
+     // No failure capture
+   });
+   ```
+
+4. Network Logging:
+   ```typescript
+   // GOOD: Network request logging
+   page.on("request", request => {
+     console.log("Request:", {
+       url: request.url(),
+       method: request.method(),
+       headers: request.headers()
+     });
+   });
+
+   page.on("response", response => {
+     console.log("Response:", {
+       url: response.url(),
+       status: response.status(),
+       headers: response.headers()
+     });
+   });
+
+   // BAD: No network logging
+   // Missing network monitoring
+   ```
+
+## Examples
+
+<example>
+// Good: Complete debugging setup
+import { test } from "@playwright/test";
+import { debugElement } from "../helpers/debug";
+
+test.beforeEach(async ({ page }) => {
+  // Network logging
+  page.on("request", request => {
+    console.log(`Request: ${request.method()} ${request.url()}`);
+  });
+
+  page.on("response", async response => {
+    const status = response.status();
+    if (status >= 400) {
+      console.log("Failed response:", {
+        url: response.url(),
+        status,
+        body: await response.text().catch(() => "Unable to get body")
+      });
+    }
+  });
+});
+
+test("user login", async ({ page }) => {
+  try {
+    await page.goto("/login");
+
+    // Debug element state
+    const loginButton = await debugElement(page, "[data-testid='login-button']");
+    if (!loginButton) {
+      throw new Error("Login button not found");
+    }
+
+    await loginButton.click();
+
+  } catch (error) {
+    // Capture failure state
+    await page.screenshot({ path: "test-results/login-failure.png" });
+    console.error("Login test failed:", {
+      error,
+      url: page.url(),
+      content: await page.content()
+    });
+    throw error;
+  }
+});
+</example>
+
+<example type="invalid">
+// Bad: Poor debugging practices
+test("user login", async ({ page }) => {
+  await page.goto("/login");
+  await page.click("button");  // No debug info
+  // No error handling
+  // No failure capture
+});
+</example>
+
+## Dependencies
+- 053-playwright-e2e-standards.mdc
+- 054-test-data-management.mdc
+
+metadata:
+  priority: high
+  version: 1.0.0
+  tags:
+    - testing
+    - debugging
+    - error-handling

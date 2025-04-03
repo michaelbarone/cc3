@@ -1,7 +1,7 @@
 "use client";
 
+import { useIframeState } from "@/app/lib/state/iframe-state";
 import React, { useCallback, useEffect, useRef } from "react";
-import { useIframeContext } from "../state/IframeContext";
 
 interface UseIframeEventsProps {
   urlId: string;
@@ -11,7 +11,7 @@ interface UseIframeEventsProps {
 }
 
 export function useIframeEvents({ urlId, iframeRef, onLoad, onError }: UseIframeEventsProps) {
-  const { dispatch } = useIframeContext();
+  const { dispatch } = useIframeState();
   const eventsAttachedRef = useRef(false);
 
   // Handle iframe load event
@@ -29,13 +29,15 @@ export function useIframeEvents({ urlId, iframeRef, onLoad, onError }: UseIframe
 
     // Verify the loaded URL matches what we expected
     if (currentSrc === targetUrl) {
+      // Mark URL as loaded
       dispatch({
-        type: "SET_STATUS",
-        payload: { urlId, status: "active-loaded" },
+        type: "LOAD_URL",
+        payload: { urlId },
       });
 
+      // Select the URL to mark it as active
       dispatch({
-        type: "UPDATE_ACTIVITY",
+        type: "SELECT_URL",
         payload: { urlId },
       });
 
@@ -109,10 +111,10 @@ export function useIframeEvents({ urlId, iframeRef, onLoad, onError }: UseIframe
           iframeRef.current.style.width = `${event.data.width}px`;
         }
 
-        // Handle activity updates
+        // Handle activity updates by selecting the URL again
         if (event.data.type === "activity") {
           dispatch({
-            type: "UPDATE_ACTIVITY",
+            type: "SELECT_URL",
             payload: { urlId },
           });
         }

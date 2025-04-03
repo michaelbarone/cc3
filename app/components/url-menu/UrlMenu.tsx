@@ -1,7 +1,8 @@
 "use client";
 
+import { useUrlManager } from "@/app/lib/hooks/useIframe";
 import { useLongPress } from "@/app/lib/hooks/useLongPress";
-import { useIframeState } from "@/app/lib/state/iframe-state-context";
+import type { UrlGroup } from "@/app/types/iframe";
 import { ExpandLess, ExpandMore, Search as SearchIcon } from "@mui/icons-material";
 import {
   Box,
@@ -12,151 +13,50 @@ import {
   ListItemText,
   TextField,
 } from "@mui/material";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  forwardRef,
+  memo,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ChangeEvent,
+} from "react";
 
 interface UrlMenuProps {
-  urlGroups: Array<{
-    id: string;
-    name: string;
-    urls: Array<{
-      id: string;
-      title: string;
-      url: string;
-      urlMobile?: string | null;
-      iconPath?: string | null;
-      idleTimeoutMinutes?: number | null;
-    }>;
-  }>;
-  activeUrlId?: string | null;
+  urlGroups: UrlGroup[];
+  initialUrlId?: string;
   onUrlSelect?: (urlId: string) => void;
 }
 
-export function UrlMenu({ urlGroups, activeUrlId: propActiveUrlId, onUrlSelect }: UrlMenuProps) {
-  // State
-  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
-  const [searchQuery, setSearchQuery] = useState("");
-  const searchInputRef = useRef<HTMLInputElement>(null);
-  const firstGroupHeaderRef = useRef<HTMLDivElement>(null);
-  const {
-    activeUrlId: contextActiveUrlId,
-    loadedUrlIds,
-    reloadIframe,
-    unloadIframe,
-  } = useIframeState();
-
-  // Use prop activeUrlId if provided, otherwise use context
-  const activeUrlId = propActiveUrlId ?? contextActiveUrlId;
-
-  // Filter URLs based on search query
-  const filteredGroups = useMemo(
-    () =>
-      urlGroups
-        .map((group) => ({
-          ...group,
-          urls: group.urls.filter(
-            (url) =>
-              url.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-              url.url.toLowerCase().includes(searchQuery.toLowerCase()),
-          ),
-        }))
-        .filter((group) => group.urls.length > 0),
-    [urlGroups, searchQuery],
-  );
-
-  // Handlers
-  const handleGroupToggle = useCallback((groupId: string) => {
-    setExpandedGroups((prev) => {
-      const next = new Set(prev);
-      if (next.has(groupId)) {
-        next.delete(groupId);
-      } else {
-        next.add(groupId);
-      }
-      return next;
-    });
-  }, []);
-
-  // Add keyboard event handler
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "/" && document.activeElement !== searchInputRef.current) {
-        e.preventDefault();
-        searchInputRef.current?.focus();
-      } else if (e.key === "Escape" && document.activeElement === searchInputRef.current) {
-        e.preventDefault();
-        searchInputRef.current?.blur();
-        firstGroupHeaderRef.current?.focus();
-      } else if (e.key === "Enter" && document.activeElement?.hasAttribute("data-group-id")) {
-        const groupId = document.activeElement.getAttribute("data-group-id");
-        if (groupId) {
-          handleGroupToggle(groupId);
-        }
-      }
-    };
-
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [handleGroupToggle]);
-
-  const handleUrlClick = useCallback(
-    (urlId: string) => {
-      onUrlSelect?.(urlId);
-    },
-    [onUrlSelect],
-  );
-
-  const handleLongPress = useCallback(
-    (urlId: string) => {
-      if (loadedUrlIds.includes(urlId)) {
-        unloadIframe(urlId);
-      } else {
-        reloadIframe(urlId);
-      }
-    },
-    [loadedUrlIds, unloadIframe, reloadIframe],
-  );
-
-  // Render URL item with proper state indicators
-  const renderUrlItem = useCallback(
-    (url: UrlMenuProps["urlGroups"][0]["urls"][0]) => {
-      const isActive = url.id === activeUrlId;
-      const isLoaded = loadedUrlIds.includes(url.id);
-
-      return (
-        <UrlMenuItem
-          key={url.id}
-          url={url}
-          isActive={isActive}
-          isLoaded={isLoaded}
-          onUrlClick={handleUrlClick}
-          onLongPress={handleLongPress}
-        />
-      );
-    },
-    [activeUrlId, loadedUrlIds, handleLongPress, handleUrlClick],
-  );
-
-  // Add UrlMenuItem component
-  const UrlMenuItem = ({
+// Extract UrlMenuItem to a separate memoized component
+const UrlMenuItem = memo(
+  ({
     url,
     isActive,
     isLoaded,
     onUrlClick,
     onLongPress,
   }: {
-    url: UrlMenuProps["urlGroups"][0]["urls"][0];
+    url: UrlGroup["urls"][0] & { title: string };
     isActive: boolean;
     isLoaded: boolean;
     onUrlClick: (urlId: string) => void;
     onLongPress: (urlId: string) => void;
   }) => {
-    const { onMouseDown, onMouseUp, onMouseLeave, onTouchStart, onTouchEnd } = useLongPress({
-      onClick: () => onUrlClick(url.id),
-      onLongPress: () => onLongPress(url.id),
-      duration: 500,
-      disabled: false,
-      visualFeedback: true,
-    });
+    // Memoize the long press handlers
+    const longPressHandlers = useMemo(
+      () =>
+        useLongPress({
+          onClick: () => onUrlClick(url.id),
+          onLongPress: () => onLongPress(url.id),
+          duration: 500,
+          disabled: false,
+          visualFeedback: true,
+        }),
+      [onUrlClick, onLongPress, url.id],
+    );
 
     return (
       <ListItem
@@ -184,11 +84,7 @@ export function UrlMenu({ urlGroups, activeUrlId: propActiveUrlId, onUrlSelect }
         <ListItemButton
           selected={isActive}
           data-url-id={url.id}
-          onMouseDown={onMouseDown}
-          onMouseUp={onMouseUp}
-          onMouseLeave={onMouseLeave}
-          onTouchStart={onTouchStart}
-          onTouchEnd={onTouchEnd}
+          {...longPressHandlers}
           sx={{
             pl: 4,
             borderLeft: isActive ? 2 : 0,
@@ -205,59 +101,187 @@ export function UrlMenu({ urlGroups, activeUrlId: propActiveUrlId, onUrlSelect }
         </ListItemButton>
       </ListItem>
     );
-  };
+  },
+  (prevProps, nextProps) => {
+    return (
+      prevProps.url.id === nextProps.url.id &&
+      prevProps.isActive === nextProps.isActive &&
+      prevProps.isLoaded === nextProps.isLoaded &&
+      prevProps.onUrlClick === nextProps.onUrlClick &&
+      prevProps.onLongPress === nextProps.onLongPress
+    );
+  },
+);
 
-  // Render search field
-  const renderSearch = () => (
-    <Box sx={{ mb: 2 }}>
-      <TextField
-        fullWidth
-        size="small"
-        placeholder="Search URLs"
-        value={searchQuery}
-        onChange={(e) => setSearchQuery(e.target.value)}
-        inputRef={searchInputRef}
-        InputProps={{
-          startAdornment: <SearchIcon sx={{ mr: 1, color: "text.secondary" }} />,
-        }}
-      />
-    </Box>
-  );
+// Extract GroupHeader into a memoized component
+const GroupHeader = memo(
+  forwardRef<
+    HTMLDivElement,
+    {
+      group: UrlGroup;
+      isExpanded: boolean;
+      onToggle: (groupId: string) => void;
+    }
+  >((props, ref) => {
+    const { group, isExpanded, onToggle } = props;
 
-  // Render group header
-  const renderGroupHeader = useCallback(
-    (group: UrlMenuProps["urlGroups"][0], index: number) => (
-      <ListItemButton
-        ref={index === 0 ? firstGroupHeaderRef : undefined}
-        onClick={() => handleGroupToggle(group.id)}
-        data-group-id={group.id}
-      >
+    const handleClick = useCallback(() => {
+      onToggle(group.id);
+    }, [onToggle, group.id]);
+
+    return (
+      <ListItemButton component="div" ref={ref} onClick={handleClick} data-group-id={group.id}>
         <ListItemText primary={group.name} />
-        {expandedGroups.has(group.id) ? <ExpandLess /> : <ExpandMore />}
+        {isExpanded ? <ExpandLess /> : <ExpandMore />}
       </ListItemButton>
-    ),
-    [expandedGroups, handleGroupToggle],
+    );
+  }),
+  (prevProps, nextProps) => {
+    return (
+      prevProps.group.id === nextProps.group.id &&
+      prevProps.group.name === nextProps.group.name &&
+      prevProps.isExpanded === nextProps.isExpanded &&
+      prevProps.onToggle === nextProps.onToggle
+    );
+  },
+);
+
+GroupHeader.displayName = "GroupHeader";
+UrlMenuItem.displayName = "UrlMenuItem";
+
+export function UrlMenu({ urlGroups, initialUrlId, onUrlSelect }: UrlMenuProps) {
+  // State
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+  const [searchQuery, setSearchQuery] = useState("");
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const firstGroupHeaderRef = useRef<HTMLDivElement>(null);
+
+  const { urls, activeUrlId, selectUrl, unloadUrl } = useUrlManager(urlGroups);
+
+  // Initialize URLs if needed
+  useEffect(() => {
+    if (initialUrlId) {
+      selectUrl(initialUrlId);
+    }
+  }, [initialUrlId, selectUrl]);
+
+  // Handle URL selection
+  const handleUrlClick = useCallback(
+    (urlId: string) => {
+      selectUrl(urlId);
+      onUrlSelect?.(urlId);
+    },
+    [selectUrl, onUrlSelect],
   );
 
-  // Render empty state
-  if (urlGroups.length === 0) {
-    return <Box sx={{ p: 2, textAlign: "center" }}>No URLs available</Box>;
-  }
+  // Handle URL unload (long press)
+  const handleUrlUnload = useCallback(
+    (urlId: string) => {
+      unloadUrl(urlId);
+    },
+    [unloadUrl],
+  );
+
+  // Handle group expansion toggle
+  const handleGroupToggle = useCallback((groupId: string) => {
+    setExpandedGroups((prev) => {
+      const next = new Set(prev);
+      if (next.has(groupId)) {
+        next.delete(groupId);
+      } else {
+        next.add(groupId);
+      }
+      return next;
+    });
+  }, []);
+
+  // Handle search input
+  const handleSearchChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(event.target.value.toLowerCase());
+  }, []);
+
+  // Filter URLs based on search query
+  const filteredGroups = useMemo(() => {
+    if (!searchQuery) return urlGroups;
+
+    return urlGroups
+      .map((group) => ({
+        ...group,
+        urls: group.urls.filter(
+          (url) =>
+            url.url.toLowerCase().includes(searchQuery) ||
+            (url as any).title?.toLowerCase().includes(searchQuery),
+        ),
+      }))
+      .filter((group) => group.urls.length > 0);
+  }, [urlGroups, searchQuery]);
+
+  // Focus search input on keyboard shortcut
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if ((event.ctrlKey || event.metaKey) && event.key === "k") {
+        event.preventDefault();
+        searchInputRef.current?.focus();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   return (
-    <Box>
-      {renderSearch()}
-      <List>
-        {filteredGroups.map((group, index) => (
-          <Box key={group.id}>
-            {renderGroupHeader(group, index)}
-            <Collapse in={expandedGroups.has(group.id)} timeout="auto">
-              <List role="list" aria-label={`${group.name} URLs`} sx={{ pl: 2 }}>
-                {group.urls.map(renderUrlItem)}
-              </List>
-            </Collapse>
-          </Box>
-        ))}
+    <Box sx={{ width: "100%", height: "100%", display: "flex", flexDirection: "column" }}>
+      <Box sx={{ p: 1 }}>
+        <TextField
+          fullWidth
+          size="small"
+          inputRef={searchInputRef}
+          placeholder="Search URLs (Ctrl+K)"
+          value={searchQuery}
+          onChange={handleSearchChange}
+          InputProps={{
+            startAdornment: <SearchIcon sx={{ mr: 1, color: "text.secondary" }} />,
+          }}
+        />
+      </Box>
+
+      <List
+        sx={{
+          width: "100%",
+          flex: 1,
+          overflowY: "auto",
+          bgcolor: "background.paper",
+        }}
+        component="nav"
+      >
+        {filteredGroups.length === 0 ? (
+          <></>
+        ) : (
+          filteredGroups.map((group) => (
+            <Box key={group.id}>
+              <GroupHeader
+                ref={group === filteredGroups[0] ? firstGroupHeaderRef : undefined}
+                group={group}
+                isExpanded={expandedGroups.has(group.id)}
+                onToggle={handleGroupToggle}
+              />
+              <Collapse in={expandedGroups.has(group.id)} timeout="auto" unmountOnExit>
+                <List component="div" disablePadding aria-label={`${group.name} URLs`}>
+                  {group.urls.map((url) => (
+                    <UrlMenuItem
+                      key={url.id}
+                      url={url as any}
+                      isActive={url.id === activeUrlId}
+                      isLoaded={urls[url.id]?.isLoaded ?? false}
+                      onUrlClick={handleUrlClick}
+                      onLongPress={handleUrlUnload}
+                    />
+                  ))}
+                </List>
+              </Collapse>
+            </Box>
+          ))
+        )}
       </List>
     </Box>
   );

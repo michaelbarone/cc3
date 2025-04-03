@@ -1,9 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useCallback } from "react";
-import { useIframeContext } from "../state/IframeContext";
+import { useIframeState } from "@/app/lib/state/iframe-state";
+import { useCallback, useEffect, useRef } from "react";
 import { useGlobalIframeContainer } from "./useGlobalIframeContainer";
-import { IframeStatus } from "@/app/types/iframe";
 
 interface UseIframeLifecycleOptions {
   onLoad?: (urlId: string) => void;
@@ -21,7 +20,7 @@ export function useIframeLifecycle(
   urlId: string,
   options: UseIframeLifecycleOptions = {},
 ): UseIframeLifecycleReturn {
-  const { dispatch } = useIframeContext();
+  const { dispatch } = useIframeState();
   const { createIframe, removeIframe } = useGlobalIframeContainer();
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
   const { onLoad, onError, onUnload } = options;
@@ -40,13 +39,15 @@ export function useIframeLifecycle(
 
     // Verify the loaded URL matches what we expected
     if (currentSrc === targetUrl) {
+      // Mark URL as loaded
       dispatch({
-        type: "SET_STATUS",
-        payload: { urlId, status: "active-loaded" as IframeStatus },
+        type: "LOAD_URL",
+        payload: { urlId },
       });
 
+      // Select URL to mark as active
       dispatch({
-        type: "UPDATE_ACTIVITY",
+        type: "SELECT_URL",
         payload: { urlId },
       });
 
@@ -81,10 +82,10 @@ export function useIframeLifecycle(
         iframe.addEventListener("error", handleError);
       }
 
-      // Update state to loading
+      // Mark URL as selected and ready to load
       dispatch({
-        type: "SET_STATUS",
-        payload: { urlId, status: "active-unloaded" as IframeStatus },
+        type: "SELECT_URL",
+        payload: { urlId },
       });
 
       // Set the URL to load content
@@ -107,8 +108,8 @@ export function useIframeLifecycle(
         iframeRef.current.src = "";
 
         dispatch({
-          type: "SET_STATUS",
-          payload: { urlId, status: "inactive-unloaded" as IframeStatus },
+          type: "UNLOAD_URL",
+          payload: { urlId },
         });
 
         onUnload?.(urlId);
@@ -136,9 +137,10 @@ export function useIframeLifecycle(
         }
       }, 50);
 
+      // Mark URL as selected but not loaded
       dispatch({
-        type: "SET_STATUS",
-        payload: { urlId, status: "active-unloaded" as IframeStatus },
+        type: "SELECT_URL",
+        payload: { urlId },
       });
     },
     [urlId, dispatch],

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 // Paths that should be accessible to the public
-const publicPaths = ["/", "/login", "/api/auth/login", "/api/auth/register"];
+const publicPaths = ["/", "/login", "/api/auth/login", "/api/auth/register", "/api/health"];
 
 // Paths that require admin access
 const adminPaths = ["/admin"]; // Protects all routes under /admin/*

@@ -41,7 +41,7 @@ import {
   Typography,
 } from "@mui/material";
 import Image from "next/image";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 
 interface Url {
   id: string;
@@ -75,6 +75,132 @@ interface User {
   username: string;
   isAdmin: boolean;
 }
+
+// Add this component before the main UrlGroupManagement component
+const MemoizedUrlItem = React.memo(function UrlItem({
+  url,
+  index,
+  groupId,
+  totalUrls,
+  onOrderChange,
+  onEdit,
+  onDelete,
+  onSelect,
+  isSelected,
+}: {
+  url: UrlInGroup;
+  index: number;
+  groupId: string;
+  totalUrls: number;
+  onOrderChange: (groupId: string, urlId: string, direction: "up" | "down") => Promise<void>;
+  onEdit: (url: Url) => void;
+  onDelete: (url: Url) => void;
+  onSelect: (urlId: string) => void;
+  isSelected: boolean;
+}) {
+  return (
+    <ListItem>
+      <Checkbox
+        edge="start"
+        checked={isSelected}
+        onChange={() => onSelect(url.url.id)}
+        sx={{ mr: 1 }}
+      />
+      <ListItemText
+        primary={
+          <Box sx={{ display: "flex", alignItems: "center" }}>
+            <Box sx={{ mr: 1 }}>
+              {url.url.iconPath ? (
+                <Image
+                  src={url.url.iconPath}
+                  alt={url.url.title}
+                  width={16}
+                  height={16}
+                  style={{ maxWidth: "100%", height: "auto" }}
+                />
+              ) : (
+                <LinkIcon fontSize="small" />
+              )}
+            </Box>
+            {url.url.title}
+          </Box>
+        }
+        secondary={
+          <Box>
+            <Typography variant="body2" component="div">
+              {url.url.url}
+            </Typography>
+            {url.url.urlMobile && (
+              <Typography variant="body2" color="text.secondary" component="div">
+                Mobile: {url.url.urlMobile}
+              </Typography>
+            )}
+          </Box>
+        }
+      />
+      <ListItemSecondaryAction>
+        <Tooltip title="Move Up">
+          <span>
+            <IconButton
+              edge="end"
+              aria-label="move up"
+              onClick={(e) => {
+                e.stopPropagation();
+                onOrderChange(groupId, url.url.id, "up");
+              }}
+              disabled={index === 0}
+              size="small"
+            >
+              <ArrowUpwardIcon fontSize="small" />
+            </IconButton>
+          </span>
+        </Tooltip>
+        <Tooltip title="Move Down">
+          <span>
+            <IconButton
+              edge="end"
+              aria-label="move down"
+              onClick={(e) => {
+                e.stopPropagation();
+                onOrderChange(groupId, url.url.id, "down");
+              }}
+              disabled={index === totalUrls - 1}
+              size="small"
+            >
+              <ArrowDownwardIcon fontSize="small" />
+            </IconButton>
+          </span>
+        </Tooltip>
+        <Tooltip title="Preview URL">
+          <IconButton
+            edge="end"
+            aria-label="preview"
+            onClick={() => window.open(url.url.url, "_blank")}
+            size="small"
+          >
+            <VisibilityIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+        <Tooltip title="Edit URL">
+          <IconButton edge="end" aria-label="edit" onClick={() => onEdit(url.url)} size="small">
+            <EditIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+        <Tooltip title="Delete URL">
+          <IconButton
+            edge="end"
+            aria-label="delete"
+            onClick={() => onDelete(url.url)}
+            color="error"
+            size="small"
+          >
+            <DeleteIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+      </ListItemSecondaryAction>
+    </ListItem>
+  );
+});
 
 export default function UrlGroupManagement() {
   const [urlGroups, setUrlGroups] = useState<UrlGroup[]>([]);
@@ -137,6 +263,212 @@ export default function UrlGroupManagement() {
 
   const [selectedUrlsForBatch, setSelectedUrlsForBatch] = useState<Set<string>>(new Set());
   const [batchOperationInProgress, setBatchOperationInProgress] = useState(false);
+
+  const [activeUrlId, setActiveUrlId] = useState<string | null>(null);
+  const [activeUrl, setActiveUrl] = useState<Url | null>(null);
+  const [loadedUrlIds, setLoadedUrlIds] = useState<string[]>([]);
+  const [iframeRefs, setIframeRefs] = useState<Record<string, HTMLIFrameElement>>({});
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Create a singleton container for iframes outside of React
+  let globalIframeContainer: HTMLDivElement | null = null;
+
+  // Function to get or create the global iframe container
+  function getGlobalIframeContainer() {
+    if (!globalIframeContainer) {
+      globalIframeContainer = document.createElement("div");
+      globalIframeContainer.id = "global-iframe-container";
+      globalIframeContainer.style.position = "fixed";
+      globalIframeContainer.style.top = "0";
+      globalIframeContainer.style.left = "0";
+      globalIframeContainer.style.width = "100%";
+      globalIframeContainer.style.height = "100%";
+      globalIframeContainer.style.pointerEvents = "none";
+      globalIframeContainer.style.zIndex = "1000";
+
+      // Ensure the container is added to the body
+      if (document.body) {
+        document.body.appendChild(globalIframeContainer);
+      }
+    }
+    return globalIframeContainer;
+  }
+
+  // Create iframes on mount
+  useEffect(() => {
+    if (!document.body) {
+      console.error("Document body not available for iframe initialization");
+      return;
+    }
+
+    // Get or create the global container
+    const container = getGlobalIframeContainer();
+    if (!container) {
+      console.error("Failed to create global iframe container");
+      return;
+    }
+
+    // Track existing and needed iframe IDs
+    const existingIframeIds = new Set(Object.keys(iframeRefs));
+    const neededIframeIds = new Set<string>();
+
+    // Create or update iframes for all URLs
+    urlGroups.forEach((group) => {
+      if (!group?.urls?.length) return;
+
+      group.urls.forEach((urlData) => {
+        if (!urlData?.url?.url) {
+          console.warn("Invalid URL data", urlData);
+          return;
+        }
+
+        const { url } = urlData;
+        const urlId = url.id;
+        neededIframeIds.add(urlId);
+
+        // If iframe already exists, just update its data-src if needed
+        if (existingIframeIds.has(urlId)) {
+          const existingIframe = iframeRefs[urlId];
+          const currentDataSrc = existingIframe.getAttribute("data-src");
+          if (currentDataSrc !== url.url) {
+            existingIframe.setAttribute("data-src", url.url);
+            // Only update src if this is the active iframe and it's currently loaded
+            if (
+              urlId === activeUrlId &&
+              existingIframe.src &&
+              existingIframe.src !== "about:blank"
+            ) {
+              existingIframe.src = url.url;
+            }
+          }
+          return;
+        }
+
+        // Create wrapper div for new iframe
+        const wrapper = document.createElement("div");
+        wrapper.setAttribute("data-iframe-container", urlId);
+        wrapper.style.position = "absolute";
+        wrapper.style.top = "0";
+        wrapper.style.left = "0";
+        wrapper.style.width = "100%";
+        wrapper.style.height = "100%";
+        wrapper.style.overflow = "hidden";
+        wrapper.style.pointerEvents = "auto";
+        wrapper.style.visibility = urlId === activeUrlId ? "visible" : "hidden";
+        wrapper.style.display = urlId === activeUrlId ? "block" : "none";
+        wrapper.style.zIndex = urlId === activeUrlId ? "1" : "0";
+
+        // Create new iframe
+        const iframe = document.createElement("iframe");
+        iframe.setAttribute("data-iframe-id", urlId);
+        iframe.setAttribute("data-src", url.url);
+        iframe.title = `iframe-${urlId}`;
+        iframe.style.width = "100%";
+        iframe.style.height = "100%";
+        iframe.style.border = "none";
+        iframe.style.background = "#fff";
+        iframe.style.overflow = "hidden";
+        iframe.setAttribute("sandbox", "allow-same-origin allow-scripts allow-forms allow-popups");
+        iframe.setAttribute(
+          "allow",
+          "accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture",
+        );
+
+        // Store ref and add to DOM
+        setIframeRefs((prev) => ({ ...prev, [urlId]: iframe }));
+        wrapper.appendChild(iframe);
+        container.appendChild(wrapper);
+
+        // Load active iframe
+        if (urlId === activeUrlId) {
+          iframe.src = url.url;
+        }
+      });
+    });
+
+    // Remove any iframes that are no longer needed
+    existingIframeIds.forEach((urlId) => {
+      if (!neededIframeIds.has(urlId)) {
+        const iframe = iframeRefs[urlId];
+        if (iframe && iframe.parentElement) {
+          iframe.parentElement.remove();
+        }
+        setIframeRefs((prev) => {
+          const newRefs = { ...prev };
+          delete newRefs[urlId];
+          return newRefs;
+        });
+      }
+    });
+
+    // Update container position when our container moves
+    const observer = new ResizeObserver(() => {
+      if (containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect();
+        Object.values(iframeRefs).forEach((iframe) => {
+          if (iframe.parentElement) {
+            iframe.parentElement.style.position = "fixed";
+            iframe.parentElement.style.top = `${rect.top}px`;
+            iframe.parentElement.style.left = `${rect.left}px`;
+            iframe.parentElement.style.width = `${rect.width}px`;
+            iframe.parentElement.style.height = `${rect.height}px`;
+          }
+        });
+      }
+    });
+
+    if (containerRef.current) {
+      observer.observe(containerRef.current);
+    }
+
+    return () => {
+      observer.disconnect();
+
+      // Remove all iframes
+      Object.values(iframeRefs).forEach((iframe) => {
+        if (iframe.parentElement) {
+          iframe.parentElement.remove();
+        }
+      });
+      setIframeRefs({});
+
+      // Only remove the global container if it's empty
+      if (container && container.childNodes.length === 0) {
+        container.remove();
+        globalIframeContainer = null;
+      }
+    };
+  }, [urlGroups, activeUrlId]);
+
+  // Handle active URL changes
+  useEffect(() => {
+    if (!activeUrlId) return;
+
+    // Update visibility and ensure proper loading for all iframes
+    Object.entries(iframeRefs).forEach(([urlId, iframe]) => {
+      const wrapper = iframe.parentElement;
+      const isActive = urlId === activeUrlId;
+
+      if (wrapper) {
+        // Force a reflow
+        wrapper.offsetHeight;
+
+        // Update visibility and z-index
+        wrapper.style.display = isActive ? "block" : "none";
+        wrapper.style.visibility = isActive ? "visible" : "hidden";
+        wrapper.style.zIndex = isActive ? "1" : "0";
+        wrapper.style.pointerEvents = isActive ? "auto" : "none";
+
+        // Load the iframe content if it's active and not already loaded
+        if (isActive && (!iframe.src || iframe.src === "about:blank")) {
+          const effectiveUrl = iframe.getAttribute("data-src");
+          if (effectiveUrl) {
+            iframe.src = effectiveUrl;
+          }
+        }
+      }
+    });
+  }, [activeUrlId, iframeRefs]);
 
   const fetchUrlGroups = async () => {
     try {
@@ -244,26 +576,55 @@ export default function UrlGroupManagement() {
 
   const handleUrlOrderChange = async (groupId: string, urlId: string, direction: "up" | "down") => {
     try {
-      const response = await fetch(
-        `/api/admin/url-groups/${groupId}/urls/${urlId}/reorder?direction=${direction}`,
-        {
-          method: "PUT",
+      // Optimistically update the UI
+      setUrlGroups((prevGroups) => {
+        return prevGroups.map((group) => {
+          if (group.id !== groupId) return group;
+
+          const urls = [...group.urls];
+          const currentIndex = urls.findIndex((u) => u.url.id === urlId);
+          if (currentIndex === -1) return group;
+
+          const newIndex = direction === "up" ? currentIndex - 1 : currentIndex + 1;
+          if (newIndex < 0 || newIndex >= urls.length) return group;
+
+          // Swap the items
+          [urls[currentIndex], urls[newIndex]] = [urls[newIndex], urls[currentIndex]];
+
+          // Update display orders
+          urls[currentIndex].displayOrder = currentIndex;
+          urls[newIndex].displayOrder = newIndex;
+
+          return {
+            ...group,
+            urls,
+          };
+        });
+      });
+
+      // Make API call in background
+      const response = await fetch(`/api/admin/url-groups/${groupId}/urls/${urlId}/reorder`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
         },
-      );
+        body: JSON.stringify({ direction }),
+      });
 
       if (!response.ok) {
         throw new Error("Failed to reorder URL");
       }
 
-      // Refresh the URL groups to get updated order
-      await fetchUrlGroups();
-
+      // Only show success message, no need to refetch
       setSnackbar({
         open: true,
         message: "URL order updated successfully",
         severity: "success",
       });
     } catch (err) {
+      // On error, refresh the list to ensure consistency
+      await fetchUrlGroups();
+
       setSnackbar({
         open: true,
         message: err instanceof Error ? err.message : "Failed to reorder URL",
@@ -845,115 +1206,17 @@ export default function UrlGroupManagement() {
                           .sort((a, b) => a.displayOrder - b.displayOrder)
                           .map((url, index) => (
                             <React.Fragment key={url.url.id}>
-                              <ListItem>
-                                <Checkbox
-                                  edge="start"
-                                  checked={selectedUrlsForBatch.has(url.url.id)}
-                                  onChange={() => handleBatchSelect(url.url.id)}
-                                  sx={{ mr: 1 }}
-                                />
-                                <ListItemText
-                                  primary={
-                                    <Box sx={{ display: "flex", alignItems: "center" }}>
-                                      <Box sx={{ mr: 1 }}>
-                                        {url.url.iconPath ? (
-                                          <Image
-                                            src={url.url.iconPath}
-                                            alt={url.url.title}
-                                            width={16}
-                                            height={16}
-                                            style={{ maxWidth: "100%", height: "auto" }}
-                                          />
-                                        ) : (
-                                          <LinkIcon fontSize="small" />
-                                        )}
-                                      </Box>
-                                      {url.url.title}
-                                    </Box>
-                                  }
-                                  secondary={
-                                    <Box>
-                                      <Typography variant="body2" component="div">
-                                        {url.url.url}
-                                      </Typography>
-                                      {url.url.urlMobile && (
-                                        <Typography
-                                          variant="body2"
-                                          color="text.secondary"
-                                          component="div"
-                                        >
-                                          Mobile: {url.url.urlMobile}
-                                        </Typography>
-                                      )}
-                                    </Box>
-                                  }
-                                />
-                                <ListItemSecondaryAction>
-                                  <Tooltip title="Move Up">
-                                    <span>
-                                      <IconButton
-                                        edge="end"
-                                        aria-label="move up"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          handleUrlOrderChange(group.id, url.url.id, "up");
-                                        }}
-                                        disabled={index === 0}
-                                        size="small"
-                                      >
-                                        <ArrowUpwardIcon fontSize="small" />
-                                      </IconButton>
-                                    </span>
-                                  </Tooltip>
-                                  <Tooltip title="Move Down">
-                                    <span>
-                                      <IconButton
-                                        edge="end"
-                                        aria-label="move down"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          handleUrlOrderChange(group.id, url.url.id, "down");
-                                        }}
-                                        disabled={index === group.urls.length - 1}
-                                        size="small"
-                                      >
-                                        <ArrowDownwardIcon fontSize="small" />
-                                      </IconButton>
-                                    </span>
-                                  </Tooltip>
-                                  <Tooltip title="Preview URL">
-                                    <IconButton
-                                      edge="end"
-                                      aria-label="preview"
-                                      onClick={() => window.open(url.url.url, "_blank")}
-                                      size="small"
-                                    >
-                                      <VisibilityIcon fontSize="small" />
-                                    </IconButton>
-                                  </Tooltip>
-                                  <Tooltip title="Edit URL">
-                                    <IconButton
-                                      edge="end"
-                                      aria-label="edit"
-                                      onClick={() => handleOpenDialog("editUrl", group, url.url)}
-                                      size="small"
-                                    >
-                                      <EditIcon fontSize="small" />
-                                    </IconButton>
-                                  </Tooltip>
-                                  <Tooltip title="Delete URL">
-                                    <IconButton
-                                      edge="end"
-                                      aria-label="delete"
-                                      onClick={() => handleOpenDialog("deleteUrl", group, url.url)}
-                                      color="error"
-                                      size="small"
-                                    >
-                                      <DeleteIcon fontSize="small" />
-                                    </IconButton>
-                                  </Tooltip>
-                                </ListItemSecondaryAction>
-                              </ListItem>
+                              <MemoizedUrlItem
+                                url={url}
+                                index={index}
+                                groupId={group.id}
+                                totalUrls={group.urls.length}
+                                onOrderChange={handleUrlOrderChange}
+                                onEdit={(url) => handleOpenDialog("editUrl", group, url)}
+                                onDelete={(url) => handleOpenDialog("deleteUrl", group, url)}
+                                onSelect={handleBatchSelect}
+                                isSelected={selectedUrlsForBatch.has(url.url.id)}
+                              />
                               {index < group.urls.length - 1 && <Divider component="li" />}
                             </React.Fragment>
                           ))}

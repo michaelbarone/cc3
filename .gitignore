@@ -22,6 +22,13 @@ prisma/data/backups/*.zip
 
 # testing
 /coverage
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/e2e/screenshots/
+/e2e/videos/
+/e2e/traces/
 
 # next.js
 /.next/

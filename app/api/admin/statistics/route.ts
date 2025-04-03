@@ -1,6 +1,7 @@
 import { verifyToken } from "@/app/lib/auth/jwt";
 import { prisma } from "@/app/lib/db/prisma";
-import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
+import { NextRequest, NextResponse } from "next/server";
 
 type JsonValue = string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue };
 
@@ -44,6 +45,7 @@ interface UserAdminStat {
 }
 
 interface MostAccessedUrl {
+  id: string;
   title: string;
   url: string;
   count: bigint;
@@ -80,6 +82,58 @@ interface UserGroupByResult {
   };
 }
 
+interface StatisticsResponse {
+  system: {
+    users: {
+      total: number;
+      active: number;
+      withPassword: number;
+      withoutPassword: number;
+      adminRatio: {
+        admin: number;
+        regular: number;
+      };
+    };
+    urlGroups: {
+      total: number;
+      unused: number;
+      averageUrlsPerGroup: number;
+    };
+    urls: {
+      total: number;
+      withMobileVersion: number;
+      desktopOnly: number;
+      orphaned: number;
+    };
+  };
+  userPreferences: {
+    themeDistribution: {
+      light: number;
+      dark: number;
+    };
+    menuPositionDistribution: {
+      left: number;
+      right: number;
+    };
+  };
+  activity: {
+    recentlyActive: RecentUser[];
+    mostAccessedUrls: Array<{
+      id: string;
+      title: string;
+      url: string;
+      accessCount: number;
+    }>;
+  };
+  urlGroups: {
+    mostAssigned: Array<{
+      name: string;
+      userCount: number;
+      urlCount: number;
+    }>;
+  };
+}
+
 // Helper function to convert BigInt to Number
 function convertBigIntToNumber(value: unknown): JsonValue {
   if (typeof value === "bigint") {
@@ -98,50 +152,63 @@ function convertBigIntToNumber(value: unknown): JsonValue {
   return value as JsonValue;
 }
 
-export async function GET() {
+export async function GET(
+  request: NextRequest,
+): Promise<NextResponse<StatisticsResponse | { error: string }>> {
   try {
-    const userData = await verifyToken();
+    const cookieStore = await cookies();
+    const authToken = cookieStore.get("auth_token")?.value;
 
-    if (!userData) {
+    if (!authToken) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    if (!userData.isAdmin) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    const user = await verifyToken(authToken);
+    if (!user || !user.isAdmin) {
+      return NextResponse.json(
+        { error: user ? "Forbidden" : "Unauthorized" },
+        { status: user ? 403 : 401 },
+      );
     }
 
-    // User Statistics
-    const userStats = await prisma.user.aggregate({
+    // Get total users count
+    const totalUsers = await prisma.user.aggregate({
       _count: { _all: true },
     });
 
-    const userThemeStats = await prisma.user.groupBy({
+    // Get theme mode distribution
+    const themeDistribution = (await prisma.user.groupBy({
       by: ["themeMode"],
       _count: { _all: true },
-    });
+    })) as unknown as UserThemeStat[];
 
-    const userMenuStats = await prisma.user.groupBy({
+    // Get menu position distribution
+    const menuDistribution = (await prisma.user.groupBy({
       by: ["menuPosition"],
       _count: { _all: true },
-    });
+    })) as unknown as UserMenuStat[];
 
-    const userAdminStats = await prisma.user.groupBy({
+    // Get admin ratio
+    const adminRatio = (await prisma.user.groupBy({
       by: ["isAdmin"],
       _count: { _all: true },
-    });
+    })) as unknown as UserAdminStat[];
 
-    const passwordStats = await prisma.user.groupBy({
+    // Get password stats
+    const passwordStats = (await prisma.user.groupBy({
       by: ["passwordHash"],
       _count: { _all: true },
-    });
+    })) as unknown as PasswordStat[];
 
+    // Get active users count
     const activeUsers = await prisma.user.count({
       where: {
         lastActiveUrl: { not: null },
       },
     });
 
-    const recentUsers = await prisma.user.findMany({
+    // Get recent users
+    const recentUsers = (await prisma.user.findMany({
       where: {
         lastActiveUrl: { not: null },
       },
@@ -154,15 +221,17 @@ export async function GET() {
         updatedAt: "desc",
       },
       take: 10,
-    });
+    })) as RecentUserInput[];
 
-    // URL Group Statistics
-    const urlGroupStats = await prisma.urlGroup.aggregate({
+    // Get URL group statistics
+    const totalUrlGroups = await prisma.urlGroup.aggregate({
       _count: { _all: true },
     });
 
-    const groupsWithUserCount = await prisma.urlGroup.findMany({
-      include: {
+    // Get most assigned URL groups
+    const mostAssignedGroups = (await prisma.urlGroup.findMany({
+      select: {
+        name: true,
         _count: {
           select: {
             userUrlGroups: true,
@@ -176,8 +245,9 @@ export async function GET() {
         },
       },
       take: 5,
-    });
+    })) as UrlGroupWithCounts[];
 
+    // Get unused URL groups count
     const unusedGroups = await prisma.urlGroup.count({
       where: {
         userUrlGroups: {
@@ -186,130 +256,115 @@ export async function GET() {
       },
     });
 
-    // Calculate average URLs per group
-    const urlsPerGroup = await prisma.urlGroup.findMany({
-      include: {
-        _count: {
-          select: { urls: true },
-        },
-      },
+    // Get total URLs count
+    const totalUrls = await prisma.url.aggregate({
+      _count: { _all: true },
     });
 
-    const totalUrls = urlsPerGroup.reduce(
-      (sum: number, group: GroupWithCount) => sum + group._count.urls,
-      0,
-    );
-    const avgUrlsPerGroup = totalUrls / (urlsPerGroup.length || 1);
-
-    // URL Statistics
-    const urlStats = await prisma.url.aggregate({
-      _count: {
-        _all: true,
-      },
-    });
-
-    // Get mobile/desktop URL stats
-    const urlMobileStats = await prisma.$queryRaw<{ withMobile: bigint; desktopOnly: bigint }[]>`
+    // Get mobile vs desktop URLs count
+    const mobileStats = await prisma.$queryRaw<[{ withMobile: bigint; desktopOnly: bigint }]>`
       SELECT
-        COUNT(CASE WHEN "urlMobile" IS NOT NULL THEN 1 END) as "withMobile",
-        COUNT(CASE WHEN "urlMobile" IS NULL THEN 1 END) as "desktopOnly"
+        COUNT(*) FILTER (WHERE "urlMobile" IS NOT NULL) as "withMobile",
+        COUNT(*) FILTER (WHERE "urlMobile" IS NULL) as "desktopOnly"
       FROM "Url"
     `;
 
-    // Get orphaned URLs count
-    const orphanedUrls = await prisma.$queryRaw<{ count: bigint }[]>`
+    // Get orphaned URLs count (not in any group)
+    const orphanedUrls = await prisma.$queryRaw<[{ count: bigint }]>`
       SELECT COUNT(*) as count
-      FROM "Url"
-      WHERE "urlGroupId" IS NULL
+      FROM "Url" u
+      WHERE NOT EXISTS (
+        SELECT 1 FROM "urls_in_groups" uig WHERE uig."urlId" = u.id
+      )
     `;
 
     // Get most accessed URLs
-    const mostAccessedUrls = await prisma.$queryRaw<{ url: string; count: bigint }[]>`
-      SELECT "lastActiveUrl" as url, COUNT(*) as count
-      FROM "User"
-      WHERE "lastActiveUrl" IS NOT NULL
-      GROUP BY "lastActiveUrl"
+    const mostAccessedUrls = await prisma.$queryRaw<MostAccessedUrl[]>`
+      SELECT u.url, u.title, COUNT(*) as count
+      FROM "User" usr
+      JOIN "Url" u ON usr."lastActiveUrl" = u.url
+      GROUP BY u.url, u.title
       ORDER BY count DESC
-      LIMIT 3
+      LIMIT 5
     `;
 
-    // Calculate percentages and prepare response
-    const serializedStatistics = {
+    // Calculate average URLs per group
+    const averageUrlsPerGroup =
+      totalUrlGroups._count._all > 0 ? totalUrls._count._all / totalUrlGroups._count._all : 0;
+
+    // Process theme distribution
+    const themeStats = {
+      light: themeDistribution.find((t) => t.themeMode === "light")?._count._all ?? 0,
+      dark: themeDistribution.find((t) => t.themeMode === "dark")?._count._all ?? 0,
+    };
+
+    // Process menu distribution
+    const menuStats = {
+      left: menuDistribution.find((m) => m.menuPosition === "left")?._count._all ?? 0,
+      right: menuDistribution.find((m) => m.menuPosition === "right")?._count._all ?? 0,
+    };
+
+    // Process admin ratio
+    const adminStats = {
+      admin: adminRatio.find((a) => a.isAdmin)?._count._all ?? 0,
+      regular: adminRatio.find((a) => !a.isAdmin)?._count._all ?? 0,
+    };
+
+    // Process password stats
+    const passwordCounts = {
+      withPassword: passwordStats.find((p) => p.passwordHash !== null)?._count._all ?? 0,
+      withoutPassword: passwordStats.find((p) => p.passwordHash === null)?._count._all ?? 0,
+    };
+
+    const response: StatisticsResponse = {
       system: {
         users: {
-          total: Number(userStats._count._all),
-          active: Number(activeUsers),
-          withPassword: Number(
-            passwordStats.find((stat) => stat.passwordHash !== null)?._count._all || 0,
-          ),
-          withoutPassword: Number(
-            passwordStats.find((stat) => stat.passwordHash === null)?._count._all || 0,
-          ),
-          adminRatio: {
-            admin: Number(userAdminStats.find((stat) => stat.isAdmin)?._count._all || 0),
-            regular: Number(userAdminStats.find((stat) => !stat.isAdmin)?._count._all || 0),
-          },
+          total: totalUsers._count._all,
+          active: activeUsers,
+          withPassword: passwordCounts.withPassword,
+          withoutPassword: passwordCounts.withoutPassword,
+          adminRatio: adminStats,
         },
         urlGroups: {
-          total: Number(urlGroupStats._count._all),
-          unused: Number(unusedGroups),
-          averageUrlsPerGroup: Number(avgUrlsPerGroup.toFixed(2)),
+          total: totalUrlGroups._count._all,
+          unused: unusedGroups,
+          averageUrlsPerGroup: Number(averageUrlsPerGroup.toFixed(2)),
         },
         urls: {
-          total: Number(urlStats._count._all),
-          withMobileVersion: Number(urlMobileStats[0]?.withMobile ?? 50),
-          desktopOnly: Number(urlMobileStats[0]?.desktopOnly ?? 150),
-          orphaned: Number(orphanedUrls[0]?.count ?? 10),
+          total: totalUrls._count._all,
+          withMobileVersion: Number(mobileStats[0].withMobile),
+          desktopOnly: Number(mobileStats[0].desktopOnly),
+          orphaned: Number(orphanedUrls[0].count),
         },
       },
       userPreferences: {
-        themeDistribution: userThemeStats.reduce((acc: Record<string, number>, stat) => {
-          const theme = stat.themeMode || "light";
-          acc[theme] = Number(stat._count._all);
-          return acc;
-        }, {}),
-        menuPositionDistribution: userMenuStats.reduce((acc: Record<string, number>, stat) => {
-          const position = stat.menuPosition || "left";
-          acc[position] = Number(stat._count._all);
-          return acc;
-        }, {}),
+        themeDistribution: themeStats,
+        menuPositionDistribution: menuStats,
       },
       activity: {
         recentlyActive: recentUsers.map((user) => ({
-          username: user.username,
-          lastActiveUrl: user.lastActiveUrl,
+          ...user,
           updatedAt: user.updatedAt.toISOString(),
         })),
-        mostAccessedUrls:
-          mostAccessedUrls.length > 0
-            ? mostAccessedUrls.map((url) => ({
-                url: url.url,
-                count: Number(url.count),
-              }))
-            : [
-                { url: "https://example.com", count: 100 },
-                { url: "https://example2.com", count: 50 },
-                { url: "https://example3.com", count: 25 },
-              ],
+        mostAccessedUrls: mostAccessedUrls.map((url: MostAccessedUrl) => ({
+          id: url.url,
+          title: url.title,
+          url: url.url,
+          accessCount: Number(url.count),
+        })),
       },
       urlGroups: {
-        mostAssigned: (groupsWithUserCount ?? []).map((group) => ({
+        mostAssigned: mostAssignedGroups.map((group) => ({
           name: group.name,
-          userCount: Number(group._count.userUrlGroups),
-          urlCount: Number(group._count.urls),
+          userCount: group._count.userUrlGroups,
+          urlCount: group._count.urls,
         })),
       },
     };
 
-    return NextResponse.json(serializedStatistics);
+    return NextResponse.json(response);
   } catch (error) {
-    if (error instanceof Error && error.message === "Unauthorized") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-    if (error instanceof Error && error.message === "Forbidden") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
     console.error("Error fetching statistics:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json({ error: "Failed to fetch statistics" }, { status: 500 });
   }
 }

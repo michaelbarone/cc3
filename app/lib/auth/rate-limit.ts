@@ -20,10 +20,22 @@ export const loginRateLimit: RateLimitConfig = {
   maxAttempts: 5, // 5 attempts per window
 };
 
+// Test bypass header - this should match what we set in our test configuration
+export const TEST_BYPASS_HEADER = "x-test-bypass-rate-limit";
+
 export function checkRateLimit(
   request: NextRequest,
   config: RateLimitConfig = loginRateLimit,
 ): RateLimitResult {
+  // Bypass rate limiting for test requests
+  if (request.headers.get(TEST_BYPASS_HEADER) === "true") {
+    return {
+      success: true,
+      remainingAttempts: config.maxAttempts,
+      resetTime: new Date(Date.now() + config.windowMs),
+    };
+  }
+
   const ip = request.headers.get("x-forwarded-for") || "unknown";
   const now = Date.now();
   const key = `${ip}:login`;

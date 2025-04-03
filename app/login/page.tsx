@@ -47,8 +47,8 @@ interface AppConfig {
 function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectPath = searchParams.get("redirect") || "/";
-  const justLoggedOut = searchParams.get("logout") === "true";
+  const redirectPath = searchParams?.get("redirect") || "/";
+  const justLoggedOut = searchParams?.get("logout") === "true";
   const { login, user, loading, setUser } = useAuth();
   const theme = useTheme();
   const [isFirstRun, setIsFirstRun] = useState(false);

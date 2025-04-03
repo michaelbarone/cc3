@@ -1,4 +1,5 @@
 import { prisma } from "@/app/lib/db/prisma";
+import { Prisma } from "@prisma/client";
 import { execSync } from "child_process";
 import fs from "fs";
 import path from "path";
@@ -94,120 +95,129 @@ initializeDatabase().catch(console.error);
 // Function to seed test data - can be called manually when needed
 export async function seedTestData() {
   try {
-    console.log("Seeding test data...");
+    console.log("Starting test data seeding...");
 
-    // Create two URL groups
-    const devGroup = await prisma.urlGroup.create({
-      data: {
-        name: "Development Tools",
-        description: "Essential development and debugging tools",
-      },
-    });
-
-    const monitoringGroup = await prisma.urlGroup.create({
-      data: {
-        name: "System Monitoring",
-        description: "System monitoring and analytics dashboards",
-      },
-    });
-
-    // Create URLs without group associations first
-    const urls = [
-      {
-        title: "GitHub Dashboard",
-        url: "https://github.com",
-        urlMobile: "https://github.com/mobile",
-        idleTimeoutMinutes: 30,
-      },
-      {
-        title: "Jenkins CI",
-        url: "https://jenkins.example.com",
-        idleTimeoutMinutes: 15,
-      },
-      {
-        title: "Grafana Metrics",
-        url: "https://grafana.example.com",
-        idleTimeoutMinutes: 5,
-      },
-      {
-        title: "Kibana Logs",
-        url: "https://kibana.example.com",
-        idleTimeoutMinutes: 10,
-      },
-      {
-        title: "Prometheus Alerts",
-        url: "https://prometheus.example.com",
-        idleTimeoutMinutes: 2,
-      },
-    ];
-
-    // Create all URLs and store their IDs
-    const createdUrls = await Promise.all(
-      urls.map((urlData) => prisma.url.create({ data: urlData })),
-    );
-
-    // Create URL-Group relationships with display orders
-    await Promise.all([
-      // Development Tools group URLs
-      prisma.urlsInGroups.create({
+    // Use a transaction to ensure data consistency
+    await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      // Create URL groups first
+      const devGroup = await tx.urlGroup.create({
         data: {
-          urlId: createdUrls[0].id, // GitHub
-          groupId: devGroup.id,
-          displayOrder: 0,
+          name: "Development Tools",
+          description: "Essential development and debugging tools",
         },
-      }),
-      prisma.urlsInGroups.create({
-        data: {
-          urlId: createdUrls[1].id, // Jenkins
-          groupId: devGroup.id,
-          displayOrder: 1,
-        },
-      }),
-      // Monitoring group URLs
-      prisma.urlsInGroups.create({
-        data: {
-          urlId: createdUrls[2].id, // Grafana
-          groupId: monitoringGroup.id,
-          displayOrder: 0,
-        },
-      }),
-      prisma.urlsInGroups.create({
-        data: {
-          urlId: createdUrls[3].id, // Kibana
-          groupId: monitoringGroup.id,
-          displayOrder: 1,
-        },
-      }),
-      prisma.urlsInGroups.create({
-        data: {
-          urlId: createdUrls[4].id, // Prometheus
-          groupId: monitoringGroup.id,
-          displayOrder: 2,
-        },
-      }),
-    ]);
+      });
 
-    // Assign groups to admin user if they exist
-    const admin = await prisma.user.findFirst({
-      where: { username: "admin" },
-    });
+      const monitoringGroup = await tx.urlGroup.create({
+        data: {
+          name: "System Monitoring",
+          description: "System monitoring and analytics dashboards",
+        },
+      });
 
-    if (admin) {
-      await Promise.all([
-        prisma.userUrlGroup.create({
+      // Create URLs with their data
+      const urls = await Promise.all([
+        tx.url.create({
           data: {
-            userId: admin.id,
-            urlGroupId: devGroup.id,
+            title: "GitHub Dashboard",
+            url: "https://github.com",
+            urlMobile: "https://github.com/mobile",
+            idleTimeoutMinutes: 30,
           },
         }),
-        prisma.userUrlGroup.create({
+        tx.url.create({
           data: {
-            userId: admin.id,
-            urlGroupId: monitoringGroup.id,
+            title: "Jenkins CI",
+            url: "https://jenkins.example.com",
+            idleTimeoutMinutes: 15,
+          },
+        }),
+        tx.url.create({
+          data: {
+            title: "Grafana Metrics",
+            url: "https://grafana.example.com",
+            idleTimeoutMinutes: 5,
+          },
+        }),
+        tx.url.create({
+          data: {
+            title: "Kibana Logs",
+            url: "https://kibana.example.com",
+            idleTimeoutMinutes: 10,
+          },
+        }),
+        tx.url.create({
+          data: {
+            title: "Prometheus Alerts",
+            url: "https://prometheus.example.com",
+            idleTimeoutMinutes: 2,
           },
         }),
       ]);
-    }
+
+      // Create URL-Group relationships with display orders
+      await Promise.all([
+        // Development Tools group URLs
+        tx.urlsInGroups.create({
+          data: {
+            urlId: urls[0].id,
+            groupId: devGroup.id,
+            displayOrder: 0,
+          },
+        }),
+        tx.urlsInGroups.create({
+          data: {
+            urlId: urls[1].id,
+            groupId: devGroup.id,
+            displayOrder: 1,
+          },
+        }),
+        // Monitoring group URLs
+        tx.urlsInGroups.create({
+          data: {
+            urlId: urls[2].id,
+            groupId: monitoringGroup.id,
+            displayOrder: 0,
+          },
+        }),
+        tx.urlsInGroups.create({
+          data: {
+            urlId: urls[3].id,
+            groupId: monitoringGroup.id,
+            displayOrder: 1,
+          },
+        }),
+        tx.urlsInGroups.create({
+          data: {
+            urlId: urls[4].id,
+            groupId: monitoringGroup.id,
+            displayOrder: 2,
+          },
+        }),
+      ]);
+
+      // Find admin user
+      const admin = await tx.user.findFirst({
+        where: { username: "admin" },
+      });
+
+      if (admin) {
+        // Assign groups to admin user
+        await Promise.all([
+          tx.userUrlGroup.create({
+            data: {
+              userId: admin.id,
+              urlGroupId: devGroup.id,
+            },
+          }),
+          tx.userUrlGroup.create({
+            data: {
+              userId: admin.id,
+              urlGroupId: monitoringGroup.id,
+            },
+          }),
+        ]);
+      }
+    });
 
     console.log("Test data seeded successfully");
   } catch (error) {

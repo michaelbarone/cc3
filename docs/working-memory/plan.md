@@ -1,6 +1,6 @@
 # Project Plan
 
-*Updated: 2025-03-26 23:45*
+*Updated: 2025-04-02 17:11*
 
 This document serves as the main project plan and tracks the status of all tasks related to the project.
 
@@ -52,6 +52,19 @@ This document serves as the main project plan and tracks the status of all tasks
   - [X] State Implementation
   - [X] Iframe Management
   - [ ] Visual Feedback Testing
+
+### IFrame State Management Refactor (New)
+- **Location**: `/docs/working-memory/open/iframe-state-refactor-20240401`
+- **Status**: Planning
+- **Description**: Refactoring iframe state management to simplify state handling, improve performance, and enhance maintainability
+- **Key Milestones**:
+  - [ ] State Consolidation
+  - [ ] Component Updates
+  - [ ] Feature Enhancement
+  - [ ] Testing and Validation
+- **Priority**: High
+- **Target**: Next Development Cycle
+- **Progress**: Initial planning completed, new state structure designed, ready for implementation
 
 ## Future Tasks
 

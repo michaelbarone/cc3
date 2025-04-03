@@ -48,11 +48,11 @@ Step 3: Initial Test Implementation
 [X] Test API route handlers
 
 Step 4: Playwright Setup
-[ ] Install and configure Playwright
-[ ] Set up E2E test environment
-[ ] Create test database seeding utilities
-[ ] Add authentication test helpers
-[ ] Configure cross-browser testing
+[X] Install and configure Playwright
+[X] Set up E2E test environment
+[X] Add authentication test helpers
+[X] Create test database seeding utilities
+[✓] E2E testing moved to dedicated plan (see: docs/working-memory/open/e2e-test-expansion-20250331/.plan)
 
 Step 5: Comprehensive API Route Testing
 [X] Map all API endpoints and their expected responses
@@ -104,524 +104,183 @@ Step 5: Comprehensive API Route Testing
     - HTTP method coverage
     - Error path coverage
     - Edge case coverage
+[X] Crete future plan to expand e2e coverage
 
-### Current Status (Updated 2025-03-30 07:15)
-
-#### Recent Discoveries & Fixes
-- ✓ Identified and resolved cookie handling issues in auth tests
-- ✓ Fixed statistics endpoint response structure mismatch
-- ✓ Resolved undefined `mostAssigned` property in AdminDashboard tests
-- ✓ Confirmed proper database mocking across all tests
-
-#### Test Implementation Progress
-- ✓ URL Menu component tests completed:
-  - Group expansion/collapse
-  - URL selection and highlighting
-  - Search functionality
-  - Keyboard navigation
-  - Long press behavior
-  - State persistence
-- ✓ IframeContainer tests implemented
-- ✓ Authentication flows completed:
-  - Login page rendering
-  - Passwordless login
-  - Password-protected login
-  - Error handling
-  - Redirect behavior
-  - Session management
-- ✓ API route handlers implemented:
-  - Login endpoint
-  - Session management
-  - Error handling
-  - Input validation
-
-### Architecture & Implementation Details
-
-#### 1. Test Structure Organization
-
-- Standardized directory structure:
-  ```
-  __tests__/
-  ├── setup.ts
-  ├── utils/
-  │   ├── test-utils.tsx        # Common test utilities and wrappers
-  │   └── test-database.ts      # Test database utilities
-  ├── mocks/
-  │   ├── handlers/             # MSW API route handlers
-  │   │   ├── auth.ts          # Authentication route mocks
-  │   │   ├── urls.ts          # URL management route mocks
-  │   │   └── users.ts         # User management route mocks
-  │   ├── data/                # Mock data fixtures
-  │   │   ├── users.ts
-  │   │   ├── urls.ts
-  │   │   └── groups.ts
-  │   └── server.ts            # MSW server setup
-  └── __snapshots__/           # Jest snapshots if needed
-  ```
-
-#### 2. Test Database Configuration
-
-- Create isolated test database setup:
-  - Implement test database initialization
-  - Add data seeding utilities
-  - Create cleanup mechanisms
-  - Add transaction wrapping for test isolation
-  - Implement Prisma test helpers
-
-#### 3. MSW Handler Implementation
-
-- Create mock handlers for critical API routes:
-  ```typescript
-  // Example structure for auth handlers
-  export const authHandlers = [
-    http.post("/api/auth/login", async () => {
-      return HttpResponse.json({
-        /* mock response */
-      });
-    }),
-    http.get("/api/auth/session", async () => {
-      return HttpResponse.json({
-        /* mock session */
-      });
-    }),
-  ];
-  ```
-
-- Organize by feature domain:
-  - Authentication handlers
-  - URL management handlers
-  - User management handlers
-  - Settings handlers
-
-#### 4. Test Utilities & Fixtures
-
-- Create common test utilities:
-  ```typescript
-  // Example test wrapper
-  export function renderWithProviders(ui: React.ReactElement) {
-    return render(
-      <ThemeProvider>
-        <AuthProvider>
-          {ui}
-        </AuthProvider>
-      </ThemeProvider>
-    )
-  }
-  ```
-- Implement shared fixtures:
-  - User scenarios (admin, regular user, etc.)
-  - URL group configurations
-  - IFrame states
-  - Common test data
-
-### Key Considerations
-
-1. Test Isolation
-
-- Each test should run in isolation
-- Database state should be reset between tests
-- MSW handlers should be reset after each test
-- Provider state should be cleaned up
-
-2. Performance
-
-- Use fast matchers when possible
-- Minimize database operations
-- Cache test fixtures when appropriate
-- Use efficient setup/teardown patterns
-
-3. Maintainability
-
-- Keep test files close to source code
-- Use descriptive test names
-- Follow AAA pattern (Arrange, Act, Assert)
-- Document complex test scenarios
-
-4. Developer Experience
-
-- Provide clear error messages
-- Add helpful test utilities
-- Maintain good test documentation
-- Create example test cases
-
-### Dependencies Required
-
-- @testing-library/react
-- @testing-library/user-event
-- @testing-library/jest-dom
-- msw
-- @prisma/client (test config)
-- happy-dom
-- vitest
-
-### Next Actions (Updated)
+### Current Status (Updated 2025-03-31 23:00)
 
 1. Fix Remaining Test Issues
-   [ ] Review and update all cookie-related tests to use async methods
-   [ ] Audit statistics endpoint tests for proper type handling
-   [ ] Verify proper error handling in admin routes
-   [ ] Ensure consistent mocking patterns across all tests
+   [✓] Review and update all cookie-related tests to use async methods
+   [✓] Audit statistics endpoint tests for proper type handling
+   [✓] Verify proper error handling in admin routes
+   [✓] Ensure consistent mocking patterns across all tests
+   [✓] Create centralized mocking utilities
 
 2. Enhance Test Coverage
-   [ ] Add comprehensive tests for error states in statistics endpoints
-   [ ] Implement boundary testing for admin dashboard data
-   [ ] Add tests for cookie persistence scenarios
-   [ ] Verify proper cleanup in all file operation tests
+   [✓] Add comprehensive tests for error states in statistics endpoints
+   [✓] Implement boundary testing for admin dashboard data
+   [✓] Add tests for cookie persistence scenarios
+   [✓] Verify proper cleanup in all file operation tests
 
 3. Test Infrastructure Improvements
-   [ ] Implement standardized cookie mocking utilities
-   [ ] Create helpers for common statistics test scenarios
-   [ ] Add type validation utilities for response structures
+   [✓] Implement standardized cookie mocking utilities
+   [✓] Create helpers for common statistics test scenarios
+   [✓] Add type validation utilities for response structures
    [ ] Set up automated test stability monitoring
 
 4. Documentation Updates
-   [ ] Document cookie handling patterns in tests
-   [ ] Update statistics endpoint testing guidelines
-   [ ] Add section on proper mocking strategies
-   [ ] Create troubleshooting guide for common test issues
+   [✓] Document cookie handling patterns in tests
+   [✓] Add section on proper mocking strategies
+   [✓] Update statistics endpoint testing guidelines
+      - Created comprehensive guidelines for both detailed and basic statistics endpoints
+      - Documented test categories: auth, validation, edge cases
+      - Added examples of mock data generation and common test scenarios
+      - Included best practices and common pitfalls to avoid
+      - Added performance testing guidelines
+   [ ] Document error handling patterns
 
 5. Quality Assurance
-   [ ] Run full test suite audit for flaky tests
+   [✓] Run full test suite audit for flaky tests
+      - Identified timing-dependent tests in IframeContainer and auth components
+      - Found resource cleanup issues in file operations and database tests
+      - Discovered race conditions in concurrent operations
+      - Documented network-dependent test issues
+      - Created comprehensive recommendations for fixes
+      - Established monitoring and prevention strategies
    [ ] Verify coverage metrics meet thresholds
-   [ ] Review error handling comprehensiveness
-   [ ] Check for proper cleanup in all tests
+   [✓] Review error handling comprehensiveness
+   [✓] Check for proper cleanup in all tests
+   [ ] Implement automated test stability monitoring
+   [ ] Add performance benchmarks for critical paths
 
-## Progress History
+### Progress History
 
-### 2025-03-18 06:34 PM - Testing Framework Setup
+### 2025-03-31 20:55 - Test Status Update
+- ✓ Completed: Cookie-related tests now using async methods properly
+- ✓ Completed: Statistics endpoint tests have proper type handling
+- ✓ Completed: Admin routes have comprehensive error handling
+- ✓ Completed: Cookie mocking utilities standardized across tests
+- 🤔 Decisions:
+  * Standardized approach for cookie mocking with mockCookieStore
+  * Comprehensive error handling patterns established for admin routes
+  * Type handling improved in statistics endpoints
+- ⏭️ Next: Focus on consistent mocking patterns across all tests
 
-- ✓ Completed: Initial setup of testing framework architecture
-- 🤔 Decisions: Decided to use MSW for API mocking instead of a test database
-- 📚 Documentation: Created plan document with detailed testing structure
-
-### 2025-03-29 09:24 PM - Test Implementation Progress
-
-- ✓ Completed: URL Menu component test suite with comprehensive coverage
-- ✓ Completed: Coverage configuration and tracking setup
-- ✓ Completed: Authentication flow and API handler tests
-- 🤔 Decisions: Added new step for comprehensive API route testing
-- 📚 Documentation: Updated plan with API testing strategy
-- ⏭️ Next: Begin mapping all API endpoints for comprehensive testing
-
-### 2025-03-29 09:35 PM - API Testing Progress
-
-- ✓ Completed: Health check endpoint tests
-- ✓ Completed: App configuration endpoint tests (including logo, theme, and registration management)
-- 🤔 Decisions: Created reusable patterns for API testing:
-  * Authentication/authorization checks
-  * File operation validations
-  * Error handling patterns
-- 📚 Documentation: Added detailed test cases for API endpoints
-- ⏭️ Next: Implement tests for user management endpoints
-
-### 2025-03-29 21:41 - User Management API Tests
-
-- ✓ Completed: User preferences endpoint tests (GET and POST)
-- ✓ Completed: User avatar endpoint tests (upload and delete)
-- ✓ Fixed: TypeScript type issues in test mocks
-- 🤔 Decisions: Created comprehensive mock data structure for user objects
-- 📚 Documentation: Updated test coverage for user management endpoints
-- ⏭️ Next: Implement tests for authentication endpoints
-
-### 2025-03-29 21:43 - Authentication API Tests Progress
-
-- ✓ Completed: Cookie handling implementation in auth tests
+### 2025-03-31 21:05 - Mocking Standardization
+- ✓ Completed: Created centralized mocking utilities in app/lib/test/mocks.ts
 - ✓ Implemented:
-  * Proper cookie store mocking with all required methods
-  * Session token validation in tests
-  * Comprehensive test coverage for auth endpoints
+  * Standard cookie store mock implementation
+  * NextRequest and NextResponse mocks
+  * Prisma client mock factory
+  * File system operation mocks
+  * Setup utility for common test scenarios
 - 🤔 Decisions:
-  * Using mock cookie store with synchronous methods
-  * Implementing all required cookie store methods
-  * Maintaining proper test isolation
-- 📚 Documentation: Updated test implementation details
-- ⏭️ Next:
-  * Add rate limiting tests for login endpoint
-  * Add comprehensive error handling tests
-  * Document testing patterns for route handlers
+  * Centralized all mocking utilities in one file
+  * Made mocks configurable for flexibility
+  * Standardized mock creation patterns
+- ⏭️ Next: Implement boundary testing for admin dashboard data
 
-### 2025-03-29 21:53 - Rate Limiting Implementation
+### 2025-03-31 21:15 - Boundary Testing Implementation
+- ✓ Completed: Created comprehensive boundary tests for admin statistics
+- ✓ Implemented test cases for:
+  * Empty data scenarios (no users, no URL groups)
+  * Maximum value handling (large numbers, BigInt conversion)
+  * Invalid data handling (dates, null values)
+  * Concurrent update scenarios
+  * Performance with large datasets
+- 🤔 Decisions:
+  * Used setupTestMocks utility for consistent test setup
+  * Added performance benchmarks for large datasets
+  * Implemented comprehensive edge case coverage
+- ⏭️ Next: Verify proper cleanup in all file operation tests
 
-- ✓ Completed: Rate limiting implementation for login endpoint
+### 2025-03-31 21:30 - File Operation Cleanup Testing
+- ✓ Completed: Created comprehensive cleanup tests in app/lib/test/cleanup.test.ts
+- ✓ Implemented test cases for:
+  * Avatar operations (upload, delete, error handling)
+  * Icon management (upload, delete, error handling)
+  * App configuration (logo upload, cleanup)
+  * First run operations (backup restore, error handling)
+- 🤔 Decisions:
+  * Created centralized file tracking mechanism
+  * Implemented comprehensive cleanup verification
+  * Added error case handling for all file operations
+- ⏭️ Next: Create helpers for common statistics test scenarios
+
+### 2025-03-31 21:45 - Statistics Test Helpers
+- ✓ Completed: Created comprehensive statistics test helpers in app/lib/test/statistics.ts
 - ✓ Implemented:
-  * Rate limit of 5 attempts per minute per IP
-  * Rate limit headers (X-RateLimit-*)
-  * In-memory rate limit store
-  * Comprehensive test coverage
+  * Type definitions for statistics response data
+  * Mock data generators for users, URL groups, and URLs
+  * Configurable distribution ratios for all metrics
+  * Response structure validation utilities
+  * Common test scenarios for edge cases
 - 🤔 Decisions:
-  * Using in-memory store for development (noted Redis for production)
-  * Implementing per-IP tracking
-  * Adding rate limit information in error responses
-- 📚 Documentation: Updated test implementation with rate limiting details
-- ⏭️ Next: Begin implementation of admin route tests
+  * Centralized all statistics mocking in one file
+  * Made mock data generators highly configurable
+  * Added comprehensive type checking
+  * Created predefined scenarios for common edge cases
+- ⏭️ Next: Add type validation utilities for response structures
 
-### 2025-03-29 22:00 - User Management API Tests Completed
-
-- ✓ Completed: Comprehensive test suite for user management endpoints
-  * User listing and search
-  * User creation and deletion
-  * User role management
-  * User preference management
-  * URL group assignments
+### 2025-03-31 22:00 - Type Validation Utilities
+- ✓ Completed: Created comprehensive type validation utilities in app/lib/test/validation.ts
 - ✓ Implemented:
-  * Authentication/authorization checks
-  * Error handling for all endpoints
-  * Input validation
-  * URL group management
-  * Transaction handling
+  * Type-safe validation framework with detailed error reporting
+  * Primitive type validators (string, number, boolean, bigint)
+  * Complex type validators (arrays, objects)
+  * Common response validators (pagination, error, success)
+  * Domain-specific validators (healthCheck, userProfile, urlGroup)
+  * Runtime type checking with TypeScript integration
 - 🤔 Decisions:
-  * Used NextRequest for proper Next.js route handler testing
-  * Implemented comprehensive mock system for Prisma
-  * Added proper cookie handling
-- 📚 Documentation: Updated test implementation details
-- ⏭️ Next: Begin implementation of URL management endpoint tests
+  * Created composable validator system for flexibility
+  * Added detailed error reporting with path tracking
+  * Implemented both validation and assertion utilities
+  * Added common response patterns as pre-built validators
+- ⏭️ Next: Set up automated test stability monitoring
 
-### 2025-03-29 22:15 - URL Management API Tests Completed
-
-- ✓ Completed: Comprehensive test suite for URL management endpoints
-  * URL creation and deletion
-  * URL update operations
-  * URL metadata handling
-  * URL validation checks
-  * URL group management
-  * Batch operations for URLs in groups
-- ✓ Implemented:
-  * Authentication/authorization checks
-  * Error handling for all endpoints
-  * Input validation
-  * File handling patterns
-  * Transaction handling
+### 2025-03-31 22:15 - Cleanup Verification Implementation
+- ✓ Completed: Created comprehensive cleanup verification test suite
+- ✓ Implemented test cases for:
+  * File system operations (temporary files, failed operations)
+  * Database connections (normal and error cases)
+  * MSW handler cleanup
+  * Mock restorations
+  * Memory leak prevention
 - 🤔 Decisions:
-  * Used NextRequest for proper Next.js route handler testing
-  * Implemented comprehensive mock system for Prisma
-  * Added proper cookie handling
-- 📚 Documentation: Updated test implementation details
-- ⏭️ Next: Begin implementation of statistics endpoint tests
+  * Created centralized resource tracking mechanism
+  * Added verification for all major cleanup categories
+  * Implemented error case handling for each category
+  * Added memory leak prevention checks
+- ⏭️ Next: Set up automated test stability monitoring
 
-### 2025-03-29 22:30 - Statistics API Tests Completed
-
-- ✓ Completed: Comprehensive test suite for statistics endpoints
-  * User activity statistics
-  * URL usage metrics
-  * System performance data
-  * Theme and menu position distribution
-  * Recent user activity tracking
-  * Most accessed URLs tracking
-- ✓ Implemented:
-  * Authentication/authorization checks
-  * Error handling for all endpoints
-  * BigInt to Number conversions
-  * Default values handling
-  * Comprehensive response validation
+### 2025-03-31 22:30 - Cookie Handling Documentation
+- ✓ Completed: Created comprehensive cookie handling documentation
+- ✓ Documented:
+  * Standard cookie store mock implementation
+  * Common test patterns for authentication and sessions
+  * Best practices for cookie testing
+  * Common pitfalls and solutions
+  * Integration with MSW
+  * Testing utilities for cookie handling
 - 🤔 Decisions:
-  * Used proper type definitions for all statistics
-  * Implemented fallback values for empty states
-  * Added comprehensive response structure validation
-- 📚 Documentation: Updated test implementation details
-- ⏭️ Next: Begin implementation of icon management endpoint tests
+  * Organized documentation by test patterns
+  * Included both good and bad examples
+  * Added reusable testing utilities
+  * Covered security considerations
+- ⏭️ Next: Update statistics endpoint testing guidelines
 
-### 2025-03-29 22:45 - Icon Management API Tests Implementation
-
-- ✓ Completed: Test suite setup for icon management endpoints
-  * Icon upload functionality
-  * Icon deletion operations
-  * Icon validation checks
-  * File system operations
-- ✓ Test Cases Implemented:
-  * Authentication/Authorization:
-    - Unauthorized access attempts
-    - Non-admin access attempts
-    - Valid admin access
-  * File Validation:
-    - File size limits (max 1MB)
-    - File type validation (image/* only)
-    - Invalid file uploads
-  * Success Scenarios:
-    - Successful icon upload
-    - Proper file conversion to WebP
-    - Correct resizing to 60x60px
-    - Proper file storage in public/icons
-  * Error Handling:
-    - Missing file errors
-    - Invalid file type errors
-    - File size limit errors
-    - File system errors
-  * Deletion Operations:
-    - Successful icon deletion
-    - Non-existent icon deletion
-    - File system cleanup
+### 2025-03-31 23:00 - Flaky Test Audit Completion
+- ✓ Completed: Full test suite audit for flaky tests
+- ✓ Created: Comprehensive flaky test audit report
+- ✓ Identified:
+  * Timing-dependent test issues
+  * Resource cleanup problems
+  * Race conditions in concurrent operations
+  * Network-dependent test flakiness
 - 🤔 Decisions:
-  * Using MSW for file upload mocking
-  * Implementing file system mocks for testing
-  * Adding cleanup routines for test files
-- 📚 Documentation: Updated test implementation details
-- ⏭️ Next: Begin implementation of E2E tests with Playwright
+  * Prioritize fixing IframeContainer test timeouts
+  * Implement comprehensive resource tracking
+  * Add retry logic for network operations
+  * Create test stability monitoring system
+- ⏭️ Next: Begin implementing fixes for identified flaky tests
 
-Next Steps:
-1. Implement admin route tests:
-   [✓] App configuration endpoints
-   [✓] User management endpoints
-   [✓] URL management endpoints
-   [✓] URL group management endpoints
-   [✓] Statistics endpoints
-   [✓] Icon management endpoints
-   [ ] Begin E2E testing setup with Playwright
-2. Test admin authorization:
-   [✓] Verify admin token requirements
-   [✓] Test non-admin access attempts
-   [✓] Test invalid token scenarios
-3. Test file operations:
-   [✓] Logo upload/delete
-   [✓] Favicon upload/delete
-   [✓] User avatar handling
-   [✓] Icon upload/delete
-4. Document admin API testing patterns:
-   [✓] Authorization patterns
-   [✓] File handling patterns
-   [✓] Configuration management
-5. Review and update test coverage metrics:
-   [✓] Route coverage
-   [✓] Method coverage
-   [✓] Error handling coverage
-   [✓] Authorization coverage
-
-### 2025-03-30 06:46 - Remaining API Test Implementation Plan
-
-- ✓ Completed API Test Coverage Audit
-- 🤔 Decisions:
-  * Prioritized remaining API endpoints for testing
-  * Identified test patterns from existing implementations to reuse
-  * Confirmed coverage of user-preferences and url-groups
-- 📚 Documentation: Updated test coverage status
-- ⏭️ Next: Implement remaining API tests in priority order
-
-#### Remaining API Tests (In Priority Order)
-
-1. First Run API Tests
-   - Endpoints to Cover:
-     * `/api/first-run/route.ts`
-     * `/api/first-run/restore/route.ts`
-   - Test Requirements:
-     * Initial application setup scenarios
-     * Restore functionality
-     * Success and error cases
-     * Authorization checks
-     * Data validation
-
-2. System Status API Tests
-   - Endpoints to Cover:
-     * `/api/system/status/route.ts`
-   - Test Requirements:
-     * Health check responses
-     * System metrics validation
-     * Error handling
-     * Authorization checks
-
-3. Settings API Tests
-   - Endpoints to Cover:
-     * `/api/settings/route.ts`
-   - Test Requirements:
-     * CRUD operations
-     * Validation rules
-     * Authorization checks
-     * Error handling
-
-#### Implementation Strategy
-
-1. Test File Structure:
-   - Follow established patterns from existing tests
-   - Maintain consistent mock setup
-   - Use shared test utilities
-   - Follow authorization check patterns
-
-2. Common Test Cases for Each Endpoint:
-   - Authentication/Authorization:
-     * Unauthorized access attempts
-     * Non-admin access attempts
-     * Valid admin access
-   - Input Validation:
-     * Required fields
-     * Data types
-     * Boundary conditions
-   - Success Scenarios:
-     * Expected responses
-     * Data transformations
-     * State changes
-   - Error Handling:
-     * Invalid inputs
-     * System errors
-     * Resource conflicts
-
-3. Quality Standards:
-   - Maintain 80% general coverage
-   - Ensure 90% coverage for critical paths
-   - Include comprehensive error cases
-   - Document edge cases
-   - Follow established patterns
-
-[Completed] Password Settings API Tests - March 30, 2025
-- Implemented comprehensive test suite for /api/settings/password endpoint
-- Covered all major scenarios: password update, disable protection, auth checks, error handling
-- All 6 test cases passing successfully
-
-[Completed] Health Check API Tests - March 30, 2025
-- Implemented test suite for /api/health endpoint
-- Verified healthy and unhealthy states
-- Confirmed proper database connectivity checks
-- All test cases passing successfully
-
-[Completed] URL Management API Tests - March 29, 2025
-
-## Remaining API Test Implementation Plan
-
-### Completed Tasks
-1. API Test Coverage Audit
-   - ✓ User Preferences API
-   - ✓ URL Groups API
-   - ✓ First Run API
-   - ✓ Health Check API
-   - ✓ Settings API (Password Management)
-
-### Test Implementation Status
-1. First Run API (COMPLETED)
-   - ✓ GET `/api/auth/first-run` - First run state check
-   - ✓ POST `/api/first-run/restore` - Backup restoration
-   - All test cases passing with proper error handling
-
-2. Health Check API (COMPLETED)
-   - ✓ GET `/api/health` - System health status
-   - ✓ Database connectivity verification
-   - ✓ Timestamp validation
-   - All test cases passing with proper error handling
-
-3. Settings API (COMPLETED)
-   - ✓ PUT `/api/settings/password` - Password management
-   - ✓ Authentication checks
-   - ✓ Password update/removal flows
-   - ✓ Error handling for various scenarios
-   - All test cases passing
-
-### Quality Standards
-- All tests follow established patterns
-- Comprehensive error handling
-- Proper mocking of dependencies
-- Clear test descriptions
-- Consistent code style
-
-### Next Steps
-1. Monitor test stability in CI/CD pipeline
-2. Consider adding integration tests
-3. Maintain documentation as new endpoints are added
-
-### 2025-03-30 07:15 - Test Framework Updates
-
-- ✓ Completed: Investigation of test database interactions
-- ✓ Verified: All tests properly mock database operations
-- ✓ Fixed: Cookie handling in authentication tests
-- ✓ Resolved: Statistics endpoint response structure issues
-- 🤔 Decisions:
-  * Standardized approach for cookie mocking
-  * Enhanced type checking for statistics responses
-  * Improved error handling patterns
-- 📚 Documentation: Updated test implementation details
-- ⏭️ Next: Implement comprehensive cookie handling tests
+### Next Task: Begin implementing fixes for identified flaky tests, starting with IframeContainer test timeouts
