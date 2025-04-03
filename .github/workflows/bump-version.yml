@@ -1,0 +1,59 @@
+name: Bump version
+on:
+  workflow_call:
+
+jobs:
+  bump-version:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        persist-credentials: false
+
+    - name: Set up node
+      uses: actions/setup-node@v4
+      with:
+        node-version: 20
+
+    - name: Cache node modules
+      id: cache-npm
+      uses: actions/cache@v4
+      env:
+        cache-name: er-version-bump-deps-v1
+      with:
+        path: node_modules
+        key: ${{ runner.os }}-build-${{ env.cache-name }}
+
+    - if: ${{ steps.cache-npm.outputs.cache-hit == 'true' }}
+      name: dependency cache found
+      run: echo "loading deps from cache"
+
+    - if: ${{ steps.cache-npm.outputs.cache-hit != 'true' }}
+      name: install conventional-changelog dependency
+      run: |
+        npm install --no-save conventional-changelog-conventionalcommits@v5 --prefix ./deps
+        mv ./deps/node_modules .
+
+    - name: Bump version and push tag
+      id: version
+      uses: TriPSs/conventional-changelog-action@v5
+      with:
+          preset: "conventionalcommits"
+          git-user-name: "github-actions"
+          git-user-email: "github-actions-edge@github.com"
+          # github-token: ${{secrets.GH_REPO_TOKEN}}
+          git-message: "chore(release): {version}"
+          release-count: 0
+          skip-on-empty: false
+          config-file-path: '.versionrc.cjs'
+
+    - name: Create Release
+      id: release
+      if: ${{ steps.version.outputs.skipped == 'false' }}
+      run: |
+          gh release create "${{ steps.version.outputs.tag }}" \
+              --repo="$GITHUB_REPOSITORY" \
+              --title="${GITHUB_REPOSITORY#*/} ${{ steps.version.outputs.tag }}" \
+              --generate-notes
