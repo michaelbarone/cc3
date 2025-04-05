@@ -1,6 +1,6 @@
 # Project Plan
 
-*Last updated: 2025-04-05 17:45*
+*Last updated: 2025-04-05 18:30*
 
 This document serves as the main project plan and tracks the status of all tasks related to the project.
 
@@ -19,7 +19,7 @@ This document serves as the main project plan and tracks the status of all tasks
 - **Target**: 2025-04-15
 - **Progress**: 70% complete
 
-### 4. Testing Framework Implementation
+### 2. Testing Framework Implementation
 - **Location**: `/docs/working-memory/open/testing-framework`
 - **Created**: `2025-03-15`
 - **Description**: Establish comprehensive testing framework with documentation
@@ -32,7 +32,31 @@ This document serves as the main project plan and tracks the status of all tasks
 - **Target**: 2025-04-20
 - **Progress**: 60% complete
 
-### 5. IFrame State Management Refactor
+### 3. API Test Standards Review
+- **Location**: `/docs/working-memory/open/api-test-review-20250405`
+- **Created**: `2025-04-05`
+- **Description**: Comprehensive review of all API tests to ensure compliance with testing standards
+- **Key Milestones**:
+  - Review all API test files against standards
+  - Update testing patterns for consistency
+  - Add debugging capabilities
+  - Improve error handling
+  - Enhance test data management
+- **Priority**: High
+- **Target**: 2025-04-12
+- **Progress**: 25% complete
+
+**Recent Updates**:
+- ✓ Completed review of health check API tests
+- ✓ Updated app config API tests
+- ✓ Added improved error logging and debugging capabilities
+- ✓ Standardized test data management with factory functions
+- ☐ Remaining: Review 15+ additional API test files
+
+**Dependencies**:
+- Testing Framework Implementation (60% complete)
+
+### 4. IFrame State Management Refactor
 - **Location**: `/docs/working-memory/open/iframe-state-refactor-20240401`
 - **Created**: `2025-04-01`
 - **Description**: Simplify iframe state management and improve performance
