@@ -56,6 +56,20 @@ function LoginContent() {
   // Add loading state for configuration
   const [configLoading, setConfigLoading] = useState(true);
 
+  // State for theme configuration
+  const [currentTheme, setCurrentTheme] = useState<"light" | "dark">("dark");
+
+  // State for users and selected user
+  const [users, setUsers] = useState<UserTile[]>([]);
+  const [selectedUser, setSelectedUser] = useState<UserTile | null>(null);
+  const [appConfig, setAppConfig] = useState<AppConfig>({
+    appName: "Control Center",
+    appLogo: null,
+    loginTheme: "dark",
+    registrationEnabled: false,
+  });
+  const passwordInputRef = useRef<HTMLInputElement>(null);
+
   // Add effect to handle redirect for authenticated users
   useEffect(() => {
     if (!loading && user) {
@@ -69,11 +83,138 @@ function LoginContent() {
     }
   }, [loading, user, justLoggedOut, router, redirectPath, setUser]);
 
+  // Fetch all users for tiles and app config
+  useEffect(() => {
+    let isMounted = true;
+    // Skip fetching if we are already logged in and being redirected
+    if (!loading && user && !justLoggedOut) return;
+
+    setConfigLoading(true);
+
+    async function fetchData() {
+      try {
+        // Fetch users
+        const usersResponse = await fetch("/api/auth/users", {
+          // Add cache headers to prevent duplicative requests
+          headers: {
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+            Pragma: "no-cache",
+            Expires: "0",
+          },
+        });
+        if (!isMounted) return;
+
+        if (usersResponse.ok) {
+          const usersData = await usersResponse.json();
+          if (!isMounted) return;
+
+          setUsers(usersData);
+
+          // Directly use the filter here instead of creating a new variable
+          const adminUsers = usersData.filter((u: UserTile) => u.isAdmin);
+          const isFirstRunDetected =
+            usersData.length === 1 && adminUsers.length === 1 && !adminUsers[0].lastLoginAt;
+
+          if (isFirstRunDetected) {
+            // During first run, use default config
+            if (isMounted) {
+              setAppConfig({
+                appName: "Dashboard",
+                appLogo: null,
+                loginTheme: "dark",
+                registrationEnabled: false,
+              });
+              setIsFirstRun(true);
+              setConfigLoading(false);
+            }
+            return;
+          }
+        }
+
+        // If not first run, fetch app configuration
+        try {
+          const configResponse = await fetch("/api/admin/app-config", {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              // Add cache control to prevent caching issues
+              "Cache-Control": "no-cache, no-store, must-revalidate",
+              Pragma: "no-cache",
+              Expires: "0",
+            },
+          });
+
+          if (!isMounted) return;
+
+          if (configResponse.ok) {
+            const configData = await configResponse.json();
+            if (!isMounted) return;
+
+            if (isMounted) {
+              setAppConfig(configData);
+              setConfigLoading(false);
+            }
+          } else {
+            // Use default config on error
+            if (isMounted) {
+              setAppConfig({
+                appName: "Dashboard",
+                appLogo: null,
+                loginTheme: "dark",
+                registrationEnabled: false,
+              });
+              setConfigLoading(false);
+            }
+          }
+        } catch (configError) {
+          // Use default config on error
+          if (isMounted) {
+            setAppConfig({
+              appName: "Dashboard",
+              appLogo: null,
+              loginTheme: "dark",
+              registrationEnabled: false,
+            });
+            setConfigLoading(false);
+          }
+        }
+      } catch (error) {
+        // Set default config on error
+        if (isMounted) {
+          setAppConfig({
+            appName: "Dashboard",
+            appLogo: null,
+            loginTheme: "dark",
+            registrationEnabled: false,
+          });
+          setConfigLoading(false);
+        }
+      }
+    }
+
+    fetchData();
+
+    // Cleanup function to prevent state updates after unmount
+    return () => {
+      isMounted = false;
+    };
+  }, [loading, user, justLoggedOut]);
+
   // Add effect to check if this is first run
   useEffect(() => {
+    // Skip if we already know it's not the first run or if we're currently loading
+    if (users.length > 0 || configLoading) return;
+
     const checkFirstRun = async () => {
       try {
-        const response = await fetch("/api/auth/first-run");
+        const response = await fetch("/api/auth/first-run", {
+          // Add cache headers to prevent duplicative requests
+          headers: {
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+            Pragma: "no-cache",
+            Expires: "0",
+          },
+        });
         if (response.ok) {
           const data = await response.json();
           setIsFirstRun(data.isFirstRun);
@@ -88,21 +229,7 @@ function LoginContent() {
     };
 
     checkFirstRun();
-  }, []);
-
-  // State for theme configuration
-  const [currentTheme, setCurrentTheme] = useState<"light" | "dark">("dark");
-
-  // State for users and selected user
-  const [users, setUsers] = useState<UserTile[]>([]);
-  const [selectedUser, setSelectedUser] = useState<UserTile | null>(null);
-  const [appConfig, setAppConfig] = useState<AppConfig>({
-    appName: "Control Center",
-    appLogo: null,
-    loginTheme: "dark",
-    registrationEnabled: false,
-  });
-  const passwordInputRef = useRef<HTMLInputElement>(null);
+  }, [users.length, configLoading]);
 
   // Add click outside handler
   useEffect(() => {
@@ -241,112 +368,6 @@ function LoginContent() {
     },
     [showPassword, passwordInputRef],
   );
-
-  // Fetch all users for tiles and app config
-  useEffect(() => {
-    let isMounted = true;
-    setConfigLoading(true);
-
-    async function fetchData() {
-      try {
-        // Fetch users
-        const usersResponse = await fetch("/api/auth/users");
-        if (!isMounted) return;
-
-        if (usersResponse.ok) {
-          const usersData = await usersResponse.json();
-          if (!isMounted) return;
-
-          setUsers(usersData);
-
-          // Directly use the filter here instead of creating a new variable
-          const adminUsers = usersData.filter((u: UserTile) => u.isAdmin);
-          const isFirstRunDetected =
-            usersData.length === 1 && adminUsers.length === 1 && !adminUsers[0].lastLoginAt;
-
-          if (isFirstRunDetected) {
-            // During first run, use default config
-            if (isMounted) {
-              setAppConfig({
-                appName: "Dashboard",
-                appLogo: null,
-                loginTheme: "dark",
-                registrationEnabled: false,
-              });
-              setIsFirstRun(true);
-              setConfigLoading(false);
-            }
-            return;
-          }
-        }
-
-        // If not first run, fetch app configuration
-        try {
-          const configResponse = await fetch("/api/admin/app-config", {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-              // Add cache control to prevent caching issues
-              "Cache-Control": "no-cache, no-store, must-revalidate",
-              Pragma: "no-cache",
-            },
-          });
-
-          if (!isMounted) return;
-
-          if (configResponse.ok) {
-            const configData = await configResponse.json();
-            if (!isMounted) return;
-
-            if (isMounted) {
-              setAppConfig(configData);
-              setConfigLoading(false);
-            }
-          } else {
-            // Use default config on error
-            if (isMounted) {
-              setAppConfig({
-                appName: "Dashboard",
-                appLogo: null,
-                loginTheme: "dark",
-                registrationEnabled: false,
-              });
-              setConfigLoading(false);
-            }
-          }
-        } catch (configError) {
-          // Use default config on error
-          if (isMounted) {
-            setAppConfig({
-              appName: "Dashboard",
-              appLogo: null,
-              loginTheme: "dark",
-              registrationEnabled: false,
-            });
-            setConfigLoading(false);
-          }
-        }
-      } catch (error) {
-        // Set default config on error
-        if (isMounted) {
-          setAppConfig({
-            appName: "Dashboard",
-            appLogo: null,
-            loginTheme: "dark",
-            registrationEnabled: false,
-          });
-          setConfigLoading(false);
-        }
-      }
-    }
-
-    fetchData();
-
-    // Cleanup function to prevent state updates after unmount
-    return () => {
-      isMounted = false;
-    };
-  }, []);
 
   // Separate effect for theme initialization
   useEffect(() => {

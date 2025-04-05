@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { createContext, ReactNode, useContext, useEffect, useState } from "react";
+import { createContext, ReactNode, useContext, useEffect, useRef, useState } from "react";
 import { cleanupIframes } from "../utils/iframe-utils";
 
 // Define user type
@@ -43,12 +43,25 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  // Add a ref to track if we've already attempted to fetch the user
+  const userFetchAttempted = useRef(false);
 
   // Fetch current user on mount
   useEffect(() => {
     const fetchUser = async () => {
+      // Skip if we've already attempted to fetch the user to prevent duplicate requests
+      if (userFetchAttempted.current) return;
+      userFetchAttempted.current = true;
+
       try {
-        const response = await fetch("/api/auth/me");
+        const response = await fetch("/api/auth/me", {
+          // Add cache control headers to prevent unintended caching
+          headers: {
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+            Pragma: "no-cache",
+            Expires: "0",
+          },
+        });
         if (response.ok) {
           const data = await response.json();
           setUser(data.user);
@@ -71,6 +84,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "Cache-Control": "no-cache, no-store, must-revalidate",
+          Pragma: "no-cache",
+          Expires: "0",
         },
         body: JSON.stringify({ username, password }),
       });
@@ -89,6 +105,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
       // Set the user state from the user property
       setUser(data.user);
+      // After successful login, reset the fetch attempted flag
+      userFetchAttempted.current = true;
       return data.user;
     } catch (error) {
       console.error("Login error:", error);
