@@ -1,6 +1,6 @@
 # Project Plan
 
-*Updated: 2025-04-03 03:15*
+*Updated: 2025-04-05 01:22*
 
 This document serves as the main project plan and tracks the status of all tasks related to the project.
 
@@ -112,6 +112,21 @@ This document serves as the main project plan and tracks the status of all tasks
 - **Priority**: High
 - **Target**: Next Development Cycle
 - **Progress**: Core implementation complete including state consolidation, component updates, and cleanup. Working on comprehensive test coverage and final validation.
+
+### API Test Standards Review (New)
+- **Location**: `/docs/working-memory/open/api-test-review-20250405`
+- **Status**: In Progress
+- **Description**: Comprehensive review of all API tests to ensure compliance with testing standards and best practices
+- **Key Milestones**:
+  - [X] Create detailed review plan
+  - [X] Review and update health check test
+  - [ ] Review admin API tests
+  - [ ] Review user API tests
+  - [ ] Document findings and improvements
+  - [ ] Update testing documentation
+- **Priority**: High
+- **Target**: Next Testing Cycle
+- **Progress**: Created review plan and completed first test review (health check API)
 
 ## Future Tasks
 

@@ -1,19 +1,18 @@
 import react from "@vitejs/plugin-react";
 import { resolve } from "path";
+import tsconfigPaths from "vite-tsconfig-paths";
 import { defineConfig } from "vitest/config";
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), tsconfigPaths()],
   test: {
     environment: "happy-dom",
-    setupFiles: ["./test/setup.ts"],
-    include: [
-      "app/**/*.test.{ts,tsx}", // Co-located test files
-      "test/smoke.test.tsx", // Only include specific test utility files
-    ],
+    setupFiles: ["./vitest.setup.ts"],
+    include: ["**/*.test.{ts,tsx}"],
     exclude: [
       "**/node_modules/**",
       "**/dist/**",
+      "**/e2e/**",
       "**/cypress/**",
       "**/.{idea,git,cache,output,temp}/**",
       "**/mocks/**", // Exclude mock files

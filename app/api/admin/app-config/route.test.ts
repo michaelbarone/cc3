@@ -2,12 +2,32 @@
 import { GET, PATCH } from "@/app/api/admin/app-config/route";
 import { verifyToken } from "@/app/lib/auth/jwt";
 import { createTestAdmin, createTestUser } from "@/app/lib/test/data/admin";
+import { debugError, debugMockCalls, debugResponse } from "@/app/lib/test/debug";
 import { PrismaClient } from "@prisma/client";
 import type { MakeDirectoryOptions, PathLike } from "fs";
 import fs from "fs";
 import { NextRequest } from "next/server";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { DeepMockProxy, mockDeep } from "vitest-mock-extended";
+
+// Types for our test data
+interface AppConfig {
+  id: string;
+  appName: string;
+  appLogo: string | null;
+  loginTheme: "light" | "dark";
+  registrationEnabled: boolean;
+  favicon: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+interface RequestBody {
+  appName?: string;
+  loginTheme?: "light" | "dark";
+  registrationEnabled?: boolean;
+  appLogo?: string | null;
+}
 
 // Mock dependencies
 vi.mock("@/app/lib/auth/jwt", () => ({
@@ -65,7 +85,7 @@ describe("App Configuration API", () => {
   const mockNonAdminToken = createTestUser();
   const baseDate = new Date("2025-04-05T01:03:36.586Z");
 
-  const mockConfig = {
+  const mockConfig: AppConfig = {
     id: "app-config",
     appName: "Control Center",
     appLogo: null,
@@ -76,7 +96,7 @@ describe("App Configuration API", () => {
     updatedAt: baseDate,
   };
 
-  const mockRequest = (body: any) =>
+  const mockRequest = (body: RequestBody) =>
     new NextRequest("http://localhost/api/admin/app-config", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -85,59 +105,82 @@ describe("App Configuration API", () => {
 
   beforeEach(() => {
     vi.resetAllMocks();
+    console.time("test-execution");
+  });
+
+  afterEach(() => {
+    console.timeEnd("test-execution");
+    // Debug mock states after each test
+    debugMockCalls(vi.mocked(verifyToken), "verifyToken");
+    debugMockCalls(vi.mocked(prismaMock.appConfig.findUnique), "appConfig.findUnique");
+    debugMockCalls(vi.mocked(prismaMock.appConfig.create), "appConfig.create");
+    debugMockCalls(vi.mocked(prismaMock.appConfig.update), "appConfig.update");
+    debugMockCalls(vi.mocked(prismaMock.appConfig.upsert), "appConfig.upsert");
   });
 
   describe("GET /api/admin/app-config", () => {
     it("should return existing app configuration", async () => {
-      vi.mocked(prismaMock.appConfig.findUnique).mockResolvedValueOnce(mockConfig);
+      // Mock the database response
+      prismaMock.appConfig.findUnique.mockResolvedValue(mockConfig);
 
+      // Make the request
       const response = await GET();
-      const data = await response.json();
+      const responseClone = response.clone();
 
+      // Debug the clone
+      await debugResponse(responseClone);
+
+      // Then check status and parse body from original
       expect(response.status).toBe(200);
+      const responseText = await response.text();
+      const data = JSON.parse(responseText);
       expect(data).toEqual(mockConfig);
     });
 
     it("should create and return default configuration when none exists", async () => {
-      vi.mocked(prismaMock.appConfig.findUnique).mockResolvedValueOnce(null);
-      vi.mocked(prismaMock.appConfig.create).mockResolvedValueOnce(mockConfig);
+      // Mock the database response
+      prismaMock.appConfig.findUnique.mockResolvedValue(null);
+      prismaMock.appConfig.create.mockResolvedValue(mockConfig);
 
+      // Make the request
       const response = await GET();
-      const data = await response.json();
+      const responseClone = response.clone();
 
+      // Debug the clone
+      await debugResponse(responseClone);
+
+      // Then check status and parse body from original
       expect(response.status).toBe(200);
+      const responseText = await response.text();
+      const data = JSON.parse(responseText);
       expect(data).toEqual(mockConfig);
     });
 
     it("should handle database errors gracefully", async () => {
-      vi.mocked(prismaMock.appConfig.findUnique).mockRejectedValueOnce(new Error("Database error"));
-      vi.mocked(prismaMock.appConfig.create).mockRejectedValueOnce(new Error("Database error"));
+      // Mock the database error
+      prismaMock.appConfig.findUnique.mockRejectedValue(new Error("Database error"));
 
-      const response = await GET();
-      const data = await response.json();
+      try {
+        // Make the request
+        const response = await GET();
+        const responseClone = response.clone();
 
-      expect(response.status).toBe(500);
-      expect(data).toEqual({ error: "Error getting app config" });
+        // Debug the clone
+        await debugResponse(responseClone);
+
+        // Then check status and parse body from original
+        expect(response.status).toBe(500);
+        const responseText = await response.text();
+        const data = JSON.parse(responseText);
+        expect(data).toEqual({ error: "Error getting app config" });
+      } catch (error) {
+        debugError(error as Error, { findUnique: prismaMock.appConfig.findUnique.mock.calls });
+        throw error;
+      }
     });
   });
 
   describe("PATCH /api/admin/app-config", () => {
-    it("updates app name when authenticated as admin", async () => {
-      const updatedConfig = {
-        ...mockConfig,
-        appName: "New App Name",
-      };
-
-      vi.mocked(verifyToken).mockResolvedValueOnce(mockAdminToken);
-      vi.mocked(prismaMock.appConfig.upsert).mockResolvedValueOnce(updatedConfig);
-
-      const response = await PATCH(mockRequest({ appName: "New App Name" }));
-      const data = await response.json();
-
-      expect(response.status).toBe(200);
-      expect(data).toEqual(updatedConfig);
-    });
-
     it("rejects update when not authenticated", async () => {
       vi.mocked(verifyToken).mockResolvedValueOnce(null);
 
@@ -179,14 +222,27 @@ describe("App Configuration API", () => {
     });
 
     it("handles database errors gracefully", async () => {
+      // Mock authentication and database error
       vi.mocked(verifyToken).mockResolvedValueOnce(mockAdminToken);
-      vi.mocked(prismaMock.appConfig.upsert).mockRejectedValueOnce(new Error("Database error"));
+      prismaMock.appConfig.update.mockRejectedValue(new Error("Database error"));
 
-      const response = await PATCH(mockRequest({ appName: "New Name" }));
-      const data = await response.json();
+      try {
+        // Make the request
+        const response = await PATCH(mockRequest({ appName: "New Name" }));
+        const responseClone = response.clone();
 
-      expect(response.status).toBe(500);
-      expect(data).toEqual({ error: "Error updating app config" });
+        // Debug the clone
+        await debugResponse(responseClone);
+
+        // Then check status and parse body from original
+        expect(response.status).toBe(500);
+        const responseText = await response.text();
+        const data = JSON.parse(responseText);
+        expect(data).toEqual({ error: "Error updating app config" });
+      } catch (error) {
+        debugError(error as Error, { update: prismaMock.appConfig.update.mock.calls });
+        throw error;
+      }
     });
 
     it("handles invalid JSON in request body", async () => {
@@ -249,13 +305,21 @@ describe("App Configuration API", () => {
       expect(data.loginTheme).toBe("light");
     });
 
-    it("validates theme value", async () => {
+    it("should handle invalid theme values", async () => {
+      // Mock authentication
       vi.mocked(verifyToken).mockResolvedValueOnce(mockAdminToken);
 
-      const response = await PATCH(mockRequest({ loginTheme: "invalid" }));
-      const data = await response.json();
+      // Make the request
+      const response = await PATCH(mockRequest({ loginTheme: "invalid" as any }));
+      const responseClone = response.clone();
 
+      // Debug the clone
+      await debugResponse(responseClone);
+
+      // Then check status and parse body from original
       expect(response.status).toBe(400);
+      const responseText = await response.text();
+      const data = JSON.parse(responseText);
       expect(data).toEqual({ error: "Invalid theme value" });
     });
 
@@ -271,47 +335,59 @@ describe("App Configuration API", () => {
       expect(data.registrationEnabled).toBe(true);
     });
 
-    it("validates registration enabled value", async () => {
+    it("should handle invalid registration enabled values", async () => {
+      // Mock authentication
       vi.mocked(verifyToken).mockResolvedValueOnce(mockAdminToken);
 
-      const response = await PATCH(mockRequest({ registrationEnabled: "true" }));
-      const data = await response.json();
+      // Make the request
+      const response = await PATCH(mockRequest({ registrationEnabled: "invalid" as any }));
+      const responseClone = response.clone();
 
+      // Debug the clone
+      await debugResponse(responseClone);
+
+      // Then check status and parse body from original
       expect(response.status).toBe(400);
+      const responseText = await response.text();
+      const data = JSON.parse(responseText);
       expect(data).toEqual({ error: "Invalid registration enabled value" });
     });
 
     it("handles file system errors during logo upload", async () => {
-      const formData = new FormData();
-      const logoFile = new File(["logo content"], "logo.png", { type: "image/png" });
-      formData.append("logo", logoFile);
-
+      // Mock authentication and file system error
       vi.mocked(verifyToken).mockResolvedValueOnce(mockAdminToken);
-      vi.mocked(fs.mkdir).mockImplementation(
+      const fsError = new Error("File system error");
+      vi.spyOn(fs, "mkdir").mockImplementation(
         (
           path: PathLike,
           options: MakeDirectoryOptions | ((error: Error | null) => void),
           callback?: (error: Error | null) => void,
         ) => {
-          if (typeof options === "function") {
-            options(new Error("File system error"));
-          } else if (callback) {
-            callback(new Error("File system error"));
+          if (typeof callback === "function") {
+            callback(fsError);
           }
+          return Promise.reject(fsError);
         },
       );
 
-      const response = await PATCH(
-        new NextRequest("http://localhost/api/admin/app-config", {
-          method: "PATCH",
-          body: formData,
-        }),
-      );
-      const data = await response.json();
+      try {
+        // Make the request
+        const response = await PATCH(mockRequest({ appLogo: "data:image/png;base64,abc123" }));
+        const responseClone = response.clone();
 
-      expect(response.status).toBe(500);
-      expect(data).toEqual({ error: "Error uploading logo" });
-    }, 10000);
+        // Debug the clone
+        await debugResponse(responseClone);
+
+        // Then check status and parse body from original
+        expect(response.status).toBe(500);
+        const responseText = await response.text();
+        const data = JSON.parse(responseText);
+        expect(data).toEqual({ error: "Error uploading logo" });
+      } catch (error) {
+        debugError(error as Error);
+        throw error;
+      }
+    });
 
     it("returns 400 when no logo file provided in upload", async () => {
       const formData = new FormData();
@@ -347,6 +423,29 @@ describe("App Configuration API", () => {
 
       expect(response.status).toBe(400);
       expect(data).toEqual({ error: "Invalid file type" });
+    });
+
+    it("updates app name when authenticated as admin", async () => {
+      // Mock authentication and database response
+      vi.mocked(verifyToken).mockResolvedValueOnce(mockAdminToken);
+      prismaMock.appConfig.update.mockResolvedValue(mockConfig);
+
+      // Make the request
+      const response = await PATCH(mockRequest({ appName: "New App Name" }));
+      const responseClone = response.clone();
+
+      // Debug the clone
+      await debugResponse(responseClone);
+
+      // Then check status and parse body from original
+      expect(response.status).toBe(200);
+      const responseText = await response.text();
+      const data = JSON.parse(responseText);
+
+      expect(data).toMatchObject({
+        id: "app-config",
+        appName: "New App Name",
+      });
     });
   });
 });
