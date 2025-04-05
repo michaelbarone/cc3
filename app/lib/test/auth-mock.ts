@@ -5,4 +5,4 @@ interface TokenPayload {
   [key: string]: any;
 }
 
-export const mockVerifyToken = vi.fn<Promise<TokenPayload | null>>();
+export const mockVerifyToken = vi.fn().mockImplementation(() => Promise.resolve<TokenPayload | null>(null));
