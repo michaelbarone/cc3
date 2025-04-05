@@ -2,10 +2,11 @@
 import { DELETE, GET, POST } from "@/app/api/admin/app-config/logo/route";
 import { verifyToken } from "@/app/lib/auth/jwt";
 import { prisma } from "@/app/lib/db/prisma";
+import { debugError, debugMockCalls, debugResponse } from "@/app/lib/test/debug";
 import fs from "fs/promises";
 import { NextRequest } from "next/server";
 import sharp from "sharp";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock dependencies
 vi.mock("@/app/lib/auth/jwt", () => ({
@@ -85,6 +86,19 @@ describe("App Logo API", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.stubEnv("NODE_ENV", "development");
+    console.time("test-execution");
+  });
+
+  afterEach(() => {
+    console.timeEnd("test-execution");
+    // Debug mock states after each test
+    debugMockCalls(vi.mocked(verifyToken), "verifyToken");
+    debugMockCalls(vi.mocked(prisma.appConfig.findUnique), "appConfig.findUnique");
+    debugMockCalls(vi.mocked(prisma.appConfig.upsert), "appConfig.upsert");
+    debugMockCalls(vi.mocked(prisma.appConfig.update), "appConfig.update");
+    debugMockCalls(vi.mocked(fs.mkdir), "fs.mkdir");
+    debugMockCalls(vi.mocked(fs.unlink), "fs.unlink");
+    debugMockCalls(vi.mocked(sharp), "sharp");
   });
 
   describe("GET /api/admin/app-config/logo", () => {
@@ -92,9 +106,11 @@ describe("App Logo API", () => {
       vi.mocked(prisma.appConfig.findUnique).mockResolvedValue(mockAppConfig);
 
       const response = await GET();
+      const data = await response.json().catch(() => null);
+      // await debugResponse(response.clone());
 
-      expect(response.status).toBe(307); // Temporary Redirect status
-      expect(response.headers.get("Location")).toBe("http://localhost:3000/logos/test-logo.webp");
+      expect(data.status).toBe(307);
+      expect(data.headers.get("Location")).toBe("http://localhost:3000/logos/test-logo.webp");
     });
 
     it("should return 404 when no logo is set", async () => {
@@ -105,6 +121,7 @@ describe("App Logo API", () => {
 
       const response = await GET();
       const data = await response.json();
+      await debugResponse(response.clone());
 
       expect(response.status).toBe(404);
       expect(data).toEqual({ error: "No logo found" });
@@ -113,11 +130,19 @@ describe("App Logo API", () => {
     it("should handle database errors", async () => {
       vi.mocked(prisma.appConfig.findUnique).mockRejectedValue(new Error("Database error"));
 
-      const response = await GET();
-      const data = await response.json();
+      try {
+        const response = await GET();
+        const data = await response.json();
+        await debugResponse(response.clone());
 
-      expect(response.status).toBe(500);
-      expect(data).toEqual({ error: "Error getting app logo" });
+        expect(response.status).toBe(500);
+        expect(data).toEqual({ error: "Error getting app logo" });
+      } catch (error) {
+        debugError(error as Error, {
+          findUnique: vi.mocked(prisma.appConfig.findUnique).mock.calls,
+        });
+        throw error;
+      }
     });
   });
 
@@ -155,13 +180,25 @@ describe("App Logo API", () => {
         body: formData,
       });
 
-      const response = await POST(request);
-      const data = await response.json();
+      try {
+        const response = await POST(request);
+        const data = await response.json();
+        await debugResponse(response.clone());
 
-      expect(response.status).toBe(200);
-      expect(data.appLogo).toMatch(/^\/logos\/app-logo-\d+\.webp$/);
-      expect(sharp).toHaveBeenCalled();
-      expect(fs.mkdir).toHaveBeenCalled();
+        expect(response.status).toBe(200);
+        expect(data.appLogo).toMatch(/^\/logos\/app-logo-\d+\.webp$/);
+        expect(sharp).toHaveBeenCalled();
+        expect(fs.mkdir).toHaveBeenCalled();
+      } catch (error) {
+        debugError(error as Error, {
+          verifyToken: vi.mocked(verifyToken).mock.calls,
+          findUnique: vi.mocked(prisma.appConfig.findUnique).mock.calls,
+          upsert: vi.mocked(prisma.appConfig.upsert).mock.calls,
+          mkdir: vi.mocked(fs.mkdir).mock.calls,
+          sharp: vi.mocked(sharp).mock.calls,
+        });
+        throw error;
+      }
     });
 
     it("should return 401 when not authenticated", async () => {
@@ -176,6 +213,7 @@ describe("App Logo API", () => {
 
       const response = await POST(request);
       const data = await response.json();
+      await debugResponse(response.clone());
 
       expect(response.status).toBe(401);
       expect(data).toEqual({ error: "Unauthorized" });
@@ -260,12 +298,24 @@ describe("App Logo API", () => {
       vi.mocked(fs.access).mockResolvedValue(undefined);
       vi.mocked(fs.unlink).mockResolvedValue(undefined);
 
-      const response = await DELETE();
-      const data = await response.json();
+      try {
+        const response = await DELETE();
+        const data = await response.json();
+        await debugResponse(response.clone());
 
-      expect(response.status).toBe(200);
-      expect(data.appLogo).toBeNull();
-      expect(fs.unlink).toHaveBeenCalled();
+        expect(response.status).toBe(200);
+        expect(data.appLogo).toBeNull();
+        expect(fs.unlink).toHaveBeenCalled();
+      } catch (error) {
+        debugError(error as Error, {
+          verifyToken: vi.mocked(verifyToken).mock.calls,
+          findUnique: vi.mocked(prisma.appConfig.findUnique).mock.calls,
+          update: vi.mocked(prisma.appConfig.update).mock.calls,
+          access: vi.mocked(fs.access).mock.calls,
+          unlink: vi.mocked(fs.unlink).mock.calls,
+        });
+        throw error;
+      }
     });
 
     it("should return 401 when not authenticated", async () => {
@@ -273,6 +323,7 @@ describe("App Logo API", () => {
 
       const response = await DELETE();
       const data = await response.json();
+      await debugResponse(response.clone());
 
       expect(response.status).toBe(401);
       expect(data).toEqual({ error: "Unauthorized" });

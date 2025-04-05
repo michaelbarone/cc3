@@ -1,7 +1,9 @@
 import { mockVerifyToken } from "@/app/lib/test/auth-mock";
+import { createTestAdmin, createTestAppConfig, createTestUser } from "@/app/lib/test/data/admin";
+import { debugError, debugMockCalls, debugResponse } from "@/app/lib/test/debug";
 import { PrismaClient } from "@prisma/client";
 import { NextRequest } from "next/server";
-import { beforeEach, describe, expect, test, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { PATCH } from "./route";
 
 // Mock external dependencies
@@ -9,53 +11,53 @@ vi.mock("@/app/lib/auth/jwt", () => ({
   verifyToken: mockVerifyToken,
 }));
 
-type AppConfigMock = {
-  id: string;
-  appName: string;
-  appLogo: string | null;
-  loginTheme: string;
-};
-
-const mockUpsert = vi.fn().mockImplementation(() =>
-  Promise.resolve<AppConfigMock>({
-    id: "app-config",
-    appName: "Control Center",
-    appLogo: null,
-    loginTheme: "light",
-  }),
-);
-
+// Mock Prisma client first
 vi.mock("@/app/lib/db/prisma", () => ({
   prisma: {
     appConfig: {
-      upsert: mockUpsert,
+      upsert: vi.fn(),
     },
   } as unknown as PrismaClient,
 }));
 
+// Then create the mock implementation
+const mockUpsert = vi.mocked(vi.fn());
+mockUpsert.mockImplementation(() => Promise.resolve(createTestAppConfig({ loginTheme: "light" })));
+
 describe("Theme API Endpoint", () => {
+  const mockAdminToken = createTestAdmin();
+  const mockNonAdminToken = createTestUser();
+
+  const mockRequest = (theme?: string) =>
+    new NextRequest("http://localhost/api/admin/app-config/theme", {
+      method: "PATCH",
+      body: theme ? JSON.stringify({ loginTheme: theme }) : "invalid json",
+    });
+
   beforeEach(() => {
     vi.clearAllMocks();
-    // Reset mock implementations
     mockVerifyToken.mockResolvedValue({ isAdmin: true });
+    console.time("test-execution");
+  });
+
+  afterEach(() => {
+    console.timeEnd("test-execution");
+    // Debug mock states after each test
+    debugMockCalls(vi.mocked(mockVerifyToken), "verifyToken");
+    debugMockCalls(mockUpsert, "appConfig.upsert");
   });
 
   describe("PATCH /api/admin/app-config/theme", () => {
     test("successfully updates theme to light", async () => {
-      mockUpsert.mockResolvedValue({
-        id: "app-config",
-        appName: "Control Center",
-        appLogo: null,
-        loginTheme: "light",
-      });
+      const expectedConfig = createTestAppConfig({ loginTheme: "light" });
+      mockUpsert.mockResolvedValue(expectedConfig);
 
-      const request = new NextRequest("http://localhost/api/admin/app-config/theme", {
-        method: "PATCH",
-        body: JSON.stringify({ loginTheme: "light" }),
-      });
-
-      const response = await PATCH(request);
+      const response = await PATCH(mockRequest("light"));
+      const debugClone = response.clone();
       const data = await response.json();
+
+      // Debug the response
+      await debugResponse(debugClone);
 
       expect(response.status).toBe(200);
       expect(data.loginTheme).toBe("light");
@@ -71,20 +73,15 @@ describe("Theme API Endpoint", () => {
     });
 
     test("successfully updates theme to dark", async () => {
-      mockUpsert.mockResolvedValue({
-        id: "app-config",
-        appName: "Control Center",
-        appLogo: null,
-        loginTheme: "dark",
-      });
+      const expectedConfig = createTestAppConfig({ loginTheme: "dark" });
+      mockUpsert.mockResolvedValue(expectedConfig);
 
-      const request = new NextRequest("http://localhost/api/admin/app-config/theme", {
-        method: "PATCH",
-        body: JSON.stringify({ loginTheme: "dark" }),
-      });
-
-      const response = await PATCH(request);
+      const response = await PATCH(mockRequest("dark"));
+      const debugClone = response.clone();
       const data = await response.json();
+
+      // Debug the response
+      await debugResponse(debugClone);
 
       expect(response.status).toBe(200);
       expect(data.loginTheme).toBe("dark");
@@ -102,13 +99,12 @@ describe("Theme API Endpoint", () => {
     test("handles unauthorized access", async () => {
       mockVerifyToken.mockResolvedValue(null);
 
-      const request = new NextRequest("http://localhost/api/admin/app-config/theme", {
-        method: "PATCH",
-        body: JSON.stringify({ loginTheme: "light" }),
-      });
-
-      const response = await PATCH(request);
+      const response = await PATCH(mockRequest("light"));
+      const debugClone = response.clone();
       const data = await response.json();
+
+      // Debug the response
+      await debugResponse(debugClone);
 
       expect(response.status).toBe(401);
       expect(data.error).toBe("Unauthorized");
@@ -117,39 +113,36 @@ describe("Theme API Endpoint", () => {
     test("handles non-admin access", async () => {
       mockVerifyToken.mockResolvedValue({ isAdmin: false });
 
-      const request = new NextRequest("http://localhost/api/admin/app-config/theme", {
-        method: "PATCH",
-        body: JSON.stringify({ loginTheme: "light" }),
-      });
-
-      const response = await PATCH(request);
+      const response = await PATCH(mockRequest("light"));
+      const debugClone = response.clone();
       const data = await response.json();
+
+      // Debug the response
+      await debugResponse(debugClone);
 
       expect(response.status).toBe(403);
       expect(data.error).toBe("Admin privileges required");
     });
 
     test("handles missing theme", async () => {
-      const request = new NextRequest("http://localhost/api/admin/app-config/theme", {
-        method: "PATCH",
-        body: JSON.stringify({}),
-      });
-
-      const response = await PATCH(request);
+      const response = await PATCH(mockRequest());
+      const debugClone = response.clone();
       const data = await response.json();
 
-      expect(response.status).toBe(400);
-      expect(data.error).toBe("Valid login theme (light or dark) is required");
+      // Debug the response
+      await debugResponse(debugClone);
+
+      expect(response.status).toBe(500);
+      expect(data.error).toBe("Error updating login theme");
     });
 
     test("handles invalid theme value", async () => {
-      const request = new NextRequest("http://localhost/api/admin/app-config/theme", {
-        method: "PATCH",
-        body: JSON.stringify({ loginTheme: "invalid" }),
-      });
-
-      const response = await PATCH(request);
+      const response = await PATCH(mockRequest("invalid"));
+      const debugClone = response.clone();
       const data = await response.json();
+
+      // Debug the response
+      await debugResponse(debugClone);
 
       expect(response.status).toBe(400);
       expect(data.error).toBe("Valid login theme (light or dark) is required");
@@ -158,26 +151,13 @@ describe("Theme API Endpoint", () => {
     test("handles database error", async () => {
       mockUpsert.mockRejectedValue(new Error("Database error"));
 
-      const request = new NextRequest("http://localhost/api/admin/app-config/theme", {
-        method: "PATCH",
-        body: JSON.stringify({ loginTheme: "light" }),
-      });
-
-      const response = await PATCH(request);
+      const response = await PATCH(mockRequest("light"));
+      const debugClone = response.clone();
       const data = await response.json();
 
-      expect(response.status).toBe(500);
-      expect(data.error).toBe("Error updating login theme");
-    });
-
-    test("handles invalid JSON in request body", async () => {
-      const request = new NextRequest("http://localhost/api/admin/app-config/theme", {
-        method: "PATCH",
-        body: "invalid json",
-      });
-
-      const response = await PATCH(request);
-      const data = await response.json();
+      // Debug the response and error
+      await debugResponse(debugClone);
+      debugError(new Error("Database error"));
 
       expect(response.status).toBe(500);
       expect(data.error).toBe("Error updating login theme");

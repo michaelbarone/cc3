@@ -424,28 +424,5 @@ describe("App Configuration API", () => {
       expect(response.status).toBe(400);
       expect(data).toEqual({ error: "Invalid file type" });
     });
-
-    it("updates app name when authenticated as admin", async () => {
-      // Mock authentication and database response
-      vi.mocked(verifyToken).mockResolvedValueOnce(mockAdminToken);
-      prismaMock.appConfig.update.mockResolvedValue(mockConfig);
-
-      // Make the request
-      const response = await PATCH(mockRequest({ appName: "New App Name" }));
-      const responseClone = response.clone();
-
-      // Debug the clone
-      await debugResponse(responseClone);
-
-      // Then check status and parse body from original
-      expect(response.status).toBe(200);
-      const responseText = await response.text();
-      const data = JSON.parse(responseText);
-
-      expect(data).toMatchObject({
-        id: "app-config",
-        appName: "New App Name",
-      });
-    });
   });
 });

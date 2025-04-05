@@ -1,7 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 
 // Paths that should be accessible to the public
-const publicPaths = ["/", "/login", "/api/auth/login", "/api/auth/register", "/api/health"];
+const publicPaths = [
+  "/",
+  "/login",
+  "/api/auth/login",
+  "/api/auth/register",
+  "/api/auth/users",
+  "/api/auth/first-run",
+  "/api/admin/app-config", // Allow public read-only access for login page
+  "/api/health",
+];
 
 // Paths that require admin access
 const adminPaths = ["/admin"]; // Protects all routes under /admin/*
@@ -14,9 +23,14 @@ interface JWTPayload {
 
 export function middleware(request: NextRequest): Promise<NextResponse> | NextResponse {
   const { pathname } = request.nextUrl;
+  const method = request.method;
 
   // Skip middleware for public paths
-  if (publicPaths.some((path) => pathname === path || pathname.startsWith("/api/auth/"))) {
+  // Also, allow GET requests to /api/admin/app-config without auth for the login page
+  if (
+    publicPaths.some((path) => pathname === path || pathname.startsWith("/api/auth/")) ||
+    (pathname === "/api/admin/app-config" && method === "GET")
+  ) {
     return NextResponse.next();
   }
 
@@ -32,7 +46,11 @@ export function middleware(request: NextRequest): Promise<NextResponse> | NextRe
   }
 
   // For admin paths, check admin status from JWT payload
-  if (adminPaths.some((path) => pathname.startsWith(path))) {
+  if (
+    adminPaths.some((path) => pathname.startsWith(path)) ||
+    (pathname.startsWith("/api/admin") &&
+      !(pathname === "/api/admin/app-config" && method === "GET"))
+  ) {
     try {
       // Using weak JWT verification just for the middleware
       // Full verification happens in the route handlers

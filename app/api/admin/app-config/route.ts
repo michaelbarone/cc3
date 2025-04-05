@@ -28,6 +28,8 @@ export async function GET() {
       });
     }
 
+    // Always return the app config without requiring authentication
+    // This endpoint needs to be accessible for the login page
     return NextResponse.json(appConfig);
   } catch (error) {
     console.error("Error getting app config:", error);
