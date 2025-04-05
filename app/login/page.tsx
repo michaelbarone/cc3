@@ -45,6 +45,14 @@ interface AppConfig {
   registrationEnabled: boolean;
 }
 
+// Default configuration object to keep code DRY
+const DEFAULT_APP_CONFIG: AppConfig = {
+  appName: "Dashboard",
+  appLogo: null,
+  loginTheme: "dark",
+  registrationEnabled: false,
+};
+
 function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -63,10 +71,8 @@ function LoginContent() {
   const [users, setUsers] = useState<UserTile[]>([]);
   const [selectedUser, setSelectedUser] = useState<UserTile | null>(null);
   const [appConfig, setAppConfig] = useState<AppConfig>({
-    appName: "Control Center",
-    appLogo: null,
-    loginTheme: "dark",
-    registrationEnabled: false,
+    ...DEFAULT_APP_CONFIG,
+    appName: "Control Center", // Override just this property for initial state
   });
   const passwordInputRef = useRef<HTMLInputElement>(null);
 
@@ -118,12 +124,7 @@ function LoginContent() {
           if (isFirstRunDetected) {
             // During first run, use default config
             if (isMounted) {
-              setAppConfig({
-                appName: "Dashboard",
-                appLogo: null,
-                loginTheme: "dark",
-                registrationEnabled: false,
-              });
+              setAppConfig(DEFAULT_APP_CONFIG);
               setIsFirstRun(true);
               setConfigLoading(false);
             }
@@ -157,36 +158,21 @@ function LoginContent() {
           } else {
             // Use default config on error
             if (isMounted) {
-              setAppConfig({
-                appName: "Dashboard",
-                appLogo: null,
-                loginTheme: "dark",
-                registrationEnabled: false,
-              });
+              setAppConfig(DEFAULT_APP_CONFIG);
               setConfigLoading(false);
             }
           }
         } catch (configError) {
           // Use default config on error
           if (isMounted) {
-            setAppConfig({
-              appName: "Dashboard",
-              appLogo: null,
-              loginTheme: "dark",
-              registrationEnabled: false,
-            });
+            setAppConfig(DEFAULT_APP_CONFIG);
             setConfigLoading(false);
           }
         }
       } catch (error) {
         // Set default config on error
         if (isMounted) {
-          setAppConfig({
-            appName: "Dashboard",
-            appLogo: null,
-            loginTheme: "dark",
-            registrationEnabled: false,
-          });
+          setAppConfig(DEFAULT_APP_CONFIG);
           setConfigLoading(false);
         }
       }
