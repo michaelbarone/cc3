@@ -26,17 +26,66 @@ export const THEME_OPTIONS = {
   DARK: "dark",
 } as const;
 
+export type ThemeMode = typeof THEME_OPTIONS.LIGHT | typeof THEME_OPTIONS.DARK;
+
 // Theme palette constants
 export const THEME_PALETTE = {
   DARK: {
     PRIMARY: "#90caf9",
+    LIGHT: "#e3f2fd",
+    DARK: "#42a5f5",
     BACKGROUND: "#121212",
     PAPER: "#1e1e1e",
+    SECONDARY: {
+      MAIN: "#f48fb1",
+      LIGHT: "#f8bbd0",
+      DARK: "#e91e63",
+    },
   },
   LIGHT: {
     PRIMARY: "#1976d2",
+    LIGHT: "#4791db",
+    DARK: "#115293",
     BACKGROUND: "#f5f5f5",
     PAPER: "#ffffff",
+    SECONDARY: {
+      MAIN: "#dc004e",
+      LIGHT: "#e33371",
+      DARK: "#9a0036",
+    },
+  },
+};
+
+// Common theme options
+export const COMMON_TYPOGRAPHY = {
+  FONT_FAMILY: [
+    "-apple-system",
+    "BlinkMacSystemFont",
+    '"Segoe UI"',
+    "Roboto",
+    '"Helvetica Neue"',
+    "Arial",
+    "sans-serif",
+    '"Apple Color Emoji"',
+    '"Segoe UI Emoji"',
+    '"Segoe UI Symbol"',
+  ].join(","),
+  HEADING_SIZES: {
+    H1: "2.5rem",
+    H2: "2rem",
+    H3: "1.75rem",
+    H4: "1.5rem",
+    H5: "1.25rem",
+    H6: "1rem",
+  },
+  HEADING_WEIGHT: 600,
+};
+
+// Component specific constants
+export const COMPONENT_STYLES = {
+  BUTTON: {
+    BORDER_RADIUS: "4px",
+    TEXT_TRANSFORM: "none" as const,
   },
 };
 

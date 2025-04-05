@@ -229,7 +229,7 @@ function LoginContent() {
   // Create base theme that matches the server-side default
   const baseTheme = createTheme({
     palette: {
-      mode: "dark",
+      mode: THEME_OPTIONS.DARK,
       primary: { main: THEME_PALETTE.DARK.PRIMARY },
       background: {
         default: THEME_PALETTE.DARK.BACKGROUND,
@@ -253,7 +253,7 @@ function LoginContent() {
       });
     }
     return baseTheme;
-  }, [currentTheme]);
+  }, [currentTheme, baseTheme]);
 
   // Handle common login errors outside of the login function to reduce re-renders
   const handleLoginError = useMemo(

@@ -3,6 +3,7 @@
 import DatabaseManagement from "@/app/components/admin/DatabaseManagement";
 import FaviconUpload from "@/app/components/ui/FaviconUpload";
 import LogoUpload from "@/app/components/ui/LogoUpload";
+import { THEME_OPTIONS, THEME_PALETTE } from "@/app/lib/utils/constants";
 import {
   Alert,
   Box,
@@ -487,8 +488,8 @@ export default function AppConfigPage() {
                       type="radio"
                       id="theme-light"
                       name="loginTheme"
-                      value="light"
-                      checked={loginTheme === "light"}
+                      value={THEME_OPTIONS.LIGHT}
+                      checked={loginTheme === THEME_OPTIONS.LIGHT}
                       onChange={handleLoginThemeChange}
                       style={{ marginRight: 1 }}
                     />
@@ -503,7 +504,7 @@ export default function AppConfigPage() {
                         border: 1,
                         borderColor: "divider",
                         borderRadius: 1,
-                        bgcolor: "#ffffff",
+                        bgcolor: THEME_PALETTE.LIGHT.PAPER,
                         color: "#000000",
                         width: "100%",
                         cursor: "pointer",
@@ -518,8 +519,8 @@ export default function AppConfigPage() {
                       type="radio"
                       id="theme-dark"
                       name="loginTheme"
-                      value="dark"
-                      checked={loginTheme === "dark"}
+                      value={THEME_OPTIONS.DARK}
+                      checked={loginTheme === THEME_OPTIONS.DARK}
                       onChange={handleLoginThemeChange}
                       style={{ marginRight: 1 }}
                     />
@@ -534,7 +535,7 @@ export default function AppConfigPage() {
                         border: 1,
                         borderColor: "divider",
                         borderRadius: 1,
-                        bgcolor: "#121212",
+                        bgcolor: THEME_PALETTE.DARK.BACKGROUND,
                         color: "#ffffff",
                         width: "100%",
                         cursor: "pointer",

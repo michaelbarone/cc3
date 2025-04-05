@@ -1,52 +1,47 @@
+import {
+  COMMON_TYPOGRAPHY,
+  COMPONENT_STYLES,
+  THEME_OPTIONS,
+  THEME_PALETTE,
+} from "@/app/lib/utils/constants";
 import { createTheme, ThemeOptions } from "@mui/material/styles";
 
 // Define common theme options for both light and dark modes
 const commonThemeOptions: ThemeOptions = {
   typography: {
-    fontFamily: [
-      "-apple-system",
-      "BlinkMacSystemFont",
-      '"Segoe UI"',
-      "Roboto",
-      '"Helvetica Neue"',
-      "Arial",
-      "sans-serif",
-      '"Apple Color Emoji"',
-      '"Segoe UI Emoji"',
-      '"Segoe UI Symbol"',
-    ].join(","),
+    fontFamily: COMMON_TYPOGRAPHY.FONT_FAMILY,
     h1: {
-      fontSize: "2.5rem",
-      fontWeight: 600,
+      fontSize: COMMON_TYPOGRAPHY.HEADING_SIZES.H1,
+      fontWeight: COMMON_TYPOGRAPHY.HEADING_WEIGHT,
     },
     h2: {
-      fontSize: "2rem",
-      fontWeight: 600,
+      fontSize: COMMON_TYPOGRAPHY.HEADING_SIZES.H2,
+      fontWeight: COMMON_TYPOGRAPHY.HEADING_WEIGHT,
     },
     h3: {
-      fontSize: "1.75rem",
-      fontWeight: 600,
+      fontSize: COMMON_TYPOGRAPHY.HEADING_SIZES.H3,
+      fontWeight: COMMON_TYPOGRAPHY.HEADING_WEIGHT,
     },
     h4: {
-      fontSize: "1.5rem",
-      fontWeight: 600,
+      fontSize: COMMON_TYPOGRAPHY.HEADING_SIZES.H4,
+      fontWeight: COMMON_TYPOGRAPHY.HEADING_WEIGHT,
     },
     h5: {
-      fontSize: "1.25rem",
-      fontWeight: 600,
+      fontSize: COMMON_TYPOGRAPHY.HEADING_SIZES.H5,
+      fontWeight: COMMON_TYPOGRAPHY.HEADING_WEIGHT,
     },
     h6: {
-      fontSize: "1rem",
-      fontWeight: 600,
+      fontSize: COMMON_TYPOGRAPHY.HEADING_SIZES.H6,
+      fontWeight: COMMON_TYPOGRAPHY.HEADING_WEIGHT,
     },
   },
   components: {
     MuiButton: {
       styleOverrides: {
         root: {
-          borderRadius: "4px",
-          textTransform: "none",
-        },
+          borderRadius: COMPONENT_STYLES.BUTTON.BORDER_RADIUS,
+          textTransform: COMPONENT_STYLES.BUTTON.TEXT_TRANSFORM,
+        } as const,
       },
     },
   },
@@ -56,20 +51,20 @@ const commonThemeOptions: ThemeOptions = {
 const lightThemeOptions: ThemeOptions = {
   ...commonThemeOptions,
   palette: {
-    mode: "light",
+    mode: THEME_OPTIONS.LIGHT,
     primary: {
-      main: "#1976d2",
-      light: "#4791db",
-      dark: "#115293",
+      main: THEME_PALETTE.LIGHT.PRIMARY,
+      light: THEME_PALETTE.LIGHT.LIGHT,
+      dark: THEME_PALETTE.LIGHT.DARK,
     },
     secondary: {
-      main: "#dc004e",
-      light: "#e33371",
-      dark: "#9a0036",
+      main: THEME_PALETTE.LIGHT.SECONDARY.MAIN,
+      light: THEME_PALETTE.LIGHT.SECONDARY.LIGHT,
+      dark: THEME_PALETTE.LIGHT.SECONDARY.DARK,
     },
     background: {
-      default: "#f5f5f5",
-      paper: "#ffffff",
+      default: THEME_PALETTE.LIGHT.BACKGROUND,
+      paper: THEME_PALETTE.LIGHT.PAPER,
     },
   },
 };
@@ -78,20 +73,20 @@ const lightThemeOptions: ThemeOptions = {
 const darkThemeOptions: ThemeOptions = {
   ...commonThemeOptions,
   palette: {
-    mode: "dark",
+    mode: THEME_OPTIONS.DARK,
     primary: {
-      main: "#90caf9",
-      light: "#e3f2fd",
-      dark: "#42a5f5",
+      main: THEME_PALETTE.DARK.PRIMARY,
+      light: THEME_PALETTE.DARK.LIGHT,
+      dark: THEME_PALETTE.DARK.DARK,
     },
     secondary: {
-      main: "#f48fb1",
-      light: "#f8bbd0",
-      dark: "#e91e63",
+      main: THEME_PALETTE.DARK.SECONDARY.MAIN,
+      light: THEME_PALETTE.DARK.SECONDARY.LIGHT,
+      dark: THEME_PALETTE.DARK.SECONDARY.DARK,
     },
     background: {
-      default: "#121212",
-      paper: "#1e1e1e",
+      default: THEME_PALETTE.DARK.BACKGROUND,
+      paper: THEME_PALETTE.DARK.PAPER,
     },
   },
 };
