@@ -1,6 +1,16 @@
 "use client";
 
 import RestoreBackup from "@/app/components/backup/RestoreBackup";
+import {
+  ANIMATION_DURATIONS,
+  AppConfig,
+  DEFAULT_APP_CONFIG,
+  NO_CACHE_HEADERS,
+  THEME_OPTIONS,
+  THEME_PALETTE,
+  TIMEOUTS,
+  UI,
+} from "@/app/lib/utils/constants";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 import {
   Alert,
@@ -37,22 +47,6 @@ interface UserTile {
   lastLoginAt?: string;
 }
 
-// Type for app config
-interface AppConfig {
-  appName: string;
-  appLogo: string | null;
-  loginTheme: string;
-  registrationEnabled: boolean;
-}
-
-// Default configuration object to keep code DRY
-const DEFAULT_APP_CONFIG: AppConfig = {
-  appName: "Dashboard",
-  appLogo: null,
-  loginTheme: "dark",
-  registrationEnabled: false,
-};
-
 function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -65,7 +59,7 @@ function LoginContent() {
   const [configLoading, setConfigLoading] = useState(true);
 
   // State for theme configuration
-  const [currentTheme, setCurrentTheme] = useState<"light" | "dark">("dark");
+  const [currentTheme, setCurrentTheme] = useState<"light" | "dark">(THEME_OPTIONS.DARK);
 
   // State for users and selected user
   const [users, setUsers] = useState<UserTile[]>([]);
@@ -102,11 +96,7 @@ function LoginContent() {
         // Fetch users
         const usersResponse = await fetch("/api/auth/users", {
           // Add cache headers to prevent duplicative requests
-          headers: {
-            "Cache-Control": "no-cache, no-store, must-revalidate",
-            Pragma: "no-cache",
-            Expires: "0",
-          },
+          headers: NO_CACHE_HEADERS,
         });
         if (!isMounted) return;
 
@@ -138,10 +128,7 @@ function LoginContent() {
             method: "GET",
             headers: {
               "Content-Type": "application/json",
-              // Add cache control to prevent caching issues
-              "Cache-Control": "no-cache, no-store, must-revalidate",
-              Pragma: "no-cache",
-              Expires: "0",
+              ...NO_CACHE_HEADERS,
             },
           });
 
@@ -194,12 +181,7 @@ function LoginContent() {
     const checkFirstRun = async () => {
       try {
         const response = await fetch("/api/auth/first-run", {
-          // Add cache headers to prevent duplicative requests
-          headers: {
-            "Cache-Control": "no-cache, no-store, must-revalidate",
-            Pragma: "no-cache",
-            Expires: "0",
-          },
+          headers: NO_CACHE_HEADERS,
         });
         if (response.ok) {
           const data = await response.json();
@@ -248,19 +230,25 @@ function LoginContent() {
   const baseTheme = createTheme({
     palette: {
       mode: "dark",
-      primary: { main: "#90caf9" },
-      background: { default: "#121212", paper: "#1e1e1e" },
+      primary: { main: THEME_PALETTE.DARK.PRIMARY },
+      background: {
+        default: THEME_PALETTE.DARK.BACKGROUND,
+        paper: THEME_PALETTE.DARK.PAPER,
+      },
     },
   });
 
   // Create a custom theme for the login page based on the app config
   const loginTheme = useMemo(() => {
-    if (currentTheme === "light") {
+    if (currentTheme === THEME_OPTIONS.LIGHT) {
       return createTheme({
         palette: {
-          mode: "light",
-          primary: { main: "#1976d2" },
-          background: { default: "#f5f5f5", paper: "#ffffff" },
+          mode: THEME_OPTIONS.LIGHT,
+          primary: { main: THEME_PALETTE.LIGHT.PRIMARY },
+          background: {
+            default: THEME_PALETTE.LIGHT.BACKGROUND,
+            paper: THEME_PALETTE.LIGHT.PAPER,
+          },
         },
       });
     }
@@ -318,7 +306,7 @@ function LoginContent() {
       if (passwordInputRef.current) {
         setTimeout(() => {
           passwordInputRef.current?.focus();
-        }, 400);
+        }, TIMEOUTS.PASSWORD_FIELD_FOCUS);
       }
     },
     [performLogin, handleLoginError, passwordInputRef],
@@ -336,7 +324,11 @@ function LoginContent() {
   // Optimize the tiles per row calculation
   const calculateTilesPerRow = useMemo(
     () => () => {
-      return window.innerWidth < 600 ? 1 : window.innerWidth < 960 ? 2 : 3;
+      return window.innerWidth < UI.BREAKPOINTS.MOBILE
+        ? UI.GRID.TILES_PER_ROW.MOBILE
+        : window.innerWidth < UI.BREAKPOINTS.TABLET
+          ? UI.GRID.TILES_PER_ROW.TABLET
+          : UI.GRID.TILES_PER_ROW.DESKTOP;
     },
     [],
   );
@@ -349,7 +341,7 @@ function LoginContent() {
       if (passwordInputRef.current) {
         setTimeout(() => {
           passwordInputRef.current?.focus();
-        }, 50);
+        }, TIMEOUTS.FOCUS_DELAY);
       }
     },
     [showPassword, passwordInputRef],
@@ -481,7 +473,7 @@ function LoginContent() {
       if (passwordInputRef.current) {
         setTimeout(() => {
           passwordInputRef.current?.focus();
-        }, 100);
+        }, TIMEOUTS.ERROR_FOCUS_DELAY);
       }
     } finally {
       setIsLoading(false);
@@ -507,22 +499,22 @@ function LoginContent() {
             alignItems: "center",
             justifyContent: "center",
             minHeight: "100vh",
-            gap: 3,
+            gap: UI.SPACING.MEDIUM,
           }}
         >
-          <CircularProgress size={60} color="primary" thickness={4} />
+          <CircularProgress size={UI.SIZING.ICON.LARGE} color="primary" thickness={4} />
           <Typography
             variant="h6"
             color="primary"
             sx={{
               fontWeight: "medium",
-              opacity: 0.9,
+              opacity: UI.OPACITY.HIGH,
               textAlign: "center",
-              animation: "pulse 1.5s infinite ease-in-out",
+              animation: `pulse ${ANIMATION_DURATIONS.PULSE}ms infinite ease-in-out`,
               "@keyframes pulse": {
-                "0%": { opacity: 0.6 },
-                "50%": { opacity: 1 },
-                "100%": { opacity: 0.6 },
+                "0%": { opacity: UI.ANIMATION.PULSE_KEYFRAMES.START },
+                "50%": { opacity: UI.ANIMATION.PULSE_KEYFRAMES.MIDDLE },
+                "100%": { opacity: UI.ANIMATION.PULSE_KEYFRAMES.END },
               },
             }}
           >
@@ -537,7 +529,7 @@ function LoginContent() {
     <ThemeProvider theme={baseTheme}>
       <ThemeProvider theme={loginTheme}>
         <CssBaseline />
-        <Fade in={!configLoading} timeout={800}>
+        <Fade in={!configLoading} timeout={ANIMATION_DURATIONS.LONG}>
           <Container
             component="main"
             maxWidth="md"
@@ -546,7 +538,7 @@ function LoginContent() {
               flexDirection: "column",
               alignItems: "center",
               minHeight: "100vh",
-              py: 8,
+              py: UI.SPACING.XLARGE,
             }}
           >
             {/* App Branding */}
@@ -556,16 +548,16 @@ function LoginContent() {
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
-                mb: 6,
+                mb: UI.SPACING.LARGE,
               }}
             >
               {appConfig.appLogo ? (
                 <Box
                   sx={{
                     position: "relative",
-                    width: 100,
-                    height: 100,
-                    mb: 2,
+                    width: UI.SIZING.ICON.XLARGE,
+                    height: UI.SIZING.ICON.XLARGE,
+                    mb: UI.SPACING.SMALL,
                   }}
                 >
                   <Image
@@ -577,7 +569,7 @@ function LoginContent() {
                     }}
                     priority
                     loading="eager"
-                    sizes="(max-width: 100px) 100vw, 100px"
+                    sizes={`(max-width: ${UI.SIZING.ICON.XLARGE}px) 100vw, ${UI.SIZING.ICON.XLARGE}px`}
                   />
                 </Box>
               ) : null}
@@ -593,13 +585,21 @@ function LoginContent() {
             </Box>
 
             {/* User Tiles Grid - Add role for better screen reader navigation */}
-            <Box sx={{ width: "100%", px: 2 }} role="region" aria-label="User selection">
-              <Typography component="h2" id="login-instruction" sx={{ mb: 2, textAlign: "center" }}>
+            <Box
+              sx={{ width: "100%", px: UI.SPACING.SMALL }}
+              role="region"
+              aria-label="User selection"
+            >
+              <Typography
+                component="h2"
+                id="login-instruction"
+                sx={{ mb: UI.SPACING.SMALL, textAlign: "center" }}
+              >
                 Select your user account to log in
               </Typography>
               <Grid
                 container
-                spacing={3}
+                spacing={UI.SPACING.MEDIUM}
                 justifyContent="center"
                 aria-labelledby="login-instruction"
               >
@@ -622,7 +622,7 @@ function LoginContent() {
                           width: "100%",
                           overflow: "hidden",
                           bgcolor: "background.paper",
-                          borderRadius: 3,
+                          borderRadius: UI.SIZING.BORDER_RADIUS.MEDIUM,
                           transition: "all 0.3s ease-in-out",
                           "&:hover": {
                             transform: selectedUser?.id === user.id ? "none" : "translateY(-10px)",
