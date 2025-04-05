@@ -1,0 +1,98 @@
+## Test File Standards
+
+// ... existing code ...
+
+## Critical Rules
+- ALWAYS check `/docs/features/testing-framework` first
+- NEVER duplicate existing test patterns - reuse them
+- ALWAYS follow error handling patterns from documentation
+- Use selective mocking - only mock what is critically necessary
+- Keep tests focused and isolated
+- Follow naming conventions from existing tests
+- Document complex test scenarios
+
+## Selective Mocking Standards
+
+1. Critical Mock Requirements:
+   - Authentication and authorization tokens
+   - Security-sensitive data
+   - External service integrations
+   - Rate-limited API calls
+
+2. Simplified Response Validation:
+   ```typescript
+   // Good: Simple status check for non-critical endpoints
+   test("handles successful request", async () => {
+     const response = await handler(request);
+     expect(response.status).toBe(200);
+   });
+
+   // Good: Detailed validation for critical data structures
+   test("validates user authentication response", async () => {
+     const response = await handler(request);
+     const data = await response.json();
+
+     expect(response.status).toBe(200);
+     expect(data).toHaveProperty('token');
+     expect(data).toHaveProperty('user.id');
+     expect(data).toHaveProperty('user.roles');
+   });
+   ```
+
+3. Mock Data Guidelines:
+   ```typescript
+   // Avoid: Excessive mock data for simple endpoints
+   const complexMock = {
+     id: 'test',
+     name: 'test',
+     created: new Date(),
+     updated: new Date(),
+     metadata: {
+       version: 1,
+       status: 'active'
+     },
+     // ... many more fields
+   };
+
+   // Better: Minimal mock data for simple endpoints
+   const simpleMock = {
+     id: 'test',
+     status: 'success'
+   };
+
+   // Best: Only mock critical security data
+   const authMock = {
+     token: 'test-token',
+     permissions: ['read']
+   };
+   ```
+
+// ... existing code ...
+
+## Examples
+
+// ... existing code ...
+
+## Best Practices for Mock Data
+
+1. Security-Critical Endpoints:
+   - ALWAYS mock authentication tokens
+   - ALWAYS validate permission checks
+   - ALWAYS test authorization flows
+
+2. Data-Critical Endpoints:
+   - Mock only fields required for business logic
+   - Validate only essential data structure
+   - Focus on data integrity over completeness
+
+3. Simple CRUD Endpoints:
+   - Prefer status code validation
+   - Skip complex mock data when possible
+   - Focus on error cases over data structure
+
+4. Performance-Critical Endpoints:
+   - Mock timing-sensitive operations
+   - Validate response times
+   - Test rate limiting behavior
+
+// ... existing code ...

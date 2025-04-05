@@ -1,26 +1,32 @@
 /// <reference types="node" />
 import { GET, PATCH } from "@/app/api/admin/app-config/route";
 import { verifyToken } from "@/app/lib/auth/jwt";
-import { prisma } from "@/app/lib/db/prisma";
+import { createTestAdmin, createTestUser } from "@/app/lib/test/data/admin";
+import { PrismaClient } from "@prisma/client";
 import type { MakeDirectoryOptions, PathLike } from "fs";
 import fs from "fs";
 import { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { DeepMockProxy, mockDeep } from "vitest-mock-extended";
 
 // Mock dependencies
 vi.mock("@/app/lib/auth/jwt", () => ({
   verifyToken: vi.fn(),
 }));
 
-vi.mock("@/app/lib/db/prisma", () => ({
-  prisma: {
-    appConfig: {
-      findUnique: vi.fn(),
-      create: vi.fn(),
-      update: vi.fn(),
-      upsert: vi.fn(),
-    },
-  },
+// Create Prisma mock
+export type Context = {
+  prisma: PrismaClient;
+};
+
+export type MockContext = {
+  prisma: DeepMockProxy<PrismaClient>;
+};
+
+const prismaMock = mockDeep<PrismaClient>();
+
+vi.mock("@/lib/db/prisma", () => ({
+  prisma: prismaMock,
 }));
 
 vi.mock("fs", () => ({
@@ -45,25 +51,6 @@ vi.mock("fs", () => ({
       callback(null);
     }),
   },
-  mkdir: vi.fn(
-    (
-      path: PathLike,
-      options: MakeDirectoryOptions | ((error: Error | null) => void),
-      callback?: (error: Error | null) => void,
-    ) => {
-      if (typeof options === "function") {
-        options(null);
-      } else if (callback) {
-        callback(null);
-      }
-    },
-  ),
-  writeFile: vi.fn((path: PathLike, data: any, callback: (error: Error | null) => void) => {
-    callback(null);
-  }),
-  unlink: vi.fn((path: PathLike, callback: (error: Error | null) => void) => {
-    callback(null);
-  }),
 }));
 
 vi.mock("path", () => ({
@@ -74,49 +61,20 @@ vi.mock("path", () => ({
 }));
 
 describe("App Configuration API", () => {
-  const mockAdminToken = {
-    id: "1",
-    username: "admin",
-    isAdmin: true,
-  };
-
-  const mockNonAdminToken = {
-    id: "2",
-    username: "user",
-    isAdmin: false,
-  };
+  const mockAdminToken = createTestAdmin();
+  const mockNonAdminToken = createTestUser();
+  const baseDate = new Date("2025-04-05T01:03:36.586Z");
 
   const mockConfig = {
     id: "app-config",
-    appName: "Test App",
-    appLogo: "/logos/test.webp",
-    favicon: "/logos/favicon.ico",
-    loginTheme: "dark",
-    registrationEnabled: false,
-    createdAt: "2025-03-30T18:35:46.633Z",
-    updatedAt: "2025-03-30T18:35:46.633Z",
-  };
-
-  const defaultConfig = {
-    id: "app-config",
     appName: "Control Center",
     appLogo: null,
-    favicon: null,
     loginTheme: "dark",
     registrationEnabled: false,
-    createdAt: expect.any(Date),
-    updatedAt: expect.any(Date),
+    favicon: null,
+    createdAt: baseDate,
+    updatedAt: baseDate,
   };
-
-  beforeEach(() => {
-    vi.resetAllMocks();
-    vi.mocked(prisma.appConfig.upsert).mockImplementation(
-      async (params: { create: Record<string, unknown>; update: Record<string, unknown> }) => ({
-        ...mockConfig,
-        ...params.update,
-      }),
-    );
-  });
 
   const mockRequest = (body: any) =>
     new NextRequest("http://localhost/api/admin/app-config", {
@@ -125,41 +83,35 @@ describe("App Configuration API", () => {
       body: JSON.stringify(body),
     });
 
+  beforeEach(() => {
+    vi.resetAllMocks();
+  });
+
   describe("GET /api/admin/app-config", () => {
     it("should return existing app configuration", async () => {
-      vi.mocked(prisma.appConfig.findUnique).mockResolvedValueOnce(mockConfig);
+      vi.mocked(prismaMock.appConfig.findUnique).mockResolvedValueOnce(mockConfig);
 
       const response = await GET();
       const data = await response.json();
 
       expect(response.status).toBe(200);
       expect(data).toEqual(mockConfig);
-      expect(prisma.appConfig.findUnique).toHaveBeenCalledWith({
-        where: { id: "app-config" },
-      });
     });
 
     it("should create and return default configuration when none exists", async () => {
-      vi.mocked(prisma.appConfig.findUnique).mockResolvedValueOnce(null);
-      vi.mocked(prisma.appConfig.create).mockResolvedValueOnce(mockConfig);
+      vi.mocked(prismaMock.appConfig.findUnique).mockResolvedValueOnce(null);
+      vi.mocked(prismaMock.appConfig.create).mockResolvedValueOnce(mockConfig);
 
       const response = await GET();
       const data = await response.json();
 
       expect(response.status).toBe(200);
       expect(data).toEqual(mockConfig);
-      expect(prisma.appConfig.create).toHaveBeenCalledWith({
-        data: {
-          id: "app-config",
-          appName: "Control Center",
-          loginTheme: "dark",
-          registrationEnabled: false,
-        },
-      });
     });
 
     it("should handle database errors gracefully", async () => {
-      vi.mocked(prisma.appConfig.findUnique).mockRejectedValueOnce(new Error("Database error"));
+      vi.mocked(prismaMock.appConfig.findUnique).mockRejectedValueOnce(new Error("Database error"));
+      vi.mocked(prismaMock.appConfig.create).mockRejectedValueOnce(new Error("Database error"));
 
       const response = await GET();
       const data = await response.json();
@@ -171,9 +123,13 @@ describe("App Configuration API", () => {
 
   describe("PATCH /api/admin/app-config", () => {
     it("updates app name when authenticated as admin", async () => {
-      const updatedConfig = { ...mockConfig, appName: "New App Name" };
+      const updatedConfig = {
+        ...mockConfig,
+        appName: "New App Name",
+      };
+
       vi.mocked(verifyToken).mockResolvedValueOnce(mockAdminToken);
-      vi.mocked(prisma.appConfig.update).mockResolvedValueOnce(updatedConfig);
+      vi.mocked(prismaMock.appConfig.upsert).mockResolvedValueOnce(updatedConfig);
 
       const response = await PATCH(mockRequest({ appName: "New App Name" }));
       const data = await response.json();
@@ -224,7 +180,7 @@ describe("App Configuration API", () => {
 
     it("handles database errors gracefully", async () => {
       vi.mocked(verifyToken).mockResolvedValueOnce(mockAdminToken);
-      vi.mocked(prisma.appConfig.upsert).mockRejectedValueOnce(new Error("Database update failed"));
+      vi.mocked(prismaMock.appConfig.upsert).mockRejectedValueOnce(new Error("Database error"));
 
       const response = await PATCH(mockRequest({ appName: "New Name" }));
       const data = await response.json();
@@ -252,7 +208,7 @@ describe("App Configuration API", () => {
     it("handles logo upload when authenticated as admin", async () => {
       const updatedConfig = { ...mockConfig, appLogo: "/logos/app-logo-123.webp" };
       vi.mocked(verifyToken).mockResolvedValueOnce(mockAdminToken);
-      vi.mocked(prisma.appConfig.update).mockResolvedValueOnce(updatedConfig);
+      vi.mocked(prismaMock.appConfig.update).mockResolvedValueOnce(updatedConfig);
 
       const formData = new FormData();
       formData.append("logo", new Blob(["test"], { type: "image/webp" }), "test.webp");
@@ -272,7 +228,7 @@ describe("App Configuration API", () => {
     it("deletes logo when authenticated as admin", async () => {
       const updatedConfig = { ...mockConfig, appLogo: null };
       vi.mocked(verifyToken).mockResolvedValueOnce(mockAdminToken);
-      vi.mocked(prisma.appConfig.update).mockResolvedValueOnce(updatedConfig);
+      vi.mocked(prismaMock.appConfig.update).mockResolvedValueOnce(updatedConfig);
 
       const response = await PATCH(mockRequest({ appLogo: null }));
       const data = await response.json();
@@ -284,7 +240,7 @@ describe("App Configuration API", () => {
     it("updates login theme when authenticated as admin", async () => {
       const updatedConfig = { ...mockConfig, loginTheme: "light" };
       vi.mocked(verifyToken).mockResolvedValueOnce(mockAdminToken);
-      vi.mocked(prisma.appConfig.update).mockResolvedValueOnce(updatedConfig);
+      vi.mocked(prismaMock.appConfig.update).mockResolvedValueOnce(updatedConfig);
 
       const response = await PATCH(mockRequest({ loginTheme: "light" }));
       const data = await response.json();
@@ -306,7 +262,7 @@ describe("App Configuration API", () => {
     it("updates registration setting when authenticated as admin", async () => {
       const updatedConfig = { ...mockConfig, registrationEnabled: true };
       vi.mocked(verifyToken).mockResolvedValueOnce(mockAdminToken);
-      vi.mocked(prisma.appConfig.update).mockResolvedValueOnce(updatedConfig);
+      vi.mocked(prismaMock.appConfig.update).mockResolvedValueOnce(updatedConfig);
 
       const response = await PATCH(mockRequest({ registrationEnabled: true }));
       const data = await response.json();

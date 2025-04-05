@@ -1,0 +1,165 @@
+---
+description: Apply testing framework standards and reuse existing patterns when creating or editing test files
+globs: **/*.test.{ts,tsx,js,jsx}
+alwaysApply: true
+---
+
+# Test File Standards
+
+## Context
+- Applies to all test files (unit, integration, e2e)
+- References testing framework documentation in `/docs/features/testing-framework`
+- Promotes reuse of existing test patterns
+- Works with existing testing rules (051-vitest-react-testing-lib-testing-standards.mdc, 053-playwright-e2e-standards.mdc)
+
+## Requirements
+- Before creating/editing test files:
+  1. Review `/docs/features/testing-framework` documentation
+  2. Search for similar existing tests to reuse patterns
+  3. Follow error handling patterns from `error-handling-patterns.md`
+  4. Use test data management practices from `test-data-management.md`
+  5. Reference troubleshooting guide for common issues
+
+## Critical Rules
+- ALWAYS check `/docs/features/testing-framework` first
+- NEVER duplicate existing test patterns - reuse them
+- ALWAYS follow error handling patterns from documentation
+- ALWAYS use standard mock implementations
+- Keep tests focused and isolated
+- Follow naming conventions from existing tests
+- Document complex test scenarios
+
+## Test Structure Standards
+
+1. Import Organization:
+   ```typescript
+   // 1. External imports
+   import { describe, test, expect, vi } from "vitest";
+   import { NextRequest } from "next/server";
+
+   // 2. Internal imports
+   import { mockVerifyToken } from "@/app/lib/test/auth-mock";
+   import { createTestFile } from "@/app/lib/test/file-mock";
+
+   // 3. Test subject import
+   import { POST, DELETE } from "./route";
+   ```
+
+2. Mock Setup:
+   ```typescript
+   // 1. Define mock types
+   type MockType = {
+     id: string;
+     // ... other fields
+   };
+
+   // 2. Create mock functions
+   const mockFn = vi.fn().mockImplementation(() =>
+     Promise.resolve<MockType>({ id: "test" })
+   );
+
+   // 3. Mock external modules
+   vi.mock("@/app/lib/module", () => ({
+     someFunction: mockFn,
+   }));
+   ```
+
+3. Test Organization:
+   ```typescript
+   describe("Feature Name", () => {
+     // 1. Setup/teardown
+     beforeEach(() => {
+       vi.clearAllMocks();
+     });
+
+     // 2. Happy path tests
+     test("successfully performs action", async () => {
+       // Arrange
+       // Act
+       // Assert
+     });
+
+     // 3. Error cases
+     test("handles error condition", async () => {
+       // Arrange
+       // Act
+       // Assert
+     });
+   });
+   ```
+
+## Examples
+
+<example>
+// Good: Following standards and reusing patterns
+import { describe, test, expect, vi } from "vitest";
+import { mockVerifyToken } from "@/app/lib/test/auth-mock";
+import { POST } from "./route";
+
+type ConfigMock = {
+  id: string;
+  value: string;
+};
+
+const mockUpsert = vi.fn().mockImplementation(() =>
+  Promise.resolve<ConfigMock>({ id: "test", value: "test" })
+);
+
+vi.mock("@/app/lib/db/prisma", () => ({
+  prisma: {
+    config: {
+      upsert: mockUpsert,
+    },
+  },
+}));
+
+describe("Config API", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockVerifyToken.mockResolvedValue({ isAdmin: true });
+  });
+
+  test("successfully updates config", async () => {
+    const response = await POST(new Request("http://test"));
+    expect(response.status).toBe(200);
+  });
+
+  test("handles unauthorized access", async () => {
+    mockVerifyToken.mockResolvedValue(null);
+    const response = await POST(new Request("http://test"));
+    expect(response.status).toBe(401);
+  });
+});
+</example>
+
+<example type="invalid">
+// Bad: Not following standards or reusing patterns
+import { test } from "vitest";
+
+// Missing proper mock setup
+const mockDb = {
+  save: () => Promise.resolve(),
+};
+
+test("config test", async () => {
+  // No describe block
+  // No error handling
+  // No pattern reuse
+  const result = await saveConfig();
+  expect(result).toBe(true);
+});
+</example>
+
+## Dependencies
+- 051-vitest-react-testing-lib-testing-standards.mdc
+- 053-playwright-e2e-standards.mdc
+- 054-test-data-management.mdc
+- 055-test-debugging-standards.mdc
+
+metadata:
+  priority: high
+  version: 1.0.0
+  tags:
+    - testing
+    - standards
+    - patterns

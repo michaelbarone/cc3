@@ -1,24 +1,39 @@
 # Project Plan
 
-*Updated: 2025-04-02 17:11*
+*Updated: 2025-04-03 03:15*
 
 This document serves as the main project plan and tracks the status of all tasks related to the project.
 
 ## Active Tasks
+
+### E2E Test Coverage Expansion (New)
+- **Location**: `/docs/working-memory/open/e2e-test-expansion-20250331`
+- **Status**: In Progress
+- **Description**: Expanding E2E test coverage with comprehensive user journey tests using Playwright
+- **Key Milestones**:
+  - [X] Phase 1: First-time setup flow
+  - [ ] Core User Journey Implementation
+  - [ ] Migration of Existing Tests
+  - [X] Phase 2: Primary User Journeys
+  - [ ] Phase 4: Performance & Accessibility
+  - [ ] Phase 5: Cross-browser & Platform Testing
+- **Priority**: High
+- **Target**: Next Testing Cycle
+- **Progress**: Completed first-time setup and primary user journeys, moving to core journey implementation
 
 ### URL Group Management Refactor (In Progress)
 - **Location**: `/docs/working-memory/open/url-group-management-refactor-20250326`
 - **Status**: In Progress
 - **Description**: Refactoring URL group management to support multiple group assignments and improve order management
 - **Key Milestones**:
-  - [ ] Schema Update with UrlsInGroups table
-  - [ ] Migration Script Implementation
-  - [ ] API Endpoint Updates
-  - [ ] Frontend Component Updates
-  - [ ] Testing and Validation
+  - [X] Schema Update with UrlsInGroups table
+  - [X] Migration Script Implementation
+  - [X] API Endpoint Updates
+  - [X] Frontend Component Updates
+  - [X] Testing and Validation
 - **Priority**: High
 - **Target**: Next Development Cycle
-- **Progress**: Initial planning completed, schema changes designed, awaiting implementation
+- **Progress**: Major implementation completed including schema changes, API updates, and frontend modifications. All planned tests passing. Ready for final review and deployment.
 
 ### Login Page UI Updates (In Progress)
 - **Location**: `/docs/working-memory/open/login-ui-update-20250319`
@@ -27,12 +42,15 @@ This document serves as the main project plan and tracks the status of all tasks
 - **Key Milestones**:
   - [X] Visual Design Updates
   - [X] User Experience Improvements
-  - [ ] Accessibility Enhancements
+  - [X] WCAG 2.1 Compliance
+  - [ ] Keyboard Navigation
+  - [X] ARIA Labels
+  - [X] Screen Reader Testing
   - [ ] Performance Optimization
-  - [X] First Run Experience - Backup Restore (Add backup restore option before first admin login)
+  - [X] First Run Experience - Backup Restore
 - **Priority**: High
 - **Target**: Next UI update cycle
-- **Progress**: Completed visual design, UX improvements, and first run backup restore functionality. Moving on to accessibility enhancements and performance optimization. Successfully implemented backup restore functionality for both first-run and admin scenarios with proper error handling and consistent JSON responses.
+- **Progress**: Major features completed including visual design, UX improvements, and first run backup restore. Accessibility mostly complete. Focusing on remaining keyboard navigation and performance optimization.
 
 ### Testing Framework Implementation (In Progress)
 - **Location**: `/docs/working-memory/open/testing-framework`
@@ -42,7 +60,27 @@ This document serves as the main project plan and tracks the status of all tasks
   - [X] Vitest + Testing Library Setup
   - [X] Critical Path Testing Setup
   - [X] Initial Test Implementation
-  - [ ] Playwright Setup
+  - [X] Playwright Setup
+  - [X] Cookie Handling & Mocking
+  - [X] Statistics Endpoint Testing
+  - [X] Test Infrastructure Setup
+  - [ ] API Route Testing:
+    * [ ] Standardized test patterns for endpoints
+    * [ ] Response schema validation
+    * [ ] Performance benchmarks
+    * [ ] Coverage metrics documentation
+  - [ ] Quality Assurance:
+    * [ ] Coverage thresholds verification
+    * [ ] Test stability monitoring
+    * [ ] Performance benchmarking
+  - [ ] Documentation:
+    * [X] Cookie handling patterns
+    * [X] Mocking strategies
+    * [X] Statistics testing guidelines
+    * [ ] Error handling patterns
+- **Priority**: High
+- **Target**: Next Testing Cycle
+- **Progress**: Core implementation complete including test setup, cookie handling, and statistics testing. Working on comprehensive API route testing and quality assurance measures. E2E testing moved to dedicated plan.
 
 ### URL Menu State Management (In Progress)
 - **Location**: `/docs/working-memory/open/url-menu-state-management`
@@ -51,20 +89,29 @@ This document serves as the main project plan and tracks the status of all tasks
 - **Key Milestones**: 
   - [X] State Implementation
   - [X] Iframe Management
-  - [ ] Visual Feedback Testing
+  - [X] Content Caching
+  - [X] Long Press Handler
+  - [X] Visual Progress Indicator
+  - [ ] Tooltips and Haptic Feedback
+  - [ ] Event Listener Cleanup
+  - [ ] Edge Case Testing
+- **Priority**: High
+- **Target**: Next Feature Release
+- **Progress**: Core functionality implemented including state management, iframe handling, and visual feedback. Working on final polish with tooltips, haptic feedback, and edge case testing.
 
-### IFrame State Management Refactor (New)
+### IFrame State Management Refactor (In Progress)
 - **Location**: `/docs/working-memory/open/iframe-state-refactor-20240401`
-- **Status**: Planning
+- **Status**: In Progress
 - **Description**: Refactoring iframe state management to simplify state handling, improve performance, and enhance maintainability
 - **Key Milestones**:
-  - [ ] State Consolidation
-  - [ ] Component Updates
-  - [ ] Feature Enhancement
-  - [ ] Testing and Validation
+  - [X] Phase 1: State Consolidation
+  - [X] Phase 2: Component Updates
+  - [ ] Phase 3: Testing Implementation
+  - [ ] Phase 4: Validation
+  - [X] Phase 5: Cleanup
 - **Priority**: High
 - **Target**: Next Development Cycle
-- **Progress**: Initial planning completed, new state structure designed, ready for implementation
+- **Progress**: Core implementation complete including state consolidation, component updates, and cleanup. Working on comprehensive test coverage and final validation.
 
 ## Future Tasks
 
@@ -120,6 +167,30 @@ This document serves as the main project plan and tracks the status of all tasks
 
 ## Closed Tasks
 
+### Theme Picker Relocation
+- **Location**: `/docs/working-memory/done/theme-picker-relocation-20240320`
+- **Completion Date**: 2024-03-20
+- **Description**: Move theme picker from header to user dropdown menu
+- **Key Achievements**:
+  - Successfully moved theme picker to user dropdown
+  - Added visual separators for better organization
+  - Maintained existing functionality
+  - Improved UI consistency
+  - Verified styling and alignment
+  - Added proper section separation in menu
+
+### API Test Coverage Improvement
+- **Location**: `/docs/working-memory/done/api-test-coverage-20250331`
+- **Completion Date**: 2025-03-31
+- **Description**: Comprehensive API test coverage implementation for all endpoints
+- **Key Achievements**:
+  - Implemented complete test coverage for authentication endpoints
+  - Added user management and preferences test suites
+  - Created admin route test coverage
+  - Added health check and utility endpoint tests
+  - Established testing standards and documentation
+  - Achieved full coverage of planned test scenarios
+
 ### Test File Relocation
 - **Location**: `/docs/working-memory/done/test-refactor-20250330`
 - **Completion Date**: 2025-03-30
@@ -152,27 +223,6 @@ This document serves as the main project plan and tracks the status of all tasks
   - Modified MenuBarAdapter to not render when menuPosition is undefined
   - Improved UX by preventing premature menu rendering
   - Maintained type safety throughout the changes
-
-### Menu Visibility Enhancement
-- **Location**: `/docs/working-memory/open/menu-visibility-20240320`
-- **Completion Date**: 2024-03-20
-- **Description**: Improve menu visibility based on number of available groups
-- **Key Achievements**:
-  - Removed dropdown functionality when only one group is available
-  - Implemented static group name display for single group case
-  - Maintained visual consistency with folder icon
-  - Improved UX by simplifying interface when dropdown is unnecessary
-  - Preserved existing functionality for multiple groups
-
-### Theme Picker Relocation
-- **Location**: `/docs/working-memory/open/theme-picker-relocation-20240320`
-- **Completion Date**: 2024-03-20
-- **Description**: Move theme picker from header to user dropdown menu
-- **Key Achievements**:
-  - Relocated theme picker to user dropdown menu
-  - Added visual separators for better organization
-  - Maintained existing functionality
-  - Improved UI consistency
 
 ### Admin Configuration
 - **Location**: `/docs/working-memory/done/admin-configuration`

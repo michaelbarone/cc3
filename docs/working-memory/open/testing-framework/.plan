@@ -76,7 +76,8 @@ Step 5: Comprehensive API Route Testing
     - System Routes:
       * Health Check (/api/health)
       * First Run (/api/first-run/*)
-[ ] Implement standardized test patterns for each endpoint:
+
+[~] Implement standardized test patterns for each endpoint:
     - Success cases with expected data
     - Authentication/Authorization:
       * Unauthenticated access
@@ -94,17 +95,26 @@ Step 5: Comprehensive API Route Testing
       * Upload limits
       * File type validation
       * Storage/cleanup
+
+[ ] Implement missing tests for identified endpoints:
+    1. App Config Endpoints:
+       - /api/admin/app-config/favicon (GET, POST, DELETE)
+       - /api/admin/app-config/theme (PATCH)
+    2. Backup/Restore Endpoints:
+       - /api/admin/backup (GET, POST)
+       - /api/first-run/restore (POST)
+    3. User Endpoints:
+       - /api/user/avatar (GET) - Only POST and DELETE are tested
+    4. URL Group Management:
+       - /api/admin/url-groups/[id]/urls (GET, POST)
+       - /api/admin/url-groups/[id]/urls/[urlId] (GET, PATCH, DELETE)
+
 [ ] Add response schema validation using TypeScript types
 [ ] Create performance benchmarks:
     - Response time tracking
     - Memory usage monitoring
     - File operation metrics
-[ ] Document API test coverage metrics:
-    - Route coverage
-    - HTTP method coverage
-    - Error path coverage
-    - Edge case coverage
-[X] Crete future plan to expand e2e coverage
+[X] Create future plan to expand e2e coverage
 
 ### Current Status (Updated 2025-03-31 23:00)
 
@@ -136,7 +146,7 @@ Step 5: Comprehensive API Route Testing
       - Added examples of mock data generation and common test scenarios
       - Included best practices and common pitfalls to avoid
       - Added performance testing guidelines
-   [ ] Document error handling patterns
+   [✓] Document error handling patterns
 
 5. Quality Assurance
    [✓] Run full test suite audit for flaky tests
@@ -153,6 +163,51 @@ Step 5: Comprehensive API Route Testing
    [ ] Add performance benchmarks for critical paths
 
 ### Progress History
+
+2024-04-03:
+- [X] Completed cookie handling patterns and documentation
+- [X] Implemented comprehensive flaky test audit
+- [X] Completed statistics endpoint testing implementation and guidelines
+- [X] Added test data generation utilities
+- [X] Implemented response validation helpers
+- [X] Created comprehensive API test coverage metrics documentation
+
+## Remaining Tasks
+
+1. API Route Testing
+- [ ] Implement standardized test patterns for remaining API routes
+    * Priority 1: App Config endpoints (favicon, theme)
+    * Priority 2: Backup/Restore endpoints
+    * Priority 3: URL Group Management endpoints
+    * Priority 4: User Avatar GET endpoint
+- [ ] Add response schema validation for all endpoints
+- [X] Document API test coverage metrics
+      See: docs/features/testing-framework/api-test-coverage.md
+- [ ] Add performance benchmarks for critical API endpoints
+
+2. Test Infrastructure
+- [ ] Set up automated test stability monitoring
+- [ ] Implement test result aggregation and reporting
+- [ ] Add test runtime performance tracking
+
+3. Documentation
+- [X] Complete error handling patterns documentation
+      See: docs/features/testing-framework/error-handling-patterns.md
+- [X] Add troubleshooting guide for common test failures
+      See: docs/features/testing-framework/troubleshooting-guide.md
+- [X] Document test data management best practices
+      See: docs/features/testing-framework/test-data-management.md
+
+4. Quality Assurance
+- [ ] Verify test coverage meets thresholds
+- [ ] Implement automated flaky test detection
+- [ ] Add performance benchmarks for critical paths
+
+## Next Steps
+1. Focus on implementing remaining API route test patterns
+2. Set up automated test stability monitoring
+3. Complete documentation for error handling patterns
+4. Implement automated flaky test detection
 
 ### 2025-03-31 20:55 - Test Status Update
 - ✓ Completed: Cookie-related tests now using async methods properly
@@ -283,4 +338,175 @@ Step 5: Comprehensive API Route Testing
   * Create test stability monitoring system
 - ⏭️ Next: Begin implementing fixes for identified flaky tests
 
+### 2025-03-31 23:15 - Error Handling Documentation
+- ✓ Completed: Created comprehensive error handling patterns documentation
+- ✓ Documented:
+  * Core error categories (Auth, DB, File System, Input)
+  * Best practices for error handling in tests
+  * Common error scenarios and response standards
+  * Testing utilities for error handling
+  * Error monitoring patterns
+- 🤔 Decisions:
+  * Organized by error categories for easy reference
+  * Included both good and bad examples
+  * Added reusable utilities and patterns
+  * Covered all major error scenarios
+- ⏭️ Next: Create troubleshooting guide for common test failures
+
+### 2025-03-31 23:30 - Troubleshooting Guide
+- ✓ Completed: Created comprehensive troubleshooting guide
+- ✓ Documented:
+  * Common test failures and solutions
+  * Performance issues and optimizations
+  * Debugging techniques and tools
+  * Common pitfalls and best practices
+- 🤔 Decisions:
+  * Organized by failure type for easy reference
+  * Included code examples for each solution
+  * Added debugging utilities and patterns
+  * Covered performance optimization
+- ⏭️ Next: Create test data management documentation
+
+### 2025-03-31 23:45 - Documentation Organization
+- ✓ Completed: Moved testing framework documentation to features directory
+- ✓ Actions taken:
+  * Transferred documentation files to docs/features/testing-framework/
+  * Created comprehensive README.md with documentation structure
+  * Established clear navigation and organization
+- 🤔 Decisions:
+  * Maintained original files in working memory for reference
+  * Created centralized documentation hub in features directory
+  * Organized documentation by core and specialized areas
+- ⏭️ Next: Begin implementing test improvements based on organized documentation
+
+### Documentation Phase Complete!
+All three major documentation tasks have been completed:
+1. Error Handling Patterns
+2. Troubleshooting Guide
+3. Test Data Management
+
+Next phase: Implementation of test improvements based on documentation.
+
 ### Next Task: Begin implementing fixes for identified flaky tests, starting with IframeContainer test timeouts
+
+### 2025-04-05 17:45 - Missing Endpoint Test Implementation Plan
+- ✓ Analyzed: Missing endpoint test requirements
+- ✓ Prioritized implementation order:
+  1. App Config Endpoints (Priority 1):
+     * /api/admin/app-config/favicon
+       - GET: Retrieve current favicon
+       - POST: Upload new favicon
+       - DELETE: Remove favicon
+     * /api/admin/app-config/theme
+       - PATCH: Update theme settings
+     Implementation Plan:
+     - Create test suite in app/api/admin/app-config/__tests__/favicon.test.ts
+     - Create test suite in app/api/admin/app-config/__tests__/theme.test.ts
+     - Implement standard test patterns for each endpoint
+     - Add file operation tests for favicon endpoints
+
+  2. Backup/Restore Endpoints (Priority 2):
+     * /api/admin/backup
+       - GET: Download backup
+       - POST: Create backup
+     * /api/first-run/restore
+       - POST: Restore from backup
+     Implementation Plan:
+     - Create test suite in app/api/admin/backup/__tests__/route.test.ts
+     - Create test suite in app/api/first-run/__tests__/restore.test.ts
+     - Add comprehensive file operation tests
+     - Implement database state verification
+
+  3. URL Group Management (Priority 3):
+     * /api/admin/url-groups/[id]/urls
+       - GET: List URLs in group
+       - POST: Add URL to group
+     * /api/admin/url-groups/[id]/urls/[urlId]
+       - GET: Get specific URL in group
+       - PATCH: Update URL in group
+       - DELETE: Remove URL from group
+     Implementation Plan:
+     - Create test suite in app/api/admin/url-groups/[id]/urls/__tests__/route.test.ts
+     - Create test suite in app/api/admin/url-groups/[id]/urls/[urlId]/__tests__/route.test.ts
+     - Implement comprehensive CRUD operation tests
+     - Add proper error handling tests
+
+  4. User Avatar Endpoint (Priority 4):
+     * /api/user/avatar
+       - GET: Retrieve user avatar (missing)
+     Implementation Plan:
+     - Update test suite in app/api/user/avatar/__tests__/route.test.ts
+     - Add GET endpoint tests
+     - Ensure proper file handling tests
+
+- 🤔 Decisions:
+  * Start with highest priority endpoints (App Config)
+  * Use standardized test patterns from documentation
+  * Implement comprehensive error handling
+  * Add proper file operation tests where needed
+  * Ensure proper cleanup in all tests
+  * Follow established mocking patterns
+- ⏭️ Next: Begin implementation of App Config endpoint tests
+
+### 2025-04-05 18:00 - Favicon Endpoint Tests Implementation
+- ✓ Completed: Created comprehensive test suite for favicon endpoints
+- ✓ Implemented:
+  * Test suite in app/api/admin/app-config/favicon/route.test.ts (colocated with route handler)
+  * Auth mock utility in app/lib/test/auth-mock.ts
+  * File mock utility in app/lib/test/file-mock.ts
+- ✓ Test Coverage:
+  * POST /api/admin/app-config/favicon
+    - Success case with file upload
+    - Authentication/Authorization
+    - File validation (size, type)
+    - Database error handling
+    - File system operations
+  * DELETE /api/admin/app-config/favicon
+    - Success case
+    - Authentication/Authorization
+    - Error handling
+    - File system operations
+- 🤔 Decisions:
+  * Followed Next.js App Router convention for test file location
+  * Created reusable test utilities for auth and file operations
+  * Implemented comprehensive error handling tests
+  * Added proper cleanup in afterEach hooks
+  * Used vi.mock for external dependencies
+- ⏭️ Next: Implement tests for /api/admin/app-config/theme endpoint
+
+### 2025-04-05 18:15 - Theme Endpoint Test Planning
+- ✓ Analyzed: Theme endpoint requirements
+- ✓ Test Location:
+  * Will create test file at app/api/admin/app-config/theme/route.test.ts
+- ✓ Test Coverage Required:
+  * PATCH /api/admin/app-config/theme
+    - Success case with theme update
+    - Authentication/Authorization checks
+    - Input validation
+    - Database error handling
+    - Invalid theme value handling
+- 🤔 Decisions:
+  * Will reuse auth mock utility
+  * Will implement theme validation tests
+  * Will follow same pattern as favicon tests
+- ⏭️ Next: Begin implementation of theme endpoint tests
+
+### 2025-04-05 18:30 - Theme Endpoint Tests Implementation
+- ✓ Completed: Created comprehensive test suite for theme endpoint
+- ✓ Implemented:
+  * Test suite in app/api/admin/app-config/theme/route.test.ts
+  * Reused auth mock utility
+- ✓ Test Coverage:
+  * PATCH /api/admin/app-config/theme
+    - Success cases (light and dark themes)
+    - Authentication/Authorization
+    - Input validation
+    - Database error handling
+    - Invalid theme value handling
+    - Invalid JSON handling
+- 🤔 Decisions:
+  * Followed Next.js App Router convention for test file location
+  * Reused auth mock utility
+  * Added comprehensive error handling tests
+  * Implemented thorough input validation tests
+- ⏭️ Next: Implement tests for backup/restore endpoints

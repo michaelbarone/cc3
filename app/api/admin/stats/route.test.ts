@@ -1,7 +1,12 @@
-import { GET } from "@/app/api/admin/stats/route";
+// 1. External imports
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+// 2. Internal imports
 import { verifyToken } from "@/app/lib/auth/jwt";
 import { prisma } from "@/app/lib/db/prisma";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+
+// 3. Test subject import
+import { GET } from "@/app/api/admin/stats/route";
 
 // Mock dependencies
 vi.mock("@/app/lib/auth/jwt", () => ({

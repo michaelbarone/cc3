@@ -1,0 +1,242 @@
+---
+description: Define standards for testing Prisma database operations and mocking the Prisma client
+globs: **/*.test.{ts,tsx,js,jsx}
+alwaysApply: true
+---
+
+# Prisma Testing Standards
+
+## Context
+- Applies to all tests involving Prisma database operations
+- Works in conjunction with 051-test-file-standards.mdc
+- Ensures consistent mocking of Prisma client
+- Provides patterns for transaction handling and test data cleanup
+
+## Critical Rules
+- ALWAYS mock the Prisma client for unit tests using vitest-mock-extended
+- NEVER use real database connections in unit tests
+- ALWAYS clean up test data in integration tests
+- Use proper type definitions for mocked responses
+- Follow transaction patterns for integration tests
+- Use consistent mock implementation patterns
+- Clean up test data in afterEach blocks
+- Place mocks in __mocks__ directory adjacent to the module being mocked
+
+## Mock Implementation Standards
+
+1. Required Dependencies:
+   ```typescript
+   // Add to package.json devDependencies
+   {
+     "vitest-mock-extended": "^1.0.0"
+   }
+   ```
+
+2. Basic Prisma Client Mock Setup:
+   ```typescript
+   // lib/__mocks__/prisma.ts
+   import { PrismaClient } from '@prisma/client'
+   import { beforeEach } from 'vitest'
+   import { mockDeep, DeepMockProxy } from 'vitest-mock-extended'
+
+   export type Context = {
+     prisma: PrismaClient
+   }
+
+   export type MockContext = {
+     prisma: DeepMockProxy<PrismaClient>
+   }
+
+   export const createMockContext = (): MockContext => ({
+     prisma: mockDeep<PrismaClient>(),
+   })
+
+   export const prismaMock = mockDeep<PrismaClient>()
+
+   beforeEach(() => {
+     vi.clearAllMocks()
+   })
+   ```
+
+3. Using Mocks in Tests:
+   ```typescript
+   import { prismaMock } from '../__mocks__/prisma'
+   import { vi, describe, beforeEach, it, expect } from 'vitest'
+
+   vi.mock('@/lib/db/prisma', () => ({
+     prisma: prismaMock
+   }))
+
+   describe('User service', () => {
+     beforeEach(() => {
+       vi.clearAllMocks()
+     })
+
+     it('should create user', async () => {
+       const user = {
+         id: '1',
+         name: 'Test',
+         email: 'test@example.com'
+       }
+
+       prismaMock.user.create.mockResolvedValue(user)
+
+       const result = await createUser(user)
+       expect(result).toEqual(user)
+     })
+   })
+   ```
+
+4. Dependency Injection Pattern:
+   ```typescript
+   // context.ts
+   import { PrismaClient } from '@prisma/client'
+   import { mockDeep, DeepMockProxy } from 'vitest-mock-extended'
+
+   export type Context = {
+     prisma: PrismaClient
+   }
+
+   export type MockContext = {
+     prisma: DeepMockProxy<PrismaClient>
+   }
+
+   export const createMockContext = (): MockContext => ({
+     prisma: mockDeep<PrismaClient>(),
+   })
+
+   // In test file:
+   import { MockContext, Context, createMockContext } from '../context'
+
+   let mockCtx: MockContext
+   let ctx: Context
+
+   beforeEach(() => {
+     mockCtx = createMockContext()
+     ctx = mockCtx as unknown as Context
+   })
+   ```
+
+## Integration Test Patterns
+
+1. Test Database Setup:
+   ```typescript
+   import { prisma } from '@/lib/db/prisma'
+   import { v4 as uuid } from 'uuid'
+
+   describe('User Integration Tests', () => {
+     const testUser = {
+       id: `test-${uuid()}`,
+       email: `test-${uuid()}@example.com`,
+       name: 'Test User',
+     }
+
+     beforeAll(async () => {
+       // Setup test database state
+       await prisma.user.create({
+         data: testUser,
+       })
+     })
+
+     afterAll(async () => {
+       // Clean up test data
+       await prisma.user.deleteMany({
+         where: {
+           email: {
+             startsWith: 'test-',
+           },
+         },
+       })
+     })
+
+     it('should retrieve user', async () => {
+       const result = await prisma.user.findUnique({
+         where: { id: testUser.id },
+       })
+       expect(result).toMatchObject(testUser)
+     })
+   })
+   ```
+
+2. Transaction Testing:
+   ```typescript
+   describe('Transaction Tests', () => {
+     beforeEach(async () => {
+       await prisma.$transaction([
+         prisma.user.deleteMany({
+           where: { email: { startsWith: 'test-' } },
+         }),
+         prisma.post.deleteMany({
+           where: { title: { startsWith: 'test-' } },
+         }),
+       ])
+     })
+
+     it('should rollback on error', async () => {
+       const tx = async () => {
+         await prisma.$transaction([
+           prisma.user.create({
+             data: { /* ... */ },
+           }),
+           // This will fail
+           prisma.post.create({
+             data: { /* invalid data */ },
+           }),
+         ])
+       }
+
+       await expect(tx()).rejects.toThrow()
+
+       // Verify no data was persisted
+       const user = await prisma.user.findFirst({
+         where: { email: 'test@example.com' },
+       })
+       expect(user).toBeNull()
+     })
+   })
+   ```
+
+## Best Practices
+
+1. Mock Setup:
+   - Use vitest-mock-extended for deep mocking
+   - Define types for mock data
+   - Use proper type casting for Prisma client
+   - Implement transaction mocks correctly
+   - Clear mocks in beforeEach blocks
+   - Place mocks in __mocks__ directory
+
+2. Test Data:
+   - Use UUID for unique identifiers
+   - Clean up test data after tests
+   - Use transactions for data management
+   - Isolate test cases properly
+   - Prefix test data with 'test-' for easy cleanup
+
+3. Error Handling:
+   - Test transaction rollbacks
+   - Verify error states
+   - Test constraint violations
+   - Handle database errors properly
+   - Mock error responses with proper types
+
+4. Integration Tests:
+   - Use separate test database
+   - Clean up after each test
+   - Use transactions for isolation
+   - Test database constraints
+   - Never use production database
+
+## Dependencies
+- 051-test-file-standards.mdc
+- 054-test-data-management.mdc
+- 200-prisma-best-practices.mdc
+
+metadata:
+  priority: high
+  version: 1.1.0
+  tags:
+    - testing
+    - prisma
+    - database
+    - mocking
