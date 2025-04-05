@@ -1,4 +1,5 @@
 import { prisma } from "@/app/lib/db/prisma";
+import { DEFAULT_APP_CONFIG } from "@/app/lib/utils/constants";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -79,9 +80,7 @@ export async function main() {
       await prisma.appConfig.create({
         data: {
           id: "app-config",
-          appName: "Control Center",
-          loginTheme: "dark",
-          registrationEnabled: false,
+          ...DEFAULT_APP_CONFIG,
         },
       });
       console.log("Created default app configuration");

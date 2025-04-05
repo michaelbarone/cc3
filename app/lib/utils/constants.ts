@@ -14,7 +14,7 @@ export interface AppConfig {
 }
 
 export const DEFAULT_APP_CONFIG: AppConfig = {
-  appName: "Dashboard",
+  appName: "Control Center",
   appLogo: null,
   loginTheme: "dark",
   registrationEnabled: false,
