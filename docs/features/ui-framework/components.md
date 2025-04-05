@@ -260,6 +260,147 @@ Key Features:
 - Mobile optimization
 - Accessibility support
 
+## UrlMenu
+
+### Purpose
+A responsive menu system for navigating URLs with optimized state management and advanced interaction patterns. Provides visual indicators of URL loading states and supports long press actions for state management.
+
+### Interface
+```tsx
+interface UrlMenuProps {
+  urlGroups: UrlGroup[];
+  initialUrlId?: string;
+  onUrlSelect?: (urlId: string) => void;
+}
+
+interface UrlGroup {
+  id: string;
+  name: string;
+  urls: {
+    id: string;
+    title: string;
+    url: string;
+    urlMobile: string | null;
+    iconPath: string | null;
+    idleTimeoutMinutes: number | null;
+  }[];
+}
+```
+
+### Key Features
+
+#### State Management
+- Manages four distinct URL states:
+  1. `active-loaded`: Active button + green dot (visible iframe with content)
+  2. `active-unloaded`: Active button, no dot (visible iframe, no content)
+  3. `inactive-loaded`: Normal button + green dot (hidden iframe with cached content)
+  4. `inactive-unloaded`: Normal button, no dot (hidden iframe, no content)
+
+#### State Transition Diagram
+```
+┌─────────────────┐   click    ┌─────────────────┐
+│ inactive-unloaded│ ────────> │  active-loaded  │
+└─────────────────┘            └─────────────────┘
+        ▲                             │
+        │                             │
+    long-press                   click another URL
+        │                             │
+        │                             ▼
+┌─────────────────┐   click    ┌─────────────────┐
+│  inactive-loaded │ <──────── │  active-unloaded │
+└─────────────────┘            └─────────────────┘
+```
+
+#### Comprehensive State Transition Diagram
+```
+                                         initial load
+                                              │
+                                              ▼
+┌─────────────────┐         click          ┌─────────────────┐
+│ inactive-unloaded│ ──────────────────────>│  active-loaded  │
+└─────────────────┘                         └─────────────────┘
+        ▲                                          │  ▲
+        │                                          │  │
+ long-press unload            click different URL  │  │ reload (after error)
+        │                                          │  │
+        │                                          ▼  │
+┌─────────────────┐         click          ┌─────────────────┐
+│  inactive-loaded │<─────────────────────>│  active-unloaded │
+└─────────────────┘                        └─────────────────┘
+        ▲                                          │
+        │                                          │
+        └──────────────────────────────────────────┘
+                     long-press unload
+
+Events that trigger state transitions:
+- click: User clicks on an URL menu item
+- click different URL: User clicks on a different URL while one is active
+- long-press unload: User performs a long-press action on an URL item
+- reload: System reloads content after error or manual refresh
+- initial load: System initializes with default URL
+
+State characteristics:
+- active-loaded: Selected + visible + content loaded (green dot)
+- active-unloaded: Selected + visible + no content
+- inactive-loaded: Not selected + cached content (green dot)
+- inactive-unloaded: Not selected + no cached content
+
+#### Interaction Patterns
+- **Click**: Standard selection of URL
+- **Long Press**: Advanced action for unloading content while maintaining selection state
+- **Visual Feedback**: Progress indicator during long press
+- **Haptic Feedback**: Vibration on mobile devices when long press completes
+
+#### Edge Case Handling
+- Manages rapid click sequences between different URLs
+- Handles interrupted long press actions gracefully
+- Properly manages state during browser tab switching
+- Provides proper cleanup of event listeners to prevent memory leaks
+
+### Example
+```tsx
+import { UrlMenu } from "@/app/components/url-menu/UrlMenu";
+
+function MyComponent() {
+  const urlGroups = [
+    {
+      id: "group1",
+      name: "Main Apps",
+      urls: [
+        {
+          id: "url1",
+          title: "Dashboard",
+          url: "https://dashboard.example.com",
+          urlMobile: null,
+          iconPath: null,
+          idleTimeoutMinutes: 30
+        },
+        // More URLs...
+      ]
+    }
+  ];
+
+  const handleUrlSelect = (urlId: string) => {
+    console.log(`Selected URL: ${urlId}`);
+  };
+
+  return (
+    <UrlMenu 
+      urlGroups={urlGroups}
+      initialUrlId="url1"
+      onUrlSelect={handleUrlSelect}
+    />
+  );
+}
+```
+
+### Testing Considerations
+- **Component Testing**: Verify rendering, group expansion/collapse, and URL selection
+- **Interaction Testing**: Test click and long press behaviors
+- **State Management**: Verify proper state transitions between the four URL states
+- **Edge Cases**: Test rapid clicks, interrupted actions, and browser tab switching
+- **Accessibility**: Ensure keyboard navigation, proper focus management, and screen reader support
+
 ## Usage Examples
 
 ### Theme Integration

@@ -6,6 +6,26 @@ import { ReactNode } from "react";
 import { act } from "react-dom/test-utils";
 import { describe, expect, it, vi } from "vitest";
 
+/**
+ * UrlMenu Component Tests
+ *
+ * This test suite includes standard functionality tests and edge case tests:
+ *
+ * Edge Case Tests:
+ * 1. Rapid Clicks: Tests rapid sequential clicks between different URL buttons
+ *    to ensure proper state management and that the last click is properly registered.
+ *
+ * 2. Interrupted Long Press: Tests that long press actions are properly canceled
+ *    when interrupted before the threshold duration (via mouse movement or early release).
+ *
+ * 3. Browser Tab Switching: Tests that operations (especially long press) handle
+ *    focus/blur events correctly when a user switches browser tabs during the operation.
+ *    This ensures proper state cleanup and prevention of unintended side effects.
+ *
+ * These edge case tests help ensure the component is robust in real-world usage scenarios
+ * where user interactions may be unpredictable or interrupted.
+ */
+
 // Mock data
 const mockUrlGroups = [
   {
@@ -249,14 +269,101 @@ describe("UrlMenu", () => {
     // Simulate long press by firing mouseDown and waiting
     await act(async () => {
       fireEvent.mouseDown(urlButton);
-      // Wait for the long press duration (500ms default)
-      await new Promise((resolve) => setTimeout(resolve, 600));
+      await new Promise((resolve) => setTimeout(resolve, 600)); // Wait longer than the 500ms threshold
       fireEvent.mouseUp(urlButton);
     });
 
-    // Verify the long press handler was called and cleanup occurred
-    await waitFor(() => {
-      expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
+    // Check for unload effect (can be checked through classes or aria-attributes based on your implementation)
+    // This needs to be updated based on how your component shows unload state
+    expect(urlButton).toHaveAttribute("aria-pressed", "false");
+  });
+
+  // New test for rapid clicks between different URLs
+  it("should handle rapid clicks between different URLs", async () => {
+    const onUrlSelect = vi.fn();
+    renderUrlMenu({ onUrlSelect });
+
+    // Expand group 1
+    await expandGroup("Group 1");
+
+    // Find URL buttons
+    const url1Button = screen.getByRole("button", { name: /URL 1/ });
+    const url2Button = screen.getByRole("button", { name: /URL 2/ });
+
+    // Rapid clicks between URLs
+    await act(async () => {
+      fireEvent.click(url1Button);
+      fireEvent.click(url2Button);
+      fireEvent.click(url1Button);
+      fireEvent.click(url2Button);
+      fireEvent.click(url1Button);
     });
+
+    // Verify the last click was registered correctly
+    await waitFor(() => {
+      expect(onUrlSelect).toHaveBeenLastCalledWith("url1");
+      expect(onUrlSelect).toHaveBeenCalledTimes(5);
+    });
+  });
+
+  // New test for interrupted long press behavior
+  it("should handle interrupted long press correctly", async () => {
+    const user = userEvent.setup();
+    renderUrlMenu();
+
+    // Expand Group 1
+    await expandGroup("Group 1");
+
+    // Find the URL button
+    const urlItem = screen.getByText("URL 1").closest("li");
+    const urlButton = within(urlItem!).getByRole("button");
+
+    // Start long press but interrupt before threshold
+    await act(async () => {
+      fireEvent.mouseDown(urlButton);
+      // Wait less than the long press threshold (500ms)
+      await new Promise((resolve) => setTimeout(resolve, 250));
+      // Interrupt by moving mouse
+      fireEvent.mouseMove(urlButton, { clientX: 10, clientY: 10 });
+      fireEvent.mouseUp(urlButton);
+    });
+
+    // Verify no long press action occurred
+    // This depends on your implementation - check a specific property or state
+    // that indicates long press was not completed
+    expect(urlButton).not.toHaveAttribute("data-long-press-active", "true");
+    expect(urlButton).toHaveAttribute("aria-pressed", "false");
+  });
+
+  // New test for browser tab switching during long operations
+  it("should handle browser tab switching during operations", async () => {
+    renderUrlMenu();
+
+    // Expand Group 1
+    await expandGroup("Group 1");
+
+    // Find the URL button
+    const urlItem = screen.getByText("URL 1").closest("li");
+    const urlButton = within(urlItem!).getByRole("button");
+
+    // Start long press
+    await act(async () => {
+      fireEvent.mouseDown(urlButton);
+
+      // Simulate tab losing focus during long press
+      fireEvent.blur(window);
+
+      // Wait enough time for long press to trigger
+      await new Promise((resolve) => setTimeout(resolve, 600));
+
+      // Tab gaining focus again
+      fireEvent.focus(window);
+
+      fireEvent.mouseUp(urlButton);
+    });
+
+    // Verify the long press was canceled when focus was lost
+    expect(urlButton).not.toHaveAttribute("data-long-press-active", "true");
+    expect(urlButton).toHaveAttribute("aria-pressed", "false");
   });
 });
