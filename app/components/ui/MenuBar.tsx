@@ -194,7 +194,7 @@ export const MenuBar = memo(function MenuBar({
       status === "active-loaded"
         ? "Active"
         : status === "active-unloaded"
-          ? "Loading..."
+          ? "Not Loaded"
           : status === "inactive-loaded"
             ? "Loaded"
             : "Not Loaded";
@@ -203,13 +203,11 @@ export const MenuBar = memo(function MenuBar({
 
   const handleUrlLongPress = useCallback(
     (url: Url) => {
-      // Only unload if not already in progress
-      if (!isLongPressInProgress) {
-        setIsLongPressInProgress(true);
-        onUrlUnload(url);
-      }
+      setIsLongPressInProgress(true);
+      onUrlUnload(url);
+      setTimeout(() => setIsLongPressInProgress(false), 1000);
     },
-    [onUrlUnload, isLongPressInProgress],
+    [onUrlUnload],
   );
 
   // Memoize the group selector render function

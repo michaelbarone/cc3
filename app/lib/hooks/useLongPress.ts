@@ -23,123 +23,88 @@ interface UseLongPressResult {
 export function useLongPress({
   onClick,
   onLongPress,
-  duration = 500,
+  duration = 1000,
   disabled = false,
   visualFeedback = true,
   triggerHapticFeedback = true,
 }: UseLongPressOptions): UseLongPressResult {
-  const timeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-  const target = useRef<HTMLElement | null>(null);
-  const longPressTriggered = useRef<boolean>(false);
   const [progress, setProgress] = useState(0);
   const [isLongPressing, setIsLongPressing] = useState(false);
+  const pressTimer = useRef<number | null>(null);
+  const pressStartTime = useRef<number>(0);
 
   const handlePressStart = useCallback(
-    (urlId: string) => {
+    (e: React.MouseEvent | React.TouchEvent) => {
       if (disabled) return;
+      e.preventDefault();
 
-      longPressTriggered.current = false;
-      const startTime = Date.now();
+      pressStartTime.current = Date.now();
+      setIsLongPressing(true);
 
-      timeoutRef.current = setTimeout(() => {
-        longPressTriggered.current = true;
-        onLongPress();
-        if (triggerHapticFeedback && navigator.vibrate) {
-          navigator.vibrate(50);
-        }
-      }, duration);
+      pressTimer.current = window.setInterval(() => {
+        const elapsed = Date.now() - pressStartTime.current;
+        const newProgress = Math.min((elapsed / duration) * 100, 100);
+        setProgress(newProgress);
 
-      // Start visual feedback
-      if (visualFeedback) {
-        setIsLongPressing(true);
-        const updateProgress = () => {
-          const elapsed = Date.now() - startTime;
-          const newProgress = Math.min((elapsed / duration) * 100, 100);
-
-          if (newProgress < 100 && isLongPressing) {
-            setProgress(newProgress);
-            requestAnimationFrame(updateProgress);
+        if (newProgress >= 100) {
+          handlePressEnd();
+          onLongPress();
+          if (triggerHapticFeedback && navigator.vibrate) {
+            navigator.vibrate(50);
           }
-        };
-        requestAnimationFrame(updateProgress);
-      }
+        }
+      }, 10);
     },
-    [disabled, duration, onLongPress, triggerHapticFeedback, visualFeedback, isLongPressing],
+    [disabled, duration, onLongPress, triggerHapticFeedback],
   );
 
   const handlePressEnd = useCallback(() => {
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
-
-    // End visual feedback
-    if (visualFeedback) {
-      setIsLongPressing(false);
-      setProgress(0);
-    }
-
-    if (!disabled && !longPressTriggered.current && onClick) {
+    if (
+      !disabled &&
+      pressTimer.current !== null &&
+      (!isLongPressing || (pressTimer.current && pressTimer?.current < 100)) &&
+      onClick
+    ) {
       onClick();
     }
-  }, [disabled, onClick, visualFeedback]);
+    console.log("handleClick" + JSON.stringify(pressTimer.current));
 
-  const onMouseDown = useCallback(
+    if (pressTimer.current !== null) {
+      window.clearInterval(pressTimer.current);
+      pressTimer.current = null;
+    }
+    setIsLongPressing(false);
+    setProgress(0);
+  }, []);
+
+  const handleClick = useCallback(
     (e: React.MouseEvent) => {
-      target.current = e.currentTarget as HTMLElement;
-      const urlId = target.current.getAttribute("data-url-id");
-      if (urlId) {
-        handlePressStart(urlId);
+      e.preventDefault();
+      // Only trigger click if we haven't started a long press
+      // or if the long press didn't complete
+      if (!disabled && (!isLongPressing || progress < 100) && onClick) {
+        onClick();
       }
+      console.log("handleClick", e);
     },
-    [handlePressStart],
+    [disabled, isLongPressing, progress, onClick],
   );
 
-  const onMouseUp = useCallback(
-    (e: React.MouseEvent) => {
-      handlePressEnd();
-    },
-    [handlePressEnd],
-  );
-
-  const onMouseLeave = useCallback(
-    (e: React.MouseEvent) => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
+  // Cleanup on unmount
+  React.useEffect(() => {
+    return () => {
+      if (pressTimer.current !== null) {
+        window.clearInterval(pressTimer.current);
       }
-      if (visualFeedback) {
-        setIsLongPressing(false);
-        setProgress(0);
-      }
-    },
-    [visualFeedback],
-  );
-
-  const onTouchStart = useCallback(
-    (e: React.TouchEvent) => {
-      e.preventDefault(); // Prevent scrolling
-      target.current = e.currentTarget as HTMLElement;
-      const urlId = target.current.getAttribute("data-url-id");
-      if (urlId) {
-        handlePressStart(urlId);
-      }
-    },
-    [handlePressStart],
-  );
-
-  const onTouchEnd = useCallback(
-    (e: React.TouchEvent) => {
-      e.preventDefault(); // Prevent scrolling
-      handlePressEnd();
-    },
-    [handlePressEnd],
-  );
+    };
+  }, []);
 
   return {
-    onMouseDown,
-    onMouseUp,
-    onMouseLeave,
-    onTouchStart,
-    onTouchEnd,
+    onMouseDown: handlePressStart,
+    onMouseUp: handlePressEnd,
+    onMouseLeave: handlePressEnd,
+    onTouchStart: handlePressStart,
+    onTouchEnd: handlePressEnd,
     progress,
     isLongPressing,
   };
