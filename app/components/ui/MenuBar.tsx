@@ -203,11 +203,13 @@ export const MenuBar = memo(function MenuBar({
 
   const handleUrlLongPress = useCallback(
     (url: Url) => {
-      setIsLongPressInProgress(true);
-      onUrlReload(url);
-      setTimeout(() => setIsLongPressInProgress(false), 1000);
+      // Only unload if not already in progress
+      if (!isLongPressInProgress) {
+        setIsLongPressInProgress(true);
+        onUrlUnload(url);
+      }
     },
-    [onUrlReload],
+    [onUrlUnload, isLongPressInProgress],
   );
 
   // Memoize the group selector render function

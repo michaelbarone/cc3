@@ -1,4 +1,4 @@
-import { Box, LinearProgress, useTheme, alpha } from "@mui/material";
+import { alpha, Box, LinearProgress, useTheme } from "@mui/material";
 
 interface LongPressProgressProps {
   progress: number;
@@ -26,7 +26,7 @@ export function LongPressProgress({ progress, isActive }: LongPressProgressProps
     >
       <LinearProgress
         variant="determinate"
-        value={progress}
+        value={progress < 25 ? 0 : progress}
         sx={{
           height: "100%",
           backgroundColor: "transparent",
