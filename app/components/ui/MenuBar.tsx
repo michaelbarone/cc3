@@ -17,7 +17,7 @@ import {
 } from "@mui/material";
 import Image from "next/image";
 import React, { memo, useCallback, useEffect, useMemo, useState } from "react";
-import { UrlItem } from "./UrlItem";
+import { UrlItem } from "../url-menu/UrlItem";
 
 interface MenuBarProps {
   urlGroups: Array<{
@@ -322,7 +322,7 @@ export const MenuBar = memo(function MenuBar({
                     const url = urlInGroup.url;
                     const status = getUrlStatus(url.id);
                     const isActive = status.startsWith("active");
-                    const isLoaded = status.endsWith("loaded");
+                    const isLoaded = status.endsWith("-loaded");
 
                     return (
                       <Button
@@ -408,7 +408,7 @@ export const MenuBar = memo(function MenuBar({
       const url = urlInGroup.url;
       const status = getUrlStatus(url.id);
       const isActive = status.startsWith("active");
-      const isLoaded = status.endsWith("loaded");
+      const isLoaded = status.endsWith("-loaded");
 
       return (
         <UrlItem

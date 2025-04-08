@@ -70,10 +70,12 @@ const UrlItem = memo(function UrlItem({
     <Tooltip title={tooltipText} placement={menuPosition === "side" ? "right" : "bottom"}>
       <Button
         onClick={(e) => {
+          console.log("onClick", e);
           e.preventDefault();
           onUrlClick();
         }}
         onContextMenu={(e) => {
+          console.log("onContextMenu", e);
           e.preventDefault();
           onLongPress();
         }}
