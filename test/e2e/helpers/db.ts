@@ -1,8 +1,8 @@
 import { exec } from "child_process";
 import fs from "fs";
 import { promisify } from "util";
-import { prisma } from "../../app/lib/db/prisma";
-import { seedTestData } from "../../lib/db/init";
+import { seedTestData } from "../../../app/lib/db/init";
+import { prisma } from "../../../app/lib/db/prisma";
 
 const execPromise = promisify(exec);
 

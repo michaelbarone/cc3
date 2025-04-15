@@ -1,4 +1,5 @@
-import { debugMockCalls } from "@/app/lib/test/debug";
+import { GET } from "@/app/api/admin/statistics/route";
+import { debugMockCalls, logTestTiming } from "@/test/helpers/debug";
 import type { PrismaClient } from "@prisma/client";
 import { cookies } from "next/headers";
 import { NextRequest } from "next/server";
@@ -7,10 +8,8 @@ import type { DeepMockProxy } from "vitest-mock-extended";
 
 import { verifyToken } from "@/app/lib/auth/jwt";
 import { prisma } from "@/app/lib/db/prisma";
-import { logTestTiming } from "@/app/lib/test/debug";
-import { createMockUser } from "@/app/lib/test/factories";
+import { createMockUser as oldCreateMockUser } from "@/app/lib/test/factories";
 
-import { GET as getStatistics } from "@/app/api/admin/statistics/route";
 import { GET as getBasicStats } from "@/app/api/admin/stats/route";
 
 // Mock the auth token verification
@@ -50,8 +49,8 @@ vi.mock("next/headers", () => ({
 
 describe("Statistics API Endpoints", () => {
   let mockRequest: NextRequest;
-  const mockAdminUser = createMockUser({ isAdmin: true });
-  const mockRegularUser = createMockUser({ isAdmin: false });
+  const mockAdminUser = oldCreateMockUser({ isAdmin: true });
+  const mockRegularUser = oldCreateMockUser({ isAdmin: false });
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -76,7 +75,7 @@ describe("Statistics API Endpoints", () => {
         // Mock token verification to return null
         (verifyToken as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(null);
 
-        const response = await getStatistics(mockRequest);
+        const response = await GET(mockRequest);
         const responseText = await response.text();
 
         // Debug using the text
@@ -108,7 +107,7 @@ describe("Statistics API Endpoints", () => {
         });
         (verifyToken as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(mockRegularUser);
 
-        const response = await getStatistics(mockRequest);
+        const response = await GET(mockRequest);
         const responseText = await response.text();
 
         // Debug using the text
@@ -137,7 +136,7 @@ describe("Statistics API Endpoints", () => {
         const dbError = new Error("Database error");
         (prisma.user.aggregate as any).mockRejectedValue(dbError);
 
-        const response = await getStatistics(mockRequest);
+        const response = await GET(mockRequest);
         const responseText = await response.text();
 
         // Debug using the text

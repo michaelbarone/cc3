@@ -199,98 +199,28 @@ export function validateApiResponse<T>(
 }
 
 /**
- * Validates response structure and adds test assertions
+ * Asserts that an API response matches the expected type structure
+ * Throws an error if validation fails
  */
 export function assertApiResponse<T>(
   response: unknown,
   validator: TypeValidator<T>,
   path = ""
 ): asserts response is T {
-  const isValid = validator.validate(response);
-
-  if (!isValid) {
-    const errors = validator.getErrors();
-    errors.forEach(error => {
-      const fullPath = `${path}${error.path.join(".")}`;
-      expect(
-        typeof error.value,
-        `${fullPath} should be ${error.expected}, received ${error.received}`
-      ).toBe(error.expected);
-    });
-  }
+  validateApiResponse(response, validator, { path, throwOnError: true });
 }
 
 /**
- * Common response validators
+ * Helper function to validate and assert API response types
  */
-export const responseValidators = {
-  pagination: <T>(itemValidator: TypeValidator<T>) => validators.object({
-    items: validators.array(itemValidator),
-    total: validators.safeInteger,
-    page: validators.safeInteger,
-    pageSize: validators.safeInteger,
-    hasMore: validators.boolean
-  }),
+export function expectApiResponse<T>(
+  response: unknown,
+  validator: TypeValidator<T>,
+  path = ""
+): void {
+  const isValid = validateApiResponse(response, validator, { path });
+  expect(isValid, `API Response validation failed at ${path}`).toBe(true);
+}
 
-  error: validators.object({
-    error: validators.string
-  }),
+export type { TypeValidator, ValidationError };
 
-  success: validators.object({
-    success: validators.boolean,
-    message: validators.string
-  }),
-
-  healthCheck: validators.object({
-    status: validators.string,
-    timestamp: validators.isoDate,
-    version: validators.string,
-    database: validators.boolean,
-    storage: validators.boolean
-  }),
-
-  userProfile: validators.object({
-    id: validators.string,
-    username: validators.string,
-    email: validators.string,
-    isAdmin: validators.boolean,
-    avatarUrl: validators.string,
-    createdAt: validators.isoDate,
-    updatedAt: validators.isoDate
-  }),
-
-  urlGroup: validators.object({
-    id: validators.string,
-    name: validators.string,
-    description: validators.string,
-    icon: validators.string,
-    urls: validators.array(validators.object({
-      id: validators.string,
-      url: validators.url,
-      urlMobile: validators.url
-    }))
-  })
-};
-
-/**
- * Example usage:
- *
- * ```typescript
- * // Validate a paginated response
- * const validator = responseValidators.pagination(responseValidators.userProfile);
- * const response = await fetch("/api/users");
- * const data = await response.json();
- *
- * if (!validateApiResponse(data, validator)) {
- *   console.error("Invalid response structure:", validator.getErrors());
- *   return;
- * }
- *
- * // Use with assertions in tests
- * test("API returns valid user list", async () => {
- *   const response = await fetch("/api/users");
- *   const data = await response.json();
- *   assertApiResponse(data, validator, "users response");
- * });
- * ```
- */

@@ -15,9 +15,6 @@ export default defineConfig({
       "**/e2e/**",
       "**/cypress/**",
       "**/.{idea,git,cache,output,temp}/**",
-      "**/mocks/**", // Exclude mock files
-      "test/setup.ts", // Exclude setup file
-      "test/utils/**", // Exclude test utilities
     ],
     coverage: {
       provider: "v8",
@@ -43,7 +40,6 @@ export default defineConfig({
           functions: 80,
           lines: 80,
         },
-        // Add specific thresholds for critical paths
         "./app/components/iframe/**/*.{ts,tsx}": {
           statements: 90,
           branches: 90,
@@ -61,6 +57,8 @@ export default defineConfig({
     globals: true,
     alias: {
       "@": resolve(__dirname, "./"),
+      "@/app": resolve(__dirname, "./app"),
+      "@/test": resolve(__dirname, "./test"),
     },
   },
 });

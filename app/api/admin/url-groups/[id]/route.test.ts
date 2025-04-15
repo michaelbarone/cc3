@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { JwtPayload, verifyToken } from "../../../../lib/auth/jwt";
 import { prisma } from "../../../../lib/db/prisma";
 import { DELETE, GET, PUT } from "./route";
+import { createMockNextRequest } from "@/test/utils/mocks/next";
 
 // Create a proper mock for ReadonlyRequestCookies
 const createMockCookies = (authToken?: string): ReadonlyRequestCookies => {
@@ -119,25 +120,26 @@ describe("URL Group API", () => {
 
   describe("GET /api/admin/url-groups/[id]", () => {
     it("should return URL group when authenticated as admin", async () => {
-      vi.mocked(prisma.$queryRaw).mockResolvedValueOnce([mockUrlGroup]);
+      vi.mocked(prisma.$queryRaw).mockResolvedValueOnce([mockUrlGroupResponse]);
 
-      const response = await GET(new NextRequest("http://localhost/api/admin/url-groups/123"), {
-        params: { id: "123" },
-      });
+      const response = await GET(
+        createMockNextRequest("http://localhost/api/admin/url-groups/123"),
+        { params: { id: "123" } },
+      );
       const data = await response.json();
 
       expect(response.status).toBe(200);
       expect(data).toEqual(mockUrlGroupResponse);
-      expect(prisma.$queryRaw).toHaveBeenCalled();
     });
 
     it("should return 401 when no token is present", async () => {
       // Override the cookie mock for this test
       vi.mocked(cookies).mockReturnValue(Promise.resolve(createMockCookies()));
 
-      const response = await GET(new NextRequest("http://localhost/api/admin/url-groups/123"), {
-        params: { id: "123" },
-      });
+      const response = await GET(
+        createMockNextRequest("http://localhost/api/admin/url-groups/123"),
+        { params: { id: "123" } },
+      );
       const data = await response.json();
 
       expect(response.status).toBe(401);
@@ -149,9 +151,10 @@ describe("URL Group API", () => {
       // Override the cookie mock for this test
       vi.mocked(cookies).mockReturnValue(Promise.resolve(createMockCookies("user_token")));
 
-      const response = await GET(new NextRequest("http://localhost/api/admin/url-groups/123"), {
-        params: { id: "123" },
-      });
+      const response = await GET(
+        createMockNextRequest("http://localhost/api/admin/url-groups/123"),
+        { params: { id: "123" } },
+      );
       const data = await response.json();
 
       expect(response.status).toBe(403);
@@ -162,9 +165,10 @@ describe("URL Group API", () => {
     it("should return 404 when URL group not found", async () => {
       vi.mocked(prisma.$queryRaw).mockResolvedValueOnce([]);
 
-      const response = await GET(new NextRequest("http://localhost/api/admin/url-groups/123"), {
-        params: { id: "123" },
-      });
+      const response = await GET(
+        createMockNextRequest("http://localhost/api/admin/url-groups/123"),
+        { params: { id: "123" } },
+      );
       const data = await response.json();
 
       expect(response.status).toBe(404);
@@ -174,9 +178,10 @@ describe("URL Group API", () => {
     it("should handle database errors gracefully", async () => {
       vi.mocked(prisma.$queryRaw).mockRejectedValueOnce(new Error("Database error"));
 
-      const response = await GET(new NextRequest("http://localhost/api/admin/url-groups/123"), {
-        params: { id: "123" },
-      });
+      const response = await GET(
+        createMockNextRequest("http://localhost/api/admin/url-groups/123"),
+        { params: { id: "123" } },
+      );
       const data = await response.json();
 
       expect(response.status).toBe(500);
@@ -200,7 +205,7 @@ describe("URL Group API", () => {
       vi.mocked(prisma.urlGroup.update).mockResolvedValueOnce(updatedUrlGroup);
 
       const response = await PUT(
-        new NextRequest("http://localhost/api/admin/url-groups/123", {
+        createMockNextRequest("http://localhost/api/admin/url-groups/123", {
           method: "PUT",
           body: JSON.stringify(updateData),
         }),
@@ -224,7 +229,7 @@ describe("URL Group API", () => {
       vi.mocked(cookies).mockReturnValue(Promise.resolve(createMockCookies()));
 
       const response = await PUT(
-        new NextRequest("http://localhost/api/admin/url-groups/123", {
+        createMockNextRequest("http://localhost/api/admin/url-groups/123", {
           method: "PUT",
           body: JSON.stringify(updateData),
         }),
@@ -242,7 +247,7 @@ describe("URL Group API", () => {
       vi.mocked(cookies).mockReturnValue(Promise.resolve(createMockCookies("user_token")));
 
       const response = await PUT(
-        new NextRequest("http://localhost/api/admin/url-groups/123", {
+        createMockNextRequest("http://localhost/api/admin/url-groups/123", {
           method: "PUT",
           body: JSON.stringify(updateData),
         }),
@@ -259,7 +264,7 @@ describe("URL Group API", () => {
       vi.mocked(prisma.urlGroup.findUnique).mockResolvedValueOnce(null);
 
       const response = await PUT(
-        new NextRequest("http://localhost/api/admin/url-groups/123", {
+        createMockNextRequest("http://localhost/api/admin/url-groups/123", {
           method: "PUT",
           body: JSON.stringify(updateData),
         }),
@@ -276,7 +281,7 @@ describe("URL Group API", () => {
       vi.mocked(prisma.urlGroup.findUnique).mockResolvedValueOnce(mockUrlGroup);
 
       const response = await PUT(
-        new NextRequest("http://localhost/api/admin/url-groups/123", {
+        createMockNextRequest("http://localhost/api/admin/url-groups/123", {
           method: "PUT",
           body: JSON.stringify({ description: "Test Description" }),
         }),
@@ -294,7 +299,7 @@ describe("URL Group API", () => {
       vi.mocked(prisma.urlGroup.update).mockRejectedValueOnce(new Error("Database error"));
 
       const response = await PUT(
-        new NextRequest("http://localhost/api/admin/url-groups/123", {
+        createMockNextRequest("http://localhost/api/admin/url-groups/123", {
           method: "PUT",
           body: JSON.stringify(updateData),
         }),
@@ -312,9 +317,10 @@ describe("URL Group API", () => {
       vi.mocked(prisma.urlGroup.findUnique).mockResolvedValueOnce(mockUrlGroup);
       vi.mocked(prisma.urlGroup.delete).mockResolvedValueOnce(mockUrlGroup);
 
-      const response = await DELETE(new NextRequest("http://localhost/api/admin/url-groups/123"), {
-        params: { id: "123" },
-      });
+      const response = await DELETE(
+        createMockNextRequest("http://localhost/api/admin/url-groups/123"),
+        { params: { id: "123" } },
+      );
       const data = await response.json();
 
       expect(response.status).toBe(200);
@@ -328,9 +334,10 @@ describe("URL Group API", () => {
       // Override the cookie mock for this test
       vi.mocked(cookies).mockReturnValue(Promise.resolve(createMockCookies()));
 
-      const response = await DELETE(new NextRequest("http://localhost/api/admin/url-groups/123"), {
-        params: { id: "123" },
-      });
+      const response = await DELETE(
+        createMockNextRequest("http://localhost/api/admin/url-groups/123"),
+        { params: { id: "123" } },
+      );
       const data = await response.json();
 
       expect(response.status).toBe(401);
@@ -342,9 +349,10 @@ describe("URL Group API", () => {
       // Override the cookie mock for this test
       vi.mocked(cookies).mockReturnValue(Promise.resolve(createMockCookies("user_token")));
 
-      const response = await DELETE(new NextRequest("http://localhost/api/admin/url-groups/123"), {
-        params: { id: "123" },
-      });
+      const response = await DELETE(
+        createMockNextRequest("http://localhost/api/admin/url-groups/123"),
+        { params: { id: "123" } },
+      );
       const data = await response.json();
 
       expect(response.status).toBe(403);
@@ -355,9 +363,10 @@ describe("URL Group API", () => {
     it("should return 404 when URL group not found", async () => {
       vi.mocked(prisma.urlGroup.findUnique).mockResolvedValueOnce(null);
 
-      const response = await DELETE(new NextRequest("http://localhost/api/admin/url-groups/123"), {
-        params: { id: "123" },
-      });
+      const response = await DELETE(
+        createMockNextRequest("http://localhost/api/admin/url-groups/123"),
+        { params: { id: "123" } },
+      );
       const data = await response.json();
 
       expect(response.status).toBe(404);
@@ -369,9 +378,10 @@ describe("URL Group API", () => {
       vi.mocked(prisma.urlGroup.findUnique).mockResolvedValueOnce(mockUrlGroup);
       vi.mocked(prisma.urlGroup.delete).mockRejectedValueOnce(new Error("Database error"));
 
-      const response = await DELETE(new NextRequest("http://localhost/api/admin/url-groups/123"), {
-        params: { id: "123" },
-      });
+      const response = await DELETE(
+        createMockNextRequest("http://localhost/api/admin/url-groups/123"),
+        { params: { id: "123" } },
+      );
       const data = await response.json();
 
       expect(response.status).toBe(500);

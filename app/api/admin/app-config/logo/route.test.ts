@@ -2,7 +2,7 @@
 import { DELETE, GET, POST } from "@/app/api/admin/app-config/logo/route";
 import { verifyToken } from "@/app/lib/auth/jwt";
 import { prisma } from "@/app/lib/db/prisma";
-import { debugError, debugMockCalls, debugResponse } from "@/app/lib/test/debug";
+import { debugError, debugMockCalls, debugResponse } from "@/test/helpers/debug";
 import fs from "fs/promises";
 import { NextRequest } from "next/server";
 import sharp from "sharp";

@@ -1,14 +1,14 @@
 // Mock external modules first
+import { DELETE, POST } from "@/app/api/admin/app-config/favicon/route";
 import { prisma } from "@/app/lib/db/prisma";
-import { mockVerifyToken } from "@/app/lib/test/auth-mock";
-import { createTestAppConfig } from "@/app/lib/test/data/admin";
-import { debugMockCalls, debugResponse } from "@/app/lib/test/debug";
-import { createTestFile } from "@/app/lib/test/file-mock";
+import { createTestAppConfig } from "@/test/utils/fixtures/data/admin-factories";
+import { debugMockCalls, debugResponse } from "@/test/utils/helpers/debug";
+import { mockVerifyToken } from "@/test/utils/mocks/auth-mock";
+import { createTestFile } from "@/test/utils/mocks/file";
 import fs from "fs/promises";
 import { NextRequest } from "next/server";
 import path from "path";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
-import { DELETE, POST } from "../favicon/route";
 
 // Type definitions
 type AppConfigMock = {

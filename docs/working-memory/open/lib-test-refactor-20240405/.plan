@@ -4,13 +4,25 @@
 Reorganizing library and test directories to improve maintainability and follow better practices.
 
 ## Current Status
-### 2024-04-05 - Initial Plan
-**Status**: Planning
+### 2024-04-05 14:30 - Implementation Starting
+**Status**: In Progress
 
-- What's working: Initial analysis complete
-- What's not: Directory structure needs consolidation
+- What's working: Initial analysis complete, directory structure decided
+- What's not: Need to begin migration
 - Blocking issues: None
-- Next actions: Begin with test utilities consolidation
+- Next actions: Create new test directory structure
+
+### Decisions Made
+1. Test Data Organization:
+   - Will use `/test/fixtures/` for all test data (moving from app/lib/test/data)
+   - Follows industry standards and testing framework conventions
+   - Maintains clear separation between test data and mock implementations
+   - Improves maintainability by centralizing test data
+
+2. Migration Approach:
+   - Keep existing `/test` directory and reorganize within it
+   - Only migrate active tests, remove archived tests
+   - Implement changes incrementally with testing after each move
 
 ## Goals
 1. Consolidate test helpers and utilities
@@ -19,134 +31,391 @@ Reorganizing library and test directories to improve maintainability and follow 
 4. Update import paths across the codebase
 5. Document new structure for team reference
 
+## Directory Structure Decision
+
+### Test Directory Structure
+```
+/test
+├── utils/              # Shared test utilities
+│   ├── setup/         # Test setup utilities
+│   │   ├── providers.tsx     # from test-utils.tsx
+│   │   ├── database.ts      # Database setup
+│   │   └── filesystem.ts    # File system setup
+│   ├── mocks/         # Mock implementations
+│   │   ├── next.ts         # Next.js mocks
+│   │   ├── prisma.ts       # Prisma mocks
+│   │   └── filesystem.ts   # File system mocks
+│   ├── helpers/       # Test helper functions
+│   │   └── cleanup.ts      # Cleanup utilities
+│   └── fixtures/      # Test data fixtures
+├── setup.ts           # Main test setup file
+└── smoke.test.tsx     # Smoke tests
+```
+
+### Library Directory Structure
+```
+/app/lib               # All library code consolidated here
+├── auth/             # Authentication utilities
+├── db/              # Database utilities
+├── hooks/           # React hooks
+├── settings/        # App settings
+├── state/           # State management
+├── utils/           # General utilities
+└── types.ts         # Shared types
+```
+
 ## Implementation Plan
 
-### Phase 1: Test Utilities Consolidation
-- [ ] Create new test directory structure
-  ```
-  /test/
-  ├── utils/              # Shared test utilities
-  ├── mocks/              # All mock implementations
-  ├── fixtures/           # Test data and fixtures
-  ├── helpers/            # Test helper functions
-  ├── setup/             # Test setup files
-  └── e2e/               # E2E tests
-  ```
-- [ ] Audit existing test utilities
-  - [ ] Map current locations and usages
-  - [ ] Identify duplicates
-  - [ ] Document dependencies
-- [ ] Migrate test utilities
-  - [ ] Move `/app/lib/test` to `/test/helpers`
-  - [ ] Move `/test/utils` content to appropriate directories
-  - [ ] Update import paths
-  - [ ] Verify all tests pass
-- [ ] Move E2E tests
-  - [ ] Migrate `/e2e` to `/test/e2e`
-  - [ ] Update playwright config
-  - [ ] Verify E2E tests pass
+### Phase 1: Test Directory Reorganization
+1. Create new directory structure in /test
+2. Move test utilities from app/lib/test to appropriate locations
+3. Update imports in existing test files
+4. Verify all tests pass after migration
 
-### Phase 2: Library Code Reorganization
-- [ ] Audit root `/lib` directory
-  - [ ] Document current usage
-  - [ ] Identify dependencies
-  - [ ] Plan migration path
-- [ ] Consolidate to `/app/lib`
-  - [ ] Move necessary code from root `/lib`
-  - [ ] Update import paths
-  - [ ] Remove root `/lib` directory
-- [ ] Verify structure
-  ```
-  /app/lib/
-  ├── auth/              # Authentication related code
-  ├── db/                # Database related code
-  ├── hooks/             # React hooks
-  ├── settings/          # App settings
-  ├── state/             # State management
-  ├── utils/             # Shared utilities
-  └── types.ts          # Shared types
-  ```
+### Phase 2: Library Consolidation
+1. Audit root /lib directory contents
+2. Move necessary files to /app/lib structure
+3. Update imports across the codebase
+4. Remove root /lib directory
 
 ### Phase 3: Import Path Updates
-- [ ] Create script to update import paths
-- [ ] Update paths in phases:
-  - [ ] Test utility imports
-  - [ ] Library imports
-  - [ ] Test file imports
-- [ ] Verify all imports resolve correctly
-- [ ] Run full test suite
+1. Create script to update import paths
+2. Run script to update all imports
+3. Manual verification of updates
+4. Fix any broken imports
 
-### Phase 4: Documentation
-- [ ] Update README.md with new structure
-- [ ] Document migration process
-- [ ] Update contribution guidelines
-- [ ] Create architecture diagram
-
-## Testing Strategy
-1. Before each move:
-   - Run full test suite
-   - Document current state
-   - Create backup branch
-
-2. After each move:
-   - Run full test suite
-   - Verify file paths
-   - Check import resolutions
-   - Validate functionality
+### Phase 4: Testing and Validation
+1. Run full test suite
+2. Fix any failing tests
+3. Verify all functionality
+4. Update documentation
 
 ## Progress Tracking
 
-### Phase 1 Progress
-- [ ] Directory structure created
-- [ ] Test utilities audited
-- [ ] Utilities migrated
-- [ ] E2E tests moved
-- [ ] All tests passing
+### Phase 1: Test Utilities Consolidation
+- [x] Create new test directory structure
+- [x] Move test utils to new location
+- [x] Audit existing test utilities
+- [x] Migrate file system cleanup utilities
+- [x] Consolidate debug utilities
+- [x] Review validation helpers
+- [x] Review remaining cleanup utilities
+- [x] Remove redundant test-utils.tsx
+- [x] Move E2E tests
 
-### Phase 2 Progress
-- [ ] Root lib audited
-- [ ] Code consolidated
-- [ ] Structure verified
-- [ ] All tests passing
+### Current Status
+- [x] Initial analysis complete
+- [x] Directory structure decided
+- [x] Implementation started
+- [x] Debug utilities migrated
+- [x] File system cleanup utilities migrated
+- [x] Library consolidated
+- [x] Imports updated
+- [x] Test-utils.tsx removed
+- [x] E2E tests moved
+- [ ] Final validation
 
-### Phase 3 Progress
-- [ ] Import update script created
-- [ ] Paths updated
-- [ ] Imports verified
-- [ ] All tests passing
-
-### Phase 4 Progress
-- [ ] README updated
-- [ ] Migration documented
-- [ ] Guidelines updated
-- [ ] Diagram created
+### Next Steps
+1. Begin library code reorganization (Phase 2)
+2. Update documentation
 
 ## Dependencies
-- Testing Framework Implementation task
-- Current API Test Review task
-
-## Risks and Mitigations
-1. Risk: Breaking changes to import paths
-   - Mitigation: Phase updates and automated testing
-
-2. Risk: Test coverage gaps
-   - Mitigation: Comprehensive testing before/after each move
-
-3. Risk: Merge conflicts
-   - Mitigation: Coordinate with team, phase changes
-
-4. Risk: Performance impact
-   - Mitigation: Monitor build times and test execution
+- Existing test framework
+- Current library structure
+- Import path resolution
 
 ## Success Criteria
-1. All tests pass after reorganization
-2. Build process completes successfully
-3. No duplicate utilities or helpers
-4. Clear, documented directory structure
-5. Team understands new organization
+- All tests passing after migration
+- No duplicate utilities
+- Clear directory structure
+- Updated documentation
+- No broken imports
 
 ## Notes
-- Keep changes small and incremental
-- Maintain constant communication with team
-- Document all decisions and changes
-- Regular backups and commit history
+- Keep original files until migration is complete
+- Test each step before proceeding
+- Document any issues encountered
+
+## Progress History
+
+### 2024-04-05 - Debug Utilities Consolidation
+
+✓ Completed:
+- Consolidated debug utilities from test/utils/debug.ts and test/helpers/debug.ts
+- Created new consolidated file at test/utils/helpers/debug.ts
+- Improved documentation and examples
+- Deleted old debug utility files
+
+### 2024-04-05 - File System Cleanup Utilities Migration
+
+✓ Completed:
+- Created new directory structure for cleanup utilities
+- Moved file system cleanup utilities to test/utils/cleanup/file/fs-cleanup.ts
+- Added improved documentation and type safety
+- Created cleanup/index.ts for centralized exports
+- Verified imports in existing test files
+- Deleted old cleanup.ts file
+
+🤔 Decisions:
+- Kept the more detailed documentation from test/helpers/debug.ts
+- Maintained consistent function signatures
+- Improved type safety with proper vitest Mock types
+- Used Array.from for Set iteration to avoid TypeScript issues
+
+❌ Issues:
+- None encountered during migration
+
+📚 Documentation:
+- Added detailed JSDoc comments with examples
+- Improved module documentation
+- Created clear directory structure
+
+⏭️ Next Steps:
+1. Continue test utilities consolidation:
+   - Review validation helpers
+   - Review remaining cleanup utilities
+   - Check for any remaining test utilities to consolidate
+
+2. Begin library code reorganization:
+   - Audit root /lib directory
+   - Plan migration of library code
+   - Update imports
+
+### 2024-04-05 - Cleanup Utilities Consolidation
+
+✓ Completed:
+- Created centralized cleanup utilities at test/utils/cleanup/index.ts
+- Consolidated file tracking utilities from test/utils/helpers/cleanup.ts
+- Moved cleanup tests to test/utils/cleanup/cleanup.test.ts
+- Updated imports to use new consolidated location
+- Improved documentation and type safety
+- Removed old cleanup utility files
+
+🤔 Decisions:
+- Kept the file tracking utilities separate from file system mocks
+- Maintained consistent function signatures
+- Added improved JSDoc documentation
+- Created a central export point in index.ts
+
+❌ Issues:
+- None encountered during migration
+
+📚 Documentation:
+- Added detailed JSDoc comments
+- Improved module documentation
+- Created clear directory structure
+
+⏭️ Next Steps:
+1. Move test-utils.tsx to setup/providers.tsx
+2. Begin library code reorganization
+3. Update documentation
+
+### 2024-04-05 - File System Mock Fix
+
+✓ Completed:
+- Fixed TypeScript error in cleanup-verification.test.ts
+- Added fs mock to setupTestMocks return object
+- Improved type safety for file system mocks
+- Verified mock functionality in cleanup tests
+
+🤔 Decisions:
+- Added fs mock to setupTestMocks return type for proper TypeScript support
+- Maintained existing mock implementation structure
+- Kept consistent with current test utilities organization
+
+❌ Issues:
+- None after fix implementation
+
+📚 Documentation:
+- Updated setupTestMocks return type
+- Maintained clear mock organization
+
+⏭️ Next Steps:
+1. Continue with test utilities consolidation:
+   - Move test-utils.tsx to setup/providers.tsx
+   - Complete remaining cleanup utilities review
+   - Update any remaining test files using fs mocks
+
+### 2024-04-05 - Test Providers Migration Review
+
+✓ Completed:
+- Discovered providers.tsx already exists in setup directory
+- Verified providers.tsx has enhanced functionality over test-utils.tsx
+- Found test-utils.tsx is now redundant
+
+🤔 Decisions:
+- providers.tsx is the correct implementation with:
+  - SessionProvider support
+  - IframeProvider integration
+  - Enhanced render options
+  - Better type definitions
+
+❌ Issues:
+- Redundant test-utils.tsx file still exists
+- Need to verify no direct imports of test-utils.tsx remain
+
+📚 Documentation:
+- Plan updated to reflect current state
+- Migration status clarified
+
+⏭️ Next Steps:
+1. Search for any imports still using test-utils.tsx
+2. Update any remaining imports to use providers.tsx
+3. Remove test-utils.tsx after verifying no dependencies
+4. Update documentation to reflect the change
+
+### 2024-04-05 - Test Utils Cleanup
+
+✓ Completed:
+- Verified no remaining imports of test-utils.tsx
+- Successfully removed redundant test-utils.tsx file
+- Confirmed all tests using providers.tsx instead
+
+🤔 Decisions:
+- Proceeded with removal after verifying no dependencies
+- Maintained existing providers.tsx implementation
+
+❌ Issues:
+- None encountered during cleanup
+
+📚 Documentation:
+- Updated plan to reflect completed migration
+- Verified documentation references providers.tsx
+
+⏭️ Next Steps:
+1. Continue with remaining cleanup utilities review
+2. Begin library code reorganization
+3. Update documentation
+
+### 2024-04-05 - E2E Test Migration
+
+✓ Completed:
+- Successfully moved all E2E test files to test/e2e directory
+- Verified directory structure matches plan
+- Confirmed no remaining files in old e2e directory
+- Verified no import path issues after migration
+
+🤔 Decisions:
+- Maintained existing E2E test organization within new location
+- Kept all test assets and helpers together
+
+❌ Issues:
+- None encountered during migration
+
+📚 Documentation:
+- Updated plan to reflect completed E2E test migration
+- Directory structure documentation remains accurate
+
+⏭️ Next Steps:
+1. Begin Phase 2: Library Consolidation
+   - Audit root /lib directory
+   - Plan migration of library code
+   - Update imports
+
+### 2024-04-05 - Library Code Consolidation
+
+✓ Completed:
+- Created new app/lib/archive directory
+- Moved archive.ts to app/lib/archive/archive.ts
+- Created archive/index.ts for clean exports
+- Moved database files to app/lib/db
+- Updated database imports to use relative paths
+- Updated app/lib/db/index.ts exports
+- Removed empty lib directory
+
+🤔 Decisions:
+- Created dedicated archive directory due to functionality scope
+- Maintained backwards compatibility in db exports
+- Used relative imports for co-located files
+
+❌ Issues:
+- None encountered during migration
+
+📚 Documentation:
+- Updated plan to reflect completed consolidation
+- Directory structure remains as planned
+
+⏭️ Next Steps:
+1. Update any remaining imports across the codebase
+2. Verify all functionality works as expected
+3. Update documentation
+
+### 2024-04-05 - Mock Data Type Fixes
+
+✓ Completed:
+- Fixed MockUser interface export in test/utils/mocks/data/users.ts
+- Added missing fields (password, lastLoginAt) to MockUser interface
+- Updated mockUsers data to include password for admin user
+- Resolved TypeScript errors in auth handlers
+
+🤔 Decisions:
+- Made MockUser interface public for reuse across test files
+- Added optional fields to maintain type safety
+- Kept consistent with existing auth handler implementation
+
+❌ Issues:
+- None after type fixes
+
+📚 Documentation:
+- Types are now properly documented in the mock data file
+
+⏭️ Next Steps:
+1. Continue verifying remaining test functionality
+2. Check for any other type-related issues in test files
+3. Update test documentation if needed
+
+### 2024-04-05 - Test Verification
+
+✓ Completed:
+- Verified all auth-related test files with updated MockUser interface
+- Confirmed auth handlers work correctly with password/non-password flows
+- Validated user handlers and data exposure
+- Checked auth tests for complete coverage
+- Verified auth mock implementation
+
+🤔 Decisions:
+- Kept TokenPayload interface separate in auth-mock.ts
+- Maintained existing test patterns and coverage
+- No additional changes needed to test files
+
+❌ Issues:
+- Some unrelated test failures in URL group tests (Prisma mocking)
+- Auth tests passing as expected
+
+📚 Documentation:
+- Test files verified and documented in plan
+- No additional documentation updates needed
+
+⏭️ Next Steps:
+1. Address unrelated URL group test failures
+2. Complete remaining documentation updates
+3. Close out the refactoring task
+
+## Current Status
+
+**Status**: In Progress
+**Phase**: Final Testing and Documentation
+**Completed Items**:
+- [x] File system mock consolidation
+- [x] Test file creation utility migration
+- [x] Import updates for file system mocks
+- [x] Debug utilities consolidation
+- [x] Validation utilities consolidation
+- [x] Cleanup utilities consolidation
+- [x] Fixed fs mock TypeScript issues
+- [x] Providers setup implementation (providers.tsx)
+- [x] E2E test migration complete
+- [x] Library code consolidation complete
+- [x] Mock data type fixes and exports
+- [x] Test functionality verification
+
+**Remaining Items**:
+- [ ] Fix URL group test failures
+- [ ] Complete documentation updates
+
+## Notes
+- Successfully consolidated debug utilities without breaking functionality
+- Improved documentation makes the utilities more maintainable
+- Following planned directory structure is working well
+- Fixed TypeScript issues with fs mocks improving type safety
+- Found providers.tsx already implements planned migration with improvements

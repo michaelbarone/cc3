@@ -1,11 +1,22 @@
+/**
+ * Core mock implementations for testing
+ * @module test/utils/mocks
+ */
+
 import { NextRequest, NextResponse } from "next/server";
 import { Mock, vi } from "vitest";
 
+/**
+ * Type definition for mock functions with common Vitest mock methods
+ */
 type MockFn = Mock & {
   mockResolvedValue: (value: any) => Mock;
   mockImplementation: (fn: (...args: any[]) => any) => Mock;
 };
 
+/**
+ * Interface for Prisma model operations that can be mocked
+ */
 interface PrismaMock {
   findUnique: MockFn;
   findMany: MockFn;
@@ -19,6 +30,7 @@ interface PrismaMock {
 
 /**
  * Standard cookie store mock implementation
+ * @returns An object with mocked cookie store methods
  */
 export const createMockCookieStore = () => ({
   get: vi.fn(),
@@ -31,6 +43,7 @@ export const createMockCookieStore = () => ({
 /**
  * Mock Next.js headers with cookie store
  * @param cookieStore Optional custom cookie store implementation
+ * @returns The provided or created cookie store mock
  */
 export const mockNextHeaders = (cookieStore = createMockCookieStore()) => {
   vi.mock("next/headers", () => ({
@@ -40,7 +53,8 @@ export const mockNextHeaders = (cookieStore = createMockCookieStore()) => {
 };
 
 /**
- * Create a mock NextRequest instance
+ * Mock implementation of NextRequest
+ * Provides a way to simulate incoming HTTP requests in tests
  */
 export class MockNextRequest extends NextRequest {
   private _url: string;
@@ -73,6 +87,9 @@ export class MockNextRequest extends NextRequest {
   }
 }
 
+/**
+ * Custom implementations for Prisma model operations
+ */
 interface PrismaCustomImplementations {
   user?: Partial<PrismaMock>;
   urlGroup?: Partial<PrismaMock>;
@@ -84,7 +101,8 @@ interface PrismaCustomImplementations {
 }
 
 /**
- * Create a mock NextResponse instance that matches Next.js Response type
+ * Mock implementation of NextResponse
+ * Provides a way to simulate HTTP responses in tests
  */
 export class MockNextResponse<T = unknown> extends NextResponse<T> {
   private _data: T;
@@ -119,6 +137,16 @@ export class MockNextResponse<T = unknown> extends NextResponse<T> {
 /**
  * Create a mock Prisma client with common operations
  * @param customImplementations Optional custom implementations for Prisma methods
+ * @returns A mocked Prisma client instance
+ *
+ * @example
+ * ```ts
+ * const mockPrisma = createMockPrismaClient({
+ *   user: {
+ *     findUnique: vi.fn().mockResolvedValue({ id: '1', name: 'Test' })
+ *   }
+ * });
+ * ```
  */
 export const createMockPrismaClient = (customImplementations: PrismaCustomImplementations = {}) => {
   const defaultMock = {
@@ -150,7 +178,8 @@ export const createMockPrismaClient = (customImplementations: PrismaCustomImplem
 };
 
 /**
- * Mock file system operations
+ * Create mock file system operations
+ * @returns An object with mocked fs functions
  */
 export const createMockFileSystem = () => ({
   accessSync: vi.fn(),
@@ -160,30 +189,9 @@ export const createMockFileSystem = () => ({
   existsSync: vi.fn(),
 });
 
-/**
- * Setup common test mocks
- * @param options Configuration options for mocks
- */
-export const setupTestMocks = (options: {
-  cookieStore?: ReturnType<typeof createMockCookieStore>;
-  prisma?: ReturnType<typeof createMockPrismaClient>;
-  fileSystem?: ReturnType<typeof createMockFileSystem>;
-} = {}) => {
-  const cookieStore = options.cookieStore || createMockCookieStore();
-  const prisma = options.prisma || createMockPrismaClient();
-  const fs = options.fileSystem || createMockFileSystem();
+export * from '../cleanup/file/fs-cleanup';
+export * from './auth';
+export * from './next';
+export * from './prisma';
+export { setupTestMocks } from './setup';
 
-  mockNextHeaders(cookieStore);
-
-  vi.mock("@/app/lib/db/prisma", () => ({
-    prisma,
-  }));
-
-  vi.mock("fs", () => fs);
-
-  return {
-    cookieStore,
-    prisma,
-    fs,
-  };
-};

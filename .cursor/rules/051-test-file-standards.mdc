@@ -40,8 +40,8 @@ alwaysApply: true
    import { NextRequest } from "next/server";
 
    // 2. Internal imports
-   import { mockVerifyToken } from "@/app/lib/test/auth-mock";
-   import { createTestFile } from "@/app/lib/test/file-mock";
+   import { mockVerifyToken } from "@/test/utils/mocks/auth-mock";
+   import { createTestFile } from "@/test/utils/mocks/file-mock";
 
    // 3. Test subject import
    import { POST, DELETE } from "./route";
@@ -173,7 +173,8 @@ alwaysApply: true
 <example>
 // Good: Following standards and reusing patterns
 import { describe, test, expect, vi } from "vitest";
-import { mockVerifyToken } from "@/app/lib/test/auth-mock";
+import { mockVerifyToken } from "@/test/utils/mocks/auth-mock";
+import { createTestFile } from "@/test/utils/mocks/file-mock";
 import { POST } from "./route";
 
 type ConfigMock = {

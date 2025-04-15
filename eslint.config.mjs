@@ -16,6 +16,7 @@ export default [
       "**/out/**",
       "**/public/**",
       "**/coverage/**",
+      "**/playwright-report/**",
       "**/dist/**",
       "**/build/**",
       "**/docs/**",

@@ -1,10 +1,10 @@
 import { prisma } from '@/app/lib/db/prisma';
-import { authHandlers } from '@/test/mocks/handlers/auth';
+import { authHandlers } from '@/test/utils/mocks/handlers/auth';
 import { cleanup } from '@testing-library/react';
 import fs from 'fs/promises';
 import { setupServer } from 'msw/node';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { setupTestMocks } from './mocks';
+import { setupTestMocks } from '../mocks';
 
 // Create MSW server
 const server = setupServer(...authHandlers);

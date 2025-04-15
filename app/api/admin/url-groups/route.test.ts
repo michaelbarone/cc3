@@ -1,3 +1,18 @@
+import type { Url, UrlGroup } from "@prisma/client";
+import { NextRequest } from "next/server";
+import { beforeEach, describe, expect, it, vi, type Mock } from "vitest";
+
+// Mock modules first
+vi.mock("@/app/lib/db/prisma");
+vi.mock("@/app/lib/auth/jwt");
+vi.mock("next/headers");
+
+// Import mocked modules
+import { verifyToken } from "@/app/lib/auth/jwt";
+import { prisma } from "@/app/lib/db/prisma";
+import { cookies } from "next/headers";
+
+// Import the modules we want to test
 import {
   DELETE as deleteUrlGroup,
   GET as getUrlGroup,
@@ -10,57 +25,46 @@ import {
   PUT as updateUrlsInGroup,
 } from "@/app/api/admin/url-groups/[id]/urls/route";
 import { POST as createUrlGroup, GET as getUrlGroupsList } from "@/app/api/admin/url-groups/route";
-import { verifyToken } from "@/app/lib/auth/jwt";
-import { prisma } from "@/app/lib/db/prisma";
-import { NextRequest } from "next/server";
-import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// Mock dependencies
-vi.mock("@/app/lib/db/prisma", () => ({
-  prisma: {
-    urlGroup: {
-      findMany: vi.fn(),
-      findUnique: vi.fn(),
-      create: vi.fn(),
-      update: vi.fn(),
-      delete: vi.fn(),
-    },
-    urlsInGroups: {
-      findMany: vi.fn(),
-      findUnique: vi.fn(),
-      create: vi.fn(),
-      createMany: vi.fn(),
-      deleteMany: vi.fn(),
-      updateMany: vi.fn(),
-      aggregate: vi.fn(),
-    },
-    url: {
-      findMany: vi.fn(),
-      findUnique: vi.fn(),
-      create: vi.fn(),
-    },
-    $transaction: vi.fn((callback) => callback(prisma)),
-    $queryRaw: vi.fn(),
-    $disconnect: vi.fn(),
-  },
-}));
-
-vi.mock("@/app/lib/auth/jwt", () => ({
-  verifyToken: vi.fn(),
-}));
-
-// Mock cookie store
-const mockCookieStore = {
-  get: vi.fn(),
-  getAll: vi.fn(),
-  has: vi.fn(),
-  set: vi.fn(),
-  delete: vi.fn(),
+// Define types
+type RouteContext = {
+  params: Promise<{ id: string }>;
 };
 
-vi.mock("next/headers", () => ({
-  cookies: vi.fn(() => mockCookieStore),
-}));
+type MockUrlGroup = UrlGroup & {
+  urls?: Array<{
+    url: Url;
+    displayOrder: number;
+  }>;
+  urlCount?: number;
+};
+
+type MockPrismaClient = {
+  urlGroup: {
+    findMany: Mock;
+    findUnique: Mock;
+    create: Mock;
+    update: Mock;
+    delete: Mock;
+  };
+  urlsInGroups: {
+    findMany: Mock;
+    findUnique: Mock;
+    create: Mock;
+    createMany: Mock;
+    deleteMany: Mock;
+    updateMany: Mock;
+    aggregate: Mock;
+  };
+  url: {
+    findMany: Mock;
+    findUnique: Mock;
+    create: Mock;
+  };
+  $transaction: Mock;
+  $queryRaw: Mock;
+  $disconnect: Mock;
+};
 
 describe("Admin URL Group Management API", () => {
   const mockAdminUser = {
@@ -69,29 +73,91 @@ describe("Admin URL Group Management API", () => {
     isAdmin: true,
   };
 
-  const mockUrlGroup = {
+  const mockUrlGroup: MockUrlGroup = {
     id: "group-id",
     name: "Test Group",
     description: "Test group description",
-    createdAt: "2025-03-30T05:03:18.240Z",
-    updatedAt: "2025-03-30T05:03:18.240Z",
+    createdAt: new Date("2025-03-30T05:03:18.240Z"),
+    updatedAt: new Date("2025-03-30T05:03:18.240Z"),
+    urls: [
+      {
+        url: {
+          id: "url-id",
+          title: "Test URL",
+          url: "https://example.com",
+          urlMobile: "https://m.example.com",
+          iconPath: "/icons/test.png",
+          idleTimeoutMinutes: 10,
+          createdAt: new Date("2025-03-30T05:03:18.240Z"),
+          updatedAt: new Date("2025-03-30T05:03:18.240Z"),
+        },
+        displayOrder: 1,
+      },
+    ],
   };
 
-  const mockUrl = {
+  const mockUrl: Url = {
     id: "url-id",
     title: "Test URL",
     url: "https://example.com",
     urlMobile: "https://m.example.com",
     iconPath: "/icons/test.png",
     idleTimeoutMinutes: 10,
-    createdAt: "2025-03-30T05:03:18.240Z",
-    updatedAt: "2025-03-30T05:03:18.240Z",
+    createdAt: new Date("2025-03-30T05:03:18.240Z"),
+    updatedAt: new Date("2025-03-30T05:03:18.240Z"),
+  };
+
+  let mockCookieStore: {
+    get: Mock;
+    getAll: Mock;
+    has: Mock;
+    set: Mock;
+    delete: Mock;
   };
 
   beforeEach(() => {
     vi.clearAllMocks();
-    mockCookieStore.get.mockReturnValue({ value: "valid_token" });
-    (verifyToken as any).mockResolvedValue(mockAdminUser);
+
+    // Setup cookie mock
+    mockCookieStore = {
+      get: vi.fn().mockReturnValue({ value: "valid_token" }),
+      getAll: vi.fn(),
+      has: vi.fn(),
+      set: vi.fn(),
+      delete: vi.fn(),
+    };
+    (cookies as Mock).mockReturnValue(mockCookieStore);
+
+    // Setup auth mock
+    (verifyToken as Mock).mockResolvedValue(mockAdminUser);
+
+    // Setup Prisma mock
+    Object.assign(prisma, {
+      $transaction: vi.fn().mockImplementation((callback) => callback(prisma)),
+      $queryRaw: vi.fn().mockResolvedValue([mockUrlGroup]),
+      urlGroup: {
+        findMany: vi.fn().mockResolvedValue([]),
+        findUnique: vi.fn().mockResolvedValue(mockUrlGroup),
+        create: vi.fn().mockResolvedValue(null),
+        update: vi.fn().mockResolvedValue(null),
+        delete: vi.fn().mockResolvedValue(null),
+      },
+      url: {
+        findMany: vi.fn().mockResolvedValue([]),
+        findUnique: vi.fn().mockResolvedValue(null),
+        create: vi.fn().mockResolvedValue(null),
+      },
+      urlsInGroups: {
+        findMany: vi.fn().mockResolvedValue([]),
+        findUnique: vi.fn().mockResolvedValue(null),
+        create: vi.fn().mockResolvedValue(null),
+        createMany: vi.fn().mockResolvedValue(null),
+        deleteMany: vi.fn().mockResolvedValue(null),
+        updateMany: vi.fn().mockResolvedValue(null),
+        aggregate: vi.fn().mockResolvedValue({ _max: { displayOrder: 0 } }),
+      },
+      $disconnect: vi.fn(),
+    });
   });
 
   describe("GET /api/admin/url-groups", () => {
@@ -204,36 +270,34 @@ describe("Admin URL Group Management API", () => {
   });
 
   describe("GET /api/admin/url-groups/[id]", () => {
-    const mockProps = { params: { id: mockUrlGroup.id } };
-
-    it("should return URL group details when authenticated as admin", async () => {
-      const mockGroupWithUrls = {
+    it("should return URL group when authenticated as admin", async () => {
+      const mockGroup = {
         ...mockUrlGroup,
         urls: [
           {
-            id: mockUrl.id,
-            title: mockUrl.title,
-            url: mockUrl.url,
-            iconPath: mockUrl.iconPath,
-            idleTimeoutMinutes: mockUrl.idleTimeoutMinutes,
+            url: mockUrl,
             displayOrder: 1,
           },
         ],
       };
 
-      (prisma.$queryRaw as any).mockResolvedValue([mockGroupWithUrls]);
+      prisma.urlGroup.findUnique = vi.fn().mockResolvedValue(mockGroup) as any;
 
-      const response = await getUrlGroup(new NextRequest("http://localhost"), mockProps);
+      const response = await getUrlGroup(new NextRequest("http://localhost"), {
+        params: Promise.resolve({ id: mockGroup.id }),
+      } as RouteContext);
       const data = await response.json();
 
       expect(response.status).toBe(200);
-      expect(data).toEqual(mockGroupWithUrls);
+      expect(data).toEqual(mockGroup);
     });
 
     it("should return 404 when URL group not found", async () => {
       (prisma.$queryRaw as any).mockResolvedValue([]);
 
-      const response = await getUrlGroup(new NextRequest("http://localhost"), mockProps);
+      const response = await getUrlGroup(new NextRequest("http://localhost"), {
+        params: Promise.resolve({ id: mockUrlGroup.id }),
+      } as RouteContext);
       const data = await response.json();
 
       expect(response.status).toBe(404);
@@ -242,7 +306,7 @@ describe("Admin URL Group Management API", () => {
   });
 
   describe("PUT /api/admin/url-groups/[id]", () => {
-    const mockProps = { params: { id: mockUrlGroup.id } };
+    const mockProps = { params: Promise.resolve({ id: mockUrlGroup.id }) };
     const mockUpdateRequest = {
       name: "Updated Group",
       description: "Updated description",
@@ -293,7 +357,7 @@ describe("Admin URL Group Management API", () => {
   });
 
   describe("DELETE /api/admin/url-groups/[id]", () => {
-    const mockProps = { params: { id: mockUrlGroup.id } };
+    const mockProps = { params: Promise.resolve({ id: mockUrlGroup.id }) };
 
     it("should delete URL group when authenticated as admin", async () => {
       (prisma.urlGroup.findUnique as any).mockResolvedValue(mockUrlGroup);
@@ -321,7 +385,7 @@ describe("Admin URL Group Management API", () => {
   });
 
   describe("GET /api/admin/url-groups/[id]/urls", () => {
-    const mockProps = { params: { id: mockUrlGroup.id } };
+    const mockProps = { params: Promise.resolve({ id: mockUrlGroup.id }) };
 
     it("should return URLs in group when authenticated", async () => {
       (prisma.urlGroup.findUnique as any).mockResolvedValue(mockUrlGroup);
@@ -356,7 +420,7 @@ describe("Admin URL Group Management API", () => {
   });
 
   describe("POST /api/admin/url-groups/[id]/urls", () => {
-    const mockProps = { params: { id: mockUrlGroup.id } };
+    const mockProps = { params: Promise.resolve({ id: mockUrlGroup.id }) };
     const mockAddUrlRequest = {
       title: "New URL",
       url: "https://newexample.com",
@@ -407,7 +471,7 @@ describe("Admin URL Group Management API", () => {
   });
 
   describe("PUT /api/admin/url-groups/[id]/urls", () => {
-    const mockProps = { params: { id: mockUrlGroup.id } };
+    const mockProps = { params: Promise.resolve({ id: mockUrlGroup.id }) };
     const mockUrlIds = ["url-1", "url-2"];
 
     it("should update URLs in group when authenticated as admin", async () => {
@@ -457,7 +521,7 @@ describe("Admin URL Group Management API", () => {
   });
 
   describe("POST /api/admin/url-groups/[id]/urls/batch", () => {
-    const mockProps = { params: { id: mockUrlGroup.id } };
+    const mockProps = { params: Promise.resolve({ id: mockUrlGroup.id }) };
 
     it("should perform batch add operation when authenticated as admin", async () => {
       const mockUrlIds = ["url-1", "url-2"];

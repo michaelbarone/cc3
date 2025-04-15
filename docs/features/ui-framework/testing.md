@@ -61,9 +61,10 @@ afterEach(() => {
 ### Test Utilities
 
 ```typescript
-// test/utils/test-utils.tsx
+// test/utils/setup/providers.tsx
+import { ThemeProvider } from '@mui/material/styles';
 import { render } from '@testing-library/react';
-import { ThemeProvider } from '@/components/theme/ThemeProvider';
+import { theme } from '@/app/theme';
 
 export function renderWithTheme(ui: React.ReactElement) {
   return render(
@@ -97,7 +98,7 @@ import { describe, it, expect } from 'vitest';
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Button } from './Button';
-import { renderWithTheme } from '@/test/utils/test-utils';
+import { renderWithTheme } from '@/test/utils/setup/providers';
 
 describe('Button', () => {
   it('renders with correct variant', () => {
@@ -138,7 +139,7 @@ import { describe, it, expect } from 'vitest';
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Dialog } from './Dialog';
-import { renderWithTheme } from '@/test/utils/test-utils';
+import { renderWithTheme } from '@/test/utils/setup/providers';
 
 describe('Dialog', () => {
   it('renders when open', () => {
@@ -229,7 +230,7 @@ describe('useTheme', () => {
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { useBreakpoints } from './useBreakpoints';
-import { createMatchMedia } from '@/test/utils/test-utils';
+import { createMatchMedia } from '@/test/utils/setup/providers';
 
 describe('useBreakpoints', () => {
   const originalMatchMedia = window.matchMedia;
@@ -266,7 +267,7 @@ import { describe, it, expect } from 'vitest';
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { App } from './App';
-import { renderWithTheme } from '@/test/utils/test-utils';
+import { renderWithTheme } from '@/test/utils/setup/providers';
 
 describe('Theme Integration', () => {
   it('applies theme to components', () => {
@@ -300,7 +301,7 @@ import { describe, it, expect } from 'vitest';
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { LoginForm } from './LoginForm';
-import { renderWithTheme } from '@/test/utils/test-utils';
+import { renderWithTheme } from '@/test/utils/setup/providers';
 
 describe('Form Integration', () => {
   it('validates form submission', async () => {
@@ -334,7 +335,7 @@ describe('Form Integration', () => {
 import { describe, it, expect } from 'vitest';
 import { screen } from '@testing-library/react';
 import { Button } from '@/components/Button';
-import { renderWithTheme } from '@/test/utils/test-utils';
+import { renderWithTheme } from '@/test/utils/setup/providers';
 
 describe('Component Rendering Performance', () => {
   it('renders button within performance budget', () => {
@@ -394,7 +395,7 @@ describe('Theme Switching Performance', () => {
 import { describe, it, expect } from 'vitest';
 import { screen } from '@testing-library/react';
 import { Button } from '@/components/Button';
-import { renderWithTheme } from '@/test/utils/test-utils';
+import { renderWithTheme } from '@/test/utils/setup/providers';
 
 describe('Button Accessibility', () => {
   it('has sufficient color contrast', () => {

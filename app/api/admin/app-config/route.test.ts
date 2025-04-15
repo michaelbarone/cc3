@@ -1,8 +1,8 @@
 /// <reference types="node" />
 import { GET, PATCH } from "@/app/api/admin/app-config/route";
 import { verifyToken } from "@/app/lib/auth/jwt";
-import { createTestAdmin, createTestUser } from "@/app/lib/test/data/admin";
-import { debugError, debugMockCalls, debugResponse } from "@/app/lib/test/debug";
+import { createTestAdmin, createTestUser } from "@/test/fixtures/data/admin";
+import { debugError, debugMockCalls, debugResponse } from "@/test/helpers/debug";
 import { PrismaClient } from "@prisma/client";
 import type { MakeDirectoryOptions, PathLike } from "fs";
 import fs from "fs";

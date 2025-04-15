@@ -1,13 +1,11 @@
-import IframeContainer, {
-  IframeContainerRef,
-  resetGlobalContainer,
-} from "@/app/components/iframe/IframeContainer";
-import { IframeProvider } from "@/app/components/iframe/state/IframeContext";
+import IframeContainer, { resetGlobalContainer } from "@/app/components/iframe/IframeContainer";
+import { IframeProvider, useIframeState } from "@/app/lib/state/iframe-state";
+import type { IframeContainerRef, UrlGroup } from "@/app/types/iframe";
 import { server } from "@/test/mocks/server";
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
 import type { ReactNode } from "react";
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Constants for test configuration
@@ -57,17 +55,6 @@ vi.mock("@mui/icons-material", () => ({
   Close: () => <span>close</span>,
 }));
 
-// Define the props type based on the component interface
-type UrlGroups = {
-  id: string;
-  urls: {
-    id: string;
-    url: string;
-    urlMobile?: string | null;
-    idleTimeoutMinutes?: number;
-  }[];
-}[];
-
 // Mock ResizeObserver
 const mockResizeObserver = vi.fn(() => ({
   observe: vi.fn(),
@@ -101,20 +88,44 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-// Test wrapper component
-function TestComponent({ urlGroups = [] }: { urlGroups: UrlGroups }) {
+// Component with event handlers
+function TestComponentWithHandlers({
+  urlGroups,
+  onLoad,
+  onError,
+}: {
+  urlGroups: UrlGroup[];
+  onLoad?: (urlId: string) => void;
+  onError?: (urlId: string, error: string) => void;
+}) {
   const iframeRef = useRef<IframeContainerRef>(null);
+  const { dispatch } = useIframeState();
+
+  useEffect(() => {
+    dispatch({
+      type: "INIT_URLS",
+      payload: {
+        urlGroups,
+        initialUrlId: "url1",
+      },
+    });
+  }, [dispatch, urlGroups]);
+
   return (
-    <IframeProvider activeUrlId="url1">
-      <IframeContainer ref={iframeRef} urlGroups={urlGroups} />
-    </IframeProvider>
+    <IframeContainer ref={iframeRef} urlGroups={urlGroups} onLoad={onLoad} onError={onError} />
   );
 }
 
+// Wrapper with provider
+function TestWrapper({ children, urlGroups }: { children: ReactNode; urlGroups: UrlGroup[] }) {
+  return <IframeProvider>{children}</IframeProvider>;
+}
+
 describe("IframeContainer", () => {
-  const mockUrlGroups: UrlGroups = [
+  const mockUrlGroups: UrlGroup[] = [
     {
       id: "group1",
+      name: "Group 1",
       urls: [
         {
           id: "url1",
@@ -170,7 +181,11 @@ describe("IframeContainer", () => {
   });
 
   it("should create iframes for all URLs in urlGroups", async () => {
-    render(<TestComponent urlGroups={mockUrlGroups} />);
+    render(
+      <TestWrapper urlGroups={mockUrlGroups}>
+        <TestComponentWithHandlers urlGroups={mockUrlGroups} />
+      </TestWrapper>,
+    );
 
     await retryOperation(async () => {
       const container = document.getElementById("global-iframe-container");
@@ -187,9 +202,9 @@ describe("IframeContainer", () => {
     const onLoad = vi.fn();
 
     render(
-      <IframeProvider activeUrlId="url1">
-        <IframeContainer urlGroups={mockUrlGroups} onLoad={onLoad} />
-      </IframeProvider>,
+      <TestWrapper urlGroups={mockUrlGroups}>
+        <TestComponentWithHandlers urlGroups={mockUrlGroups} onLoad={onLoad} />
+      </TestWrapper>,
     );
 
     await retryOperation(async () => {
@@ -203,13 +218,13 @@ describe("IframeContainer", () => {
     });
   });
 
-  it("should handle iframe error events", async () => {
+  it("should handle iframe errors", async () => {
     const onError = vi.fn();
 
     render(
-      <IframeProvider activeUrlId="url1">
-        <IframeContainer urlGroups={mockUrlGroups} onError={onError} />
-      </IframeProvider>,
+      <TestWrapper urlGroups={mockUrlGroups}>
+        <TestComponentWithHandlers urlGroups={mockUrlGroups} onError={onError} />
+      </TestWrapper>,
     );
 
     await retryOperation(async () => {
@@ -228,7 +243,7 @@ describe("IframeContainer", () => {
       const ref = useRef<IframeContainerRef>(null);
 
       return (
-        <IframeProvider activeUrlId="url1">
+        <IframeProvider>
           <IframeContainer ref={ref} urlGroups={mockUrlGroups} />
           <button onClick={() => ref.current?.resetIframe("url1")}>Reset</button>
           <button onClick={() => ref.current?.unloadIframe("url1")}>Unload</button>
@@ -250,7 +265,7 @@ describe("IframeContainer", () => {
     // Set useMediaQuery to return true for mobile viewport
     mockUseMediaQuery.mockReturnValue(true);
 
-    render(<TestComponent urlGroups={mockUrlGroups} />);
+    render(<TestComponentWithHandlers urlGroups={mockUrlGroups} />);
 
     await retryOperation(async () => {
       const iframe = document.querySelector("iframe");
@@ -268,9 +283,14 @@ describe("IframeContainer", () => {
   });
 
   it("should update iframe visibility based on active URL", async () => {
-    const mockUrlGroups: UrlGroups = [
+    // Reset global container before test
+    resetGlobalContainer();
+    vi.useFakeTimers();
+
+    const mockUrlGroups: UrlGroup[] = [
       {
         id: "group1",
+        name: "Group 1",
         urls: [
           { id: "url1", url: "https://example.com/1" },
           { id: "url2", url: "https://example.com/2" },
@@ -278,12 +298,9 @@ describe("IframeContainer", () => {
       },
     ];
 
-    // Reset global container before test
-    resetGlobalContainer();
-
     // Initialize with url1 active and loaded
     const { rerender } = render(
-      <IframeProvider activeUrlId="url1">
+      <IframeProvider>
         <IframeContainer urlGroups={mockUrlGroups} />
       </IframeProvider>,
     );
@@ -310,7 +327,7 @@ describe("IframeContainer", () => {
 
     // Change active URL to url2
     rerender(
-      <IframeProvider activeUrlId="url2">
+      <IframeProvider>
         <IframeContainer urlGroups={mockUrlGroups} />
       </IframeProvider>,
     );
@@ -334,6 +351,9 @@ describe("IframeContainer", () => {
       expect(container2.style.visibility).toBe("visible");
       expect(container2.style.display).toBe("block");
     });
+
+    // Restore real timers
+    vi.useRealTimers();
   });
 
   it("should cleanup iframes on unmount", async () => {
@@ -341,7 +361,7 @@ describe("IframeContainer", () => {
     vi.useFakeTimers();
 
     // Render component
-    const { unmount } = render(<TestComponent urlGroups={mockUrlGroups} />);
+    const { unmount } = render(<TestComponentWithHandlers urlGroups={mockUrlGroups} />);
 
     // Wait for container to be created
     await retryOperation(async () => {
@@ -371,5 +391,57 @@ describe("IframeContainer", () => {
 
     // Restore real timers
     vi.useRealTimers();
+  });
+
+  it("should reset iframe when requested", async () => {
+    const ref = useRef<IframeContainerRef>(null);
+
+    render(
+      <TestWrapper urlGroups={mockUrlGroups}>
+        <>
+          <TestComponentWithHandlers urlGroups={mockUrlGroups} />
+          <button onClick={() => ref.current?.resetIframe("url1")}>Reset</button>
+        </>
+      </TestWrapper>,
+    );
+
+    // ... existing code ...
+  });
+
+  it("should handle URL changes", async () => {
+    const mockUrlGroupsWithTwoUrls: UrlGroup[] = [
+      {
+        id: "group1",
+        name: "Group 1",
+        urls: [
+          {
+            id: "url1",
+            url: "https://example.com/1",
+          },
+          {
+            id: "url2",
+            url: "https://example.com/2",
+          },
+        ],
+      },
+    ];
+
+    // Initialize with url1 active and loaded
+    const { rerender } = render(
+      <TestWrapper urlGroups={mockUrlGroupsWithTwoUrls}>
+        <TestComponentWithHandlers urlGroups={mockUrlGroupsWithTwoUrls} />
+      </TestWrapper>,
+    );
+
+    // ... existing code ...
+
+    // Change active URL to url2
+    rerender(
+      <TestWrapper urlGroups={mockUrlGroupsWithTwoUrls}>
+        <TestComponentWithHandlers urlGroups={mockUrlGroupsWithTwoUrls} />
+      </TestWrapper>,
+    );
+
+    // ... existing code ...
   });
 });

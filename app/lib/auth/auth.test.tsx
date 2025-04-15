@@ -34,9 +34,9 @@ vi.mock("@/app/lib/auth/auth-context", () => ({
 
 import { AuthProvider } from "@/app/lib/auth/auth-context";
 import LoginPage from "@/app/login/page";
-import { mockUsers } from "@/test/mocks/data/users";
-import { resetAuthState } from "@/test/mocks/handlers/auth";
-import { render, screen, waitFor, within } from "@/test/utils/test-utils";
+import { mockUsers } from "@/test/utils/mocks/data/users";
+import { resetAuthState } from "@/test/utils/mocks/handlers/auth";
+import { render, screen, waitFor, within } from "@/test/utils/setup/providers";
 import userEvent from "@testing-library/user-event";
 import { type ReadonlyURLSearchParams } from "next/navigation";
 import React from "react";

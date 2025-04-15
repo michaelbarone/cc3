@@ -1,6 +1,6 @@
-import { mockVerifyToken } from "@/app/lib/test/auth-mock";
-import { createTestAdmin, createTestAppConfig, createTestUser } from "@/app/lib/test/data/admin";
-import { debugError, debugMockCalls, debugResponse } from "@/app/lib/test/debug";
+import { createTestAdmin, createTestAppConfig, createTestUser } from "@/test/fixtures/data/admin";
+import { debugError, debugMockCalls, debugResponse } from "@/test/helpers/debug";
+import { mockVerifyToken } from "@/test/utils/mocks/auth-mock";
 import { PrismaClient } from "@prisma/client";
 import { NextRequest } from "next/server";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";

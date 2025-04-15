@@ -1,6 +1,6 @@
-import { GET as getStatistics } from "@/app/api/admin/statistics/route";
+import { GET } from "@/app/api/admin/statistics/route";
 import { verifyToken } from "@/app/lib/auth/jwt";
-import { setupTestMocks } from "@/app/lib/test/mocks";
+import { setupTestMocks } from "@/test/utils/mocks";
 import type { PrismaClient } from "@prisma/client";
 import { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -90,7 +90,7 @@ describe("Admin Statistics API Boundary Tests", () => {
       });
       (verifyToken as any).mockResolvedValue(null);
 
-      const response = await getStatistics(mockRequest);
+      const response = await GET(mockRequest);
       const data = await response.json();
 
       expect(response.status).toBe(401);
@@ -106,7 +106,7 @@ describe("Admin Statistics API Boundary Tests", () => {
       });
       (verifyToken as any).mockResolvedValue(mockNonAdminUser);
 
-      const response = await getStatistics(mockRequest);
+      const response = await GET(mockRequest);
       const data = await response.json();
 
       expect(response.status).toBe(403);
@@ -114,7 +114,7 @@ describe("Admin Statistics API Boundary Tests", () => {
     });
 
     it("should return 200 when authenticated as admin", async () => {
-      const response = await getStatistics(mockRequest);
+      const response = await GET(mockRequest);
       const data = await response.json();
 
       expect(response.status).toBe(200);
@@ -129,7 +129,7 @@ describe("Admin Statistics API Boundary Tests", () => {
       typedMockPrisma.urlGroup.findMany.mockResolvedValue([]);
       typedMockPrisma.urlGroup.count.mockResolvedValue(0);
 
-      const response = await getStatistics(mockRequest);
+      const response = await GET(mockRequest);
       const data = await response.json();
 
       expect(response.status).toBe(200);
@@ -153,7 +153,7 @@ describe("Admin Statistics API Boundary Tests", () => {
         return Promise.resolve([]);
       });
 
-      const response = await getStatistics(mockRequest);
+      const response = await GET(mockRequest);
       const data = await response.json();
 
       expect(response.status).toBe(200);
@@ -176,7 +176,7 @@ describe("Admin Statistics API Boundary Tests", () => {
         return Promise.resolve([]);
       });
 
-      const response = await getStatistics(mockRequest);
+      const response = await GET(mockRequest);
       const data = await response.json();
 
       expect(response.status).toBe(200);
@@ -197,7 +197,7 @@ describe("Admin Statistics API Boundary Tests", () => {
         },
       ]);
 
-      const response = await getStatistics(mockRequest);
+      const response = await GET(mockRequest);
       const data = await response.json();
 
       expect(response.status).toBe(200);
@@ -215,7 +215,7 @@ describe("Admin Statistics API Boundary Tests", () => {
         return Promise.resolve([]);
       });
 
-      const response = await getStatistics(mockRequest);
+      const response = await GET(mockRequest);
       const data = await response.json();
 
       expect(response.status).toBe(200);
@@ -237,7 +237,7 @@ describe("Admin Statistics API Boundary Tests", () => {
         return Promise.resolve(userCount);
       });
 
-      const response = await getStatistics(mockRequest);
+      const response = await GET(mockRequest);
       const data = await response.json();
 
       expect(response.status).toBe(200);
@@ -249,7 +249,7 @@ describe("Admin Statistics API Boundary Tests", () => {
   describe("Edge Cases - Performance", () => {
     it("should handle response timing", async () => {
       const startTime = Date.now();
-      const response = await getStatistics(mockRequest);
+      const response = await GET(mockRequest);
       const data = await response.json();
       const endTime = Date.now();
       const duration = endTime - startTime;
