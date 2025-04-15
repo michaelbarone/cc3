@@ -72,6 +72,12 @@ This document serves as the main project plan and tracks the status of all tasks
 - **Target**: 2025-04-15
 - **Progress**: 90% complete - Pending edge case testing
 
+### [Library and Test Directory Refactoring](/docs/working-memory/open/lib-test-refactor-20240405/.plan)
+- **Status**: Planning
+- **Priority**: High
+- **Dependencies**: Testing Framework Implementation, API Test Review
+- **Description**: Reorganizing library and test directories to improve maintainability and follow better practices
+
 ## Future Tasks
 
 ### Database Version Migration Support

@@ -1,0 +1,152 @@
+# Library and Test Directory Refactoring
+
+## Context
+Reorganizing library and test directories to improve maintainability and follow better practices.
+
+## Current Status
+### 2024-04-05 - Initial Plan
+**Status**: Planning
+
+- What's working: Initial analysis complete
+- What's not: Directory structure needs consolidation
+- Blocking issues: None
+- Next actions: Begin with test utilities consolidation
+
+## Goals
+1. Consolidate test helpers and utilities
+2. Reorganize library code structure
+3. Maintain test coverage during migration
+4. Update import paths across the codebase
+5. Document new structure for team reference
+
+## Implementation Plan
+
+### Phase 1: Test Utilities Consolidation
+- [ ] Create new test directory structure
+  ```
+  /test/
+  ├── utils/              # Shared test utilities
+  ├── mocks/              # All mock implementations
+  ├── fixtures/           # Test data and fixtures
+  ├── helpers/            # Test helper functions
+  ├── setup/             # Test setup files
+  └── e2e/               # E2E tests
+  ```
+- [ ] Audit existing test utilities
+  - [ ] Map current locations and usages
+  - [ ] Identify duplicates
+  - [ ] Document dependencies
+- [ ] Migrate test utilities
+  - [ ] Move `/app/lib/test` to `/test/helpers`
+  - [ ] Move `/test/utils` content to appropriate directories
+  - [ ] Update import paths
+  - [ ] Verify all tests pass
+- [ ] Move E2E tests
+  - [ ] Migrate `/e2e` to `/test/e2e`
+  - [ ] Update playwright config
+  - [ ] Verify E2E tests pass
+
+### Phase 2: Library Code Reorganization
+- [ ] Audit root `/lib` directory
+  - [ ] Document current usage
+  - [ ] Identify dependencies
+  - [ ] Plan migration path
+- [ ] Consolidate to `/app/lib`
+  - [ ] Move necessary code from root `/lib`
+  - [ ] Update import paths
+  - [ ] Remove root `/lib` directory
+- [ ] Verify structure
+  ```
+  /app/lib/
+  ├── auth/              # Authentication related code
+  ├── db/                # Database related code
+  ├── hooks/             # React hooks
+  ├── settings/          # App settings
+  ├── state/             # State management
+  ├── utils/             # Shared utilities
+  └── types.ts          # Shared types
+  ```
+
+### Phase 3: Import Path Updates
+- [ ] Create script to update import paths
+- [ ] Update paths in phases:
+  - [ ] Test utility imports
+  - [ ] Library imports
+  - [ ] Test file imports
+- [ ] Verify all imports resolve correctly
+- [ ] Run full test suite
+
+### Phase 4: Documentation
+- [ ] Update README.md with new structure
+- [ ] Document migration process
+- [ ] Update contribution guidelines
+- [ ] Create architecture diagram
+
+## Testing Strategy
+1. Before each move:
+   - Run full test suite
+   - Document current state
+   - Create backup branch
+
+2. After each move:
+   - Run full test suite
+   - Verify file paths
+   - Check import resolutions
+   - Validate functionality
+
+## Progress Tracking
+
+### Phase 1 Progress
+- [ ] Directory structure created
+- [ ] Test utilities audited
+- [ ] Utilities migrated
+- [ ] E2E tests moved
+- [ ] All tests passing
+
+### Phase 2 Progress
+- [ ] Root lib audited
+- [ ] Code consolidated
+- [ ] Structure verified
+- [ ] All tests passing
+
+### Phase 3 Progress
+- [ ] Import update script created
+- [ ] Paths updated
+- [ ] Imports verified
+- [ ] All tests passing
+
+### Phase 4 Progress
+- [ ] README updated
+- [ ] Migration documented
+- [ ] Guidelines updated
+- [ ] Diagram created
+
+## Dependencies
+- Testing Framework Implementation task
+- Current API Test Review task
+
+## Risks and Mitigations
+1. Risk: Breaking changes to import paths
+   - Mitigation: Phase updates and automated testing
+
+2. Risk: Test coverage gaps
+   - Mitigation: Comprehensive testing before/after each move
+
+3. Risk: Merge conflicts
+   - Mitigation: Coordinate with team, phase changes
+
+4. Risk: Performance impact
+   - Mitigation: Monitor build times and test execution
+
+## Success Criteria
+1. All tests pass after reorganization
+2. Build process completes successfully
+3. No duplicate utilities or helpers
+4. Clear, documented directory structure
+5. Team understands new organization
+
+## Notes
+- Keep changes small and incremental
+- Maintain constant communication with team
+- Document all decisions and changes
+- Regular backups and commit history
