@@ -5,39 +5,35 @@ import { Mock } from 'vitest';
  */
 
 /**
- * Debug a response object by logging its status, headers, and body
+ * Debug a response by logging its status and body
  */
-export async function debugResponse(response: Response) {
+export async function debugResponse(response: Response): Promise<void> {
   try {
-    // Log response details first
-    const status = response.status;
-    const statusText = response.statusText;
-    const headers = Object.fromEntries(response.headers.entries());
-
-    let body = '<body stream already consumed>';
-
-    // Only attempt to read body if response is clonable
-    if (response.bodyUsed === false) {
-      try {
-        const clone = response.clone();
-        body = await clone.text();
-        if (body.length > 1000) {
-          body = body.substring(0, 1000) + '...';
-        }
-      } catch (e) {
-        body = '<failed to read body: ' + (e as Error).message + '>';
-      }
+    // Get the response text
+    const text = await response.text();
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch {
+      data = text;
     }
 
-    console.log('Response Debug:', {
-      status,
-      statusText,
-      headers,
-      body,
-      bodyUsed: response.bodyUsed
+    // Create a new response with the same data
+    const newResponse = new Response(JSON.stringify(data), {
+      status: response.status,
+      statusText: response.statusText,
+      headers: response.headers,
     });
-  } catch (e) {
-    console.error('Failed to debug response:', e);
+
+    console.log("Response debug:", {
+      status: newResponse.status,
+      statusText: newResponse.statusText,
+      headers: Object.fromEntries(newResponse.headers.entries()),
+      body: typeof data === 'string' ? data : JSON.stringify(data, null, 2),
+      bodyUsed: false,
+    });
+  } catch (error) {
+    console.error("Failed to debug response:", error);
   }
 }
 
@@ -62,4 +58,12 @@ export function debugMockCalls(mockFn: Mock, name: string) {
     results: mockFn.mock.results,
     instances: mockFn.mock.instances
   });
+}
+
+/**
+ * Log the time taken for a test
+ */
+export function logTestTiming(testName: string, startTime: number): void {
+  const duration = performance.now() - startTime;
+  console.log(`Test timing - ${testName}: ${duration.toFixed(2)}ms`);
 }
