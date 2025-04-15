@@ -28,6 +28,7 @@ alwaysApply: true
 - Keep tests focused and isolated
 - Follow naming conventions from existing tests
 - Document complex test scenarios
+- ALWAYS run the test BEFORE editing to establish a baseline
 - ALWAYS run the test after you are done editing to ensure passing tests
 
 ## Test Structure Standards
