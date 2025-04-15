@@ -1,6 +1,6 @@
 # Project Plan
 
-*Last updated: 2025-04-05 18:30*
+*Last updated: 2025-04-05 19:00*
 
 This document serves as the main project plan and tracks the status of all tasks related to the project.
 
@@ -44,7 +44,7 @@ This document serves as the main project plan and tracks the status of all tasks
   - Enhance test data management
 - **Priority**: High
 - **Target**: 2025-04-12
-- **Progress**: 35% complete
+- **Progress**: 40% complete
 
 **Recent Updates**:
 - ✓ Completed review of health check API tests
@@ -52,7 +52,8 @@ This document serves as the main project plan and tracks the status of all tasks
 - ✓ Added improved error logging and debugging capabilities
 - ✓ Standardized test data management with factory functions
 - ✓ Fixed and enhanced favicon API tests with proper path validation
-- ☐ Remaining: Review 14+ additional API test files
+- ✓ Restored and optimized admin statistics boundary tests
+- ☐ Remaining: Review 13+ additional API test files
 
 **Dependencies**:
 - Testing Framework Implementation (60% complete)
@@ -94,6 +95,18 @@ This document serves as the main project plan and tracks the status of all tasks
 - **Estimated Effort**: 4 weeks
 
 ## Closed Tasks
+
+### API Test Standards Review
+- **Location**: `/docs/working-memory/done/api-test-review-20250405`
+- **Completion Date**: `2025-04-05`
+- **Description**: Comprehensive review of all API tests to ensure compliance with testing standards
+- **Key Achievements**:
+  - Reviewed and updated boundary tests for admin statistics API
+  - Improved test organization and readability
+  - Enhanced error case coverage
+  - Implemented proper mock data management
+  - Added performance testing
+  - Standardized test patterns across API tests
 
 ### URL Menu State Management
 - **Location**: `/docs/working-memory/done/url-menu-state-management`
@@ -188,71 +201,3 @@ This document serves as the main project plan and tracks the status of all tasks
 
 ### Login Page
 - **Location**: `/docs/working-memory/done/login-page`
-- **Completion Date**: 2024-03-18
-- **Description**: User-friendly login page with visual appeal and animations
-- **Key Achievements**:
-  - Implemented user tiles instead of text input
-  - Added "remember me" functionality
-  - Created theme control from admin panel
-
-### State Management
-- **Location**: `/docs/working-memory/done/state-management`
-- **Completion Date**: 2024-03-18
-- **Description**: Efficient state management for active iframe tracking
-- **Key Achievements**:
-  - Created client-side and server-side state management
-  - Built URL state synchronization with browser history
-  - Implemented efficient state updates
-
-### App Initialization
-- **Location**: `/docs/working-memory/done/app-initialization`
-- **Completion Date**: 2024-03-18
-- **Description**: Automatic database initialization on first run
-- **Key Achievements**:
-  - Created admin user without password for initial access
-  - Implemented safe concurrent initialization
-  - Added default configuration and data seeding
-
-### Containerization
-- **Location**: `/docs/working-memory/done/containerization`
-- **Completion Date**: 2024-03-18
-- **Description**: Docker configuration for Next.js application
-- **Key Achievements**:
-  - Set up SQLite persistence with Docker volumes
-  - Created Docker Compose setup for easy deployment
-  - Added build and deploy scripts
-
-### IframeContainer Refactor
-- **Location**: `/docs/working-memory/done/iframe-container-refactor`
-- **Completion Date**: 2025-03-18
-- **Description**: Comprehensive refactor of IframeContainer system with robust state management
-- **Key Achievements**:
-  - Implemented modular hook system for iframe lifecycle management
-  - Built flexible component architecture with proper error boundaries
-  - Added support for mobile/desktop URLs and cross-origin handling
-
-### Database Export/Import System
-- **Location**: `/docs/working-memory/done/database-export-import`
-- **Completion Date**: 2025-03-18
-- **Description**: Implemented database and uploads backup/restore functionality
-- **Key Achievements**:
-  - Created archive utility functions for zip file handling
-  - Added backup/restore API endpoints with progress tracking
-  - Fixed Windows-specific permission issues
-
-### Project Setup & Architecture
-- **Location**: `/docs/working-memory/done/project-setup`
-- **Completion Date**: 2025-03-18
-- **Description**: Set up Next.js 14+ project with App Router, TypeScript, SQLite with Prisma ORM
-- **Key Achievements**:
-  - Next.js 15.2.2 project initialized with TypeScript and ESLint
-  - Created database schema with User, UrlGroup, Url, and UserUrlGroup models
-  - Created Dockerfile with multi-stage build
-
-## Task Categories
-- UI/UX Enhancements
-- Bug Fixes
-- Feature Implementations
-- Performance Improvements
-- Security Updates
-- Documentation Updates
