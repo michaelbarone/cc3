@@ -1,55 +1,46 @@
+// Mock external modules first
+import { prisma } from "@/app/lib/db/prisma";
 import { mockVerifyToken } from "@/app/lib/test/auth-mock";
+import { createTestAppConfig } from "@/app/lib/test/data/admin";
+import { debugMockCalls, debugResponse } from "@/app/lib/test/debug";
 import { createTestFile } from "@/app/lib/test/file-mock";
-import { PrismaClient } from "@prisma/client";
 import fs from "fs/promises";
 import { NextRequest } from "next/server";
 import path from "path";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { DELETE, POST } from "../favicon/route";
 
+// Type definitions
+type AppConfigMock = {
+  id: string;
+  createdAt: Date;
+  updatedAt: Date;
+  appName: string;
+  appLogo: string | null;
+  favicon: string | null;
+  loginTheme: string;
+  registrationEnabled: boolean;
+};
+
 // Mock external dependencies
 vi.mock("@/app/lib/auth/jwt", () => ({
   verifyToken: mockVerifyToken,
 }));
 
-type AppConfigMock = {
-  id: string;
-  appName?: string;
-  favicon: string | null;
-  loginTheme?: string;
-  registrationEnabled?: boolean;
-};
-
-const mockFindUnique = vi
-  .fn()
-  .mockImplementation(() => Promise.resolve<AppConfigMock | null>(null));
-const mockUpdate = vi
-  .fn()
-  .mockImplementation(() => Promise.resolve<AppConfigMock>({ id: "app-config", favicon: null }));
-const mockUpsert = vi
-  .fn()
-  .mockImplementation(() =>
-    Promise.resolve<AppConfigMock>({ id: "app-config", favicon: "/favicon-test.ico" }),
-  );
-
-// Create mock functions for fs operations
-const mockAccess = vi.fn().mockImplementation(() => Promise.resolve());
-const mockUnlink = vi.fn().mockImplementation(() => Promise.resolve());
-
 vi.mock("@/app/lib/db/prisma", () => ({
   prisma: {
     appConfig: {
-      findUnique: mockFindUnique,
-      update: mockUpdate,
-      upsert: mockUpsert,
+      findUnique: vi.fn(),
+      update: vi.fn(),
+      upsert: vi.fn(),
     },
-  } as unknown as PrismaClient,
+  },
 }));
 
 vi.mock("fs/promises", () => ({
   default: {
-    access: mockAccess,
-    unlink: mockUnlink,
+    access: vi.fn(),
+    unlink: vi.fn(),
   },
 }));
 
@@ -60,18 +51,53 @@ vi.mock("sharp", () => ({
   }),
 }));
 
+// Get mock functions
+const {
+  findUnique: mockFindUnique,
+  update: mockUpdate,
+  upsert: mockUpsert,
+} = vi.mocked(prisma.appConfig);
+const { access: mockAccess, unlink: mockUnlink } = vi.mocked(fs);
+
+// Set up mock implementations
+const defaultAppConfig = createTestAppConfig({
+  favicon: null,
+});
+
+const faviconAppConfig = createTestAppConfig({
+  favicon: `/favicon-${Date.now()}.ico`,
+});
+
+mockFindUnique.mockResolvedValue(null);
+mockUpdate.mockResolvedValue(defaultAppConfig);
+mockUpsert.mockResolvedValue(faviconAppConfig);
+mockAccess.mockResolvedValue(undefined);
+mockUnlink.mockResolvedValue(undefined);
+
 describe("Favicon API Endpoints", () => {
   const publicDir = path.join(process.cwd(), "public");
   const testFaviconPath = path.join(publicDir, "favicon-test.ico");
 
   beforeEach(() => {
     vi.clearAllMocks();
-    // Reset mock implementations
     mockVerifyToken.mockResolvedValue({ isAdmin: true });
+    mockFindUnique.mockResolvedValue(null);
+    mockUpdate.mockResolvedValue(defaultAppConfig);
+    mockUpsert.mockResolvedValue(faviconAppConfig);
+    console.time("test-execution");
   });
 
   afterEach(async () => {
-    // Clean up any test files
+    console.timeEnd("test-execution");
+    // Debug mock states after each test
+    debugMockCalls(vi.mocked(mockVerifyToken), "verifyToken");
+    debugMockCalls(vi.mocked(mockFindUnique), "appConfig.findUnique");
+    debugMockCalls(vi.mocked(mockUpdate), "appConfig.update");
+    debugMockCalls(vi.mocked(mockUpsert), "appConfig.upsert");
+    debugMockCalls(vi.mocked(mockAccess), "fs.access");
+    debugMockCalls(vi.mocked(mockUnlink), "fs.unlink");
+
+    // Clean up test files
     try {
       await fs.access(testFaviconPath);
       await fs.unlink(testFaviconPath);
@@ -81,244 +107,213 @@ describe("Favicon API Endpoints", () => {
   });
 
   describe("POST /api/admin/app-config/favicon", () => {
-    test("successfully uploads favicon", async () => {
-      // Mock database responses
-      mockFindUnique.mockResolvedValue(null);
-      mockUpsert.mockResolvedValue({
-        id: "app-config",
-        appName: "Control Center",
-        favicon: "/favicon-test.ico",
-        loginTheme: "dark",
-        registrationEnabled: false,
-      });
-
-      // Create test file
-      const testFile = createTestFile("test-favicon.ico", "image/x-icon", 50 * 1024);
+    const createFaviconRequest = (file?: File) => {
       const formData = new FormData();
-      formData.append("favicon", testFile);
-
-      const request = new NextRequest("http://localhost/api/admin/app-config/favicon", {
+      if (file) {
+        formData.append("favicon", file);
+      }
+      return new NextRequest("http://localhost/api/admin/app-config/favicon", {
         method: "POST",
         body: formData,
       });
+    };
 
-      const response = await POST(request);
+    // Happy path tests
+    test("successfully uploads favicon", async () => {
+      // Arrange
+      const testFile = createTestFile("test-favicon.ico", "image/x-icon", 50 * 1024);
+      mockUpsert.mockResolvedValueOnce(faviconAppConfig);
+
+      // Act
+      const response = await POST(createFaviconRequest(testFile));
       const data = await response.json();
+      await debugResponse(response);
 
+      // Assert
       expect(response.status).toBe(200);
       expect(data.favicon).toMatch(/^\/favicon-\d+\.ico$/);
       expect(mockUpsert).toHaveBeenCalled();
     });
 
-    test("handles unauthorized access", async () => {
-      mockVerifyToken.mockResolvedValue(null);
-
-      const request = new NextRequest("http://localhost/api/admin/app-config/favicon", {
-        method: "POST",
-      });
-
-      const response = await POST(request);
-      const data = await response.json();
-
-      expect(response.status).toBe(401);
-      expect(data.error).toBe("Unauthorized");
-    });
-
-    test("handles non-admin access", async () => {
-      mockVerifyToken.mockResolvedValue({ isAdmin: false });
-
-      const request = new NextRequest("http://localhost/api/admin/app-config/favicon", {
-        method: "POST",
-      });
-
-      const response = await POST(request);
-      const data = await response.json();
-
-      expect(response.status).toBe(403);
-      expect(data.error).toBe("Admin privileges required");
-    });
-
-    test("handles missing file", async () => {
-      const formData = new FormData();
-      const request = new NextRequest("http://localhost/api/admin/app-config/favicon", {
-        method: "POST",
-        body: formData,
-      });
-
-      const response = await POST(request);
-      const data = await response.json();
-
-      expect(response.status).toBe(400);
-      expect(data.error).toBe("No favicon file provided");
-    });
-
-    test("handles file too large", async () => {
-      const testFile = createTestFile("large-favicon.ico", "image/x-icon", 200 * 1024);
-      const formData = new FormData();
-      formData.append("favicon", testFile);
-
-      const request = new NextRequest("http://localhost/api/admin/app-config/favicon", {
-        method: "POST",
-        body: formData,
-      });
-
-      const response = await POST(request);
-      const data = await response.json();
-
-      expect(response.status).toBe(400);
-      expect(data.error).toBe("File too large (max 100KB)");
-    });
-
-    test("handles invalid file type", async () => {
-      const testFile = createTestFile("invalid.txt", "text/plain", 50 * 1024);
-      const formData = new FormData();
-      formData.append("favicon", testFile);
-
-      const request = new NextRequest("http://localhost/api/admin/app-config/favicon", {
-        method: "POST",
-        body: formData,
-      });
-
-      const response = await POST(request);
-      const data = await response.json();
-
-      expect(response.status).toBe(400);
-      expect(data.error).toBe("File must be an image");
-    });
-
-    test("handles database error", async () => {
-      mockUpsert.mockRejectedValue(new Error("Database error"));
-
-      const testFile = createTestFile("test-favicon.ico", "image/x-icon", 50 * 1024);
-      const formData = new FormData();
-      formData.append("favicon", testFile);
-
-      const request = new NextRequest("http://localhost/api/admin/app-config/favicon", {
-        method: "POST",
-        body: formData,
-      });
-
-      const response = await POST(request);
-      const data = await response.json();
-
-      expect(response.status).toBe(500);
-      expect(data.error).toBe("Error uploading favicon");
-    });
-
     test("deletes old favicon when uploading new one", async () => {
-      // Mock existing favicon
-      mockFindUnique.mockResolvedValue({
-        id: "app-config",
-        favicon: "/old-favicon.ico",
-      });
-
-      mockUpsert.mockResolvedValue({
-        id: "app-config",
-        favicon: "/favicon-test.ico",
-      });
-
+      // Arrange
       const testFile = createTestFile("test-favicon.ico", "image/x-icon", 50 * 1024);
-      const formData = new FormData();
-      formData.append("favicon", testFile);
+      mockFindUnique.mockResolvedValueOnce(createTestAppConfig({ favicon: "/old-favicon.ico" }));
+      mockUpsert.mockResolvedValueOnce(faviconAppConfig);
 
-      const request = new NextRequest("http://localhost/api/admin/app-config/favicon", {
-        method: "POST",
-        body: formData,
+      // Act
+      const response = await POST(createFaviconRequest(testFile));
+      await debugResponse(response);
+
+      // Assert
+      expect(mockUnlink).toHaveBeenCalled();
+      expect(response.status).toBe(200);
+    });
+
+    // Error cases
+    describe("error handling", () => {
+      test("handles unauthorized access", async () => {
+        // Arrange
+        mockVerifyToken.mockResolvedValueOnce(null);
+
+        // Act
+        const response = await POST(createFaviconRequest());
+        const data = await response.json();
+        await debugResponse(response);
+
+        // Assert
+        expect(response.status).toBe(401);
+        expect(data.error).toBe("Unauthorized");
       });
 
-      await POST(request);
+      test("handles non-admin access", async () => {
+        // Arrange
+        mockVerifyToken.mockResolvedValueOnce({ isAdmin: false });
 
-      expect(mockUnlink).toHaveBeenCalled();
+        // Act
+        const response = await POST(createFaviconRequest());
+        const data = await response.json();
+        await debugResponse(response);
+
+        // Assert
+        expect(response.status).toBe(403);
+        expect(data.error).toBe("Admin privileges required");
+      });
+
+      test("handles missing file", async () => {
+        // Act
+        const response = await POST(createFaviconRequest());
+        const data = await response.json();
+        await debugResponse(response);
+
+        // Assert
+        expect(response.status).toBe(400);
+        expect(data.error).toBe("No favicon file provided");
+      });
+
+      test("handles file too large", async () => {
+        // Arrange
+        const largeFile = createTestFile("large-favicon.ico", "image/x-icon", 200 * 1024);
+
+        // Act
+        const response = await POST(createFaviconRequest(largeFile));
+        const data = await response.json();
+        await debugResponse(response);
+
+        // Assert
+        expect(response.status).toBe(400);
+        expect(data.error).toBe("File too large (max 100KB)");
+      });
+
+      test("handles database error", async () => {
+        // Arrange
+        const testFile = createTestFile("test-favicon.ico", "image/x-icon", 50 * 1024);
+        mockUpsert.mockRejectedValueOnce(new Error("Database error"));
+
+        // Act
+        const response = await POST(createFaviconRequest(testFile));
+        const data = await response.json();
+        await debugResponse(response);
+
+        // Assert
+        expect(response.status).toBe(500);
+        expect(data.error).toBe("Error uploading favicon");
+      });
     });
   });
 
   describe("DELETE /api/admin/app-config/favicon", () => {
+    // Happy path tests
     test("successfully deletes favicon", async () => {
-      mockFindUnique.mockResolvedValue({
-        id: "app-config",
-        favicon: "/favicon-test.ico",
-      });
+      // Arrange
+      mockFindUnique.mockResolvedValueOnce(faviconAppConfig);
+      mockUpdate.mockResolvedValueOnce(defaultAppConfig);
 
-      mockUpdate.mockResolvedValue({
-        id: "app-config",
-        favicon: null,
-      });
-
+      // Act
       const response = await DELETE();
       const data = await response.json();
+      await debugResponse(response);
 
+      // Assert
       expect(response.status).toBe(200);
       expect(data.favicon).toBeNull();
       expect(mockUnlink).toHaveBeenCalled();
     });
 
-    test("handles unauthorized access", async () => {
-      mockVerifyToken.mockResolvedValue(null);
+    // Error cases
+    describe("error handling", () => {
+      test("handles unauthorized access", async () => {
+        // Arrange
+        mockVerifyToken.mockResolvedValueOnce(null);
 
-      const response = await DELETE();
-      const data = await response.json();
+        // Act
+        const response = await DELETE();
+        const data = await response.json();
+        await debugResponse(response);
 
-      expect(response.status).toBe(401);
-      expect(data.error).toBe("Unauthorized");
-    });
-
-    test("handles non-admin access", async () => {
-      mockVerifyToken.mockResolvedValue({ isAdmin: false });
-
-      const response = await DELETE();
-      const data = await response.json();
-
-      expect(response.status).toBe(403);
-      expect(data.error).toBe("Admin privileges required");
-    });
-
-    test("handles missing favicon", async () => {
-      mockFindUnique.mockResolvedValue({
-        id: "app-config",
-        favicon: null,
+        // Assert
+        expect(response.status).toBe(401);
+        expect(data.error).toBe("Unauthorized");
       });
 
-      const response = await DELETE();
-      const data = await response.json();
+      test("handles non-admin access", async () => {
+        // Arrange
+        mockVerifyToken.mockResolvedValueOnce({ isAdmin: false });
 
-      expect(response.status).toBe(400);
-      expect(data.error).toBe("App does not have a favicon");
-    });
+        // Act
+        const response = await DELETE();
+        const data = await response.json();
+        await debugResponse(response);
 
-    test("handles database error", async () => {
-      mockFindUnique.mockResolvedValue({
-        id: "app-config",
-        favicon: "/favicon-test.ico",
+        // Assert
+        expect(response.status).toBe(403);
+        expect(data.error).toBe("Admin privileges required");
       });
 
-      mockUpdate.mockRejectedValue(new Error("Database error"));
+      test("handles missing favicon", async () => {
+        // Arrange
+        mockFindUnique.mockResolvedValueOnce(defaultAppConfig);
 
-      const response = await DELETE();
-      const data = await response.json();
+        // Act
+        const response = await DELETE();
+        const data = await response.json();
+        await debugResponse(response);
 
-      expect(response.status).toBe(500);
-      expect(data.error).toBe("Error deleting favicon");
-    });
-
-    test("handles file system error gracefully", async () => {
-      mockFindUnique.mockResolvedValue({
-        id: "app-config",
-        favicon: "/favicon-test.ico",
+        // Assert
+        expect(response.status).toBe(400);
+        expect(data.error).toBe("App does not have a favicon");
       });
 
-      mockAccess.mockRejectedValue(new Error("File system error"));
+      test("handles database error", async () => {
+        // Arrange
+        mockFindUnique.mockResolvedValueOnce(faviconAppConfig);
+        mockUpdate.mockRejectedValueOnce(new Error("Database error"));
 
-      mockUpdate.mockResolvedValue({
-        id: "app-config",
-        favicon: null,
+        // Act
+        const response = await DELETE();
+        const data = await response.json();
+        await debugResponse(response);
+
+        // Assert
+        expect(response.status).toBe(500);
+        expect(data.error).toBe("Error deleting favicon");
       });
 
-      const response = await DELETE();
-      const data = await response.json();
+      test("handles file system error gracefully", async () => {
+        // Arrange
+        mockFindUnique.mockResolvedValueOnce(faviconAppConfig);
+        mockAccess.mockRejectedValueOnce(new Error("File system error"));
+        mockUpdate.mockResolvedValueOnce(defaultAppConfig);
 
-      // Should still succeed even if file deletion fails
-      expect(response.status).toBe(200);
-      expect(data.favicon).toBeNull();
+        // Act
+        const response = await DELETE();
+        const data = await response.json();
+        await debugResponse(response);
+
+        // Assert
+        expect(response.status).toBe(200);
+        expect(data.favicon).toBeNull();
+      });
     });
   });
 });

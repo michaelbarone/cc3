@@ -67,7 +67,6 @@ export function useLongPress({
     ) {
       onClick();
     }
-    console.log("handleClick" + JSON.stringify(pressTimer.current));
 
     if (pressTimer.current !== null) {
       window.clearInterval(pressTimer.current);

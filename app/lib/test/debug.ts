@@ -8,21 +8,37 @@ import { Mock } from 'vitest';
  * Debug a response object by logging its status, headers, and body
  */
 export async function debugResponse(response: Response) {
-  // Log response details first
-  const status = response.status;
-  const statusText = response.statusText;
-  const headers = Object.fromEntries(response.headers.entries());
+  try {
+    // Log response details first
+    const status = response.status;
+    const statusText = response.statusText;
+    const headers = Object.fromEntries(response.headers.entries());
 
-  // Clone for body reading
-  const clone = response.clone();
-  const body = await clone.text();
+    let body = '<body stream already consumed>';
 
-  console.log('Response Debug:', {
-    status,
-    statusText,
-    headers,
-    body: body.length > 1000 ? body.substring(0, 1000) + '...' : body
-  });
+    // Only attempt to read body if response is clonable
+    if (response.bodyUsed === false) {
+      try {
+        const clone = response.clone();
+        body = await clone.text();
+        if (body.length > 1000) {
+          body = body.substring(0, 1000) + '...';
+        }
+      } catch (e) {
+        body = '<failed to read body: ' + (e as Error).message + '>';
+      }
+    }
+
+    console.log('Response Debug:', {
+      status,
+      statusText,
+      headers,
+      body,
+      bodyUsed: response.bodyUsed
+    });
+  } catch (e) {
+    console.error('Failed to debug response:', e);
+  }
 }
 
 /**
