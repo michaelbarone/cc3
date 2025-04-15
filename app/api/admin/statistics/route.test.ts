@@ -1,3 +1,4 @@
+import { debugMockCalls } from "@/app/lib/test/debug";
 import type { PrismaClient } from "@prisma/client";
 import { cookies } from "next/headers";
 import { NextRequest } from "next/server";
@@ -154,10 +155,9 @@ describe("Statistics API Endpoints", () => {
       } catch (error) {
         console.error("Test failed:", {
           error,
-          request: mockRequest,
           mockState: {
-            prisma: prisma.user.aggregate.mock.calls,
-            auth: verifyToken.mock.calls,
+            prisma: debugMockCalls(prisma.user.aggregate as any, "user.aggregate"),
+            auth: debugMockCalls(verifyToken as any, "verifyToken"),
           },
         });
         throw error;
@@ -198,9 +198,9 @@ describe("Statistics API Endpoints", () => {
         console.error("Test failed:", {
           error,
           mockState: {
-            userCount: prisma.user.count.mock.calls,
-            urlGroupCount: prisma.urlGroup.count.mock.calls,
-            urlCount: prisma.url.count.mock.calls,
+            userCount: debugMockCalls(prisma.user.count as any, "user.count"),
+            urlGroupCount: debugMockCalls(prisma.urlGroup.count as any, "urlGroup.count"),
+            urlCount: debugMockCalls(prisma.url.count as any, "url.count"),
           },
         });
         throw error;
@@ -299,7 +299,7 @@ describe("Statistics API Endpoints", () => {
         console.error("Test failed:", {
           error,
           mockState: {
-            userCount: prisma.user.count.mock.calls,
+            userCount: debugMockCalls(prisma.user.count as any, "user.count"),
           },
         });
         throw error;
