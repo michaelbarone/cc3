@@ -121,7 +121,7 @@ describe("App Logo API", () => {
 
       const response = await GET();
       const data = await response.json();
-      await debugResponse(response.clone());
+      await debugResponse(response);
 
       expect(response.status).toBe(404);
       expect(data).toEqual({ error: "No logo found" });

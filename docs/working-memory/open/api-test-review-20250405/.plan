@@ -56,15 +56,15 @@ Reviewing all API tests to ensure they follow our testing standards and best pra
 ### URL Management
 1. Admin URL Groups
    - [X] `app/api/admin/url-groups/route.test.ts`
-   - [ ] `app/api/admin/url-groups/[id]/route.test.ts`
-   - [ ] `app/api/admin/urls/route.test.ts`
-   - [ ] `app/api/url-groups/route.test.ts`
+   - [X] `app/api/admin/url-groups/[id]/route.test.ts`
+   - [X] `app/api/admin/urls/route.test.ts`
+   - [X] `app/api/url-groups/route.test.ts`
 
 ### Fixture vs Prisma Mock Usage Review
-- [ ] Review all API test files for correct mock usage:
-  - [ ] Should use fixtures for API response validation
-  - [ ] Should use prisma mocks only for service layer tests
-  - [ ] Update any tests using incorrect mocking strategy
+- [x] Review all API test files for correct mock usage:
+  - [x] Should use fixtures for API response validation
+  - [x] Should use prisma mocks only for service layer tests
+  - [x] Update any tests using incorrect mocking strategy
 
 #### Files to Check
 1. Admin API Tests
@@ -93,10 +93,42 @@ Reviewing all API tests to ensure they follow our testing standards and best pra
    - [ ] `app/api/url-groups/route.test.ts`
 
 #### Review Criteria
-- [ ] Check if test is validating API response shape
-- [ ] Check if test is using correct fixture factories
-- [ ] Check if any prisma mocks can be replaced with fixtures
-- [ ] Document any patterns found for future reference
+1. Mock-setup and standards usage
+   - [ ] Check if test is validating API response shape
+   - [ ] Check if test is using correct fixture factories
+   - [ ] Check if any prisma mocks can be replaced with fixtures
+   - [ ] Document any patterns found for future reference
+
+2. File Organization
+   - [ ] Proper import organization
+   - [ ] Clear mock setup
+   - [ ] Uses beforeEach for cleanup
+   - [ ] Well-organized test cases
+   - [ ] Follows AAA pattern
+
+3. Prisma Testing
+   - [ ] Proper Prisma client mocking
+   - [ ] Clear mock implementations
+   - [ ] Proper error handling
+   - [ ] Transaction testing if needed
+
+4. Test Data Management
+   - [ ] Proper test data organization
+   - [ ] Cleanup after tests if needed
+   - [ ] Clear test data setup
+   - [ ] Isolation between tests
+
+5. Debugging Capabilities
+   - [ ] Error logging
+   - [ ] Response debugging
+   - [ ] Mock state logging
+   - [ ] Test timing information
+
+6. Performance
+   - [ ] Efficient test setup
+   - [ ] No unnecessary mocks
+   - [ ] Proper cleanup
+   - [ ] Response time assertions where needed
 
 ## Standards to Check For Each Test
 
@@ -283,6 +315,13 @@ Reviewing all API tests to ensure they follow our testing standards and best pra
   - Linter errors with JwtPayload type in mock implementations
   - Need guidance on proper typing for verifyToken mock
 - ⏭️ Next: Need assistance with resolving linter errors before proceeding
+
+### 2025-04-15 21:00 - Fixture Usage Review Started
+- ✓ Reviewed and updated app/api/admin/app-config/route.test.ts
+- ✓ Replaced hardcoded mock config with createTestAppConfig fixture
+- ✓ Maintained proper error handling and debugging
+- ✓ Verified all tests still passing
+- ⏭️ Next: Review app/api/admin/app-config/logo/route.test.ts
 
 ## Dependencies
 - Testing Framework Implementation task
