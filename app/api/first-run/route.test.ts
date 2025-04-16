@@ -1,7 +1,8 @@
 import { GET as getFirstRunStatus } from "@/app/api/auth/first-run/route";
 import { POST as restoreBackup } from "@/app/api/first-run/restore/route";
+import { restoreBackup as restoreBackupUtil } from "@/app/lib/archive/archive";
 import { prisma } from "@/app/lib/db/prisma";
-import { restoreBackup as restoreBackupUtil } from "@/lib/archive";
+import { debugResponse, measureTestTime } from "@/test/utils/helpers/debug";
 import fs from "fs/promises";
 import { NextRequest } from "next/server";
 import path from "path";
@@ -46,27 +47,33 @@ describe("First Run API", () => {
 
   describe("GET /api/auth/first-run", () => {
     it("returns true when exactly one admin user exists who has never logged in", async () => {
+      const testTimer = measureTestTime();
       const mockFindMany = vi.fn().mockResolvedValueOnce([createMockUser({ lastLoginAt: null })]);
       vi.mocked(prisma.user.findMany).mockImplementation(mockFindMany);
 
       const response = await getFirstRunStatus();
+      await debugResponse(response);
       const data = await response.json();
 
       expect(response.status).toBe(200);
       expect(data).toEqual({ isFirstRun: true });
+      testTimer.end();
     });
 
     it("returns false when admin user has logged in", async () => {
+      const testTimer = measureTestTime();
       const mockFindMany = vi
         .fn()
         .mockResolvedValueOnce([createMockUser({ lastLoginAt: new Date() })]);
       vi.mocked(prisma.user.findMany).mockImplementation(mockFindMany);
 
       const response = await getFirstRunStatus();
+      await debugResponse(response);
       const data = await response.json();
 
       expect(response.status).toBe(200);
       expect(data).toEqual({ isFirstRun: false });
+      testTimer.end();
     });
 
     it("returns false when multiple users exist", async () => {
@@ -99,14 +106,17 @@ describe("First Run API", () => {
     });
 
     it("handles database errors gracefully", async () => {
+      const testTimer = measureTestTime();
       const mockFindMany = vi.fn().mockRejectedValueOnce(new Error("Database error"));
       vi.mocked(prisma.user.findMany).mockImplementation(mockFindMany);
 
       const response = await getFirstRunStatus();
+      await debugResponse(response);
       const data = await response.json();
 
       expect(response.status).toBe(500);
       expect(data).toEqual({ error: "Internal server error" });
+      testTimer.end();
     });
   });
 
@@ -123,6 +133,7 @@ describe("First Run API", () => {
     });
 
     it("restores backup during first run", async () => {
+      const testTimer = measureTestTime();
       const mockFindMany = vi.fn().mockResolvedValueOnce([createMockUser({ lastLoginAt: null })]);
       vi.mocked(prisma.user.findMany).mockImplementation(mockFindMany);
 
@@ -132,15 +143,18 @@ describe("First Run API", () => {
       });
 
       const response = await restoreBackup(request);
+      await debugResponse(response);
       const data = await response.json();
 
       expect(response.status).toBe(200);
       expect(data).toEqual({ success: true });
       expect(restoreBackupUtil).toHaveBeenCalled();
       expect(fs.unlink).toHaveBeenCalled(); // Verify cleanup
+      testTimer.end();
     });
 
     it("returns 403 when not in first run state", async () => {
+      const testTimer = measureTestTime();
       const mockFindMany = vi
         .fn()
         .mockResolvedValueOnce([createMockUser({ lastLoginAt: new Date() })]);
@@ -152,10 +166,12 @@ describe("First Run API", () => {
       });
 
       const response = await restoreBackup(request);
+      await debugResponse(response);
       const data = await response.json();
 
       expect(response.status).toBe(403);
       expect(data).toEqual({ error: "Restore is only available during first run" });
+      testTimer.end();
     });
 
     it("returns 400 when no backup file provided", async () => {
@@ -196,6 +212,7 @@ describe("First Run API", () => {
     });
 
     it("handles restore errors gracefully", async () => {
+      const testTimer = measureTestTime();
       const mockFindMany = vi.fn().mockResolvedValueOnce([createMockUser({ lastLoginAt: null })]);
       vi.mocked(prisma.user.findMany).mockImplementation(mockFindMany);
 
@@ -207,11 +224,13 @@ describe("First Run API", () => {
       });
 
       const response = await restoreBackup(request);
+      await debugResponse(response);
       const data = await response.json();
 
       expect(response.status).toBe(400);
       expect(data).toEqual({ error: "Restore failed" });
       expect(fs.unlink).toHaveBeenCalled(); // Verify cleanup still happens
+      testTimer.end();
     });
   });
 });

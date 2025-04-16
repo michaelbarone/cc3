@@ -1,16 +1,15 @@
 import { GET } from "@/app/api/admin/statistics/route";
-import { debugMockCalls, logTestTiming } from "@/test/helpers/debug";
+import { debugMockCalls, logTestTiming } from "@/test/utils/helpers/debug";
 import type { PrismaClient } from "@prisma/client";
 import { cookies } from "next/headers";
 import { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { DeepMockProxy } from "vitest-mock-extended";
 
+import { GET as getBasicStats } from "@/app/api/admin/stats/route";
 import { verifyToken } from "@/app/lib/auth/jwt";
 import { prisma } from "@/app/lib/db/prisma";
-import { createMockUser as oldCreateMockUser } from "@/app/lib/test/factories";
-
-import { GET as getBasicStats } from "@/app/api/admin/stats/route";
+import { createMockUser } from "@/test/utils/mocks/prisma";
 
 // Mock the auth token verification
 vi.mock("@/app/lib/auth/jwt", () => ({
@@ -49,8 +48,8 @@ vi.mock("next/headers", () => ({
 
 describe("Statistics API Endpoints", () => {
   let mockRequest: NextRequest;
-  const mockAdminUser = oldCreateMockUser({ isAdmin: true });
-  const mockRegularUser = oldCreateMockUser({ isAdmin: false });
+  const mockAdminUser = createMockUser({ isAdmin: true });
+  const mockRegularUser = createMockUser({ isAdmin: false });
 
   beforeEach(() => {
     vi.clearAllMocks();

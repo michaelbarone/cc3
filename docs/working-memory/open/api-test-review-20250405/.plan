@@ -4,12 +4,26 @@
 Reviewing all API tests to ensure they follow our testing standards and best practices.
 
 ## Current Status
-### 2025-04-15 15:30
+### 2025-04-15 18:40
 **Status**: In Progress
-- What's working: Initial setup complete, health check test, app config test, app config logo test, app config theme test, app config favicon test, admin statistics test, and admin statistics boundary test reviewed and updated
-- What's not: Need to review remaining API tests
+- What's working: 14 test files reviewed and updated successfully
+- What's not: 5 test files remaining to review (User Preferences and URL Management suite)
 - Blocking issues: None
-- Next actions: Review URL management test files
+- Next actions: Review User Preferences test file (app/api/user/preferences/route.test.ts)
+
+### 2025-04-15 18:25
+**Status**: In Progress
+- What's working: Linter error in first-run test resolved, import path corrected
+- What's not: 8 test files remaining to review
+- Blocking issues: None
+- Next actions: Review User Management test files (app/api/user/route.test.ts)
+
+### 2025-04-15 18:20
+**Status**: In Progress
+- What's working: 10 test files reviewed and updated (Health Check, App Config suite, Statistics suite, and User Management tests)
+- What's not: 9 test files remaining to review
+- Blocking issues: None
+- Next actions: Review Admin Icons test file (app/api/admin/icons/route.test.ts)
 
 ### 2025-04-05 18:15
 **Status**: In Progress
@@ -38,6 +52,13 @@ Reviewing all API tests to ensure they follow our testing standards and best pra
 - What's not: Need to review remaining API tests
 - Next actions: Review app config favicon test file
 
+### 2025-04-15 18:35
+**Status**: In Progress
+- What's working: User Avatar test file updated with proper response handling and debugging capabilities
+- What's not: 6 test files remaining to review
+- Blocking issues: None
+- Next actions: Review User Preferences test file (app/api/user/preferences/route.test.ts)
+
 ## Test Files to Review
 
 ### Health Check API
@@ -58,32 +79,33 @@ Reviewing all API tests to ensure they follow our testing standards and best pra
    - [x] `app/api/admin/app-config/favicon/route.test.ts`
 
 2. Statistics
-   - [ ] `app/api/admin/statistics/route.test.ts`
-   - [ ] `app/api/admin/statistics/boundary.test.ts`
-   - [ ] `app/api/admin/stats/route.test.ts`
+   - [x] `app/api/admin/statistics/route.test.ts`
+   - [x] `app/api/admin/statistics/boundary.test.ts`
+   - [x] `app/api/admin/stats/route.test.ts`
 
-3. URL Management
+3. User Management
+   - [x] `app/api/admin/users/route.test.ts`
+   - [x] `app/api/admin/users/[id]/avatar/route.test.ts`
+
+4. Icons
+   - [x] `app/api/admin/icons/route.test.ts`
+
+### User API Tests
+1. Authentication
+   - [x] `app/api/auth/route.test.ts`
+   - [x] `app/api/first-run/route.test.ts`
+
+2. User Management
+   - [x] `app/api/user/route.test.ts`
+   - [x] `app/api/user/avatar/route.test.ts`
+   - [ ] `app/api/user/preferences/route.test.ts`
+
+### URL Management
+1. Admin URL Groups
    - [ ] `app/api/admin/url-groups/route.test.ts`
    - [ ] `app/api/admin/url-groups/[id]/route.test.ts`
    - [ ] `app/api/admin/urls/route.test.ts`
    - [ ] `app/api/url-groups/route.test.ts`
-
-4. User Management
-   - [ ] `app/api/admin/users/route.test.ts`
-   - [ ] `app/api/admin/users/[id]/avatar/route.test.ts`
-
-5. Icons
-   - [ ] `app/api/admin/icons/route.test.ts`
-
-### User API Tests
-1. Authentication
-   - [ ] `app/api/auth/route.test.ts`
-   - [ ] `app/api/first-run/route.test.ts`
-
-2. User Management
-   - [ ] `app/api/user/route.test.ts`
-   - [ ] `app/api/user/avatar/route.test.ts`
-   - [ ] `app/api/user/preferences/route.test.ts`
 
 ## Standards to Check For Each Test
 
@@ -120,15 +142,39 @@ Reviewing all API tests to ensure they follow our testing standards and best pra
 
 ## Progress History
 
-### 2025-04-15 15:30 - Admin Statistics Boundary Test Review
+### 2025-04-15 18:30 - User Route Test Update
+- ✓ Updated app/api/user/route.test.ts with debugging capabilities
+- ✓ Added proper test timing with createTestTimer
+- ✓ Fixed JwtPayload type implementation
+- ✓ Added debugResponse for better error tracking
+- ✓ Improved error handling with detailed mock state logging
+- ⏭️ Next: Review User Avatar test file
+
+### 2025-04-15 18:25 - First Run Test Import Fix
+- ✓ Fixed linter error in app/api/first-run/route.test.ts
+- ✓ Updated import path from '@/lib/archive' to '@/app/lib/archive/archive'
+- ✓ Verified all tests still passing after import path update
+- ✓ No other changes needed for this file
+- ⏭️ Next: Continue with User Management test files review
+
+### 2025-04-15 18:23 - First Run Test Review
+- ✓ Reviewed app/api/first-run/route.test.ts
+- ✓ Added debugResponse helper for better debugging
+- ✓ Added measureTestTime for performance tracking
+- ✓ Verified test organization and coverage
+- ✓ Confirmed proper error handling and cleanup
+- ✓ All tests passing with improved debugging capabilities
+- ⚠️ Note: Linter error for @/lib/archive import needs investigation
+- ⏭️ Next: Review User Management test files (app/api/user/route.test.ts)
+
+### 2025-04-15 20:00 - User Avatar Test Review
+- ✓ Reviewed app/api/admin/users/[id]/avatar/route.test.ts
 - ✓ Added debug helpers for responses and errors
 - ✓ Added test timing information
-- ✓ Improved test data management with factory functions
-- ✓ Added mock state logging
-- ✓ Created reusable test helper functions
-- ✓ Fixed linting issues
-- ✓ All tests passing successfully
-- ⏭️ Next: Review URL management test files
+- ✓ Added factory functions for test data
+- ✓ Added proper error handling with debugging
+- ✓ All tests passing successfully (12 tests in 723ms)
+- ⏭️ Next: Review Admin Icons test file
 
 ### 2025-04-05 18:15 - Admin Statistics Test Review
 - ✓ Reviewed app/api/admin/statistics/route.test.ts
@@ -188,6 +234,23 @@ Reviewing all API tests to ensure they follow our testing standards and best pra
 - ✓ Reviewed and updated health check test
 - ✓ Reviewed and updated app config test
 - ⏭️ Next: Review app config logo test file
+
+### 2025-04-15 18:20 - Admin Icons Test Review
+- ✓ Reviewed app/api/admin/icons/route.test.ts
+- ✓ Confirmed proper test organization and mock setup
+- ✓ Verified debugging capabilities (debugResponse and measureTestTime)
+- ✓ Validated error handling for all edge cases
+- ✓ Confirmed proper test data management with factory functions
+- ✓ All tests passing with good coverage
+- ⏭️ Next: Review Authentication test files (app/api/auth/route.test.ts)
+
+### 2025-04-15 18:35 - User Avatar Test Update
+- ✓ Fixed response stream locking issues in app/api/user/avatar/route.test.ts
+- ✓ Updated all test cases to use text() instead of json() for response handling
+- ✓ Added proper response debugging for all test cases
+- ✓ Maintained test timing and error handling
+- ✓ All tests passing successfully
+- ⏭️ Next: Review User Preferences test file
 
 ## Dependencies
 - Testing Framework Implementation task

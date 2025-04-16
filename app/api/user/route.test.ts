@@ -1,7 +1,8 @@
 import { DELETE as deleteAvatar, POST as uploadAvatar } from "@/app/api/user/avatar/route";
 import { GET as getPreferences, POST as updatePreferences } from "@/app/api/user/preferences/route";
-import { verifyToken } from "@/app/lib/auth/jwt";
+import { JwtPayload, verifyToken } from "@/app/lib/auth/jwt";
 import { prisma } from "@/app/lib/db/prisma";
+import { createTestTimer } from "@/test/utils/helpers/debug";
 import fs from "fs/promises";
 import { NextRequest, NextResponse } from "next/server";
 import path from "path";
@@ -54,6 +55,7 @@ vi.mock("path", async (importOriginal) => {
 });
 
 describe("User API", () => {
+  const testTimer = createTestTimer();
   const mockDate = new Date("2024-01-01T00:00:00.000Z");
   const mockUser = {
     id: "1",
@@ -69,13 +71,15 @@ describe("User API", () => {
     updatedAt: mockDate,
   };
 
-  const mockJwtPayload = {
+  const mockJwtPayload: JwtPayload = {
     id: mockUser.id,
+    username: mockUser.username,
     isAdmin: mockUser.isAdmin,
   };
 
   beforeEach(() => {
     vi.clearAllMocks();
+    testTimer.reset();
 
     // Mock path.join to return predictable paths
     vi.mocked(path.join).mockImplementation((...args) => args.join("/"));

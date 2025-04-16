@@ -5,6 +5,7 @@ import { generateToken, verifyToken } from "@/app/lib/auth/jwt";
 import { verifyPassword } from "@/app/lib/auth/password";
 import { clearRateLimits } from "@/app/lib/auth/rate-limit";
 import { prisma } from "@/app/lib/db/prisma";
+import { debugResponse, measureTestTime } from "@/test/utils/helpers/debug";
 import { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -142,6 +143,7 @@ describe("Authentication API", () => {
   describe("POST /api/auth/login", () => {
     describe("Rate Limiting", () => {
       it("allows 5 attempts within 1 minute window", async () => {
+        const testTimer = measureTestTime();
         vi.mocked(prisma.user.findUnique).mockResolvedValue(mockUser);
         vi.mocked(verifyPassword).mockResolvedValue(false);
 
@@ -159,6 +161,7 @@ describe("Authentication API", () => {
           } as unknown as NextRequest;
 
           const response = await login(request);
+          await debugResponse(response);
           expect(response.status).toBe(401);
           const data = await response.json();
           expect(data.remainingAttempts).toBe(4 - i);
@@ -177,11 +180,13 @@ describe("Authentication API", () => {
         } as unknown as NextRequest;
 
         const response = await login(request);
+        await debugResponse(response);
         expect(response.status).toBe(429);
         const data = await response.json();
         expect(data.error).toBe("Too many login attempts");
         expect(data.remainingAttempts).toBe(0);
         expect(data.resetTime).toBeDefined();
+        testTimer.end();
       });
 
       it("includes rate limit headers in responses", async () => {
@@ -240,6 +245,7 @@ describe("Authentication API", () => {
 
     describe("Password-based login", () => {
       it("authenticates user with valid credentials", async () => {
+        const testTimer = measureTestTime();
         const password = "correct_password";
         const token = "valid_token";
         vi.mocked(prisma.user.findUnique).mockResolvedValue(mockUser);
@@ -259,6 +265,7 @@ describe("Authentication API", () => {
         });
 
         const response = await login(request);
+        await debugResponse(response);
         const data = await response.json();
 
         expect(response.status).toBe(200);
@@ -277,6 +284,7 @@ describe("Authentication API", () => {
           path: "/",
           maxAge: 24 * 60 * 60,
         });
+        testTimer.end();
       });
 
       it("returns 401 for invalid password", async () => {
@@ -370,11 +378,13 @@ describe("Authentication API", () => {
 
   describe("GET /api/auth/session", () => {
     it("returns session data for valid token", async () => {
+      const testTimer = measureTestTime();
       vi.mocked(verifyToken).mockResolvedValueOnce(mockJwtPayload);
       vi.mocked(prisma.user.findUnique).mockResolvedValueOnce(mockUser);
       mockCookieStore.get.mockReturnValue({ value: "valid_token" });
 
       const response = await getSession();
+      await debugResponse(response);
       const data = await response.json();
 
       expect(response.status).toBe(200);
@@ -384,6 +394,7 @@ describe("Authentication API", () => {
           username: mockUser.username,
         }),
       );
+      testTimer.end();
     });
 
     it("returns null for invalid token", async () => {
@@ -420,9 +431,12 @@ describe("Authentication API", () => {
 
   describe("POST /api/auth/logout", () => {
     it("clears auth token cookie", async () => {
+      const testTimer = measureTestTime();
       const response = await logout();
+      await debugResponse(response);
       expect(response.status).toBe(200);
       expect(mockCookieStore.delete).toHaveBeenCalledWith("auth_token");
+      testTimer.end();
     });
 
     it("returns success even if no session exists", async () => {

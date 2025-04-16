@@ -11,6 +11,7 @@ import { POST as createUser, GET as getUsersList } from "@/app/api/admin/users/r
 import { verifyToken } from "@/app/lib/auth/jwt";
 import { hashPassword } from "@/app/lib/auth/password";
 import { prisma } from "@/app/lib/db/prisma";
+import { createTestTimer, debugResponse } from "@/test/utils/helpers/debug";
 import { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -56,60 +57,112 @@ vi.mock("next/headers", () => ({
   cookies: vi.fn(() => mockCookieStore),
 }));
 
-describe("Admin User Management API", () => {
-  const mockAdminUser = {
-    id: "admin-id",
-    username: "admin",
-    isAdmin: true,
-  };
+// Factory functions for test data
+const createMockUser = (overrides = {}) => ({
+  id: "test-user-id",
+  username: "testuser",
+  isAdmin: false,
+  passwordHash: "hashed_password",
+  ...overrides,
+});
 
-  const mockRegularUser = {
-    id: "user-id",
-    username: "testuser",
-    isAdmin: false,
-    passwordHash: "hashed_password",
-  };
+const createMockUrlGroup = (overrides = {}) => ({
+  id: "test-group-id",
+  name: "Test Group",
+  description: "Test Description",
+  ...overrides,
+});
+
+describe("Admin User Management API", () => {
+  const mockAdminUser = createMockUser({ id: "admin-id", username: "admin", isAdmin: true });
+  const mockRegularUser = createMockUser({ id: "user-id", username: "testuser" });
+  const timer = createTestTimer();
 
   beforeEach(() => {
     vi.clearAllMocks();
+    timer.reset();
     mockCookieStore.get.mockReturnValue({ value: "valid_token" });
     (verifyToken as any).mockResolvedValue(mockAdminUser);
   });
 
   describe("GET /api/admin/users", () => {
     it("should return all users when authenticated as admin", async () => {
-      const mockUsers = [mockAdminUser, mockRegularUser];
-      (prisma.user.findMany as any).mockResolvedValue(mockUsers);
+      timer.start("get-users-test");
+      try {
+        const mockUsers = [mockAdminUser, mockRegularUser];
+        (prisma.user.findMany as any).mockResolvedValue(mockUsers);
 
-      const response = await getUsersList();
-      const data = await response.json();
+        const response = await getUsersList();
+        await debugResponse(response);
+        const data = await response.json();
 
-      expect(response.status).toBe(200);
-      expect(data).toEqual(mockUsers);
-      expect(prisma.user.findMany).toHaveBeenCalledWith({
-        orderBy: { username: "asc" },
-      });
+        expect(response.status).toBe(200);
+        expect(data).toEqual(mockUsers);
+        expect(prisma.user.findMany).toHaveBeenCalledWith({
+          orderBy: { username: "asc" },
+        });
+
+        timer.end("get-users-test");
+      } catch (error) {
+        console.error("Test failed:", {
+          error,
+          mockState: {
+            verifyToken: vi.mocked(verifyToken).mock.calls,
+            findMany: vi.mocked(prisma.user.findMany).mock.calls,
+          },
+        });
+        throw error;
+      }
     });
 
     it("should return 401 when not authenticated", async () => {
-      mockCookieStore.get.mockReturnValue(undefined);
-      (verifyToken as any).mockResolvedValue(null);
+      timer.start("unauth-users-test");
+      try {
+        mockCookieStore.get.mockReturnValue(undefined);
+        (verifyToken as any).mockResolvedValue(null);
 
-      const response = await getUsersList();
-      const data = await response.json();
+        const response = await getUsersList();
+        await debugResponse(response);
+        const data = await response.json();
 
-      expect(response.status).toBe(401);
-      expect(data.error).toBe("Unauthorized");
+        expect(response.status).toBe(401);
+        expect(data.error).toBe("Unauthorized");
+
+        timer.end("unauth-users-test");
+      } catch (error) {
+        console.error("Test failed:", {
+          error,
+          mockState: {
+            verifyToken: vi.mocked(verifyToken).mock.calls,
+            cookies: mockCookieStore.get.mock.calls,
+          },
+        });
+        throw error;
+      }
     });
 
     it("should return 403 when authenticated as non-admin", async () => {
-      (verifyToken as any).mockResolvedValue({ ...mockRegularUser });
+      timer.start("forbidden-users-test");
+      try {
+        (verifyToken as any).mockResolvedValue({ ...mockRegularUser });
 
-      const response = await getUsersList();
-      const data = await response.json();
+        const response = await getUsersList();
+        await debugResponse(response);
+        const data = await response.json();
 
-      expect(response.status).toBe(403);
-      expect(data.error).toBe("Forbidden");
+        expect(response.status).toBe(403);
+        expect(data.error).toBe("Forbidden");
+
+        timer.end("forbidden-users-test");
+      } catch (error) {
+        console.error("Test failed:", {
+          error,
+          mockState: {
+            verifyToken: vi.mocked(verifyToken).mock.calls,
+          },
+        });
+        throw error;
+      }
     });
   });
 
@@ -121,60 +174,107 @@ describe("Admin User Management API", () => {
     };
 
     it("should create a new user when authenticated as admin", async () => {
-      const hashedPassword = "hashed_password_123";
-      (hashPassword as any).mockResolvedValue(hashedPassword);
-      (prisma.user.create as any).mockResolvedValue({
-        id: "new-user-id",
-        ...mockCreateUserRequest,
-        passwordHash: hashedPassword,
-      });
+      timer.start("create-user-test");
+      try {
+        const hashedPassword = "hashed_password_123";
+        (hashPassword as any).mockResolvedValue(hashedPassword);
+        const newUser = createMockUser({
+          id: "new-user-id",
+          username: mockCreateUserRequest.username,
+          isAdmin: mockCreateUserRequest.isAdmin,
+          passwordHash: hashedPassword,
+        });
+        (prisma.user.create as any).mockResolvedValue(newUser);
 
-      const request = new NextRequest("http://localhost/api/admin/users", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(mockCreateUserRequest),
-      });
+        const request = new NextRequest("http://localhost/api/admin/users", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(mockCreateUserRequest),
+        });
 
-      const response = await createUser(request);
-      const data = await response.json();
+        const response = await createUser(request);
+        await debugResponse(response);
+        const data = await response.json();
 
-      expect(response.status).toBe(201);
-      expect(data).toMatchObject({
-        id: "new-user-id",
-        username: mockCreateUserRequest.username,
-        isAdmin: mockCreateUserRequest.isAdmin,
-      });
-      expect(hashPassword).toHaveBeenCalledWith(mockCreateUserRequest.password);
+        expect(response.status).toBe(201);
+        expect(data).toMatchObject({
+          id: newUser.id,
+          username: mockCreateUserRequest.username,
+          isAdmin: mockCreateUserRequest.isAdmin,
+        });
+        expect(hashPassword).toHaveBeenCalledWith(mockCreateUserRequest.password);
+
+        timer.end("create-user-test");
+      } catch (error) {
+        console.error("Test failed:", {
+          error,
+          mockState: {
+            verifyToken: vi.mocked(verifyToken).mock.calls,
+            hashPassword: vi.mocked(hashPassword).mock.calls,
+            createUser: vi.mocked(prisma.user.create).mock.calls,
+          },
+        });
+        throw error;
+      }
     });
 
     it("should return 400 when username is missing", async () => {
-      const request = new NextRequest("http://localhost/api/admin/users", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password: "test123" }),
-      });
+      timer.start("invalid-create-user-test");
+      try {
+        const request = new NextRequest("http://localhost/api/admin/users", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ password: "test123" }),
+        });
 
-      const response = await createUser(request);
-      const data = await response.json();
+        const response = await createUser(request);
+        await debugResponse(response);
+        const data = await response.json();
 
-      expect(response.status).toBe(400);
-      expect(data.error).toBe("Username is required");
+        expect(response.status).toBe(400);
+        expect(data.error).toBe("Username is required");
+
+        timer.end("invalid-create-user-test");
+      } catch (error) {
+        console.error("Test failed:", {
+          error,
+          mockState: {
+            verifyToken: vi.mocked(verifyToken).mock.calls,
+          },
+        });
+        throw error;
+      }
     });
 
     it("should return 409 when username already exists", async () => {
-      (prisma.user.findUnique as any).mockResolvedValue(mockRegularUser);
+      timer.start("duplicate-user-test");
+      try {
+        (prisma.user.findUnique as any).mockResolvedValue(mockRegularUser);
 
-      const request = new NextRequest("http://localhost/api/admin/users", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(mockCreateUserRequest),
-      });
+        const request = new NextRequest("http://localhost/api/admin/users", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(mockCreateUserRequest),
+        });
 
-      const response = await createUser(request);
-      const data = await response.json();
+        const response = await createUser(request);
+        await debugResponse(response);
+        const data = await response.json();
 
-      expect(response.status).toBe(409);
-      expect(data.error).toBe("Username already exists");
+        expect(response.status).toBe(409);
+        expect(data.error).toBe("Username already exists");
+
+        timer.end("duplicate-user-test");
+      } catch (error) {
+        console.error("Test failed:", {
+          error,
+          mockState: {
+            verifyToken: vi.mocked(verifyToken).mock.calls,
+            findUnique: vi.mocked(prisma.user.findUnique).mock.calls,
+          },
+        });
+        throw error;
+      }
     });
   });
 
