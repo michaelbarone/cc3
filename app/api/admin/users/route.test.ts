@@ -11,9 +11,10 @@ import { POST as createUser, GET as getUsersList } from "@/app/api/admin/users/r
 import { verifyToken } from "@/app/lib/auth/jwt";
 import { hashPassword } from "@/app/lib/auth/password";
 import { prisma } from "@/app/lib/db/prisma";
-import { createTestTimer, debugResponse } from "@/test/utils/helpers/debug";
+import { createTestTimer, debugResponse } from "@/test/helpers/debug";
+import { createMockAdminUser, createMockUser } from "@/test/mocks/factories";
 import { NextRequest } from "next/server";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, test, vi } from "vitest";
 
 // Mock dependencies
 vi.mock("@/app/lib/db/prisma", () => ({
@@ -57,113 +58,81 @@ vi.mock("next/headers", () => ({
   cookies: vi.fn(() => mockCookieStore),
 }));
 
-// Factory functions for test data
-const createMockUser = (overrides = {}) => ({
-  id: "test-user-id",
-  username: "testuser",
-  isAdmin: false,
-  passwordHash: "hashed_password",
-  ...overrides,
-});
-
-const createMockUrlGroup = (overrides = {}) => ({
-  id: "test-group-id",
-  name: "Test Group",
-  description: "Test Description",
-  ...overrides,
-});
-
 describe("Admin User Management API", () => {
-  const mockAdminUser = createMockUser({ id: "admin-id", username: "admin", isAdmin: true });
-  const mockRegularUser = createMockUser({ id: "user-id", username: "testuser" });
-  const timer = createTestTimer();
-
   beforeEach(() => {
     vi.clearAllMocks();
-    timer.reset();
-    mockCookieStore.get.mockReturnValue({ value: "valid_token" });
-    (verifyToken as any).mockResolvedValue(mockAdminUser);
+    // Set up admin authentication by default
+    (verifyToken as any).mockResolvedValue(createMockAdminUser());
   });
 
-  describe("GET /api/admin/users", () => {
-    it("should return all users when authenticated as admin", async () => {
-      timer.start("get-users-test");
-      try {
-        const mockUsers = [mockAdminUser, mockRegularUser];
-        (prisma.user.findMany as any).mockResolvedValue(mockUsers);
+  test("returns users list for admin", async () => {
+    const mockAdminUser = createMockAdminUser();
+    const mockRegularUser = createMockUser();
+    const mockUsers = [mockAdminUser, mockRegularUser];
+    (prisma.user.findMany as any).mockResolvedValue(mockUsers);
 
-        const response = await getUsersList();
-        await debugResponse(response);
-        const data = await response.json();
+    const response = await getUsersList();
+    await debugResponse(response);
+    const data = await response.json();
 
-        expect(response.status).toBe(200);
-        expect(data).toEqual(mockUsers);
-        expect(prisma.user.findMany).toHaveBeenCalledWith({
-          orderBy: { username: "asc" },
-        });
-
-        timer.end("get-users-test");
-      } catch (error) {
-        console.error("Test failed:", {
-          error,
-          mockState: {
-            verifyToken: vi.mocked(verifyToken).mock.calls,
-            findMany: vi.mocked(prisma.user.findMany).mock.calls,
-          },
-        });
-        throw error;
-      }
+    expect(response.status).toBe(200);
+    expect(data).toEqual(mockUsers);
+    expect(prisma.user.findMany).toHaveBeenCalledWith({
+      orderBy: { username: "asc" },
     });
+  });
 
-    it("should return 401 when not authenticated", async () => {
-      timer.start("unauth-users-test");
-      try {
-        mockCookieStore.get.mockReturnValue(undefined);
-        (verifyToken as any).mockResolvedValue(null);
+  it("should return 401 when not authenticated", async () => {
+    const timer = createTestTimer();
+    timer.start("unauth-users-test");
+    try {
+      // Override the default admin auth for this specific test
+      (verifyToken as any).mockResolvedValue(null);
 
-        const response = await getUsersList();
-        await debugResponse(response);
-        const data = await response.json();
+      const response = await getUsersList();
+      await debugResponse(response);
+      const data = await response.json();
 
-        expect(response.status).toBe(401);
-        expect(data.error).toBe("Unauthorized");
+      expect(response.status).toBe(401);
+      expect(data.error).toBe("Unauthorized");
 
-        timer.end("unauth-users-test");
-      } catch (error) {
-        console.error("Test failed:", {
-          error,
-          mockState: {
-            verifyToken: vi.mocked(verifyToken).mock.calls,
-            cookies: mockCookieStore.get.mock.calls,
-          },
-        });
-        throw error;
-      }
-    });
+      timer.end("unauth-users-test");
+    } catch (error) {
+      console.error("Test failed:", {
+        error,
+        mockState: {
+          verifyToken: vi.mocked(verifyToken).mock.calls,
+          cookies: mockCookieStore.get.mock.calls,
+        },
+      });
+      throw error;
+    }
+  });
 
-    it("should return 403 when authenticated as non-admin", async () => {
-      timer.start("forbidden-users-test");
-      try {
-        (verifyToken as any).mockResolvedValue({ ...mockRegularUser });
+  it("should return 403 when authenticated as non-admin", async () => {
+    const timer = createTestTimer();
+    timer.start("forbidden-users-test");
+    try {
+      // Override the default admin auth for this specific test
+      (verifyToken as any).mockResolvedValue(createMockUser());
 
-        const response = await getUsersList();
-        await debugResponse(response);
-        const data = await response.json();
+      const response = await getUsersList();
+      await debugResponse(response);
+      const data = await response.json();
 
-        expect(response.status).toBe(403);
-        expect(data.error).toBe("Forbidden");
+      expect(response.status).toBe(403);
+      expect(data.error).toBe("Forbidden");
 
-        timer.end("forbidden-users-test");
-      } catch (error) {
-        console.error("Test failed:", {
-          error,
-          mockState: {
-            verifyToken: vi.mocked(verifyToken).mock.calls,
-          },
-        });
-        throw error;
-      }
-    });
+      timer.end("forbidden-users-test");
+    } catch (error) {
+      console.error("Test failed:", {
+        error,
+        mockState: {
+          verifyToken: vi.mocked(verifyToken).mock.calls,
+        },
+      });
+      throw error;
+    }
   });
 
   describe("POST /api/admin/users", () => {
@@ -174,6 +143,7 @@ describe("Admin User Management API", () => {
     };
 
     it("should create a new user when authenticated as admin", async () => {
+      const timer = createTestTimer();
       timer.start("create-user-test");
       try {
         const hashedPassword = "hashed_password_123";
@@ -219,6 +189,7 @@ describe("Admin User Management API", () => {
     });
 
     it("should return 400 when username is missing", async () => {
+      const timer = createTestTimer();
       timer.start("invalid-create-user-test");
       try {
         const request = new NextRequest("http://localhost/api/admin/users", {
@@ -247,9 +218,10 @@ describe("Admin User Management API", () => {
     });
 
     it("should return 409 when username already exists", async () => {
+      const timer = createTestTimer();
       timer.start("duplicate-user-test");
       try {
-        (prisma.user.findUnique as any).mockResolvedValue(mockRegularUser);
+        (prisma.user.findUnique as any).mockResolvedValue(createMockUser());
 
         const request = new NextRequest("http://localhost/api/admin/users", {
           method: "POST",
@@ -279,18 +251,18 @@ describe("Admin User Management API", () => {
   });
 
   describe("GET /api/admin/users/[id]", () => {
-    const mockProps = { params: Promise.resolve({ id: mockRegularUser.id }) };
+    const mockProps = { params: Promise.resolve({ id: createMockUser().id }) };
 
     it("should return user details when authenticated as admin", async () => {
-      (prisma.user.findUnique as any).mockResolvedValue(mockRegularUser);
+      (prisma.user.findUnique as any).mockResolvedValue(createMockUser());
 
       const response = await getUser(new NextRequest("http://localhost"), mockProps);
       const data = await response.json();
 
       expect(response.status).toBe(200);
-      expect(data).toEqual(mockRegularUser);
+      expect(data).toEqual(createMockUser());
       expect(prisma.user.findUnique).toHaveBeenCalledWith({
-        where: { id: mockRegularUser.id },
+        where: { id: createMockUser().id },
       });
     });
 
@@ -306,7 +278,7 @@ describe("Admin User Management API", () => {
   });
 
   describe("PUT /api/admin/users/[id]", () => {
-    const mockProps = { params: Promise.resolve({ id: mockRegularUser.id }) };
+    const mockProps = { params: Promise.resolve({ id: createMockUser().id }) };
     const mockUpdateRequest = {
       username: "updateduser",
       isAdmin: true,
@@ -316,10 +288,10 @@ describe("Admin User Management API", () => {
     it("should update user details when authenticated as admin", async () => {
       const hashedPassword = "new_hashed_password";
       (hashPassword as any).mockResolvedValue(hashedPassword);
-      (prisma.user.findUnique as any).mockResolvedValue(mockRegularUser);
+      (prisma.user.findUnique as any).mockResolvedValue(createMockUser());
       (prisma.user.findFirst as any).mockResolvedValue(null);
       (prisma.user.update as any).mockResolvedValue({
-        ...mockRegularUser,
+        ...createMockUser(),
         ...mockUpdateRequest,
         passwordHash: hashedPassword,
       });
@@ -335,7 +307,7 @@ describe("Admin User Management API", () => {
 
       expect(response.status).toBe(200);
       expect(data).toMatchObject({
-        id: mockRegularUser.id,
+        id: createMockUser().id,
         username: mockUpdateRequest.username,
         isAdmin: mockUpdateRequest.isAdmin,
       });
@@ -360,11 +332,11 @@ describe("Admin User Management API", () => {
   });
 
   describe("DELETE /api/admin/users/[id]", () => {
-    const mockProps = { params: Promise.resolve({ id: mockRegularUser.id }) };
+    const mockProps = { params: Promise.resolve({ id: createMockUser().id }) };
 
     it("should delete user when authenticated as admin", async () => {
-      (prisma.user.findUnique as any).mockResolvedValue(mockRegularUser);
-      (prisma.user.delete as any).mockResolvedValue(mockRegularUser);
+      (prisma.user.findUnique as any).mockResolvedValue(createMockUser());
+      (prisma.user.delete as any).mockResolvedValue(createMockUser());
 
       const response = await deleteUser(new NextRequest("http://localhost"), mockProps);
       const data = await response.json();
@@ -372,7 +344,7 @@ describe("Admin User Management API", () => {
       expect(response.status).toBe(200);
       expect(data).toEqual({ success: true });
       expect(prisma.user.delete).toHaveBeenCalledWith({
-        where: { id: mockRegularUser.id },
+        where: { id: createMockUser().id },
       });
     });
 
@@ -388,7 +360,7 @@ describe("Admin User Management API", () => {
   });
 
   describe("GET /api/admin/users/[id]/url-groups", () => {
-    const mockProps = { params: Promise.resolve({ id: mockRegularUser.id }) };
+    const mockProps = { params: Promise.resolve({ id: createMockUser().id }) };
     const mockUrlGroups = [
       { id: "group1", name: "Group 1" },
       { id: "group2", name: "Group 2" },
@@ -407,18 +379,18 @@ describe("Admin User Management API", () => {
       expect(response.status).toBe(200);
       expect(data).toEqual(mockUrlGroups);
       expect(prisma.userUrlGroup.findMany).toHaveBeenCalledWith({
-        where: { userId: mockRegularUser.id },
+        where: { userId: createMockUser().id },
         include: { urlGroup: true },
       });
     });
   });
 
   describe("PUT /api/admin/users/[id]/url-groups", () => {
-    const mockProps = { params: Promise.resolve({ id: mockRegularUser.id }) };
+    const mockProps = { params: Promise.resolve({ id: createMockUser().id }) };
     const mockUrlGroupIds = ["group1", "group2"];
 
     it("should update user's URL group assignments when authenticated as admin", async () => {
-      (prisma.user.findUnique as any).mockResolvedValue(mockRegularUser);
+      (prisma.user.findUnique as any).mockResolvedValue(createMockUser());
 
       const request = new NextRequest("http://localhost", {
         method: "PUT",
@@ -432,11 +404,11 @@ describe("Admin User Management API", () => {
       expect(response.status).toBe(200);
       expect(data).toEqual({ success: true });
       expect(prisma.userUrlGroup.deleteMany).toHaveBeenCalledWith({
-        where: { userId: mockRegularUser.id },
+        where: { userId: createMockUser().id },
       });
       expect(prisma.userUrlGroup.createMany).toHaveBeenCalledWith({
         data: mockUrlGroupIds.map((groupId) => ({
-          userId: mockRegularUser.id,
+          userId: createMockUser().id,
           urlGroupId: groupId,
         })),
       });

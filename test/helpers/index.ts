@@ -4,7 +4,7 @@
  */
 
 import path from 'path';
-import { createdFiles } from '../mocks/filesystem';
+import { createdFiles } from '../mocks/services/filesystem/fs.mock';
 
 /**
  * File tracking utilities for test cleanup

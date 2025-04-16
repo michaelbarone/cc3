@@ -1,4 +1,4 @@
-import { authHandlers } from '@/test/utils/mocks/handlers/auth'
+import { authHandlers } from '@/test/mocks/services/handlers/auth'
 import '@testing-library/jest-dom'
 import { cleanup } from '@testing-library/react'
 import { setupServer } from 'msw/node'

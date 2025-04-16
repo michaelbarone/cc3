@@ -36,20 +36,24 @@ Reorganizing library and test directories to improve maintainability and follow 
 ### Test Directory Structure
 ```
 /test
-├── utils/              # Shared test utilities
-│   ├── setup/         # Test setup utilities
-│   │   ├── providers.tsx     # from test-utils.tsx
-│   │   ├── database.ts      # Database setup
-│   │   └── filesystem.ts    # File system setup
-│   ├── mocks/         # Mock implementations
-│   │   ├── next.ts         # Next.js mocks
-│   │   ├── prisma.ts       # Prisma mocks
-│   │   └── filesystem.ts   # File system mocks
-│   ├── helpers/       # Test helper functions
-│   │   └── cleanup.ts      # Cleanup utilities
-│   └── fixtures/      # Test data fixtures
-├── setup.ts           # Main test setup file
-└── smoke.test.tsx     # Smoke tests
+├── fixtures/           # Test data fixtures
+│   ├── factories.ts   # Factory functions with API transformations
+│   ├── data/         # Static test data
+│   └── responses/    # Expected API responses
+├── mocks/             # Mock implementations
+│   ├── prisma.ts     # Prisma client mock
+│   ├── next.ts       # Next.js mocks
+│   ├── filesystem.ts # File system mocks
+│   └── services/     # Service-specific mocks
+├── helpers/           # Test helper functions
+│   ├── cleanup.ts    # Cleanup utilities
+│   └── validation.ts # Validation utilities
+├── setup/            # Test setup utilities
+│   ├── providers.tsx # Test providers (from test-utils.tsx)
+│   ├── database.ts  # Database setup
+│   └── filesystem.ts # File system setup
+├── setup.ts          # Main test setup file
+└── smoke.test.tsx    # Smoke tests
 ```
 
 ### Library Directory Structure

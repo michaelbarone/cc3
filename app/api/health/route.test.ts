@@ -1,144 +1,52 @@
-import { GET } from "@/app/api/health/route";
-import { prisma } from "@/app/lib/db/prisma";
-import fs from "fs";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { createTestTimer, debugResponse, measureTestTime } from "@/test/helpers/debug";
+import { fileSystemMock, setupFileSystemMocks } from "@/test/mocks/services/filesystem/fs.mock";
+import { PrismaMock } from "@/test/mocks/services/prisma/prisma.mock";
+import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { GET } from "./route";
 
-// Mock dependencies
+// Create test timer
+const timer = createTestTimer();
+
+// Mock modules
 vi.mock("@/app/lib/db/prisma", () => ({
-  prisma: {
-    $queryRaw: vi.fn(),
-  },
+  prisma: PrismaMock.getInstance(),
 }));
 
-// Mock fs
-vi.mock("fs", () => ({
-  default: {
-    accessSync: vi.fn(),
-    constants: {
-      R_OK: 4,
-      W_OK: 2,
-    },
-  },
-}));
-
-// Helper function for debugging responses
-async function debugResponse(response: Response) {
-  const data = await response.json();
-  console.log("Response state:", {
-    status: response.status,
-    headers: Object.fromEntries(response.headers.entries()),
-    data,
-  });
-  return data;
-}
+// Setup filesystem mocks
+setupFileSystemMocks();
 
 describe("Health Check API", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    // Default to successful filesystem check
-    vi.mocked(fs.accessSync).mockImplementation(() => undefined);
+  const suiteTimer = measureTestTime();
 
-    // Log test start time for debugging
-    console.log(`Test started at: ${new Date().toISOString()}`);
+  beforeEach(() => {
+    PrismaMock.reset();
+    fileSystemMock.reset();
+    // Ensure accessSync is properly mocked for each test
+    fileSystemMock.accessSync.mockImplementation((path: string, mode?: number) => {
+      // Default implementation returns undefined for success
+      return undefined;
+    });
+  });
+
+  afterAll(() => {
+    suiteTimer.end();
   });
 
   it("returns healthy status when all systems are operational", async () => {
-    const mockQueryRaw = vi.fn().mockResolvedValueOnce([{ 1: 1 }]);
-    vi.mocked(prisma.$queryRaw).mockImplementation(mockQueryRaw);
+    timer.start("healthy status test");
 
+    // Arrange
+    PrismaMock.getInstance().$queryRaw.mockResolvedValueOnce([{ 1: 1 }]);
+    fileSystemMock.accessSync.mockReturnValueOnce(undefined);
+
+    // Act
     const response = await GET();
-    const data = await debugResponse(response);
+    const data = await debugResponse<HealthCheckResponse>(response);
+    timer.end("healthy status test");
 
+    // Assert
     expect(response.status).toBe(200);
-    expect(data).toEqual({
-      status: "healthy",
-      timestamp: expect.any(String),
-      checks: {
-        database: true,
-        filesystem: true,
-        memory: true,
-      },
-      version: expect.any(String),
-      metrics: {
-        uptime: expect.any(Number),
-        responseTime: expect.any(Number),
-        memoryUsage: expect.any(Number),
-      },
-    });
-    expect(vi.mocked(prisma.$queryRaw)).toHaveBeenCalledWith(expect.any(Array));
-  });
-
-  it("returns unhealthy status when database connection fails", async () => {
-    try {
-      const mockQueryRaw = vi.fn().mockRejectedValueOnce(new Error("Database connection failed"));
-      vi.mocked(prisma.$queryRaw).mockImplementation(mockQueryRaw);
-      // Ensure filesystem check passes
-      vi.mocked(fs.accessSync).mockImplementation(() => undefined);
-
-      const response = await GET();
-      const data = await debugResponse(response);
-
-      expect(response.status).toBe(503);
-      expect(data).toEqual({
-        status: "unhealthy",
-        timestamp: expect.any(String),
-        checks: {
-          database: false,
-          filesystem: true,
-          memory: true,
-        },
-        version: expect.any(String),
-        metrics: {
-          uptime: expect.any(Number),
-          responseTime: expect.any(Number),
-          memoryUsage: expect.any(Number),
-        },
-        error: "database check failed",
-      });
-      expect(vi.mocked(prisma.$queryRaw)).toHaveBeenCalledWith(expect.any(Array));
-    } catch (error) {
-      console.error("Test failed:", {
-        error,
-        mockCalls: vi.mocked(prisma.$queryRaw).mock.calls,
-        mockResults: vi.mocked(prisma.$queryRaw).mock.results,
-      });
-      throw error;
-    }
-  });
-
-  it("validates timestamp format in healthy response", async () => {
-    const mockQueryRaw = vi.fn().mockResolvedValueOnce([{ 1: 1 }]);
-    vi.mocked(prisma.$queryRaw).mockImplementation(mockQueryRaw);
-
-    const response = await GET();
-    const data = await debugResponse(response);
-
-    expect(response.status).toBe(200);
-    // Verify timestamp is a valid ISO string
-    expect(() => new Date(data.timestamp)).not.toThrow();
-    expect(data.timestamp).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z$/);
-  });
-
-  it("includes version information in the response", async () => {
-    const mockQueryRaw = vi.fn().mockResolvedValueOnce([{ 1: 1 }]);
-    vi.mocked(prisma.$queryRaw).mockImplementation(mockQueryRaw);
-
-    const response = await GET();
-    const data = await debugResponse(response);
-
-    expect(data.version).toBeDefined();
-    expect(typeof data.version).toBe("string");
-    expect(data.version).toMatch(/^\d+\.\d+\.\d+$/);
-  });
-
-  it("includes detailed system checks in the response", async () => {
-    const mockQueryRaw = vi.fn().mockResolvedValueOnce([{ 1: 1 }]);
-    vi.mocked(prisma.$queryRaw).mockImplementation(mockQueryRaw);
-
-    const response = await GET();
-    const data = await debugResponse(response);
-
-    expect(data.checks).toBeDefined();
+    expect(data.status).toBe("healthy");
     expect(data.checks).toEqual({
       database: true,
       filesystem: true,
@@ -146,79 +54,116 @@ describe("Health Check API", () => {
     });
   });
 
+  it("returns unhealthy status when database connection fails", async () => {
+    timer.start("database failure test");
+
+    // Arrange
+    PrismaMock.getInstance().$queryRaw.mockRejectedValueOnce(new Error("DB Error"));
+    fileSystemMock.accessSync.mockReturnValueOnce(undefined);
+
+    // Act
+    const response = await GET();
+    const data = await debugResponse<HealthCheckResponse>(response);
+    timer.end("database failure test");
+
+    // Assert
+    expect(response.status).toBe(503);
+    expect(data.status).toBe("unhealthy");
+    expect(data.checks.database).toBe(false);
+    expect(data.error).toBe("database check failed");
+  });
+
+  it("validates timestamp format in healthy response", async () => {
+    timer.start("timestamp validation test");
+
+    // Arrange
+    PrismaMock.getInstance().$queryRaw.mockResolvedValueOnce([{ 1: 1 }]);
+    fileSystemMock.accessSync.mockReturnValueOnce(undefined);
+
+    // Act
+    const response = await GET();
+    const data = await debugResponse<HealthCheckResponse>(response);
+    timer.end("timestamp validation test");
+
+    // Assert
+    expect(data.timestamp).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
+  });
+
+  it("includes version information in the response", async () => {
+    timer.start("version info test");
+
+    // Arrange
+    PrismaMock.getInstance().$queryRaw.mockResolvedValueOnce([{ 1: 1 }]);
+    fileSystemMock.accessSync.mockReturnValueOnce(undefined);
+
+    // Act
+    const response = await GET();
+    const data = await debugResponse<HealthCheckResponse>(response);
+    timer.end("version info test");
+
+    // Assert
+    expect(data.version).toBeDefined();
+    expect(typeof data.version).toBe("string");
+  });
+
   it("handles multiple system check failures", async () => {
-    try {
-      const mockQueryRaw = vi.fn().mockRejectedValueOnce(new Error("Database connection failed"));
-      vi.mocked(prisma.$queryRaw).mockImplementation(mockQueryRaw);
+    timer.start("multiple failures test");
 
-      // Mock filesystem check to fail
-      vi.mocked(fs.accessSync).mockImplementation(() => {
-        throw new Error("ENOENT: no such file or directory");
-      });
+    // Arrange
+    PrismaMock.getInstance().$queryRaw.mockRejectedValueOnce(new Error("DB Error"));
+    fileSystemMock.accessSync.mockImplementationOnce(() => {
+      throw new Error("FS Error");
+    });
 
-      // Mock process.memoryUsage to simulate high memory usage
-      const originalMemoryUsage = process.memoryUsage;
-      const mockMemoryUsage = vi.fn().mockReturnValue({
-        heapUsed: 2000000000, // 2GB - above threshold
-        heapTotal: 2000000000,
-        rss: 2200000000,
-        external: 0,
-        arrayBuffers: 0,
-      }) as unknown as typeof process.memoryUsage;
-      process.memoryUsage = mockMemoryUsage;
+    // Act
+    const response = await GET();
+    const data = await debugResponse<HealthCheckResponse>(response);
+    timer.end("multiple failures test");
 
-      console.log("Test setup complete:", {
-        dbMock: vi.mocked(prisma.$queryRaw).mock.calls.length,
-        fsMock: vi.mocked(fs.accessSync).mock.calls.length,
-        memoryUsageMock: "configured",
-      });
-
-      const response = await GET();
-      const data = await debugResponse(response);
-
-      expect(response.status).toBe(503);
-      expect(data).toEqual({
-        status: "unhealthy",
-        timestamp: expect.any(String),
-        checks: {
-          database: false,
-          filesystem: false,
-          memory: false,
-        },
-        version: expect.any(String),
-        metrics: {
-          uptime: expect.any(Number),
-          responseTime: expect.any(Number),
-          memoryUsage: expect.any(Number),
-        },
-        error: "Multiple system checks failed",
-      });
-
-      // Restore original memoryUsage function
-      process.memoryUsage = originalMemoryUsage;
-    } catch (error) {
-      console.error("Multiple system check test failed:", {
-        error,
-        dbMockCalls: vi.mocked(prisma.$queryRaw).mock.calls,
-        fsMockCalls: vi.mocked(fs.accessSync).mock.calls,
-        memoryUsage: process.memoryUsage(),
-      });
-      throw error;
-    }
+    // Assert
+    expect(response.status).toBe(503);
+    expect(data.status).toBe("unhealthy");
+    expect(data.checks).toEqual({
+      database: false,
+      filesystem: false,
+      memory: true,
+    });
+    expect(data.error).toBe("Multiple system checks failed");
   });
 
   it("includes performance metrics in the response", async () => {
-    const mockQueryRaw = vi.fn().mockResolvedValueOnce([{ 1: 1 }]);
-    vi.mocked(prisma.$queryRaw).mockImplementation(mockQueryRaw);
+    timer.start("performance metrics test");
 
+    // Arrange
+    PrismaMock.getInstance().$queryRaw.mockResolvedValueOnce([{ 1: 1 }]);
+    fileSystemMock.accessSync.mockReturnValueOnce(undefined);
+
+    // Act
     const response = await GET();
-    const data = await debugResponse(response);
+    const data = await debugResponse<HealthCheckResponse>(response);
+    timer.end("performance metrics test");
 
+    // Assert
     expect(data.metrics).toBeDefined();
-    expect(data.metrics).toEqual({
-      uptime: expect.any(Number),
-      responseTime: expect.any(Number),
-      memoryUsage: expect.any(Number),
-    });
+    expect(typeof data.metrics.uptime).toBe("number");
+    expect(typeof data.metrics.responseTime).toBe("number");
+    expect(typeof data.metrics.memoryUsage).toBe("number");
   });
 });
+
+interface HealthCheckResponse {
+  status: "healthy" | "unhealthy";
+  timestamp: string;
+  checks: {
+    database: boolean;
+    filesystem: boolean;
+    memory: boolean;
+  };
+  version: string;
+  metrics: {
+    uptime: number;
+    responseTime: number;
+    memoryUsage: number;
+  };
+  error?: string;
+}

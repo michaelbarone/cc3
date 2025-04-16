@@ -4,67 +4,57 @@
  */
 
 import { Response as PlaywrightResponse } from '@playwright/test';
+import { NextResponse } from 'next/server';
 import { Mock } from 'vitest';
 
 /**
- * Debug a response by logging its status and body
- * @param response The Response object to debug
- *
- * @example
- * ```ts
- * const response = await fetch('/api/data');
- * await debugResponse(response);
- * // Logs: Response debug: { status: 200, statusText: "OK", ... }
- * ```
+ * Enhanced debug helper that automatically clones the response and returns parsed data
+ * Handles both NextResponse and PlaywrightResponse types
  */
-export async function debugResponse(response: Response | PlaywrightResponse): Promise<void> {
-  try {
-    if (response instanceof Response) {
-      // Handle standard Response object
-      const text = await response.text();
-      let data;
-      try {
-        data = JSON.parse(text);
-      } catch {
-        data = text;
-      }
+export async function debugResponse<T = unknown>(response: NextResponse | PlaywrightResponse): Promise<T> {
+  console.log('Response Status:', response.status);
+  console.log('Response Status Text:', response.statusText);
+  console.log('Response Headers:');
 
-      // Create a new response with the same data
-      const newResponse = new Response(JSON.stringify(data), {
-        status: response.status,
-        statusText: response.statusText,
-        headers: response.headers,
-      });
+  let data: T;
 
-      console.log("Response debug:", {
-        status: newResponse.status,
-        statusText: newResponse.statusText,
-        headers: Object.fromEntries(newResponse.headers.entries()),
-        body: typeof data === 'string' ? data : JSON.stringify(data, null, 2),
-        bodyUsed: false,
-      });
-    } else {
-      // Handle Playwright Response object
-      const status = response.status();
-      const headers = response.headers();
-      let body;
-
-      try {
-        body = await response.json();
-      } catch (e) {
-        body = await response.text();
-      }
-
-      console.log('Response Debug Info:', {
-        status,
-        headers,
-        body,
-        url: response.url(),
-      });
+  // Handle headers for both Response types
+  if ('headers' in response && typeof response.headers === 'function') {
+    // Playwright Response
+    const headers = response.headers();
+    Object.entries(headers).forEach(([key, value]) => {
+      console.log(`  ${key}: ${value}`);
+    });
+    const text = await response.text();
+    try {
+      data = JSON.parse(text);
+      console.log('Response Body:', data);
+    } catch {
+      console.log('Response Body (raw):', text);
+      throw new Error('Failed to parse response as JSON');
     }
-  } catch (error) {
-    console.error("Failed to debug response:", error);
+  } else if (response instanceof NextResponse) {
+    // Next.js Response
+    const headers = Object.fromEntries(response.headers);
+    Object.entries(headers).forEach(([key, value]) => {
+      console.log(`  ${key}: ${value}`);
+    });
+
+    // Clone response before reading
+    const clonedResponse = response.clone();
+    try {
+      data = await clonedResponse.json();
+      console.log('Response Body:', data);
+    } catch {
+      const text = await clonedResponse.text();
+      console.log('Response Body (raw):', text);
+      throw new Error('Failed to parse response as JSON');
+    }
+  } else {
+    throw new Error('Unsupported response type');
   }
+
+  return data;
 }
 
 /**
@@ -142,6 +132,7 @@ export function debugTestData(data: any, label = 'Test Data') {
 export const measureTestTime = () => {
   const start = performance.now();
   return {
+    elapsed: () => performance.now() - start,
     end: () => {
       if (process.env.DEBUG_TESTS !== "true") return;
       const end = performance.now();
@@ -151,23 +142,25 @@ export const measureTestTime = () => {
 };
 
 /**
- * Creates a timer utility for measuring multiple test execution times
+ * Creates a simple timer for measuring test execution time
  */
 export function createTestTimer() {
-  const timers = new Map<string, number>();
+  const timers: Record<string, number> = {};
 
   return {
     start: (label: string) => {
-      timers.set(label, performance.now());
+      timers[label] = performance.now();
+      console.log(`⏱️ Starting ${label}`);
     },
     end: (label: string) => {
-      const start = timers.get(label);
-      if (!start) return;
+      const start = timers[label];
+      if (!start) {
+        console.warn(`Timer ${label} was not started`);
+        return;
+      }
       const duration = performance.now() - start;
-      console.log(`Timer ${label}: ${duration.toFixed(2)}ms`);
-    },
-    reset: () => {
-      timers.clear();
+      console.log(`⏱️ ${label} took ${duration.toFixed(2)}ms`);
+      delete timers[label];
     }
   };
 }

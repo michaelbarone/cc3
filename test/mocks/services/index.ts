@@ -189,9 +189,23 @@ export const createMockFileSystem = () => ({
   existsSync: vi.fn(),
 });
 
-export * from '../cleanup/file/fs-cleanup';
+export * from '../../helpers/file/fs-cleanup';
 export * from './auth';
 export * from './next';
 export * from './prisma';
 export { setupTestMocks } from './setup';
+
+/**
+ * Consolidated test mocks exports
+ * @module test/mocks/services
+ */
+
+export * from './auth';
+export * from './filesystem';
+export * from './prisma';
+
+// Export remaining service mocks
+export * from './next';
+export * from './server';
+export * from './setup';
 
