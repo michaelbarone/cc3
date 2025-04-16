@@ -1,9 +1,9 @@
 import { prisma } from "@/app/lib/db/prisma";
+import { main as seedDatabase } from "@/prisma/seed";
 import { Prisma } from "@prisma/client";
 import { execSync } from "child_process";
 import fs from "fs";
 import path from "path";
-import { main as seedDatabase } from "../../prisma/seed";
 
 // Flag to ensure we only try to initialize once per process
 let isInitializing = false;

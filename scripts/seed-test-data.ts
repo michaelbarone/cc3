@@ -1,4 +1,4 @@
-import { seedTestData } from "../lib/db/init";
+import { seedTestData } from "@/app/lib/db/init";
 
 console.log("Starting test data seeding...");
 
