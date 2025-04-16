@@ -1,432 +1,417 @@
-# Error Handling Patterns in Tests
+# Error Handling Patterns in Testing
 
 ## Overview
+This document outlines standardized patterns for testing error handling in the Control Center application. These patterns ensure consistent and comprehensive error testing across all components and integrate seamlessly with our debugging standards.
 
-This document outlines standardized patterns for testing error handling across different types of operations in the Control Center application. These patterns ensure consistent and comprehensive error coverage in our test suites.
+## Test Framework Integration
 
-## Core Error Categories
+### Related Testing Standards
+- [Vitest and React Testing Library Standards](./vitest-react-testing-lib-testing-standards.md)
+  - Unit test error handling
+  - Component test error states
+  - Mock error scenarios
+
+- [Playwright E2E Standards](./playwright-e2e-standards.md)
+  - Browser error handling
+  - Network error simulation
+  - UI error state testing
+
+- [Prisma Testing Standards](./prisma-testing-standards.md)
+  - Database error handling
+  - Transaction error testing
+  - Constraint violation testing
+
+### Core Testing Guidelines
+- [Test Data Management](./test-data-management.md)
+  - Error state test data
+  - Invalid input scenarios
+  - Boundary condition data
+
+- [Test Debugging Standards](./test-debugging-standards.md)
+  - Error logging patterns
+  - Debug helper functions
+  - Error state capture
+
+## Error Categories and Test Patterns
 
 ### 1. Authentication Errors
-
 ```typescript
-describe("Authentication Errors", () => {
-  it("handles missing token", async () => {
-    const response = await handler();
-    expect(response.status).toBe(401);
-    expect(await response.json()).toEqual({
-      error: "Unauthorized"
-    });
-  });
-
-  it("handles invalid token", async () => {
-    vi.mocked(verifyToken).mockRejectedValue(
-      new Error("Invalid token")
-    );
-    const response = await handler();
-    expect(response.status).toBe(401);
-  });
-
-  it("handles expired token", async () => {
-    vi.mocked(verifyToken).mockRejectedValue(
-      new Error("Token expired")
-    );
-    const response = await handler();
-    expect(response.status).toBe(401);
+describe('Authentication Error Handling', () => {
+  it('should handle invalid credentials', async () => {
+    const mockAuth = vi.fn().mockRejectedValue(new AuthError('Invalid credentials'));
+    
+    try {
+      await authenticateUser(mockAuth);
+    } catch (error) {
+      // Log detailed error context
+      console.error('Authentication failed:', {
+        error,
+        timestamp: new Date().toISOString(),
+        context: 'Authentication test',
+        requestData: { /* mock request data */ }
+      });
+      
+      expect(error).toBeInstanceOf(AuthError);
+      expect(error.message).toBe('Invalid credentials');
+      expect(error.code).toBe('AUTH_001'); // Standardized error codes
+    }
   });
 });
 ```
 
 ### 2. Authorization Errors
-
 ```typescript
-describe("Authorization Errors", () => {
-  it("handles non-admin access to admin routes", async () => {
-    vi.mocked(verifyToken).mockResolvedValue({
-      id: "user-id",
-      isAdmin: false
-    });
-    const response = await handler();
-    expect(response.status).toBe(403);
-    expect(await response.json()).toEqual({
-      error: "Admin privileges required"
-    });
-  });
-
-  it("handles resource access without permission", async () => {
-    vi.mocked(verifyToken).mockResolvedValue({
-      id: "user-id",
-      isAdmin: false
-    });
-    const response = await handler();
-    expect(response.status).toBe(403);
-    expect(await response.json()).toEqual({
-      error: "Insufficient permissions"
-    });
+describe('Authorization Error Handling', () => {
+  it('should handle insufficient permissions', async () => {
+    const mockAccess = vi.fn().mockRejectedValue(
+      new AccessDeniedError('Insufficient permissions')
+    );
+    
+    try {
+      await performAction(mockAccess);
+    } catch (error) {
+      logTestError('Authorization test failed', {
+        error,
+        context: 'Permission check',
+        userRole: 'user',
+        requiredRole: 'admin'
+      });
+      
+      expect(error).toBeInstanceOf(AccessDeniedError);
+      expect(error.code).toBe('AUTH_002');
+    }
   });
 });
 ```
 
 ### 3. Database Errors
-
 ```typescript
-describe("Database Errors", () => {
-  it("handles connection errors", async () => {
-    vi.mocked(prisma.user.findUnique).mockRejectedValue(
-      new Error("Connection refused")
+describe('Database Error Handling', () => {
+  it('should handle connection failures', async () => {
+    const mockDb = vi.fn().mockRejectedValue(
+      new DatabaseError('Connection failed')
     );
-    const response = await handler();
-    expect(response.status).toBe(500);
-  });
-
-  it("handles constraint violations", async () => {
-    vi.mocked(prisma.user.create).mockRejectedValue(
-      new Error("Unique constraint violation")
-    );
-    const response = await handler();
-    expect(response.status).toBe(400);
-  });
-
-  it("handles transaction failures", async () => {
-    vi.mocked(prisma.$transaction).mockRejectedValue(
-      new Error("Transaction failed")
-    );
-    const response = await handler();
-    expect(response.status).toBe(500);
+    
+    try {
+      await queryDatabase(mockDb);
+    } catch (error) {
+      logTestError('Database operation failed', {
+        error,
+        operation: 'query',
+        retryCount: 3,
+        lastAttempt: new Date().toISOString()
+      });
+      
+      expect(error).toBeInstanceOf(DatabaseError);
+      expect(error.code).toBe('DB_001');
+    }
   });
 });
 ```
 
 ### 4. File System Errors
-
 ```typescript
-describe("File System Errors", () => {
-  it("handles file not found", async () => {
-    const error = Object.assign(new Error("File not found"), {
-      code: "ENOENT"
-    });
-    vi.mocked(fs.access).mockRejectedValue(error);
-    const response = await handler();
-    expect(response.status).toBe(404);
-  });
-
-  it("handles permission denied", async () => {
-    const error = Object.assign(new Error("Permission denied"), {
-      code: "EACCES"
-    });
-    vi.mocked(fs.writeFile).mockRejectedValue(error);
-    const response = await handler();
-    expect(response.status).toBe(500);
-  });
-
-  it("handles disk full", async () => {
-    const error = Object.assign(new Error("No space left"), {
-      code: "ENOSPC"
-    });
-    vi.mocked(fs.writeFile).mockRejectedValue(error);
-    const response = await handler();
-    expect(response.status).toBe(500);
+describe('File System Error Handling', () => {
+  it('should handle file not found', async () => {
+    const mockFs = vi.fn().mockRejectedValue(
+      new FileSystemError('File not found')
+    );
+    
+    await expect(async () => {
+      await readFile(mockFs);
+    }).rejects.toThrow('File not found');
   });
 });
 ```
 
 ### 5. Input Validation Errors
-
 ```typescript
-describe("Input Validation Errors", () => {
-  it("handles missing required fields", async () => {
-    const response = await handler({
-      ...validData,
-      requiredField: undefined
-    });
-    expect(response.status).toBe(400);
-    expect(await response.json()).toEqual({
-      error: "Required field missing"
-    });
-  });
-
-  it("handles invalid data types", async () => {
-    const response = await handler({
-      ...validData,
-      numericField: "not-a-number"
-    });
-    expect(response.status).toBe(400);
-  });
-
-  it("handles out-of-range values", async () => {
-    const response = await handler({
-      ...validData,
-      age: -1
-    });
-    expect(response.status).toBe(400);
+describe('Input Validation Error Handling', () => {
+  it('should handle invalid input format', () => {
+    const invalidInput = { name: '' };
+    
+    expect(() => {
+      validateInput(invalidInput);
+    }).toThrow('Name is required');
   });
 });
 ```
 
-## Error Handling Best Practices
+## Best Practices
 
 ### 1. Mock Setup
-
 ```typescript
-// GOOD: Comprehensive mock setup
-beforeEach(() => {
-  vi.clearAllMocks();
-  mockPrisma.user.findUnique.mockResolvedValue(null);
-  mockFs.access.mockResolvedValue(undefined);
-  mockVerifyToken.mockResolvedValue(null);
-});
+// Good Practice
+const mockService = {
+  operation: vi.fn().mockRejectedValue(new CustomError('Error message'))
+};
 
-// BAD: Incomplete mock setup
-beforeEach(() => {
-  vi.clearAllMocks();
-  // Missing mock implementations
-});
+// Bad Practice - Avoid using generic Error
+const mockService = {
+  operation: vi.fn().mockRejectedValue(new Error('Generic error'))
+};
 ```
 
 ### 2. Error Assertion
-
 ```typescript
-// GOOD: Comprehensive error checking
-it("handles database error", async () => {
-  const dbError = new Error("Database error");
-  mockPrisma.user.findUnique.mockRejectedValue(dbError);
+// Good Practice
+await expect(async () => {
+  await riskyOperation();
+}).rejects.toThrow(CustomError);
 
-  const response = await handler();
-  const data = await response.json();
-
-  expect(response.status).toBe(500);
-  expect(data).toEqual({
-    error: "Internal server error"
-  });
-  expect(console.error).toHaveBeenCalledWith(
-    "Database error:",
-    dbError
-  );
-});
-
-// BAD: Insufficient error checking
-it("handles error", async () => {
-  mockPrisma.user.findUnique.mockRejectedValue(new Error());
-  const response = await handler();
-  expect(response.status).toBe(500);
+// Better Practice - Check error properties
+await expect(async () => {
+  await riskyOperation();
+}).rejects.toMatchObject({
+  name: 'CustomError',
+  message: 'Expected error message',
+  code: 'ERROR_CODE'
 });
 ```
 
 ### 3. Error Recovery
-
 ```typescript
-// GOOD: Testing error recovery
-it("recovers from temporary database error", async () => {
-  // First call fails
-  mockPrisma.user.findUnique
-    .mockRejectedValueOnce(new Error("Temporary error"))
-    // Second call succeeds
-    .mockResolvedValueOnce(mockUser);
-
-  const response = await handler();
-  expect(response.status).toBe(200);
-  expect(mockPrisma.user.findUnique).toHaveBeenCalledTimes(2);
+describe('Error Recovery', () => {
+  it('should retry failed operations', async () => {
+    const mockOperation = vi.fn()
+      .mockRejectedValueOnce(new NetworkError('Temporary failure'))
+      .mockResolvedValueOnce('Success');
+    
+    const result = await retryOperation(mockOperation);
+    expect(result).toBe('Success');
+    expect(mockOperation).toHaveBeenCalledTimes(2);
+  });
 });
 ```
 
 ## Common Error Scenarios
 
 ### 1. Concurrent Operations
-
 ```typescript
-describe("Concurrent Operations", () => {
-  it("handles concurrent updates", async () => {
-    // Simulate concurrent update
-    mockPrisma.user.update
-      .mockRejectedValueOnce(new Error("Update conflict"))
-      .mockResolvedValueOnce(mockUser);
+describe('Concurrent Operations', () => {
+  it('should handle race conditions', async () => {
+    const operations = [
+      performOperation(),
+      performOperation(),
+      performOperation()
+    ];
+    
+    await expect(async () => {
+      await Promise.all(operations);
+    }).rejects.toThrow(ConcurrencyError);
+  });
+});
+```
 
-    const response = await handler();
-    expect(response.status).toBe(409);
-    expect(await response.json()).toEqual({
-      error: "Resource conflict"
+### 2. Resource Cleanup
+```typescript
+describe('Resource Cleanup', () => {
+  it('should release resources on error', async () => {
+    const cleanup = vi.fn();
+    
+    try {
+      await useResource();
+    } catch (error) {
+      cleanup();
+    }
+    
+    expect(cleanup).toHaveBeenCalled();
+  });
+});
+```
+
+## Integration with Test Debugging
+
+### 1. Debug Helpers Integration
+```typescript
+import { debugElement, debugResponse, measureTestTime } from '../helpers/debug';
+
+describe('UI Error States', () => {
+  it('should handle and debug UI errors', async ({ page }) => {
+    const testTimer = measureTestTime('UI Error Test');
+    
+    try {
+      const errorButton = await debugElement(page, '[data-testid="error-trigger"]');
+      await errorButton.click();
+      
+      const response = await page.waitForResponse(url => url.includes('/api/error'));
+      await debugResponse(response);
+      
+    } catch (error) {
+      await page.screenshot({
+        path: `test-results/ui-error-${Date.now()}.png`,
+        fullPage: true
+      });
+      
+      logTestError('UI interaction failed', {
+        error,
+        url: page.url(),
+        elementState: await debugElement(page, '[data-testid="error-trigger"]'),
+        testDuration: testTimer.elapsed()
+      });
+      
+      throw error;
+    } finally {
+      testTimer.end();
+    }
+  });
+});
+```
+
+### 2. Network Error Monitoring
+```typescript
+describe('API Error Handling', () => {
+  it('should capture network errors', async ({ page }) => {
+    const testTimer = measureTestTime('API Error Test');
+    
+    // Monitor network requests
+    page.on('request', request => {
+      console.log('Request:', {
+        url: request.url(),
+        method: request.method(),
+        headers: request.headers(),
+        timestamp: new Date().toISOString()
+      });
     });
+
+    page.on('response', async response => {
+      if (response.status() >= 400) {
+        console.error('API Error:', {
+          url: response.url(),
+          status: response.status(),
+          body: await response.text().catch(() => 'Unable to get body'),
+          timestamp: new Date().toISOString(),
+          testDuration: testTimer.elapsed()
+        });
+      }
+    });
+    
+    try {
+      // Test implementation
+      await page.goto('/api-test');
+      await debugElement(page, '[data-testid="api-trigger"]');
+      
+    } finally {
+      testTimer.end();
+    }
   });
 });
 ```
 
-### 2. Resource Limits
+## Test Performance Monitoring
 
+### 1. Test Timing Integration
 ```typescript
-describe("Resource Limits", () => {
-  it("handles file size limits", async () => {
-    const largeFile = new File(
-      ["x".repeat(1024 * 1024 * 11)], // 11MB
-      "large.jpg",
-      { type: "image/jpeg" }
-    );
-    const response = await handler(largeFile);
-    expect(response.status).toBe(413);
-  });
-
-  it("handles rate limits", async () => {
-    // Simulate rate limit exceeded
-    mockRateLimit.mockResolvedValue(false);
-    const response = await handler();
-    expect(response.status).toBe(429);
+describe('Performance Error Handling', () => {
+  it('should handle timeout errors', async () => {
+    const testTimer = measureTestTime('Timeout Test');
+    
+    try {
+      await expect(async () => {
+        await longRunningOperation();
+      }).rejects.toThrow(TimeoutError);
+      
+    } finally {
+      const duration = testTimer.end();
+      if (duration > 5000) {
+        console.warn('Test exceeded recommended duration:', {
+          testName: 'Timeout Test',
+          duration,
+          threshold: 5000
+        });
+      }
+    }
   });
 });
 ```
 
-### 3. Network Issues
-
+### 2. Response Time Assertions
 ```typescript
-describe("Network Issues", () => {
-  it("handles timeout", async () => {
-    vi.mocked(fetch).mockRejectedValue(
-      new Error("Request timeout")
-    );
-    const response = await handler();
-    expect(response.status).toBe(504);
-  });
-
-  it("handles service unavailable", async () => {
-    vi.mocked(fetch).mockRejectedValue(
-      new Error("Service unavailable")
-    );
-    const response = await handler();
-    expect(response.status).toBe(503);
+describe('API Response Time', () => {
+  it('should handle slow responses', async () => {
+    const testTimer = measureTestTime('API Response Test');
+    
+    try {
+      const response = await fetch('/api/endpoint');
+      await debugResponse(response);
+      
+      const duration = testTimer.elapsed();
+      expect(duration).toBeLessThan(1000); // 1 second threshold
+      
+    } catch (error) {
+      logTestError('API response time test failed', {
+        error,
+        duration: testTimer.elapsed(),
+        threshold: 1000
+      });
+      throw error;
+    } finally {
+      testTimer.end();
+    }
   });
 });
 ```
 
-## Error Response Standards
+## Error Handling Best Practices
 
-### 1. Response Structure
-
+### 1. Test Organization
 ```typescript
-// Standard error response shape
-interface ErrorResponse {
-  error: string;
-  details?: Record<string, unknown>;
-  code?: string;
+describe('Feature Tests', () => {
+  // Setup error monitoring
+  beforeAll(() => {
+    setupErrorMonitoring();
+  });
+  
+  // Clear error state before each test
+  beforeEach(() => {
+    clearErrorState();
+  });
+  
+  // Log any uncaught errors
+  afterEach(() => {
+    logUncaughtErrors();
+  });
+  
+  // Test implementation
+  it('should handle errors properly', async () => {
+    const testTimer = measureTestTime();
+    try {
+      // Test code
+    } catch (error) {
+      logTestError('Test failed', { error, duration: testTimer.elapsed() });
+      throw error;
+    } finally {
+      testTimer.end();
+    }
+  });
+});
+```
+
+### 2. Error State Management
+```typescript
+interface ErrorState {
+  error: Error;
+  context: string;
+  timestamp: string;
+  testName: string;
+  duration: number;
 }
 
-// Validation
-expect(await response.json()).toMatchObject<ErrorResponse>({
-  error: expect.any(String),
-  details: expect.any(Object),
-  code: expect.any(String)
-});
+function captureErrorState(error: Error, testTimer: TestTimer): ErrorState {
+  return {
+    error,
+    context: 'test execution',
+    timestamp: new Date().toISOString(),
+    testName: expect.getState().currentTestName,
+    duration: testTimer.elapsed()
+  };
+}
 ```
 
-### 2. Status Codes
-
-```typescript
-// Common status codes and their test cases
-const statusCodes = {
-  400: "Bad Request",
-  401: "Unauthorized",
-  403: "Forbidden",
-  404: "Not Found",
-  409: "Conflict",
-  413: "Payload Too Large",
-  429: "Too Many Requests",
-  500: "Internal Server Error",
-  503: "Service Unavailable",
-  504: "Gateway Timeout"
-};
-
-Object.entries(statusCodes).forEach(([code, message]) => {
-  it(`returns ${code} for ${message}`, async () => {
-    // Test implementation
-    expect(response.status).toBe(Number(code));
-  });
-});
-```
-
-## Testing Utilities
-
-### 1. Error Generators
-
-```typescript
-// Utility for generating common errors
-export const createError = {
-  database: (message: string) => new Error(`Database error: ${message}`),
-  validation: (field: string) => new Error(`Invalid ${field}`),
-  auth: (reason: string) => new Error(`Auth failed: ${reason}`),
-  filesystem: (code: string) => Object.assign(
-    new Error("File system error"),
-    { code }
-  )
-};
-```
-
-### 2. Response Validators
-
-```typescript
-// Utility for validating error responses
-export const validateErrorResponse = async (
-  response: Response,
-  expectedStatus: number,
-  expectedMessage: string
-) => {
-  expect(response.status).toBe(expectedStatus);
-  const data = await response.json();
-  expect(data).toEqual({
-    error: expectedMessage
-  });
-};
-```
-
-## Error Monitoring in Tests
-
-### 1. Console Spies
-
-```typescript
-describe("Error Logging", () => {
-  let consoleErrorSpy: vi.SpyInstance;
-
-  beforeEach(() => {
-    consoleErrorSpy = vi.spyOn(console, "error");
-  });
-
-  afterEach(() => {
-    consoleErrorSpy.mockRestore();
-  });
-
-  it("logs database errors", async () => {
-    const error = new Error("Database error");
-    mockPrisma.user.findUnique.mockRejectedValue(error);
-    await handler();
-    expect(consoleErrorSpy).toHaveBeenCalledWith(
-      "Database error:",
-      error
-    );
-  });
-});
-```
-
-### 2. Error Tracking
-
-```typescript
-describe("Error Tracking", () => {
-  it("tracks error frequency", async () => {
-    const errorTracker = {
-      count: 0,
-      lastError: null as Error | null
-    };
-
-    try {
-      await handler();
-    } catch (error) {
-      errorTracker.count++;
-      errorTracker.lastError = error as Error;
-    }
-
-    expect(errorTracker.count).toBe(1);
-    expect(errorTracker.lastError).toBeDefined();
-  });
-});
-```
-
-## Next Steps
-
-1. Implement error handling test patterns for remaining untested endpoints
-2. Add comprehensive error tracking to all test suites
-3. Create error simulation utilities for common scenarios
-4. Document error handling patterns in API documentation 
+## Related Documentation
+- [Test Debugging Standards](./test-debugging-standards.md) - Comprehensive debugging patterns
+- [Test Data Management](./test-data-management.md) - Error state test data management
+- [API Testing Standards](./api-testing-standards.md) - API error handling patterns
+- [Error Code Registry](./error-code-registry.md) - Centralized error code documentation
+- [Performance Testing Standards](./performance-testing-standards.md) - Test timing and performance monitoring
+- [E2E Testing Standards](./playwright-e2e-standards.md) - Browser and network error handling 

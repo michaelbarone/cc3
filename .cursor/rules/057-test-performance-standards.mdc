@@ -1,0 +1,136 @@
+# Test Performance Standards
+
+## Context
+- Applies to all test files (unit, integration, e2e, api)
+- Works with existing testing rules
+- Enforces performance monitoring and thresholds
+
+<rule>
+name: test_performance_standards
+description: Ensures test files include proper performance monitoring and meet defined thresholds
+
+filters:
+  - type: file_extension
+    pattern: "\\.(test|spec)\\.(ts|tsx)$"
+  - type: content
+    pattern: "describe\\(|it\\(|test\\("
+
+actions:
+  - type: validate
+    conditions:
+      # Check for test timer usage
+      - pattern: "measureTestTime\\("
+        message: "Tests must use measureTestTime for performance monitoring"
+
+      # Check for proper cleanup in finally blocks
+      - pattern: "finally\\s*{[^}]*timer\\.end\\(\\)"
+        message: "Test timers must be properly ended in finally blocks"
+
+      # Check for performance thresholds
+      - pattern: "expect\\([^)]+\\)\\.toBeLessThan\\(THRESHOLDS\\."
+        message: "Tests must include performance threshold assertions"
+
+  - type: suggest
+    message: |
+      Tests should follow these performance standards:
+
+      1. Timer Setup:
+      ```typescript
+      describe('Feature', () => {
+        const suiteTimer = measureTestTime('Suite Name');
+
+        beforeAll(async () => {
+          const setupTimer = measureTestTime('Setup');
+          try {
+            // Setup
+          } finally {
+            setupTimer.end();
+          }
+        });
+
+        it('should perform action', async () => {
+          const testTimer = measureTestTime('Test Name');
+          try {
+            // Test implementation
+          } finally {
+            testTimer.end();
+          }
+        });
+
+        afterAll(() => {
+          suiteTimer.end();
+        });
+      });
+      ```
+
+      2. Performance Thresholds:
+      ```typescript
+      const THRESHOLDS = {
+        UNIT: 100,      // 100ms
+        INTEGRATION: 1000, // 1 second
+        E2E: 5000,      // 5 seconds
+        API: 2000       // 2 seconds
+      } as const;
+
+      expect(timer.elapsed()).toBeLessThan(THRESHOLDS.UNIT);
+      ```
+
+      3. Response Time Monitoring:
+      ```typescript
+      const response = await fetch('/api/endpoint');
+      await debugResponse(response, {
+        timing: {
+          total: timer.elapsed(),
+          threshold: THRESHOLDS.API
+        }
+      });
+      ```
+
+      4. CI Environment Handling:
+      ```typescript
+      const threshold = process.env.CI
+        ? THRESHOLDS.UNIT * 1.5  // 50% more time in CI
+        : THRESHOLDS.UNIT;
+      ```
+
+examples:
+  - input: |
+      describe('Feature', () => {
+        it('should work', async () => {
+          await doSomething();
+        });
+      });
+    output: "Invalid: Missing performance monitoring"
+    explanation: "Test file must include performance monitoring using measureTestTime"
+
+  - input: |
+      describe('Feature', () => {
+        const timer = measureTestTime('Feature Suite');
+
+        it('should work', async () => {
+          const testTimer = measureTestTime('Test');
+          try {
+            await doSomething();
+            expect(testTimer.elapsed()).toBeLessThan(THRESHOLDS.UNIT);
+          } finally {
+            testTimer.end();
+          }
+        });
+
+        afterAll(() => {
+          timer.end();
+        });
+      });
+    output: "Valid: Includes proper performance monitoring"
+    explanation: "Test file includes timer setup, threshold checks, and proper cleanup"
+
+metadata:
+  priority: high
+  version: 1.0.0
+  tags:
+    - testing
+    - performance
+    - standards
+  dependencies:
+    - 051-test-file-standards.mdc
+    - 055-test-debugging-standards.mdc

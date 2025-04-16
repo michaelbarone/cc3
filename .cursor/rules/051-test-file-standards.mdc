@@ -11,6 +11,7 @@ alwaysApply: true
 - References testing framework documentation in `/docs/features/testing-framework`
 - Promotes reuse of existing test patterns
 - Works with existing testing rules (051-vitest-react-testing-lib-testing-standards.mdc, 053-playwright-e2e-standards.mdc)
+- Integrates with performance monitoring standards from 055-test-debugging-standards.mdc
 
 ## Requirements
 - Before creating/editing test files:
@@ -19,12 +20,14 @@ alwaysApply: true
   3. Follow error handling patterns from `error-handling-patterns.md`
   4. Use test data management practices from `test-data-management.md`
   5. Reference troubleshooting guide for common issues
+  6. Implement performance monitoring using `measureTestTime`
 
 ## Critical Rules
 - ALWAYS check `/docs/features/testing-framework` first
 - NEVER duplicate existing test patterns - reuse them
 - ALWAYS follow error handling patterns from documentation
 - ALWAYS use standard mock implementations
+- ALWAYS include performance monitoring for test operations
 - Keep tests focused and isolated
 - Follow naming conventions from existing tests
 - Document complex test scenarios
@@ -39,11 +42,15 @@ alwaysApply: true
    import { describe, test, expect, vi } from "vitest";
    import { NextRequest } from "next/server";
 
-   // 2. Internal imports
+   // 2. Testing utilities
+   import { measureTestTime, THRESHOLDS } from "@/test/utils/performance";
+   import { debugResponse } from "@/test/utils/debug";
+
+   // 3. Internal imports
    import { mockVerifyToken } from "@/test/utils/mocks/auth-mock";
    import { createTestFile } from "@/test/utils/mocks/file-mock";
 
-   // 3. Test subject import
+   // 4. Test subject import
    import { POST, DELETE } from "./route";
    ```
 
@@ -55,10 +62,15 @@ alwaysApply: true
      // ... other fields
    };
 
-   // 2. Create mock functions
-   const mockFn = vi.fn().mockImplementation(() =>
-     Promise.resolve<MockType>({ id: "test" })
-   );
+   // 2. Create mock functions with timing
+   const mockFn = vi.fn().mockImplementation(async () => {
+     const timer = measureTestTime('mockFn');
+     try {
+       return Promise.resolve<MockType>({ id: "test" });
+     } finally {
+       timer.end();
+     }
+   });
 
    // 3. Mock external modules
    vi.mock("@/app/lib/module", () => ({
@@ -69,110 +81,98 @@ alwaysApply: true
 3. Test Organization:
    ```typescript
    describe("Feature Name", () => {
+     const suiteTimer = measureTestTime('Feature Suite');
+
      // 1. Setup/teardown
      beforeEach(() => {
        vi.clearAllMocks();
      });
 
+     afterAll(() => {
+       suiteTimer.end();
+     });
+
      // 2. Happy path tests
      test("successfully performs action", async () => {
-       // Arrange
-       // Act
-       // Assert
+       const testTimer = measureTestTime('successful action test');
+       try {
+         // Arrange
+         const data = { id: "test" };
+
+         // Act
+         const actionTimer = measureTestTime('perform action');
+         const result = await performAction(data);
+         expect(actionTimer.elapsed()).toBeLessThan(THRESHOLDS.UNIT);
+         actionTimer.end();
+
+         // Assert
+         expect(result).toBeDefined();
+       } finally {
+         testTimer.end();
+       }
      });
 
      // 3. Error cases
      test("handles error condition", async () => {
-       // Arrange
-       // Act
-       // Assert
+       const testTimer = measureTestTime('error handling test');
+       try {
+         // Arrange
+         mockFn.mockRejectedValueOnce(new Error("Test error"));
+
+         // Act & Assert
+         const actionTimer = measureTestTime('error action');
+         try {
+           await performAction();
+         } catch (error) {
+           expect(actionTimer.elapsed()).toBeLessThan(THRESHOLDS.UNIT);
+           expect(error.message).toBe("Test error");
+         }
+         actionTimer.end();
+       } finally {
+         testTimer.end();
+       }
      });
    });
    ```
 
-## Selective Mocking Standards
+## Performance Standards
 
-1. Critical Mock Requirements:
-   - Authentication and authorization tokens
-   - Security-sensitive data
-   - External service integrations
-   - Rate-limited API calls
-
-2. Simplified Response Validation:
+1. Test Timing Requirements:
    ```typescript
-   // Good: Simple status check for non-critical endpoints
-   test("handles successful request", async () => {
-     const response = await handler(request);
-     expect(response.status).toBe(200);
-   });
+   // Define thresholds based on test type
+   export const THRESHOLDS = {
+     UNIT: 100,      // 100ms
+     INTEGRATION: 1000, // 1 second
+     E2E: 5000,      // 5 seconds
+     API: 2000       // 2 seconds
+   } as const;
 
-   // Good: Detailed validation for critical data structures
-   test("validates user authentication response", async () => {
-     const response = await handler(request);
-     const data = await response.json();
-
-     expect(response.status).toBe(200);
-     expect(data).toHaveProperty('token');
-     expect(data).toHaveProperty('user.id');
-     expect(data).toHaveProperty('user.roles');
+   // Apply thresholds in tests
+   test("performs within time limit", async () => {
+     const timer = measureTestTime('operation');
+     try {
+       await operation();
+       expect(timer.elapsed()).toBeLessThan(THRESHOLDS.UNIT);
+     } finally {
+       timer.end();
+     }
    });
    ```
 
-3. Mock Data Guidelines:
-   ```typescript
-   // Avoid: Excessive mock data for simple endpoints
-   const complexMock = {
-     id: 'test',
-     name: 'test',
-     created: new Date(),
-     updated: new Date(),
-     metadata: {
-       version: 1,
-       status: 'active'
-     },
-     // ... many more fields
-   };
-
-   // Better: Minimal mock data for simple endpoints
-   const simpleMock = {
-     id: 'test',
-     status: 'success'
-   };
-
-   // Best: Only mock critical security data
-   const authMock = {
-     token: 'test-token',
-     permissions: ['read']
-   };
-   ```
-
-## Best Practices for Mock Data
-
-1. Security-Critical Endpoints:
-   - ALWAYS mock authentication tokens
-   - ALWAYS validate permission checks
-   - ALWAYS test authorization flows
-
-2. Data-Critical Endpoints:
-   - Mock only fields required for business logic
-   - Validate only essential data structure
-   - Focus on data integrity over completeness
-
-3. Simple CRUD Endpoints:
-   - Prefer status code validation
-   - Skip complex mock data when possible
-   - Focus on error cases over data structure
-
-4. Performance-Critical Endpoints:
-   - Mock timing-sensitive operations
-   - Validate response times
-   - Test rate limiting behavior
+2. Performance Monitoring Guidelines:
+   - Measure all significant operations
+   - Track suite-level timing
+   - Monitor mock execution time
+   - Log performance metrics on failure
+   - Use appropriate thresholds
+   - Clean up timers in finally blocks
 
 ## Examples
 
 <example>
-// Good: Following standards and reusing patterns
+// Good: Following standards with performance monitoring
 import { describe, test, expect, vi } from "vitest";
+import { measureTestTime, THRESHOLDS } from "@/test/utils/performance";
 import { mockVerifyToken } from "@/test/utils/mocks/auth-mock";
 import { createTestFile } from "@/test/utils/mocks/file-mock";
 import { POST } from "./route";
@@ -182,9 +182,14 @@ type ConfigMock = {
   value: string;
 };
 
-const mockUpsert = vi.fn().mockImplementation(() =>
-  Promise.resolve<ConfigMock>({ id: "test", value: "test" })
-);
+const mockUpsert = vi.fn().mockImplementation(async () => {
+  const timer = measureTestTime('mockUpsert');
+  try {
+    return Promise.resolve<ConfigMock>({ id: "test", value: "test" });
+  } finally {
+    timer.end();
+  }
+});
 
 vi.mock("@/app/lib/db/prisma", () => ({
   prisma: {
@@ -195,29 +200,47 @@ vi.mock("@/app/lib/db/prisma", () => ({
 }));
 
 describe("Config API", () => {
+  const suiteTimer = measureTestTime('Config API Suite');
+
   beforeEach(() => {
     vi.clearAllMocks();
     mockVerifyToken.mockResolvedValue({ isAdmin: true });
   });
 
+  afterAll(() => {
+    suiteTimer.end();
+  });
+
   test("successfully updates config", async () => {
-    const response = await POST(new Request("http://test"));
-    expect(response.status).toBe(200);
+    const testTimer = measureTestTime('config update test');
+    try {
+      const response = await POST(new Request("http://test"));
+      expect(response.status).toBe(200);
+      expect(testTimer.elapsed()).toBeLessThan(THRESHOLDS.API);
+    } finally {
+      testTimer.end();
+    }
   });
 
   test("handles unauthorized access", async () => {
-    mockVerifyToken.mockResolvedValue(null);
-    const response = await POST(new Request("http://test"));
-    expect(response.status).toBe(401);
+    const testTimer = measureTestTime('unauthorized test');
+    try {
+      mockVerifyToken.mockResolvedValue(null);
+      const response = await POST(new Request("http://test"));
+      expect(response.status).toBe(401);
+      expect(testTimer.elapsed()).toBeLessThan(THRESHOLDS.UNIT);
+    } finally {
+      testTimer.end();
+    }
   });
 });
 </example>
 
 <example type="invalid">
-// Bad: Not following standards or reusing patterns
+// Bad: Not following standards or performance monitoring
 import { test } from "vitest";
 
-// Missing proper mock setup
+// Missing proper mock setup and performance tracking
 const mockDb = {
   save: () => Promise.resolve(),
 };
@@ -226,6 +249,7 @@ test("config test", async () => {
   // No describe block
   // No error handling
   // No pattern reuse
+  // No performance monitoring
   const result = await saveConfig();
   expect(result).toBe(true);
 });
@@ -236,11 +260,13 @@ test("config test", async () => {
 - 053-playwright-e2e-standards.mdc
 - 054-test-data-management.mdc
 - 055-test-debugging-standards.mdc
+- 057-test-performance-standards.mdc
 
 metadata:
   priority: high
-  version: 1.0.0
+  version: 1.1.0
   tags:
     - testing
     - standards
     - patterns
+    - performance

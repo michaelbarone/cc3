@@ -23,6 +23,10 @@ interface MockUser {
   lastActiveUrl?: string;
   /** Timestamp of last update */
   updatedAt?: string;
+  /** Timestamp of creation */
+  createdAt?: string;
+  /** Timestamp of last login */
+  lastLoginAt?: string;
 }
 
 /**
@@ -40,6 +44,7 @@ interface MockUser {
  * ```
  */
 export function createMockUser(overrides: Partial<MockUser> = {}): MockUser {
+  const now = new Date();
   const defaultUser: MockUser = {
     id: `user-${Math.random().toString(36).slice(2, 9)}`,
     username: `user-${Math.random().toString(36).slice(2, 9)}`,
@@ -48,7 +53,9 @@ export function createMockUser(overrides: Partial<MockUser> = {}): MockUser {
     themeMode: 'light',
     menuPosition: 'left',
     lastActiveUrl: 'https://example.com',
-    updatedAt: new Date().toISOString(),
+    createdAt: now.toISOString(),
+    updatedAt: now.toISOString(),
+    lastLoginAt: now.toISOString(),
   };
 
   return {

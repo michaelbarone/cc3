@@ -73,12 +73,15 @@ describe("Admin URL Group Management API", () => {
     isAdmin: true,
   };
 
+  const mockDate = new Date("2025-01-01T00:00:00.000Z");
+  const mockDateString = mockDate.toISOString();
+
   const mockUrlGroup: MockUrlGroup = {
-    id: "group-id",
+    id: "test-group-id",
     name: "Test Group",
-    description: "Test group description",
-    createdAt: new Date("2025-03-30T05:03:18.240Z"),
-    updatedAt: new Date("2025-03-30T05:03:18.240Z"),
+    description: "Test description",
+    createdAt: mockDate,
+    updatedAt: mockDate,
     urls: [
       {
         url: {
@@ -88,8 +91,8 @@ describe("Admin URL Group Management API", () => {
           urlMobile: "https://m.example.com",
           iconPath: "/icons/test.png",
           idleTimeoutMinutes: 10,
-          createdAt: new Date("2025-03-30T05:03:18.240Z"),
-          updatedAt: new Date("2025-03-30T05:03:18.240Z"),
+          createdAt: mockDate,
+          updatedAt: mockDate,
         },
         displayOrder: 1,
       },
@@ -97,14 +100,14 @@ describe("Admin URL Group Management API", () => {
   };
 
   const mockUrl: Url = {
-    id: "url-id",
+    id: "test-url-id",
     title: "Test URL",
     url: "https://example.com",
     urlMobile: "https://m.example.com",
     iconPath: "/icons/test.png",
-    idleTimeoutMinutes: 10,
-    createdAt: new Date("2025-03-30T05:03:18.240Z"),
-    updatedAt: new Date("2025-03-30T05:03:18.240Z"),
+    idleTimeoutMinutes: 30,
+    createdAt: mockDate,
+    updatedAt: mockDate,
   };
 
   let mockCookieStore: {
@@ -230,8 +233,8 @@ describe("Admin URL Group Management API", () => {
       (prisma.urlGroup.create as any).mockResolvedValue({
         id: "new-group-id",
         ...mockCreateGroupRequest,
-        createdAt: mockUrlGroup.createdAt,
-        updatedAt: mockUrlGroup.updatedAt,
+        createdAt: mockDateString,
+        updatedAt: mockDateString,
       });
 
       const request = new NextRequest("http://localhost/api/admin/url-groups", {

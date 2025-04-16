@@ -273,12 +273,15 @@ When planning documentation updates:
    ### PowerShell: $(Get-Date -Format "yyyy-MM-dd HH:mm")
    ### Bash: $(date "+%Y-%m-%d %H:%M")
 
-   **Status**: In Progress
-
+   **Status**: [Planning|In Progress|Completed|Blocked]
    - What's working: {current state}
    - What's not: {current issues}
    - Blocking issues: {if any}
    - Next actions: {immediate next steps}
+
+   NOTE: Current Status section should ONLY contain the most recent status.
+   All previous status updates should be moved to Progress History section
+   with appropriate timestamps and consolidated where possible.
    ```
 
 3. Progress Tracking:
@@ -288,10 +291,16 @@ When planning documentation updates:
    ### Bash: $(date "+%Y-%m-%d %H:%M") - {Brief Title}
 
    - ✓ Completed: {work completed}
-   - 🤔 Decisions: {decisions made}
+   - 🤔 Decisions: {key decisions made}
    - ❌ Issues: {problems encountered}
    - 📚 Documentation: {documentation updates}
    - ⏭️ Next: {next steps}
+
+   NOTE:
+   - Add new entries at TOP
+   - Include previous status changes as part of Progress History
+   - Consolidate related updates under same timestamp where possible
+   - Keep history chronological and focused on major milestones
    ```
 
 ## Validation Requirements

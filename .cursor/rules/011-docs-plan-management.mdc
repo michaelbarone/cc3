@@ -566,10 +566,11 @@ actions:
 
             Update Rules:
             1. Current Status:
-               - Update timestamp and status first
+               - ONLY show most recent status
+               - Update timestamp and status
                - Reflect current state of work
-               - List immediate achievements and challenges
-               - NEVER duplicate completed items here
+               - Move previous status updates to Progress History
+               - Consolidate related updates under same timestamp
 
             2. Implementation Steps:
                - Mark items complete with [X] in-place
@@ -579,6 +580,8 @@ actions:
 
             3. Progress History:
                - Add new entries at TOP
+               - Include previous status updates as historical entries
+               - Consolidate related updates under same timestamp
                - Only record MAJOR milestones
                - Keep entries concise
                - Focus on decisions and learnings
