@@ -4,6 +4,54 @@
 
 This document outlines best practices for managing test data across different types of tests in the Control Center application. It covers data generation, storage, and cleanup strategies.
 
+## Fixtures vs Prisma Mocks
+
+### When to Use Fixtures
+- **API Tests**: Use fixtures when testing API endpoints
+  - Fixtures represent the actual API response shape
+  - Include transformed data (e.g., ISO string dates)
+  - Provide better type safety and documentation
+  - Example:
+    ```typescript
+    // Good: Using fixtures for API test
+    test("GET /api/users", async () => {
+      const mockUser = createMockUser();
+      prismaMock.user.findMany.mockResolvedValue([mockUser]);
+      
+      const response = await GET("/api/users");
+      const data = await response.json();
+      
+      expect(data).toEqual([mockUser]); // Fixture includes API transformations
+    });
+    ```
+
+### When to Use Prisma Mocks
+- **Service Layer Tests**: Use prisma mocks when testing database operations
+  - Direct database operation testing
+  - Transaction testing
+  - Raw database schema validation
+  - Example:
+    ```typescript
+    // Good: Using prisma mocks for service test
+    test("createUser service", async () => {
+      const rawUserData = {
+        id: "1",
+        name: "Test",
+        createdAt: new Date() // Raw date object
+      };
+      prismaMock.user.create.mockResolvedValue(rawUserData);
+      
+      const result = await userService.createUser(rawUserData);
+      expect(result).toEqual(rawUserData);
+    });
+    ```
+
+### Best Practices
+1. Keep transformations in fixtures
+2. Use prisma mocks for database-specific features
+3. Maintain clear separation between API and service tests
+4. Document transformation logic in fixture factories
+
 ## Test Data Categories
 
 ### 1. Mock Data

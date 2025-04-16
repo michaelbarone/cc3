@@ -13,7 +13,8 @@ alwaysApply: true
 - Provides patterns for transaction handling and test data cleanup
 
 ## Critical Rules
-- ALWAYS mock the Prisma client for unit tests using vitest-mock-extended
+- ALWAYS use fixtures for API layer tests (see examples below)
+- ONLY use Prisma mocks directly for service layer tests
 - NEVER use real database connections in unit tests
 - ALWAYS clean up test data in integration tests
 - Use proper type definitions for mocked responses
@@ -21,6 +22,65 @@ alwaysApply: true
 - Use consistent mock implementation patterns
 - Clean up test data in afterEach blocks
 - Place mocks in __mocks__ directory adjacent to the module being mocked
+
+## Layer-Specific Testing Standards
+
+### 1. API Layer Testing
+```typescript
+// GOOD: Using fixtures for API tests
+import { createMockUser } from "@/test/utils/fixtures/factories";
+
+test("GET /api/users", async () => {
+  const mockUser = createMockUser();
+  prismaMock.user.findMany.mockResolvedValue([mockUser]);
+
+  const response = await GET("/api/users");
+  const data = await response.json();
+
+  // Fixture includes API transformations (e.g., ISO dates)
+  expect(data).toEqual([mockUser]);
+});
+
+// BAD: Using raw Prisma mocks for API tests
+test("GET /api/users", async () => {
+  const rawUser = {
+    id: "1",
+    createdAt: new Date(), // Wrong: API returns ISO string
+  };
+  prismaMock.user.findMany.mockResolvedValue([rawUser]);
+
+  const response = await GET("/api/users");
+  const data = await response.json();
+
+  // Will fail due to date format mismatch
+  expect(data).toEqual([rawUser]);
+});
+```
+
+### 2. Service Layer Testing
+```typescript
+// GOOD: Using Prisma mocks for service tests
+test("createUser service", async () => {
+  const rawUserData = {
+    id: "1",
+    createdAt: new Date(), // Correct: Service layer uses Date objects
+  };
+  prismaMock.user.create.mockResolvedValue(rawUserData);
+
+  const result = await userService.createUser(rawUserData);
+  expect(result).toEqual(rawUserData);
+});
+
+// BAD: Using fixtures for service tests
+test("createUser service", async () => {
+  const mockUser = createMockUser(); // Wrong: Has API transformations
+  prismaMock.user.create.mockResolvedValue(mockUser);
+
+  const result = await userService.createUser(mockUser);
+  // Will fail due to date format mismatch
+  expect(result).toEqual(mockUser);
+});
+```
 
 ## Mock Implementation Standards
 
@@ -234,7 +294,7 @@ alwaysApply: true
 
 metadata:
   priority: high
-  version: 1.1.0
+  version: 1.2.0
   tags:
     - testing
     - prisma
