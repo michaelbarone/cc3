@@ -128,15 +128,15 @@ export function debugTestData(data: any, label = 'Test Data') {
 
 /**
  * Test timing utility to measure test execution time
+ * @param operation The name of the operation being timed
  */
-export const measureTestTime = () => {
+export const measureTestTime = (operation?: string) => {
   const start = performance.now();
   return {
     elapsed: () => performance.now() - start,
     end: () => {
-      if (process.env.DEBUG_TESTS !== "true") return;
       const end = performance.now();
-      console.log(`Test execution time: ${(end - start).toFixed(2)}ms`);
+      console.log(operation ? `Operation '${operation}' took ${(end - start).toFixed(2)}ms` : `Test took ${(end - start).toFixed(2)}ms`);
     },
   };
 };
@@ -174,3 +174,36 @@ export function logTestTiming(testName: string, startTime: number): void {
   const duration = performance.now() - startTime;
   console.log(`Test timing - ${testName}: ${duration.toFixed(2)}ms`);
 }
+
+/**
+ * Performance thresholds for different types of tests in milliseconds.
+ * Used to validate test execution times and ensure performance standards.
+ *
+ * @constant
+ * @type {Record<'UNIT' | 'INTEGRATION' | 'E2E' | 'API', number>}
+ *
+ * @property {number} UNIT - Maximum time for unit tests (100ms)
+ *                          Fast, isolated tests with no external dependencies
+ * @property {number} INTEGRATION - Maximum time for integration tests (1000ms)
+ *                                 Tests involving multiple units or simple external services
+ * @property {number} E2E - Maximum time for end-to-end tests (5000ms)
+ *                         Full system tests involving browser and multiple services
+ * @property {number} API - Maximum time for API tests (2000ms)
+ *                         Tests involving HTTP requests and database operations
+ *
+ * @example
+ * ```typescript
+ * test("should complete within unit test threshold", async () => {
+ *   const timer = measureTestTime('operation');
+ *   await operation();
+ *   expect(timer.elapsed()).toBeLessThan(THRESHOLDS.UNIT);
+ *   timer.end();
+ * });
+ * ```
+ */
+export const THRESHOLDS = {
+  UNIT: 100,      // 100ms
+  INTEGRATION: 1000, // 1 second
+  E2E: 5000,      // 5 seconds
+  API: 2000       // 2 seconds
+} as const;

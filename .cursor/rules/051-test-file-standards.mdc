@@ -135,6 +135,21 @@ alwaysApply: true
    });
    ```
 
+4. Response Debugging:
+   ```typescript
+   // Standard response debugging
+   const response = await performAction();
+   const data = await debugResponse(response);
+   expect(response.status).toBe(200);
+
+   // Exception: Redirect Responses
+   // Do not use debugResponse for redirect responses (3xx status codes)
+   // as they don't contain a response body to debug
+   const redirectResponse = await performRedirect();
+   expect(redirectResponse.status).toBe(307);
+   expect(redirectResponse.headers.get("Location")).toBe(expectedUrl);
+   ```
+
 ## Performance Standards
 
 1. Test Timing Requirements:

@@ -61,17 +61,22 @@ Reviewing all API tests to ensure they follow our testing standards and best pra
    - [X] `app/api/url-groups/route.test.ts`
 
 ### Fixture vs Prisma Mock Usage Review
-- [x] Review all API test files for correct mock usage:
-  - [x] Should use fixtures for API response validation
-  - [x] Should use prisma mocks only for service layer tests
-  - [x] Update any tests using incorrect mocking strategy
+
+#### Reference Examples
+- `app/api/admin/app-config/logo/route.test.ts` - Excellent example of:
+  - Proper fixture usage with createMockUser and createMockAppConfig
+  - Clear mock setup and organization
+  - Comprehensive error handling with debugError
+  - Performance tracking with measureTestTime
+  - Proper response debugging (including redirect handling)
+  - Consistent test patterns and structure
 
 #### Files to Check
 1. Admin API Tests
    - [ ] `app/api/admin/app-config/route.test.ts`
-   - [ ] `app/api/admin/app-config/logo/route.test.ts`
-   - [ ] `app/api/admin/app-config/theme/route.test.ts`
-   - [ ] `app/api/admin/app-config/favicon/route.test.ts`
+   - [x] `app/api/admin/app-config/logo/route.test.ts`
+   - [x] `app/api/admin/app-config/theme/route.test.ts`
+   - [x] `app/api/admin/app-config/favicon/route.test.ts`
    - [ ] `app/api/admin/statistics/route.test.ts`
    - [ ] `app/api/admin/statistics/boundary.test.ts`
    - [ ] `app/api/admin/stats/route.test.ts`
@@ -92,8 +97,13 @@ Reviewing all API tests to ensure they follow our testing standards and best pra
    - [ ] `app/api/admin/urls/route.test.ts`
    - [ ] `app/api/url-groups/route.test.ts`
 
-#### Review Criteria
+## Standards to Check For Each Test
+
 1. Mock-setup and standards usage
+   - [ ] Review all API test files for correct mock usage:
+     - [ ] Should use fixtures for API response validation
+     - [ ] Should use prisma mocks only for service layer tests
+     - [ ] Update any tests using incorrect mocking strategy
    - [ ] Check if test is validating API response shape
    - [ ] Check if test is using correct fixture factories
    - [ ] Check if any prisma mocks can be replaced with fixtures
@@ -125,39 +135,6 @@ Reviewing all API tests to ensure they follow our testing standards and best pra
    - [ ] Test timing information
 
 6. Performance
-   - [ ] Efficient test setup
-   - [ ] No unnecessary mocks
-   - [ ] Proper cleanup
-   - [ ] Response time assertions where needed
-
-## Standards to Check For Each Test
-
-1. File Organization
-   - [ ] Proper import organization
-   - [ ] Clear mock setup
-   - [ ] Uses beforeEach for cleanup
-   - [ ] Well-organized test cases
-   - [ ] Follows AAA pattern
-
-2. Prisma Testing
-   - [ ] Proper Prisma client mocking
-   - [ ] Clear mock implementations
-   - [ ] Proper error handling
-   - [ ] Transaction testing if needed
-
-3. Test Data Management
-   - [ ] Proper test data organization
-   - [ ] Cleanup after tests if needed
-   - [ ] Clear test data setup
-   - [ ] Isolation between tests
-
-4. Debugging Capabilities
-   - [ ] Error logging
-   - [ ] Response debugging
-   - [ ] Mock state logging
-   - [ ] Test timing information
-
-5. Performance
    - [ ] Efficient test setup
    - [ ] No unnecessary mocks
    - [ ] Proper cleanup
@@ -322,6 +299,55 @@ Reviewing all API tests to ensure they follow our testing standards and best pra
 - ✓ Maintained proper error handling and debugging
 - ✓ Verified all tests still passing
 - ⏭️ Next: Review app/api/admin/app-config/logo/route.test.ts
+
+### 2025-04-15 21:15 - Theme Route Test Review Complete
+- ✓ Reviewed app/api/admin/app-config/theme/route.test.ts
+- ✓ Confirmed compliance with all test standards:
+  - Proper file organization and mock setup
+  - Using fixtures (createTestAppConfig) for API validation
+  - Comprehensive error handling and debugging
+  - Performance tracking with measureTestTime
+- ✓ Fixed type assertions for debugResponse
+- ✓ All tests passing with proper type safety
+- ⏭️ Next: Review app/api/admin/app-config/favicon/route.test.ts
+
+### 2025-04-15 21:20 - Theme Route Test Second Review
+- ✓ Re-reviewed app/api/admin/app-config/theme/route.test.ts against latest standards
+- ✓ Confirmed compliance with updated criteria:
+  - Mock setup using fixtures appropriately
+  - File organization follows best practices
+  - Prisma testing standards maintained
+  - Test data management with factories
+  - Full debugging capabilities
+- ✓ No additional changes needed
+- ⏭️ Next: Proceed with favicon route test review
+
+### 2025-04-15 21:25 - Favicon Route Test Review In Progress
+- ✓ Updated app/api/admin/app-config/favicon/route.test.ts with:
+  - Performance tracking using measureTestTime
+  - Type assertions for debugResponse
+  - Proper error handling with debugError
+  - Latest fixture patterns
+- ❌ Blocked by linter errors:
+  - Cannot locate correct paths for mock utilities
+  - Need to verify paths for auth-mock and file-mock
+- 🤔 Decisions:
+  - Pausing after three attempts to fix import paths
+  - Need to verify correct mock utility locations
+- ⏭️ Next: Need assistance with correct mock utility paths
+
+### 2025-04-15 21:45 - Favicon Route Test Review Complete
+- ✓ Verified app/api/admin/app-config/favicon/route.test.ts meets all standards:
+  - Proper file organization and mock setup
+  - Using fixtures (createTestAppConfig) for API validation
+  - Comprehensive error handling with debugError
+  - Performance tracking with measureTestTime
+  - Proper test data management with factories
+  - Full debugging capabilities with debugResponse and debugMockCalls
+- ✓ Fixed file size validation test with proper buffer creation
+- ✓ All tests passing with proper type safety
+- ✓ No additional changes needed
+- ⏭️ Next: Review app/api/admin/statistics/route.test.ts
 
 ## Dependencies
 - Testing Framework Implementation task

@@ -6,12 +6,18 @@ import {
   createTestAdmin,
   createTestAppConfig,
 } from "@/test/fixtures/data/factories";
-import { debugError, debugMockCalls, debugResponse } from "@/test/helpers/debug";
+import {
+  debugError,
+  debugMockCalls,
+  debugResponse,
+  measureTestTime,
+  THRESHOLDS,
+} from "@/test/helpers/debug";
 import { PrismaClient } from "@prisma/client";
 import type { MakeDirectoryOptions, PathLike } from "fs";
 import fs from "fs";
 import { NextRequest } from "next/server";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { DeepMockProxy, mockDeep } from "vitest-mock-extended";
 
 // Types for our test data
@@ -85,6 +91,7 @@ vi.mock("path", () => ({
 }));
 
 describe("App Configuration API", () => {
+  const suiteTimer = measureTestTime("App Config API Suite");
   const mockAdminToken = createTestAdmin();
   const mockNonAdminToken = createMockUser();
   const mockConfig = createTestAppConfig({
@@ -107,11 +114,9 @@ describe("App Configuration API", () => {
 
   beforeEach(() => {
     vi.resetAllMocks();
-    console.time("test-execution");
   });
 
   afterEach(() => {
-    console.timeEnd("test-execution");
     // Debug mock states after each test
     debugMockCalls(vi.mocked(verifyToken), "verifyToken");
     debugMockCalls(vi.mocked(prismaMock.appConfig.findUnique), "appConfig.findUnique");
@@ -120,40 +125,66 @@ describe("App Configuration API", () => {
     debugMockCalls(vi.mocked(prismaMock.appConfig.upsert), "appConfig.upsert");
   });
 
+  afterAll(() => {
+    suiteTimer.end();
+  });
+
   describe("GET /api/admin/app-config", () => {
     it("should return existing app configuration", async () => {
-      prismaMock.appConfig.findUnique.mockResolvedValue(mockConfig);
+      const testTimer = measureTestTime("get existing config test");
+      try {
+        prismaMock.appConfig.findUnique.mockResolvedValue(mockConfig);
 
-      const response = await GET();
-      const data = await debugResponse(response);
+        const response = await GET();
+        const data = (await debugResponse(response)) as AppConfig;
 
-      expect(response.status).toBe(200);
-      expect(data).toEqual(mockConfig);
+        expect(response.status).toBe(200);
+        expect(data).toEqual(mockConfig);
+        expect(testTimer.elapsed()).toBeLessThan(THRESHOLDS.API);
+      } finally {
+        testTimer.end();
+      }
     });
 
     it("should create and return default configuration when none exists", async () => {
-      prismaMock.appConfig.findUnique.mockResolvedValue(null);
-      prismaMock.appConfig.create.mockResolvedValue(mockConfig);
+      const testTimer = measureTestTime("create default config test");
+      try {
+        prismaMock.appConfig.findUnique.mockResolvedValue(null);
+        prismaMock.appConfig.create.mockResolvedValue(mockConfig);
 
-      const response = await GET();
-      const data = await debugResponse(response);
+        const response = await GET();
+        const data = (await debugResponse(response)) as AppConfig;
 
-      expect(response.status).toBe(200);
-      expect(data).toEqual(mockConfig);
+        expect(response.status).toBe(200);
+        expect(data).toEqual(mockConfig);
+        expect(testTimer.elapsed()).toBeLessThan(THRESHOLDS.API);
+      } finally {
+        testTimer.end();
+      }
     });
 
     it("should handle database errors gracefully", async () => {
-      prismaMock.appConfig.findUnique.mockRejectedValue(new Error("Database error"));
-
+      const testTimer = measureTestTime("database error test");
       try {
+        prismaMock.appConfig.findUnique.mockRejectedValue(new Error("Database error"));
+
         const response = await GET();
-        const data = await debugResponse(response);
+        const data = (await debugResponse(response)) as { error: string };
 
         expect(response.status).toBe(500);
         expect(data).toEqual({ error: "Error getting app config" });
+        expect(testTimer.elapsed()).toBeLessThan(THRESHOLDS.API);
       } catch (error) {
-        debugError(error as Error, { findUnique: prismaMock.appConfig.findUnique.mock.calls });
+        debugError(error as Error, {
+          findUnique: prismaMock.appConfig.findUnique.mock.calls,
+          performanceMetrics: {
+            elapsed: testTimer.elapsed(),
+            threshold: THRESHOLDS.API,
+          },
+        });
         throw error;
+      } finally {
+        testTimer.end();
       }
     });
   });

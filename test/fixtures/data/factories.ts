@@ -33,9 +33,9 @@ export interface MockUser {
   lastActiveUrl?: string;
   last_active_url?: string | null;
   /** Timestamp of last update */
-  updatedAt?: string;
+  updatedAt?: Date;
   /** Timestamp of creation */
-  createdAt?: string;
+  createdAt?: Date;
   /** Timestamp of last login */
   lastLoginAt?: string | null;
 }
@@ -68,8 +68,8 @@ export function createMockUser(overrides: Partial<MockUser> = {}): MockUser {
     menuPosition: 'left',
     lastActiveUrl: 'https://example.com',
     last_active_url: null,
-    createdAt: now.toISOString(),
-    updatedAt: now.toISOString(),
+    createdAt: now,
+    updatedAt: now,
     lastLoginAt: null,
   };
 

@@ -2,11 +2,19 @@
 import { DELETE, GET, POST } from "@/app/api/admin/app-config/logo/route";
 import { verifyToken } from "@/app/lib/auth/jwt";
 import { prisma } from "@/app/lib/db/prisma";
-import { debugError, debugMockCalls, debugResponse } from "@/test/helpers/debug";
+import { createMockAppConfig } from "@/test/fixtures/app-config";
+import { createMockUser } from "@/test/fixtures/data/factories";
+import {
+  debugError,
+  debugMockCalls,
+  debugResponse,
+  measureTestTime,
+  THRESHOLDS,
+} from "@/test/helpers/debug";
 import fs from "fs/promises";
 import { NextRequest } from "next/server";
 import sharp from "sharp";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock dependencies
 vi.mock("@/app/lib/auth/jwt", () => ({
@@ -60,37 +68,19 @@ vi.mock("path", async () => {
 });
 
 describe("App Logo API", () => {
-  const mockAdminUser = {
-    id: "admin-id",
-    username: "admin",
-    isAdmin: true,
-  };
-
-  const mockNonAdminUser = {
-    id: "user-id",
-    username: "user",
-    isAdmin: false,
-  };
-
-  const mockAppConfig = {
-    id: "app-config",
-    appName: "Test App",
+  const suiteTimer = measureTestTime("App Logo API Suite");
+  const mockAdminUser = createMockUser({ isAdmin: true });
+  const mockNonAdminUser = createMockUser({ isAdmin: false });
+  const mockAppConfig = createMockAppConfig({
     appLogo: "/logos/test-logo.webp",
-    favicon: null,
-    loginTheme: "dark",
-    registrationEnabled: false,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  };
+  });
 
   beforeEach(() => {
     vi.clearAllMocks();
     vi.stubEnv("NODE_ENV", "development");
-    console.time("test-execution");
   });
 
   afterEach(() => {
-    console.timeEnd("test-execution");
     // Debug mock states after each test
     debugMockCalls(vi.mocked(verifyToken), "verifyToken");
     debugMockCalls(vi.mocked(prisma.appConfig.findUnique), "appConfig.findUnique");
@@ -101,47 +91,69 @@ describe("App Logo API", () => {
     debugMockCalls(vi.mocked(sharp), "sharp");
   });
 
+  afterAll(() => {
+    suiteTimer.end();
+  });
+
   describe("GET /api/admin/app-config/logo", () => {
     it("should redirect to logo URL when logo exists", async () => {
-      vi.mocked(prisma.appConfig.findUnique).mockResolvedValue(mockAppConfig);
+      const testTimer = measureTestTime("logo redirect test");
+      try {
+        vi.mocked(prisma.appConfig.findUnique).mockResolvedValue(mockAppConfig);
 
-      const response = await GET();
-      const data = await response.json().catch(() => null);
-      // await debugResponse(response.clone());
-
-      expect(data.status).toBe(307);
-      expect(data.headers.get("Location")).toBe("http://localhost:3000/logos/test-logo.webp");
+        // we do not need to debug this response as its a redirect
+        const response = await GET();
+        expect(response.status).toBe(307);
+        expect(response.headers.get("Location")).toBe("http://localhost:3000/logos/test-logo.webp");
+        expect(testTimer.elapsed()).toBeLessThan(THRESHOLDS.API);
+      } finally {
+        testTimer.end();
+      }
     });
 
     it("should return 404 when no logo is set", async () => {
-      vi.mocked(prisma.appConfig.findUnique).mockResolvedValue({
-        ...mockAppConfig,
-        appLogo: null,
-      });
+      const testTimer = measureTestTime("logo not found test");
+      try {
+        vi.mocked(prisma.appConfig.findUnique).mockResolvedValue(
+          createMockAppConfig({
+            appLogo: null,
+          }),
+        );
 
-      const response = await GET();
-      const data = await response.json();
-      await debugResponse(response);
+        const response = await GET();
+        const data = (await debugResponse(response)) as { error: string | null };
 
-      expect(response.status).toBe(404);
-      expect(data).toEqual({ error: "No logo found" });
+        expect(response.status).toBe(404);
+        expect(data).toEqual({ error: "No logo found" });
+        expect(testTimer.elapsed()).toBeLessThan(THRESHOLDS.API);
+      } finally {
+        testTimer.end();
+      }
     });
 
     it("should handle database errors", async () => {
-      vi.mocked(prisma.appConfig.findUnique).mockRejectedValue(new Error("Database error"));
-
+      const testTimer = measureTestTime("logo database error test");
       try {
+        const dbError = new Error("Database error");
+        vi.mocked(prisma.appConfig.findUnique).mockRejectedValue(dbError);
+
         const response = await GET();
-        const data = await response.json();
-        await debugResponse(response.clone());
+        const data = (await debugResponse(response)) as { error: string | null };
 
         expect(response.status).toBe(500);
         expect(data).toEqual({ error: "Error getting app logo" });
+        expect(testTimer.elapsed()).toBeLessThan(THRESHOLDS.API);
       } catch (error) {
         debugError(error as Error, {
           findUnique: vi.mocked(prisma.appConfig.findUnique).mock.calls,
+          performanceMetrics: {
+            elapsed: testTimer.elapsed(),
+            threshold: THRESHOLDS.API,
+          },
         });
         throw error;
+      } finally {
+        testTimer.end();
       }
     });
   });
@@ -160,35 +172,37 @@ describe("App Logo API", () => {
     };
 
     it("should upload and process logo when authenticated as admin", async () => {
-      vi.mocked(verifyToken).mockResolvedValue(mockAdminUser);
-      vi.mocked(prisma.appConfig.findUnique).mockResolvedValue(mockAppConfig);
-      vi.mocked(prisma.appConfig.upsert).mockResolvedValue({
-        ...mockAppConfig,
-        appLogo: "/logos/app-logo-123.webp",
-      });
-      vi.mocked(fs.mkdir).mockResolvedValue(undefined);
-      vi.mocked(sharp).mockReturnValue({
-        resize: vi.fn().mockReturnThis(),
-        webp: vi.fn().mockReturnThis(),
-        toFile: vi.fn().mockResolvedValue(undefined),
-      } as any);
-
-      const file = createImageFile();
-      const formData = createFormData(file);
-      const request = new NextRequest("http://localhost:3000", {
-        method: "POST",
-        body: formData,
-      });
-
+      const testTimer = measureTestTime("logo upload test");
       try {
+        vi.mocked(verifyToken).mockResolvedValue(mockAdminUser);
+        vi.mocked(prisma.appConfig.findUnique).mockResolvedValue(mockAppConfig);
+        vi.mocked(prisma.appConfig.upsert).mockResolvedValue(
+          createMockAppConfig({
+            appLogo: "/logos/app-logo-123.webp",
+          }),
+        );
+        vi.mocked(fs.mkdir).mockResolvedValue(undefined);
+        vi.mocked(sharp).mockReturnValue({
+          resize: vi.fn().mockReturnThis(),
+          webp: vi.fn().mockReturnThis(),
+          toFile: vi.fn().mockResolvedValue(undefined),
+        } as any);
+
+        const file = createImageFile();
+        const formData = createFormData(file);
+        const request = new NextRequest("http://localhost:3000", {
+          method: "POST",
+          body: formData,
+        });
+
         const response = await POST(request);
-        const data = await response.json();
-        await debugResponse(response.clone());
+        const data = (await debugResponse(response)) as { appLogo: string | null };
 
         expect(response.status).toBe(200);
         expect(data.appLogo).toMatch(/^\/logos\/app-logo-\d+\.webp$/);
         expect(sharp).toHaveBeenCalled();
         expect(fs.mkdir).toHaveBeenCalled();
+        expect(testTimer.elapsed()).toBeLessThan(THRESHOLDS.API);
       } catch (error) {
         debugError(error as Error, {
           verifyToken: vi.mocked(verifyToken).mock.calls,
@@ -196,44 +210,61 @@ describe("App Logo API", () => {
           upsert: vi.mocked(prisma.appConfig.upsert).mock.calls,
           mkdir: vi.mocked(fs.mkdir).mock.calls,
           sharp: vi.mocked(sharp).mock.calls,
+          performanceMetrics: {
+            elapsed: testTimer.elapsed(),
+            threshold: THRESHOLDS.API,
+          },
         });
         throw error;
+      } finally {
+        testTimer.end();
       }
     });
 
     it("should return 401 when not authenticated", async () => {
-      vi.mocked(verifyToken).mockResolvedValue(null);
+      const testTimer = measureTestTime("unauthorized test");
+      try {
+        vi.mocked(verifyToken).mockResolvedValue(null);
 
-      const file = createImageFile();
-      const formData = createFormData(file);
-      const request = new NextRequest("http://localhost:3000", {
-        method: "POST",
-        body: formData,
-      });
+        const file = createImageFile();
+        const formData = createFormData(file);
+        const request = new NextRequest("http://localhost:3000", {
+          method: "POST",
+          body: formData,
+        });
 
-      const response = await POST(request);
-      const data = await response.json();
-      await debugResponse(response.clone());
+        const response = await POST(request);
+        const data = (await debugResponse(response)) as { error: string | null };
 
-      expect(response.status).toBe(401);
-      expect(data).toEqual({ error: "Unauthorized" });
+        expect(response.status).toBe(401);
+        expect(data).toEqual({ error: "Unauthorized" });
+        expect(testTimer.elapsed()).toBeLessThan(THRESHOLDS.API);
+      } finally {
+        testTimer.end();
+      }
     });
 
     it("should return 403 when authenticated as non-admin", async () => {
-      vi.mocked(verifyToken).mockResolvedValue(mockNonAdminUser);
+      const testTimer = measureTestTime("forbidden test");
+      try {
+        vi.mocked(verifyToken).mockResolvedValue(mockNonAdminUser);
 
-      const file = createImageFile();
-      const formData = createFormData(file);
-      const request = new NextRequest("http://localhost:3000", {
-        method: "POST",
-        body: formData,
-      });
+        const file = createImageFile();
+        const formData = createFormData(file);
+        const request = new NextRequest("http://localhost:3000", {
+          method: "POST",
+          body: formData,
+        });
 
-      const response = await POST(request);
-      const data = await response.json();
+        const response = await POST(request);
+        const data = (await debugResponse(response)) as { error: string | null };
 
-      expect(response.status).toBe(403);
-      expect(data).toEqual({ error: "Admin privileges required" });
+        expect(response.status).toBe(403);
+        expect(data).toEqual({ error: "Admin privileges required" });
+        expect(testTimer.elapsed()).toBeLessThan(THRESHOLDS.API);
+      } finally {
+        testTimer.end();
+      }
     });
 
     it("should return 400 when no file is provided", async () => {
@@ -246,7 +277,7 @@ describe("App Logo API", () => {
       });
 
       const response = await POST(request);
-      const data = await response.json();
+      const data = (await debugResponse(response)) as { error: string | null };
 
       expect(response.status).toBe(400);
       expect(data).toEqual({ error: "No logo file provided" });
@@ -263,7 +294,7 @@ describe("App Logo API", () => {
       });
 
       const response = await POST(request);
-      const data = await response.json();
+      const data = (await debugResponse(response)) as { error: string | null };
 
       expect(response.status).toBe(400);
       expect(data).toEqual({ error: "File too large (max 1MB)" });
@@ -280,7 +311,7 @@ describe("App Logo API", () => {
       });
 
       const response = await POST(request);
-      const data = await response.json();
+      const data = (await debugResponse(response)) as { error: string | null };
 
       expect(response.status).toBe(400);
       expect(data).toEqual({ error: "File must be an image" });
@@ -300,8 +331,7 @@ describe("App Logo API", () => {
 
       try {
         const response = await DELETE();
-        const data = await response.json();
-        await debugResponse(response.clone());
+        const data = (await debugResponse(response)) as { appLogo: string | null };
 
         expect(response.status).toBe(200);
         expect(data.appLogo).toBeNull();
@@ -322,8 +352,7 @@ describe("App Logo API", () => {
       vi.mocked(verifyToken).mockResolvedValue(null);
 
       const response = await DELETE();
-      const data = await response.json();
-      await debugResponse(response.clone());
+      const data = (await debugResponse(response)) as { error: string | null };
 
       expect(response.status).toBe(401);
       expect(data).toEqual({ error: "Unauthorized" });
@@ -333,7 +362,7 @@ describe("App Logo API", () => {
       vi.mocked(verifyToken).mockResolvedValue(mockNonAdminUser);
 
       const response = await DELETE();
-      const data = await response.json();
+      const data = (await debugResponse(response)) as { error: string | null };
 
       expect(response.status).toBe(403);
       expect(data).toEqual({ error: "Admin privileges required" });
@@ -347,7 +376,7 @@ describe("App Logo API", () => {
       });
 
       const response = await DELETE();
-      const data = await response.json();
+      const data = (await debugResponse(response)) as { error: string | null };
 
       expect(response.status).toBe(400);
       expect(data).toEqual({ error: "App does not have a logo" });
@@ -364,7 +393,7 @@ describe("App Logo API", () => {
       });
 
       const response = await DELETE();
-      const data = await response.json();
+      const data = (await debugResponse(response)) as { appLogo: string | null };
 
       expect(response.status).toBe(200);
       expect(data.appLogo).toBeNull();
