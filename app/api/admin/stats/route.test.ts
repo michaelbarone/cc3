@@ -1,13 +1,20 @@
 // 1. External imports
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 // 2. Internal imports
 import { verifyToken } from "@/app/lib/auth/jwt";
 import { prisma } from "@/app/lib/db/prisma";
-import { createTestTimer, debugResponse } from "@/test/utils/helpers/debug";
+import { debugError, debugResponse, measureTestTime, THRESHOLDS } from "@/test/helpers/debug";
 
 // 3. Test subject import
 import { GET } from "@/app/api/admin/stats/route";
+
+// Response type definition
+interface StatsResponse {
+  totalUsers: number;
+  totalUrlGroups: number;
+  totalUrls: number;
+}
 
 // Mock dependencies
 vi.mock("@/app/lib/auth/jwt", () => ({
@@ -36,7 +43,7 @@ const createMockUser = (overrides = {}) => ({
   ...overrides,
 });
 
-const createMockStats = (overrides = {}) => ({
+const createMockStats = (overrides = {}): StatsResponse => ({
   totalUsers: 10,
   totalUrlGroups: 5,
   totalUrls: 25,
@@ -46,17 +53,19 @@ const createMockStats = (overrides = {}) => ({
 describe("Admin Stats API", () => {
   const mockAdminUser = createMockUser({ id: "admin-id", username: "admin", isAdmin: true });
   const mockRegularUser = createMockUser({ id: "user-id", username: "testuser" });
-  const timer = createTestTimer();
+  const suiteTimer = measureTestTime("Admin Stats Suite");
 
   beforeEach(() => {
     vi.clearAllMocks();
-    timer.reset();
+  });
+
+  afterAll(() => {
+    suiteTimer.end();
   });
 
   describe("GET /api/admin/stats", () => {
     it("should return stats when authenticated as admin", async () => {
-      timer.start("admin-stats-test");
-
+      const testTimer = measureTestTime("admin-stats-test");
       try {
         // Mock authentication
         vi.mocked(verifyToken).mockResolvedValue(mockAdminUser);
@@ -68,8 +77,7 @@ describe("Admin Stats API", () => {
         vi.mocked(prisma.url.count).mockResolvedValue(mockStats.totalUrls);
 
         const response = await GET();
-        await debugResponse(response);
-        const data = await response.json();
+        const data = (await debugResponse(response)) as StatsResponse;
 
         expect(response.status).toBe(200);
         expect(data).toEqual(mockStats);
@@ -79,10 +87,9 @@ describe("Admin Stats API", () => {
         expect(prisma.urlGroup.count).toHaveBeenCalled();
         expect(prisma.url.count).toHaveBeenCalled();
 
-        timer.end("admin-stats-test");
+        expect(testTimer.elapsed()).toBeLessThan(THRESHOLDS.API);
       } catch (error) {
-        console.error("Test failed:", {
-          error,
+        debugError(error as Error, {
           mockState: {
             verifyToken: vi.mocked(verifyToken).mock.calls,
             userCount: vi.mocked(prisma.user.count).mock.calls,
@@ -91,18 +98,18 @@ describe("Admin Stats API", () => {
           },
         });
         throw error;
+      } finally {
+        testTimer.end();
       }
     });
 
     it("should return 401 when not authenticated", async () => {
-      timer.start("unauth-stats-test");
-
+      const testTimer = measureTestTime("unauth-stats-test");
       try {
         vi.mocked(verifyToken).mockResolvedValue(null);
 
         const response = await GET();
-        await debugResponse(response);
-        const data = await response.json();
+        const data = (await debugResponse(response)) as { error: string };
 
         expect(response.status).toBe(401);
         expect(data).toEqual({ error: "Unauthorized" });
@@ -112,27 +119,26 @@ describe("Admin Stats API", () => {
         expect(prisma.urlGroup.count).not.toHaveBeenCalled();
         expect(prisma.url.count).not.toHaveBeenCalled();
 
-        timer.end("unauth-stats-test");
+        expect(testTimer.elapsed()).toBeLessThan(THRESHOLDS.UNIT);
       } catch (error) {
-        console.error("Test failed:", {
-          error,
+        debugError(error as Error, {
           mockState: {
             verifyToken: vi.mocked(verifyToken).mock.calls,
           },
         });
         throw error;
+      } finally {
+        testTimer.end();
       }
     });
 
     it("should return 403 when authenticated as non-admin", async () => {
-      timer.start("forbidden-stats-test");
-
+      const testTimer = measureTestTime("forbidden-stats-test");
       try {
         vi.mocked(verifyToken).mockResolvedValue(mockRegularUser);
 
         const response = await GET();
-        await debugResponse(response);
-        const data = await response.json();
+        const data = (await debugResponse(response)) as { error: string };
 
         expect(response.status).toBe(403);
         expect(data).toEqual({ error: "Forbidden" });
@@ -142,43 +148,43 @@ describe("Admin Stats API", () => {
         expect(prisma.urlGroup.count).not.toHaveBeenCalled();
         expect(prisma.url.count).not.toHaveBeenCalled();
 
-        timer.end("forbidden-stats-test");
+        expect(testTimer.elapsed()).toBeLessThan(THRESHOLDS.UNIT);
       } catch (error) {
-        console.error("Test failed:", {
-          error,
+        debugError(error as Error, {
           mockState: {
             verifyToken: vi.mocked(verifyToken).mock.calls,
           },
         });
         throw error;
+      } finally {
+        testTimer.end();
       }
     });
 
     it("should handle database errors gracefully", async () => {
-      timer.start("db-error-stats-test");
-
+      const testTimer = measureTestTime("db-error-stats-test");
       try {
         vi.mocked(verifyToken).mockResolvedValue(mockAdminUser);
         const dbError = new Error("Database error");
         vi.mocked(prisma.user.count).mockRejectedValue(dbError);
 
         const response = await GET();
-        await debugResponse(response);
-        const data = await response.json();
+        const data = (await debugResponse(response)) as { error: string };
 
         expect(response.status).toBe(500);
         expect(data).toEqual({ error: "Internal Server Error" });
 
-        timer.end("db-error-stats-test");
+        expect(testTimer.elapsed()).toBeLessThan(THRESHOLDS.UNIT);
       } catch (error) {
-        console.error("Test failed:", {
-          error,
+        debugError(error as Error, {
           mockState: {
             verifyToken: vi.mocked(verifyToken).mock.calls,
             userCount: vi.mocked(prisma.user.count).mock.calls,
           },
         });
         throw error;
+      } finally {
+        testTimer.end();
       }
     });
   });

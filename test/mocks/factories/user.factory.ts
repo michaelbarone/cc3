@@ -6,7 +6,7 @@
 import { User } from '@prisma/client';
 
 export interface MockUser extends Omit<User, 'lastLoginAt'> {
-  lastLoginAt?: Date | null;
+  lastLoginAt: Date | null;
   password?: string;
   menuPosition: string | null;
   themeMode: string | null;
