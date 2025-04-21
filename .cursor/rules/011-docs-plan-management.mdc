@@ -66,52 +66,6 @@ When planning implementations:
    - Cross-reference maintenance
    - Version control practices
 
-## Documentation Standards
-
-### Component Documentation
-```typescript
-/**
- * LoginForm Component
- * @component
- * @description Handles user authentication through form submission
- *
- * @example
- * ```tsx
- * <LoginForm
- *   onSuccess={handleSuccess}
- *   redirectPath="/dashboard"
- * />
- * ```
- */
-interface LoginFormProps {
-  /** Callback fired when login succeeds */
-  onSuccess: (user: User) => void;
-  /** Path to redirect after successful login */
-  redirectPath?: string;
-}
-```
-
-### State Management Documentation
-```typescript
-/**
- * Authentication State
- * @typedef {Object} AuthState
- *
- * @example
- * ```tsx
- * const [authState, dispatch] = useReducer(authReducer, initialState);
- * ```
- */
-interface AuthState {
-  /** Current user object, null if not authenticated */
-  user: User | null;
-  /** Loading state for auth operations */
-  loading: boolean;
-  /** Last error message if any */
-  error?: string;
-}
-```
-
 ### Type Documentation Requirements
 1. Required Documentation:
    - Every exported type must have JSDoc comment
@@ -317,21 +271,6 @@ actions:
                - Created security followup
                </example>
 
-               <example type="invalid">
-               # Bad: Incomplete Milestone Addition
-               1. Added milestone without questions
-               2. Updated only plan.md
-               3. No implementation details
-               4. No security consideration
-               5. Missing dependencies
-
-               ## Missing:
-               - No scope definition
-               - No security review
-               - Incomplete documentation
-               - No dependency check
-               </example>
-
          c) Risk Management:
             - Potential blockers
             - Mitigation strategies
@@ -381,23 +320,6 @@ actions:
               - Cross-reference validation
               - Link verification process
               - Content accuracy review
-
-         f) Specialized Testing:
-            - For API issues: Follow api_debugging_methodology test patterns
-              ```ruby
-              # Example API test structure from api_debugging_methodology
-              RSpec.describe ApiClient do
-                describe 'configuration' do
-                  it 'loads environment variables' do
-                    # Test env vars
-                  end
-
-                  it 'configures the client properly' do
-                    # Test client setup
-                  end
-                end
-              end
-              ```
 
       4. Documentation Template:
          ```markdown
@@ -533,6 +455,7 @@ actions:
             - Must be updated in real-time as work progresses
             - Use [X] for completed items, [ ] for pending items
             - Include timestamps for all updates
+            - ALWAYS run a command to get timestamps, NEVER estimate timestamps in .plan or plan.md files
 
             Structure and Update Flow:
             ```markdown
@@ -615,30 +538,6 @@ actions:
             - ❌ Issues: None encountered
             - 📚 Documentation: Updated plan with findings
             - ⏭️ Next: Begin configuration updates
-            ```
-
-            Example of Incorrect Updates:
-            ```markdown
-            ## Current Status
-            ### 2025-03-30 21:30
-
-            **Status**: In Progress
-            - What's working:
-              - [X] Document current structure  # DON'T duplicate checklist here
-              - [X] Analyze dependencies
-            - What's not: Import paths
-            - Next actions: Configuration
-
-            ## Implementation Steps
-            1. Preparation Phase  # DON'T remove structure
-               - Document current structure
-               - Analyze dependencies
-
-            ## Progress History
-            ### 2025-03-30 21:30 - Implementation Progress
-            - [X] Document current structure  # DON'T duplicate checklist here
-            - [X] Analyze dependencies
-            - [ ] Update configuration  # DON'T mix pending items
             ```
 
          b) Main Project Plan (plan.md):
