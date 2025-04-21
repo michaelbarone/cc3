@@ -72,7 +72,7 @@ actions:
       1. Simple Single-Line (Most Reliable):
       ```powershell
       # PowerShell
-      git commit -m "feat(ui): add new button component" -ErrorAction Stop
+      git commit -m "feat(ui): add new button component"
       ```
       ```bash
       # Bash
@@ -82,11 +82,7 @@ actions:
       2. Two-Part Message (Recommended):
       ```powershell
       # PowerShell - Using array for multiple messages
-      $messages = @(
-          "feat(ui): add new dashboard components",
-          "Implements metric cards and responsive layout"
-      )
-      git commit -m $messages[0] -m $messages[1] -ErrorAction Stop
+      git commit -m "feat(rules): update conventional commits rule" -m "- Optimize PowerShell commit message formatting"
       ```
       ```bash
       # Bash
@@ -97,27 +93,7 @@ actions:
       3. Multi-line Message (For Complex Changes):
       ```powershell
       # PowerShell - Using array join for reliable multi-line (recommended)
-      $commitLines = @(
-          "feat(auth): implement OAuth2 authentication",
-          "",
-          "- Add OAuth2 provider integration",
-          "- Update middleware",
-          "",
-          "BREAKING CHANGE: New authentication flow requires client update"
-      )
-      $msg = $commitLines -join "`n"
-      git commit -m $msg -ErrorAction Stop
-
-      # Alternative: Using here-string (note: be careful with indentation)
-      $msg = @"
-feat(auth): implement OAuth2 authentication
-
-- Add OAuth2 provider integration
-- Update middleware
-
-BREAKING CHANGE: New authentication flow requires client update
-"@
-      git commit -m $msg -ErrorAction Stop
+      git commit -m "feat(rules): update conventional commits rule" -m "- Optimize PowerShell commit message formatting`n- Add error handling for commit operations`n- Improve documentation for multi-line commits`n- Update examples with PowerShell best practices`n`nBREAKING CHANGE: Requires PowerShell 5.1+"
       ```
       ```bash
       # Bash - Using heredoc
@@ -130,38 +106,6 @@ feat(auth): implement OAuth2 authentication
 BREAKING CHANGE: New authentication flow requires client update
 EOF
       )"
-      ```
-
-      4. Using Editor (For Very Complex Messages):
-      ```powershell
-      # PowerShell - Set editor with error handling
-      try {
-          # Save current editor if exists
-          $prevEditor = if (Test-Path Env:\GIT_EDITOR) { $env:GIT_EDITOR } else { $null }
-
-          # Set new editor
-          $env:GIT_EDITOR = "code --wait"
-
-          # Attempt commit
-          git commit -ErrorAction Stop
-      }
-      catch {
-          Write-Error "Failed to commit: $_"
-      }
-      finally {
-          # Restore previous editor state
-          if ($null -ne $prevEditor) {
-              $env:GIT_EDITOR = $prevEditor
-          }
-          else {
-              Remove-Item Env:\GIT_EDITOR -ErrorAction SilentlyContinue
-          }
-      }
-      ```
-      ```bash
-      # Bash
-      export GIT_EDITOR="code --wait"
-      git commit
       ```
 
       ## Best Practices
@@ -179,55 +123,10 @@ EOF
          - Array join for complex multi-line messages
          - Here-string only when necessary (beware of indentation)
 
-      3. Command Sequencing:
-         ```powershell
-         # PowerShell - Using try/catch with proper error handling
-         try {
-             # Stage changes
-             git add . -ErrorAction Stop
-
-             # Prepare commit message
-             $messages = @(
-                 "feat(scope): new feature",
-                 "Detailed description of changes"
-             )
-
-             # Commit with error handling
-             git commit -m $messages[0] -m $messages[1] -ErrorAction Stop
-         }
-         catch {
-             Write-Error "Git operation failed: $_"
-             Write-Error "Error occurred at line: $($_.InvocationInfo.ScriptLineNumber)"
-         }
-         ```
-         ```bash
-         # Bash - Using separate lines
-         git add .
-         git commit -m "feat(scope): new feature"
-         ```
-
       4. Breaking Changes:
          ```powershell
          # PowerShell - Using array join for reliable formatting
-         try {
-             $commitMsg = @(
-                 "feat(auth): implement new authentication system",
-                 "",
-                 "- Add OAuth2 provider integration",
-                 "- Remove legacy authentication",
-                 "- Update middleware",
-                 "",
-                 "BREAKING CHANGE: Legacy authentication removed.",
-                 "Update client configurations to use OAuth2.",
-                 "Migration guide: https://docs.example.com/migration"
-             ) -join "`n"
-
-             git commit -m $commitMsg -ErrorAction Stop
-         }
-         catch {
-             Write-Error "Failed to commit breaking change: $_"
-             Write-Error "Error details: $($_.Exception.Message)"
-         }
+         git commit -m "feat(rules): update conventional commits rule" -m "- Optimize PowerShell commit message formatting`n- Add error handling for commit operations`n- Improve documentation for multi-line commits`n- Update examples with PowerShell best practices`n`nBREAKING CHANGE: Requires PowerShell 5.1+"
          ```
          ```bash
          # Bash
@@ -243,50 +142,6 @@ Update client configurations to use OAuth2.
 Migration guide: https://docs.example.com/migration
 EOF
          )"
-         ```
-
-      ## Common Pitfalls to Avoid
-
-      1. String Handling:
-         ```powershell
-         # PowerShell - DON'T use string concatenation
-         # BAD: Unreliable line endings
-         $msg = "feat(scope): title" + "`n" + "body"
-
-         # BAD: Indented here-string (adds unwanted spaces)
-         $msg = @"
-             feat(scope): title
-             body
-         "@
-
-         # GOOD: Array join approach
-         $msg = @(
-             "feat(scope): title",
-             "",
-             "body"
-         ) -join "`n"
-
-         # GOOD: Clean here-string (when necessary)
-         $msg = @"
-feat(scope): title
-
-body
-"@
-         ```
-
-      2. Error Handling:
-         ```powershell
-         # PowerShell - DON'T skip error handling
-         # BAD: No error handling
-         git commit -m "message"  # Bad
-
-         # GOOD: Proper error handling
-         try {
-             git commit -m "message" -ErrorAction Stop
-         }
-         catch {
-             Write-Error "Commit failed: $_"
-         }
          ```
 
 examples:
