@@ -101,7 +101,7 @@ Reviewing all API test files to ensure they follow our testing standards and bes
    - [ ] `app/api/admin/icons/route.test.ts`
 
 2. User API Tests
-   - [ ] `app/api/auth/route.test.ts`
+   - [X] `app/api/auth/route.test.ts`
    - [ ] `app/api/first-run/route.test.ts`
    - [ ] `app/api/user/route.test.ts`
    - [ ] `app/api/user/avatar/route.test.ts`
@@ -430,6 +430,17 @@ Reviewing all API test files to ensure they follow our testing standards and bes
 - ✓ All tests passing with proper type safety
 - ✓ No additional changes needed
 - ⏭️ Next: Review app/api/admin/icons/route.test.ts
+
+### 2025-04-26 07:45 - Auth Route Test Update Complete
+- ✓ Updated app/api/auth/route.test.ts with:
+  - Fixed test expectations to match actual route response format
+  - Updated "authenticates user with valid credentials" test to expect success flag and user object
+  - Updated "returns 401 for missing password" test to include remainingAttempts field
+  - All tests passing with proper response validation
+- 🤔 Decisions:
+  - Kept route implementation as is since it was working correctly
+  - Updated tests to match actual response format instead of modifying route
+- ⏭️ Next: Review app/api/first-run/route.test.ts
 
 ## Dependencies
 - Testing Framework Implementation task
