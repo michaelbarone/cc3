@@ -110,7 +110,7 @@ Reviewing all API test files to ensure they follow our testing standards and bes
    - [ ] `app/api/admin/url-groups/route.test.ts`
    - [ ] `app/api/admin/url-groups/[id]/route.test.ts`
    - [ ] `app/api/admin/urls/route.test.ts`
-   - [ ] `app/api/url-groups/route.test.ts`
+   - [X] `app/api/url-groups/route.test.ts`
 
 ## Standards to Check For Each Test
 
@@ -556,6 +556,22 @@ Reviewing all API test files to ensure they follow our testing standards and bes
   - Maintained consistent error handling patterns
 - ⏭️ Next: Review app/api/admin/url-groups/route.test.ts
 
+### 2025-04-26 18:30 - URL Groups Batch Test Fix Complete
+- ✓ Fixed and improved app/api/admin/url-groups/[id]/urls/batch/route.test.ts:
+  - Fixed factory function imports (createTestUrl, createTestUrlGroup)
+  - Updated Request to NextRequest with proper imports
+  - Fixed RouteContext type to use Promise for params
+  - Updated mock implementations for better type safety
+  - Fixed test data structure to match route expectations
+  - Added proper error handling and debugging
+  - Maintained performance monitoring
+  - All tests passing with proper type safety
+- 🤔 Decisions:
+  - Used type casting with (function as any) for mocks to resolve type issues
+  - Updated request body format to match route expectations
+  - Maintained consistent error handling patterns
+- ⏭️ Next: Review app/api/admin/url-groups/[id]/route.test.ts
+
 ## Checklist
 - [x] app/api/admin/statistics/boundary.test.ts
 - [x] app/api/admin/stats/route.test.ts
@@ -564,6 +580,7 @@ Reviewing all API test files to ensure they follow our testing standards and bes
 - [x] app/api/user/preferences/route.test.ts
 - [x] app/api/user/avatar/route.test.ts
 - [x] app/api/admin/icons/route.test.ts
+- [x] app/api/admin/url-groups/[id]/urls/batch/route.test.ts
 
 ## Next Steps
 Review app/api/admin/users/route.test.ts for similar improvements in:
