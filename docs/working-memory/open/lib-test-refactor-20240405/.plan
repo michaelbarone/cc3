@@ -36,24 +36,53 @@ Reorganizing library and test directories to improve maintainability and follow 
 ### Test Directory Structure
 ```
 /test
-├── fixtures/           # Test data fixtures
-│   ├── factories.ts   # Factory functions with API transformations
-│   ├── data/         # Static test data
-│   └── responses/    # Expected API responses
-├── mocks/             # Mock implementations
-│   ├── prisma.ts     # Prisma client mock
-│   ├── next.ts       # Next.js mocks
-│   ├── filesystem.ts # File system mocks
-│   └── services/     # Service-specific mocks
-├── helpers/           # Test helper functions
-│   ├── cleanup.ts    # Cleanup utilities
-│   └── validation.ts # Validation utilities
-├── setup/            # Test setup utilities
-│   ├── providers.tsx # Test providers (from test-utils.tsx)
-│   ├── database.ts  # Database setup
-│   └── filesystem.ts # File system setup
-├── setup.ts          # Main test setup file
-└── smoke.test.tsx    # Smoke tests
+├── e2e/                # End-to-end tests and helpers (Playwright config, journeys, helpers, assets, troubleshooting)
+│   ├── config.ts               # Playwright configuration for E2E tests
+│   ├── global-setup.ts         # E2E global setup logic
+│   ├── journeys/               # E2E user journey test suites
+│   ├── helpers/                # E2E-specific helper functions
+│   ├── test-assets/            # Static assets for E2E tests
+│   ├── TROUBLESHOOTING.md      # Troubleshooting guide for E2E tests
+│   ├── archived/               # Archived/legacy E2E tests
+│   └── smoke.spec.ts           # Basic E2E smoke test
+├── fixtures/           # Test data fixtures (API and service layer)
+│   ├── app-config.ts           # App config fixture data
+│   ├── data/                   # Static test data for API layer
+│   │   ├── statistics.ts         # Mock statistics data for API tests
+│   │   └── factories.ts          # Factory functions for creating API test data
+│   └── responses/              # Expected API response fixtures
+├── helpers/            # Test helper functions (unit/integration)
+│   ├── debug.ts                # Debug utilities (logResponse, debugElement, performance timers, error logging)
+│   ├── index.ts                # Central export for helpers
+│   ├── type-validation.ts      # Type validation helpers for test data
+│   ├── cleanup.test.ts         # Tests for cleanup utilities
+│   ├── cleanup-verification.test.ts # Tests for verifying cleanup logic
+│   ├── file/                   # File-related helpers
+│   │   └── fs-cleanup.ts         # File system cleanup utilities for tests
+│   └── db/                     # Database helper utilities (if present)
+├── integration/        # Integration tests (empty or WIP)
+├── mocks/              # Mock implementations for services, Prisma, Next.js, etc.
+│   ├── README.md               # Overview of mock usage and structure
+│   ├── factories/              # Factory functions for mock data
+│   ├── services/               # Service-specific mocks
+│   │   ├── setup.ts              # Setup logic for service mocks
+│   │   ├── server.ts             # Mock server implementation
+│   │   ├── next.ts               # Next.js API route mocks
+│   │   ├── index.ts              # Central export for service mocks
+│   │   ├── prisma/               # Prisma client mocks
+│   │   │   ├── prisma.mock.ts      # Deep Prisma client mock (mockDeep, type-safe)
+│   │   │   └── index.ts           # Prisma mock exports
+│   │   ├── handlers/             # Mock request handlers
+│   │   ├── filesystem/           # File system mocks
+│   │   ├── auth/                 # Auth-related mocks
+│   │   └── data/                 # Data-related mocks
+├── setup/              # Test setup utilities (providers, context, etc.)
+│   └── providers.tsx           # Test providers (SessionProvider, IframeProvider, enhanced render)
+├── utils/              # Utility helpers for tests (general-purpose)
+│   └── helpers/                # Utility helper functions (currently empty or WIP)
+├── setup.ts            # Main test setup file (global hooks, environment setup)
+├── smoke.test.tsx      # Basic smoke test for test environment
+├── types.ts            # Type definitions for test mocks and fixtures (e.g., TokenPayload)
 ```
 
 ### Library Directory Structure
@@ -67,6 +96,47 @@ Reorganizing library and test directories to improve maintainability and follow 
 ├── utils/           # General utilities
 └── types.ts         # Shared types
 ```
+
+### Standard Imports for Test Files
+
+The following import pattern reflecteth the current best practices for test files in this noble codebase. Use this as a template for new tests:
+
+```typescript
+// 1. External libraries
+import { render, screen, cleanup } from '@testing-library/react'
+import { describe, expect, it, beforeAll, beforeEach, afterAll, afterEach, vi } from 'vitest'
+import { setupServer } from 'msw/node'
+
+// 2. Application code (API routes, Prisma, etc.)
+import { POST as avatarPost } from '@/app/api/user/avatar/route'
+import { prisma } from '@/app/lib/db/prisma'
+import type { JwtPayload } from '@/app/lib/auth/jwt'
+
+// 3. Test mocks and helpers
+import { authHandlers } from '@/test/mocks/services/handlers/auth'
+import { setupTestMocks } from '@/test/mocks/services/setup'
+import { createMockFileSystem, createMockSharp } from '@/test/mocks/filesystem'
+import { createMockNextRequest } from '@/test/mocks/next'
+import { mockPrismaClient } from '@/test/mocks/prisma'
+import { clearTestFiles, getCreatedFiles, initializeTestFiles } from '@/test/helpers'
+import { debugResponse, debugError, measureTestTime, createTestTimer, THRESHOLDS } from '@/test/helpers/debug' // Debug utilities for test output, timing, and error inspection
+
+// 4. Node.js built-ins (if needed)
+import path from 'path'
+import fs from 'fs/promises'
+
+// 5. Type imports (if needed)
+import type { MockUser } from '@/test/fixtures/data/factories'
+
+// 6. Test-specific setup (e.g., MSW server)
+const server = setupServer(...authHandlers)
+```
+
+> **Note:**
+> - The `@/test/helpers/debug` import provideth utilities for debugging responses, errors, and measuring test performance. It is standard for API and integration tests.
+> - Adjust the imports to match the needs of thy test (e.g., use only `render` and `screen` for simple component tests).
+> - For E2E or integration tests, include MSW, Prisma, and relevant mocks as shown.
+> - Always group imports by type: external libraries, application code, test mocks/helpers, built-ins, and types.
 
 ## Implementation Plan
 
