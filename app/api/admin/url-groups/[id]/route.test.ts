@@ -1,76 +1,137 @@
-import { vi } from "vitest";
-
-// Mock next/headers before any imports
-vi.mock("next/headers", () => ({
-  cookies: vi.fn(() => ({
-    get: vi.fn(),
-    getAll: vi.fn(),
-    has: vi.fn(),
-    set: vi.fn(),
-    delete: vi.fn(),
-  })),
-}));
-
-import { debugResponse, measureTestTime } from "@/test/helpers/debug";
-import { mockVerifyToken, setupAuthMocks } from "@/test/mocks/services/auth/auth.mock";
-import { createMockCookieStore, mockNextHeaders } from "@/test/mocks/services/next";
-import { PrismaMock } from "@/test/mocks/services/prisma/prisma.mock";
+import {
+  DELETE as deleteUrlGroup,
+  GET as getUrlGroup,
+  RouteContext,
+  PUT as updateUrlGroup,
+} from "@/app/api/admin/url-groups/[id]/route";
+import { verifyToken } from "@/app/lib/auth/jwt";
+import { prisma } from "@/app/lib/db/prisma";
+import { createTestUrl, createTestUrlGroup } from "@/test/fixtures/data/factories";
+import {
+  debugError,
+  debugMockCalls,
+  debugResponse,
+  measureTestTime,
+  THRESHOLDS,
+} from "@/test/helpers/debug";
 import { NextRequest } from "next/server";
-import { afterAll, beforeEach, describe, expect, it } from "vitest";
-import { DELETE, GET, PUT, RouteContext } from "./route";
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi, type Mock } from "vitest";
 
-// Create test timer for the entire test suite
-const timer = measureTestTime();
-
-// Create mock prisma client
-const mockPrisma = PrismaMock.getInstance();
-vi.mock("@/lib/prisma", () => ({
-  prisma: mockPrisma,
+// Setup mocks first
+vi.mock("@/app/lib/auth/jwt", () => ({
+  verifyToken: vi.fn(),
 }));
 
-// Setup auth mocks
-setupAuthMocks();
+vi.mock("@/app/lib/db/prisma", () => ({
+  prisma: {
+    urlGroup: {
+      findMany: vi.fn(),
+      findUnique: vi.fn(),
+      create: vi.fn(),
+      update: vi.fn(),
+      delete: vi.fn(),
+    },
+    urlsInGroups: {
+      findMany: vi.fn(),
+      findUnique: vi.fn(),
+      create: vi.fn(),
+      createMany: vi.fn(),
+      deleteMany: vi.fn(),
+      updateMany: vi.fn(),
+      aggregate: vi.fn(),
+    },
+    url: {
+      findMany: vi.fn(),
+      findUnique: vi.fn(),
+      create: vi.fn(),
+    },
+    $transaction: vi.fn((callback) => callback(prisma)),
+    $queryRaw: vi.fn(),
+    $disconnect: vi.fn(),
+  },
+}));
 
-describe("URL Group API", () => {
-  const suiteTimer = measureTestTime();
+// Mock cookie store
+const mockCookieStore = {
+  get: vi.fn(),
+  getAll: vi.fn(),
+  has: vi.fn(),
+  set: vi.fn(),
+  delete: vi.fn(),
+};
 
-  // Create test data using factories
-  const mockUrlGroup = {
-    id: "test-group-1",
-    name: "Test Group",
-    description: "Test Description",
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    urls: [],
-  };
+vi.mock("next/headers", () => ({
+  cookies: vi.fn(() => mockCookieStore),
+}));
 
-  const mockAdmin = {
-    id: "admin-1",
-    name: "Admin User",
-    email: "admin@test.com",
+// Define response types
+type UrlInGroup = {
+  id: string;
+  title: string;
+  url: string;
+  iconPath: string | null;
+  idleTimeoutMinutes: number | null;
+  displayOrder: number;
+};
+
+type UrlGroupResponse = {
+  id: string;
+  name: string;
+  description: string | null;
+  createdAt: string;
+  updatedAt: string;
+  urls: UrlInGroup[];
+};
+
+type ErrorResponse = {
+  error: string;
+};
+
+type SuccessResponse = {
+  success: boolean;
+};
+
+describe("Admin URL Group API", () => {
+  const suiteTimer = measureTestTime("Admin URL Group API Suite");
+
+  // Mock data
+  const mockAdminUser = {
+    id: "admin-id",
+    username: "admin",
     isAdmin: true,
   };
 
-  const mockUser = {
-    id: "user-1",
-    name: "Regular User",
-    email: "user@test.com",
+  const mockNonAdminUser = {
+    id: "user-id",
+    username: "user",
     isAdmin: false,
   };
 
-  let cookieStore: ReturnType<typeof createMockCookieStore>;
+  const mockDate = new Date("2025-01-01T00:00:00.000Z");
+  const mockDateString = mockDate.toISOString();
 
-  // Helper to create NextRequest with params
-  const createNextRequest = (method: string = "GET", body?: any) => {
-    const url = `http://localhost/api/admin/url-groups/${mockUrlGroup.id}`;
-    return new NextRequest(url, {
-      method,
-      ...(body && {
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      }),
-    });
-  };
+  const mockUrlGroup = createTestUrlGroup({
+    id: "test-group-id",
+    name: "Test Group",
+    description: "Test description",
+    createdAt: mockDateString,
+    updatedAt: mockDateString,
+    urls: [
+      {
+        url: createTestUrl({
+          id: "url-id",
+          title: "Test URL",
+          url: "https://example.com",
+          urlMobile: "https://m.example.com",
+          iconPath: "/icons/test.png",
+          idleTimeoutMinutes: 10,
+          createdAt: mockDateString,
+          updatedAt: mockDateString,
+        }),
+        displayOrder: 1,
+      },
+    ],
+  });
 
   // Helper to create route context with params
   const createRouteContext = (id: string): RouteContext => ({
@@ -78,29 +139,33 @@ describe("URL Group API", () => {
   });
 
   beforeEach(() => {
-    // Reset all mocks
-    PrismaMock.reset();
-    vi.clearAllMocks();
+    const setupTimer = measureTestTime("Test Setup");
+    try {
+      vi.clearAllMocks();
 
-    // Set up cookie store mock
-    cookieStore = createMockCookieStore();
-    cookieStore.get.mockImplementation((name: string) => {
-      if (name === "auth_token") {
-        return { value: "admin_token" };
-      }
-      return undefined;
-    });
+      // Setup auth mock
+      mockCookieStore.get.mockReturnValue({ value: "valid_token" });
+      (verifyToken as Mock).mockResolvedValue(mockAdminUser);
 
-    // Set up headers mock with cookie store
-    mockNextHeaders(cookieStore);
+      // Setup Prisma mock
+      (prisma.$queryRaw as Mock).mockResolvedValue([mockUrlGroup]);
+      (prisma.urlGroup.findUnique as Mock).mockResolvedValue(mockUrlGroup);
+    } finally {
+      setupTimer.end();
+    }
+  });
 
-    // Setup auth mock responses
-    mockVerifyToken.mockImplementation(async (token?: string) => {
-      if (!token) return null;
-      if (token === "admin_token") return mockAdmin;
-      if (token === "user_token") return mockUser;
-      return null;
-    });
+  afterEach(() => {
+    const cleanupTimer = measureTestTime("Test Cleanup");
+    try {
+      debugMockCalls(verifyToken as Mock, "verifyToken");
+      debugMockCalls(prisma.$queryRaw as Mock, "prisma.$queryRaw");
+      debugMockCalls(prisma.urlGroup.findUnique as Mock, "prisma.urlGroup.findUnique");
+      debugMockCalls(prisma.urlGroup.update as Mock, "prisma.urlGroup.update");
+      debugMockCalls(prisma.urlGroup.delete as Mock, "prisma.urlGroup.delete");
+    } finally {
+      cleanupTimer.end();
+    }
   });
 
   afterAll(() => {
@@ -109,25 +174,32 @@ describe("URL Group API", () => {
 
   describe("GET /api/admin/url-groups/[id]", () => {
     it("should return URL group when authenticated as admin", async () => {
-      const testTimer = measureTestTime();
+      const testTimer = measureTestTime("Get URL Group - Admin");
       try {
         // Arrange
-        mockPrisma.$queryRaw.mockResolvedValueOnce([mockUrlGroup]);
+        (prisma.$queryRaw as Mock).mockResolvedValue([mockUrlGroup]);
 
         // Act
-        const response = await GET(createNextRequest(), createRouteContext(mockUrlGroup.id));
-        const data = await debugResponse(response);
+        const response = await getUrlGroup(
+          new NextRequest("http://localhost"),
+          createRouteContext(mockUrlGroup.id),
+        );
+        const data = await debugResponse<UrlGroupResponse>(response);
 
         // Assert
         expect(response.status).toBe(200);
         expect(data).toEqual(mockUrlGroup);
-        expect(mockPrisma.$queryRaw).toHaveBeenCalledWith(expect.any(String));
+        expect(prisma.$queryRaw).toHaveBeenCalled();
+        expect(testTimer.elapsed()).toBeLessThan(THRESHOLDS.API);
       } catch (error) {
-        console.error("Test failed:", {
-          error,
+        debugError(error as Error, {
           mockState: {
-            prismaQuery: mockPrisma.$queryRaw.mock.calls,
-            verifyToken: mockVerifyToken.mock.calls,
+            prismaQuery: (prisma.$queryRaw as Mock).mock.calls,
+            verifyToken: (verifyToken as Mock).mock.calls,
+          },
+          performanceMetrics: {
+            elapsed: testTimer.elapsed(),
+            threshold: THRESHOLDS.API,
           },
         });
         throw error;
@@ -137,84 +209,129 @@ describe("URL Group API", () => {
     });
 
     it("should return 401 when no token is present", async () => {
-      const testTimer = measureTestTime();
+      const testTimer = measureTestTime("Get URL Group - Unauthorized");
       try {
         // Arrange
-        cookieStore.get.mockReturnValue(undefined);
+        mockCookieStore.get.mockReturnValue(undefined);
 
         // Act
-        const response = await GET(createNextRequest(), createRouteContext(mockUrlGroup.id));
-        const data = await debugResponse(response);
+        const response = await getUrlGroup(
+          new NextRequest("http://localhost"),
+          createRouteContext(mockUrlGroup.id),
+        );
+        const data = await debugResponse<ErrorResponse>(response);
 
         // Assert
         expect(response.status).toBe(401);
         expect(data).toEqual({ error: "Unauthorized" });
-        expect(mockPrisma.$queryRaw).not.toHaveBeenCalled();
+        expect(prisma.$queryRaw).not.toHaveBeenCalled();
+        expect(testTimer.elapsed()).toBeLessThan(THRESHOLDS.API);
+      } catch (error) {
+        debugError(error as Error, {
+          performanceMetrics: {
+            elapsed: testTimer.elapsed(),
+            threshold: THRESHOLDS.API,
+          },
+        });
+        throw error;
       } finally {
         testTimer.end();
       }
     });
 
     it("should return 403 when authenticated as non-admin", async () => {
-      const testTimer = measureTestTime();
+      const testTimer = measureTestTime("Get URL Group - Forbidden");
       try {
         // Arrange
-        cookieStore.get.mockReturnValue({ value: "user_token" });
+        (verifyToken as Mock).mockResolvedValue(mockNonAdminUser);
 
         // Act
-        const response = await GET(createNextRequest(), createRouteContext(mockUrlGroup.id));
-        const data = await debugResponse(response);
+        const response = await getUrlGroup(
+          new NextRequest("http://localhost"),
+          createRouteContext(mockUrlGroup.id),
+        );
+        const data = await debugResponse<ErrorResponse>(response);
 
         // Assert
         expect(response.status).toBe(403);
         expect(data).toEqual({ error: "Forbidden" });
-        expect(mockPrisma.$queryRaw).not.toHaveBeenCalled();
+        expect(prisma.$queryRaw).not.toHaveBeenCalled();
+        expect(testTimer.elapsed()).toBeLessThan(THRESHOLDS.API);
+      } catch (error) {
+        debugError(error as Error, {
+          performanceMetrics: {
+            elapsed: testTimer.elapsed(),
+            threshold: THRESHOLDS.API,
+          },
+        });
+        throw error;
       } finally {
         testTimer.end();
       }
     });
 
     it("should return 404 when URL group not found", async () => {
-      const testTimer = measureTestTime();
+      const testTimer = measureTestTime("Get URL Group - Not Found");
       try {
         // Arrange
-        mockPrisma.$queryRaw.mockResolvedValueOnce([]);
+        (prisma.$queryRaw as Mock).mockResolvedValue([]);
 
         // Act
-        const response = await GET(createNextRequest(), createRouteContext(mockUrlGroup.id));
-        const data = await debugResponse(response);
+        const response = await getUrlGroup(
+          new NextRequest("http://localhost"),
+          createRouteContext("non-existent-id"),
+        );
+        const data = await debugResponse<ErrorResponse>(response);
 
         // Assert
         expect(response.status).toBe(404);
         expect(data).toEqual({ error: "URL group not found" });
+        expect(testTimer.elapsed()).toBeLessThan(THRESHOLDS.API);
+      } catch (error) {
+        debugError(error as Error, {
+          mockState: {
+            prismaQuery: (prisma.$queryRaw as Mock).mock.calls,
+          },
+          performanceMetrics: {
+            elapsed: testTimer.elapsed(),
+            threshold: THRESHOLDS.API,
+          },
+        });
+        throw error;
       } finally {
         testTimer.end();
       }
     });
 
     it("should handle database errors gracefully", async () => {
-      const testTimer = measureTestTime();
+      const testTimer = measureTestTime("Get URL Group - Database Error");
       try {
         // Arrange
         const dbError = new Error("Database error");
-        mockPrisma.$queryRaw.mockRejectedValueOnce(dbError);
+        (prisma.$queryRaw as Mock).mockRejectedValue(dbError);
 
         // Act
-        const response = await GET(createNextRequest(), createRouteContext(mockUrlGroup.id));
-        const data = await debugResponse(response);
+        const response = await getUrlGroup(
+          new NextRequest("http://localhost"),
+          createRouteContext(mockUrlGroup.id),
+        );
+        const data = await debugResponse<ErrorResponse>(response);
 
         // Assert
         expect(response.status).toBe(500);
         expect(data).toEqual({ error: "Internal Server Error" });
-
-        // Log error for debugging
-        console.error("Database operation failed:", {
-          error: dbError.message,
-          stack: dbError.stack,
+        expect(testTimer.elapsed()).toBeLessThan(THRESHOLDS.API);
+      } catch (error) {
+        debugError(error as Error, {
           mockState: {
-            prismaQuery: mockPrisma.$queryRaw.mock.calls,
+            prismaQuery: (prisma.$queryRaw as Mock).mock.calls,
+          },
+          performanceMetrics: {
+            elapsed: testTimer.elapsed(),
+            threshold: THRESHOLDS.API,
           },
         });
+        throw error;
       } finally {
         testTimer.end();
       }
@@ -229,36 +346,45 @@ describe("URL Group API", () => {
     });
 
     it("should update URL group when authenticated as admin", async () => {
-      const testTimer = measureTestTime();
+      const testTimer = measureTestTime("Update URL Group - Success");
       try {
         // Arrange
         const updateData = createUpdateData();
         const updatedUrlGroup = { ...mockUrlGroup, ...updateData };
 
-        mockPrisma.urlGroup.findUnique.mockResolvedValueOnce(mockUrlGroup);
-        mockPrisma.urlGroup.update.mockResolvedValueOnce(updatedUrlGroup);
+        (prisma.urlGroup.findUnique as Mock).mockResolvedValue(mockUrlGroup);
+        (prisma.urlGroup.update as Mock).mockResolvedValue(updatedUrlGroup);
 
         // Act
-        const response = await PUT(
-          createNextRequest("PUT", updateData),
-          createRouteContext(mockUrlGroup.id),
-        );
-        const data = await debugResponse(response);
+        const request = new NextRequest("http://localhost", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(updateData),
+        });
+
+        const response = await updateUrlGroup(request, createRouteContext(mockUrlGroup.id));
+        const data = await debugResponse<UrlGroupResponse>(response);
 
         // Assert
         expect(response.status).toBe(200);
         expect(data).toEqual(updatedUrlGroup);
-        expect(mockPrisma.urlGroup.update).toHaveBeenCalledWith({
+        expect(prisma.urlGroup.update).toHaveBeenCalledWith({
           where: { id: mockUrlGroup.id },
-          data: updateData,
+          data: {
+            name: updateData.name,
+            description: updateData.description,
+          },
         });
+        expect(testTimer.elapsed()).toBeLessThan(THRESHOLDS.API);
       } catch (error) {
-        console.error("Test failed:", {
-          error,
+        debugError(error as Error, {
           mockState: {
-            findUnique: mockPrisma.urlGroup.findUnique.mock.calls,
-            update: mockPrisma.urlGroup.update.mock.calls,
-            verifyToken: mockVerifyToken.mock.calls,
+            findUnique: (prisma.urlGroup.findUnique as Mock).mock.calls,
+            update: (prisma.urlGroup.update as Mock).mock.calls,
+          },
+          performanceMetrics: {
+            elapsed: testTimer.elapsed(),
+            threshold: THRESHOLDS.API,
           },
         });
         throw error;
@@ -268,103 +394,184 @@ describe("URL Group API", () => {
     });
 
     it("should return 401 when no token is present", async () => {
-      const testTimer = measureTestTime();
+      const testTimer = measureTestTime("Update URL Group - Unauthorized");
       try {
         // Arrange
-        cookieStore.get.mockReturnValue(undefined);
+        mockCookieStore.get.mockReturnValue(undefined);
         const updateData = createUpdateData();
 
         // Act
-        const response = await PUT(
-          createNextRequest("PUT", updateData),
-          createRouteContext(mockUrlGroup.id),
-        );
-        const data = await debugResponse(response);
+        const request = new NextRequest("http://localhost", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(updateData),
+        });
+
+        const response = await updateUrlGroup(request, createRouteContext(mockUrlGroup.id));
+        const data = await debugResponse<ErrorResponse>(response);
 
         // Assert
         expect(response.status).toBe(401);
         expect(data).toEqual({ error: "Unauthorized" });
-        expect(mockPrisma.urlGroup.update).not.toHaveBeenCalled();
+        expect(prisma.urlGroup.update).not.toHaveBeenCalled();
+        expect(testTimer.elapsed()).toBeLessThan(THRESHOLDS.API);
+      } catch (error) {
+        debugError(error as Error, {
+          performanceMetrics: {
+            elapsed: testTimer.elapsed(),
+            threshold: THRESHOLDS.API,
+          },
+        });
+        throw error;
       } finally {
         testTimer.end();
       }
     });
 
     it("should return 403 when authenticated as non-admin", async () => {
-      const testTimer = measureTestTime();
+      const testTimer = measureTestTime("Update URL Group - Forbidden");
       try {
         // Arrange
-        cookieStore.get.mockReturnValue({ value: "user_token" });
+        (verifyToken as Mock).mockResolvedValue(mockNonAdminUser);
         const updateData = createUpdateData();
 
         // Act
-        const response = await PUT(
-          createNextRequest("PUT", updateData),
-          createRouteContext(mockUrlGroup.id),
-        );
-        const data = await debugResponse(response);
+        const request = new NextRequest("http://localhost", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(updateData),
+        });
+
+        const response = await updateUrlGroup(request, createRouteContext(mockUrlGroup.id));
+        const data = await debugResponse<ErrorResponse>(response);
 
         // Assert
         expect(response.status).toBe(403);
         expect(data).toEqual({ error: "Forbidden" });
-        expect(mockPrisma.urlGroup.update).not.toHaveBeenCalled();
+        expect(prisma.urlGroup.update).not.toHaveBeenCalled();
+        expect(testTimer.elapsed()).toBeLessThan(THRESHOLDS.API);
+      } catch (error) {
+        debugError(error as Error, {
+          performanceMetrics: {
+            elapsed: testTimer.elapsed(),
+            threshold: THRESHOLDS.API,
+          },
+        });
+        throw error;
       } finally {
         testTimer.end();
       }
     });
 
     it("should return 404 when URL group not found", async () => {
-      const testTimer = measureTestTime();
+      const testTimer = measureTestTime("Update URL Group - Not Found");
       try {
         // Arrange
-        mockPrisma.urlGroup.findUnique.mockResolvedValueOnce(null);
+        (prisma.urlGroup.findUnique as Mock).mockResolvedValue(null);
         const updateData = createUpdateData();
 
         // Act
-        const response = await PUT(
-          createNextRequest("PUT", updateData),
-          createRouteContext(mockUrlGroup.id),
-        );
-        const data = await debugResponse(response);
+        const request = new NextRequest("http://localhost", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(updateData),
+        });
+
+        const response = await updateUrlGroup(request, createRouteContext("non-existent-id"));
+        const data = await debugResponse<ErrorResponse>(response);
 
         // Assert
         expect(response.status).toBe(404);
         expect(data).toEqual({ error: "URL group not found" });
-        expect(mockPrisma.urlGroup.update).not.toHaveBeenCalled();
+        expect(prisma.urlGroup.update).not.toHaveBeenCalled();
+        expect(testTimer.elapsed()).toBeLessThan(THRESHOLDS.API);
+      } catch (error) {
+        debugError(error as Error, {
+          mockState: {
+            findUnique: (prisma.urlGroup.findUnique as Mock).mock.calls,
+          },
+          performanceMetrics: {
+            elapsed: testTimer.elapsed(),
+            threshold: THRESHOLDS.API,
+          },
+        });
+        throw error;
+      } finally {
+        testTimer.end();
+      }
+    });
+
+    it("should validate required name field", async () => {
+      const testTimer = measureTestTime("Update URL Group - Validation Error");
+      try {
+        // Arrange
+        const updateData = createUpdateData({ name: "" });
+
+        // Act
+        const request = new NextRequest("http://localhost", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(updateData),
+        });
+
+        const response = await updateUrlGroup(request, createRouteContext(mockUrlGroup.id));
+        const data = await debugResponse<ErrorResponse>(response);
+
+        // Assert
+        expect(response.status).toBe(400);
+        expect(data).toEqual({ error: "Group name is required" });
+        expect(prisma.urlGroup.update).not.toHaveBeenCalled();
+        expect(testTimer.elapsed()).toBeLessThan(THRESHOLDS.API);
+      } catch (error) {
+        debugError(error as Error, {
+          performanceMetrics: {
+            elapsed: testTimer.elapsed(),
+            threshold: THRESHOLDS.API,
+          },
+        });
+        throw error;
       } finally {
         testTimer.end();
       }
     });
 
     it("should handle database errors gracefully", async () => {
-      const testTimer = measureTestTime();
+      const testTimer = measureTestTime("Update URL Group - Database Error");
       try {
         // Arrange
-        const dbError = new Error("Database error");
-        mockPrisma.urlGroup.findUnique.mockResolvedValueOnce(mockUrlGroup);
-        mockPrisma.urlGroup.update.mockRejectedValueOnce(dbError);
         const updateData = createUpdateData();
+        const dbError = new Error("Database error");
+
+        (prisma.urlGroup.findUnique as Mock).mockResolvedValue(mockUrlGroup);
+        (prisma.urlGroup.update as Mock).mockRejectedValue(dbError);
 
         // Act
-        const response = await PUT(
-          createNextRequest("PUT", updateData),
-          createRouteContext(mockUrlGroup.id),
-        );
-        const data = await debugResponse(response);
+        const request = new NextRequest("http://localhost", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(updateData),
+        });
+
+        const response = await updateUrlGroup(request, createRouteContext(mockUrlGroup.id));
+        const data = await debugResponse<ErrorResponse>(response);
 
         // Assert
         expect(response.status).toBe(500);
         expect(data).toEqual({ error: "Internal Server Error" });
-
-        // Log error for debugging
-        console.error("Database operation failed:", {
-          error: dbError.message,
-          stack: dbError.stack,
+        expect(testTimer.elapsed()).toBeLessThan(THRESHOLDS.API);
+      } catch (error) {
+        debugError(error as Error, {
+          error,
           mockState: {
-            findUnique: mockPrisma.urlGroup.findUnique.mock.calls,
-            update: mockPrisma.urlGroup.update.mock.calls,
+            findUnique: (prisma.urlGroup.findUnique as Mock).mock.calls,
+            update: (prisma.urlGroup.update as Mock).mock.calls,
+          },
+          performanceMetrics: {
+            elapsed: testTimer.elapsed(),
+            threshold: THRESHOLDS.API,
           },
         });
+        throw error;
       } finally {
         testTimer.end();
       }
@@ -373,32 +580,35 @@ describe("URL Group API", () => {
 
   describe("DELETE /api/admin/url-groups/[id]", () => {
     it("should delete URL group when authenticated as admin", async () => {
-      const testTimer = measureTestTime();
+      const testTimer = measureTestTime("Delete URL Group - Success");
       try {
         // Arrange
-        mockPrisma.urlGroup.findUnique.mockResolvedValueOnce(mockUrlGroup);
-        mockPrisma.urlGroup.delete.mockResolvedValueOnce(mockUrlGroup);
+        (prisma.urlGroup.findUnique as Mock).mockResolvedValue(mockUrlGroup);
+        (prisma.urlGroup.delete as Mock).mockResolvedValue(mockUrlGroup);
 
         // Act
-        const response = await DELETE(
-          createNextRequest("DELETE"),
+        const response = await deleteUrlGroup(
+          new NextRequest("http://localhost"),
           createRouteContext(mockUrlGroup.id),
         );
-        const data = await debugResponse(response);
+        const data = await debugResponse<SuccessResponse>(response);
 
         // Assert
         expect(response.status).toBe(200);
         expect(data).toEqual({ success: true });
-        expect(mockPrisma.urlGroup.delete).toHaveBeenCalledWith({
+        expect(prisma.urlGroup.delete).toHaveBeenCalledWith({
           where: { id: mockUrlGroup.id },
         });
+        expect(testTimer.elapsed()).toBeLessThan(THRESHOLDS.API);
       } catch (error) {
-        console.error("Test failed:", {
-          error,
+        debugError(error as Error, {
           mockState: {
-            findUnique: mockPrisma.urlGroup.findUnique.mock.calls,
-            delete: mockPrisma.urlGroup.delete.mock.calls,
-            verifyToken: mockVerifyToken.mock.calls,
+            findUnique: (prisma.urlGroup.findUnique as Mock).mock.calls,
+            delete: (prisma.urlGroup.delete as Mock).mock.calls,
+          },
+          performanceMetrics: {
+            elapsed: testTimer.elapsed(),
+            threshold: THRESHOLDS.API,
           },
         });
         throw error;
@@ -408,99 +618,133 @@ describe("URL Group API", () => {
     });
 
     it("should return 401 when no token is present", async () => {
-      const testTimer = measureTestTime();
+      const testTimer = measureTestTime("Delete URL Group - Unauthorized");
       try {
         // Arrange
-        cookieStore.get.mockReturnValue(undefined);
+        mockCookieStore.get.mockReturnValue(undefined);
 
         // Act
-        const response = await DELETE(
-          createNextRequest("DELETE"),
+        const response = await deleteUrlGroup(
+          new NextRequest("http://localhost"),
           createRouteContext(mockUrlGroup.id),
         );
-        const data = await debugResponse(response);
+        const data = await debugResponse<ErrorResponse>(response);
 
         // Assert
         expect(response.status).toBe(401);
         expect(data).toEqual({ error: "Unauthorized" });
-        expect(mockPrisma.urlGroup.delete).not.toHaveBeenCalled();
+        expect(prisma.urlGroup.delete).not.toHaveBeenCalled();
+        expect(testTimer.elapsed()).toBeLessThan(THRESHOLDS.API);
+      } catch (error) {
+        debugError(error as Error, {
+          performanceMetrics: {
+            elapsed: testTimer.elapsed(),
+            threshold: THRESHOLDS.API,
+          },
+        });
+        throw error;
       } finally {
         testTimer.end();
       }
     });
 
     it("should return 403 when authenticated as non-admin", async () => {
-      const testTimer = measureTestTime();
+      const testTimer = measureTestTime("Delete URL Group - Forbidden");
       try {
         // Arrange
-        cookieStore.get.mockReturnValue({ value: "user_token" });
+        (verifyToken as Mock).mockResolvedValue(mockNonAdminUser);
 
         // Act
-        const response = await DELETE(
-          createNextRequest("DELETE"),
+        const response = await deleteUrlGroup(
+          new NextRequest("http://localhost"),
           createRouteContext(mockUrlGroup.id),
         );
-        const data = await debugResponse(response);
+        const data = await debugResponse<ErrorResponse>(response);
 
         // Assert
         expect(response.status).toBe(403);
         expect(data).toEqual({ error: "Forbidden" });
-        expect(mockPrisma.urlGroup.delete).not.toHaveBeenCalled();
+        expect(prisma.urlGroup.delete).not.toHaveBeenCalled();
+        expect(testTimer.elapsed()).toBeLessThan(THRESHOLDS.API);
+      } catch (error) {
+        debugError(error as Error, {
+          performanceMetrics: {
+            elapsed: testTimer.elapsed(),
+            threshold: THRESHOLDS.API,
+          },
+        });
+        throw error;
       } finally {
         testTimer.end();
       }
     });
 
     it("should return 404 when URL group not found", async () => {
-      const testTimer = measureTestTime();
+      const testTimer = measureTestTime("Delete URL Group - Not Found");
       try {
         // Arrange
-        mockPrisma.urlGroup.findUnique.mockResolvedValueOnce(null);
+        (prisma.urlGroup.findUnique as Mock).mockResolvedValue(null);
 
         // Act
-        const response = await DELETE(
-          createNextRequest("DELETE"),
-          createRouteContext(mockUrlGroup.id),
+        const response = await deleteUrlGroup(
+          new NextRequest("http://localhost"),
+          createRouteContext("non-existent-id"),
         );
-        const data = await debugResponse(response);
+        const data = await debugResponse<ErrorResponse>(response);
 
         // Assert
         expect(response.status).toBe(404);
         expect(data).toEqual({ error: "URL group not found" });
-        expect(mockPrisma.urlGroup.delete).not.toHaveBeenCalled();
+        expect(prisma.urlGroup.delete).not.toHaveBeenCalled();
+        expect(testTimer.elapsed()).toBeLessThan(THRESHOLDS.API);
+      } catch (error) {
+        debugError(error as Error, {
+          mockState: {
+            findUnique: (prisma.urlGroup.findUnique as Mock).mock.calls,
+          },
+          performanceMetrics: {
+            elapsed: testTimer.elapsed(),
+            threshold: THRESHOLDS.API,
+          },
+        });
+        throw error;
       } finally {
         testTimer.end();
       }
     });
 
     it("should handle database errors gracefully", async () => {
-      const testTimer = measureTestTime();
+      const testTimer = measureTestTime("Delete URL Group - Database Error");
       try {
         // Arrange
         const dbError = new Error("Database error");
-        mockPrisma.urlGroup.findUnique.mockResolvedValueOnce(mockUrlGroup);
-        mockPrisma.urlGroup.delete.mockRejectedValueOnce(dbError);
+        (prisma.urlGroup.findUnique as Mock).mockResolvedValue(mockUrlGroup);
+        (prisma.urlGroup.delete as Mock).mockRejectedValue(dbError);
 
         // Act
-        const response = await DELETE(
-          createNextRequest("DELETE"),
+        const response = await deleteUrlGroup(
+          new NextRequest("http://localhost"),
           createRouteContext(mockUrlGroup.id),
         );
-        const data = await debugResponse(response);
+        const data = await debugResponse<ErrorResponse>(response);
 
         // Assert
         expect(response.status).toBe(500);
         expect(data).toEqual({ error: "Internal Server Error" });
-
-        // Log error for debugging
-        console.error("Database operation failed:", {
-          error: dbError.message,
-          stack: dbError.stack,
+        expect(testTimer.elapsed()).toBeLessThan(THRESHOLDS.API);
+      } catch (error) {
+        debugError(error as Error, {
+          error,
           mockState: {
-            findUnique: mockPrisma.urlGroup.findUnique.mock.calls,
-            delete: mockPrisma.urlGroup.delete.mock.calls,
+            findUnique: (prisma.urlGroup.findUnique as Mock).mock.calls,
+            delete: (prisma.urlGroup.delete as Mock).mock.calls,
+          },
+          performanceMetrics: {
+            elapsed: testTimer.elapsed(),
+            threshold: THRESHOLDS.API,
           },
         });
+        throw error;
       } finally {
         testTimer.end();
       }
