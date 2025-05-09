@@ -499,3 +499,291 @@ const restoreSnapshot = async (
 2. Create data validation schemas for all test fixtures
 3. Add performance monitoring for data operations
 4. Document data dependencies between test suites 
+
+## Factory Function Examples from API Tests
+
+### User Factory Functions
+
+```typescript
+// Admin user factory with role specification
+const createTestAdmin = (overrides?: Partial<User>): User => ({
+  id: `admin-${Date.now()}`,
+  name: "Test Admin",
+  email: "admin@example.com",
+  isAdmin: true,
+  createdAt: new Date().toISOString(), // API format
+  updatedAt: new Date().toISOString(), // API format
+  ...overrides
+});
+
+// Regular user factory
+const createMockUser = (overrides?: Partial<User>): User => ({
+  id: `user-${Date.now()}`,
+  name: "Test User",
+  email: "user@example.com",
+  isAdmin: false,
+  createdAt: new Date().toISOString(), // API format
+  updatedAt: new Date().toISOString(), // API format
+  ...overrides
+});
+
+// Example usage in tests
+describe("Admin API", () => {
+  const mockAdminToken = createTestAdmin();
+  const mockNonAdminToken = createMockUser();
+
+  beforeEach(() => {
+    vi.mocked(verifyToken).mockResolvedValueOnce(mockAdminToken);
+  });
+
+  it("allows admin access", async () => {
+    const response = await GET();
+    expect(response.status).toBe(200);
+  });
+
+  it("denies non-admin access", async () => {
+    vi.mocked(verifyToken).mockResolvedValueOnce(mockNonAdminToken);
+    const response = await GET();
+    expect(response.status).toBe(403);
+  });
+});
+```
+
+### File Object Factories
+
+```typescript
+// File blob factory with proper buffer handling
+const createTestFileBlob = (
+  content: string = "test file content",
+  options: {
+    type?: string;
+    size?: number;
+    filename?: string;
+  } = {}
+): Blob => {
+  const defaultOptions = {
+    type: "application/octet-stream",
+    size: content.length,
+    filename: "test-file.txt",
+  };
+  
+  const mergedOptions = { ...defaultOptions, ...options };
+  
+  // Create buffer of specified size if needed
+  let fileContent = content;
+  if (mergedOptions.size > content.length) {
+    fileContent = content.padEnd(mergedOptions.size, "0");
+  }
+  
+  return new Blob([fileContent], { type: mergedOptions.type });
+};
+
+// Create a file that exceeds size limits
+const createLargeFile = (sizeInMB: number = 6): Blob => {
+  const oneMB = 1024 * 1024;
+  const size = sizeInMB * oneMB;
+  return createTestFileBlob("0", { size });
+};
+
+// Example usage in tests
+describe("File Upload", () => {
+  it("validates file size", async () => {
+    const testTimer = measureTestTime("file size validation test");
+    try {
+      const largeFile = createLargeFile(6); // 6MB file (over limit)
+      const formData = new FormData();
+      formData.append("file", largeFile, "large-file.txt");
+      
+      const response = await POST(new Request("http://test", {
+        method: "POST",
+        body: formData
+      }));
+      
+      expect(response.status).toBe(400);
+      expect(await debugResponse(response)).toEqual({ 
+        error: "File size exceeds the 5MB limit" 
+      });
+    } finally {
+      testTimer.end();
+    }
+  });
+});
+```
+
+### App Configuration Factories
+
+```typescript
+// App config factory with theme settings
+const createTestAppConfig = (overrides?: Partial<AppConfig>): AppConfig => ({
+  id: "app-config",
+  appName: "Test App",
+  appLogo: null,
+  loginTheme: "light", // Defaults to light theme
+  registrationEnabled: true,
+  favicon: null,
+  createdAt: new Date().toISOString(), // API format
+  updatedAt: new Date().toISOString(), // API format
+  ...overrides
+});
+
+// Example usage in tests
+describe("App Config API", () => {
+  const mockConfig = createTestAppConfig({
+    loginTheme: "dark", // Override default theme
+    registrationEnabled: false
+  });
+  
+  beforeEach(() => {
+    vi.mocked(prisma.appConfig.findUnique).mockResolvedValue(mockConfig);
+  });
+  
+  it("returns existing config", async () => {
+    const response = await GET();
+    const data = await debugResponse(response);
+    
+    expect(response.status).toBe(200);
+    expect(data).toEqual(mockConfig);
+  });
+  
+  it("validates theme values", async () => {
+    vi.mocked(verifyToken).mockResolvedValueOnce(mockAdminToken);
+    
+    const response = await PATCH(
+      mockRequest({
+        loginTheme: "invalid" as any,
+      }),
+    );
+    
+    expect(response.status).toBe(400);
+    expect(await debugResponse(response)).toEqual({ 
+      error: "Invalid theme value" 
+    });
+  });
+});
+```
+
+### URL and URL Group Factories
+
+```typescript
+// URL factory with group assignment
+const createTestUrl = (
+  urlGroupId?: string,
+  overrides?: Partial<URL>
+): URL => ({
+  id: `url-${Date.now()}`,
+  name: "Test URL",
+  url: "https://example.com",
+  description: "Test description",
+  urlGroupId: urlGroupId || null,
+  createdAt: new Date().toISOString(), // API format
+  updatedAt: new Date().toISOString(), // API format
+  ...overrides
+});
+
+// URL group factory
+const createTestUrlGroup = (overrides?: Partial<URLGroup>): URLGroup => ({
+  id: `group-${Date.now()}`,
+  name: "Test Group",
+  description: "Test group description",
+  createdAt: new Date().toISOString(), // API format
+  updatedAt: new Date().toISOString(), // API format
+  ...overrides
+});
+
+// Example usage in tests
+describe("URL Management API", () => {
+  const mockUrlGroup = createTestUrlGroup();
+  const mockUrl = createTestUrl(mockUrlGroup.id);
+  
+  beforeEach(() => {
+    vi.mocked(prisma.uRLGroup.findUnique).mockResolvedValue(mockUrlGroup);
+    vi.mocked(prisma.uRL.findMany).mockResolvedValue([mockUrl]);
+  });
+  
+  it("returns URLs for a group", async () => {
+    const response = await GET();
+    const data = await debugResponse(response);
+    
+    expect(response.status).toBe(200);
+    expect(data).toEqual([mockUrl]);
+  });
+});
+```
+
+## API vs Service Layer Data Pattern
+
+Our improved test suite strictly follows these data patterns:
+
+### API Layer Testing Example
+
+```typescript
+// API test using fixtures (app/api/admin/app-config/route.test.ts)
+describe("PATCH /api/admin/app-config", () => {
+  it("should update app name", async () => {
+    const testTimer = measureTestTime("update app name test");
+    try {
+      vi.mocked(verifyToken).mockResolvedValueOnce(mockAdminToken);
+      
+      // Use fixture with API format dates (ISO strings)
+      const updatedConfig = createTestAppConfig({
+        appName: "New Control Center",
+      });
+      
+      vi.mocked(prisma.appConfig.upsert).mockResolvedValueOnce(updatedConfig);
+
+      const response = await PATCH(mockRequest({ appName: "New Control Center" }));
+      const data = await debugResponse(response) as AppConfig;
+
+      expect(response.status).toBe(200);
+      expect(data).toEqual(updatedConfig); // Direct comparison with fixture
+      expect(vi.mocked(prisma.appConfig.upsert)).toHaveBeenCalledWith({
+        where: { id: "app-config" },
+        create: expect.any(Object),
+        update: { appName: "New Control Center" },
+      });
+      expect(testTimer.elapsed()).toBeLessThan(THRESHOLDS.API);
+    } finally {
+      testTimer.end();
+    }
+  });
+});
+```
+
+### Service Layer Testing Example
+
+```typescript
+// Service test using raw data objects (not shown in API tests)
+describe("appConfigService.updateAppName", () => {
+  it("should update app name", async () => {
+    const testTimer = measureTestTime("update app name service test");
+    try {
+      // Use raw date objects for service layer
+      const rawAppConfig = {
+        id: "app-config",
+        appName: "Test App",
+        createdAt: new Date(), // Raw Date object
+        updatedAt: new Date() // Raw Date object
+      };
+      
+      const updatedConfig = {
+        ...rawAppConfig,
+        appName: "New App Name",
+        updatedAt: new Date() // New Date object
+      };
+      
+      prismaMock.appConfig.update.mockResolvedValue(updatedConfig);
+
+      const result = await appConfigService.updateAppName("New App Name");
+
+      expect(result).toEqual(updatedConfig); // Service returns raw objects
+      expect(result.updatedAt).toBeInstanceOf(Date); // Date is a Date object
+      expect(prismaMock.appConfig.update).toHaveBeenCalledWith({
+        where: { id: "app-config" },
+        data: { appName: "New App Name" }
+      });
+    } finally {
+      testTimer.end();
+    }
+  });
+});
+```
