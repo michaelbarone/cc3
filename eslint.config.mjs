@@ -72,7 +72,7 @@ export default [
       "no-unused-vars": "off",
       "no-extra-boolean-cast": "off",
       "react/react-in-jsx-scope": "off",
-      "no-console": "warn",
+      // "no-console": "warn",
       "@typescript-eslint/no-unused-vars": [
         "warn",
         {

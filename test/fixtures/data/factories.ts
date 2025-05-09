@@ -28,7 +28,7 @@ export interface MockUser {
   /** User's preferred theme setting */
   themeMode?: 'light' | 'dark';
   /** User's preferred menu position */
-  menuPosition?: 'left' | 'top';
+  menuPosition?: 'top' | 'side';
   /** Last URL the user visited */
   lastActiveUrl?: string;
   last_active_url?: string | null;
@@ -65,7 +65,7 @@ export function createMockUser(overrides: Partial<MockUser> = {}): MockUser {
     requiresPassword: false,
     password_hash: null,
     themeMode: 'light',
-    menuPosition: 'left',
+    menuPosition: 'top',
     lastActiveUrl: 'https://example.com',
     last_active_url: null,
     createdAt: now,
