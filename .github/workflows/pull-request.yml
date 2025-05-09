@@ -180,32 +180,51 @@ jobs:
           duration=$((end_time - start_time))
           echo "duration=$duration" >> $GITHUB_OUTPUT
 
+          echo "--- Full Test Output (test_output.txt) ---"
+          cat test_output.txt
+          echo "--- End Full Test Output ---"
+
           # Attempt to parse Vitest summary line
           # Example: Tests:      2 failed, 2 passed, 1 skipped, 5 total
           summary_line=$(grep -E "^Tests:([[:space:]]+.*)" test_output.txt | tail -n 1)
+          echo "Debug: Captured summary_line: '${summary_line}'"
 
-          passed_tests=$(echo "$summary_line" | grep -oP '\\d+(?= passed)' | awk '{s+=$1} END {print s+0}')
-          failed_tests=$(echo "$summary_line" | grep -oP '\\d+(?= failed)' | awk '{s+=$1} END {print s+0}')
-          # Vitest uses "skipped", some runners might use "pending"
-          skipped_tests=$(echo "$summary_line" | grep -oP '\\d+(?= (?:skipped|pending))' | awk '{s+=$1} END {print s+0}')
+          if [ -n "$summary_line" ]; then
+            # Use awk to parse counts from the summary_line
+            parsed_counts=$(echo "$summary_line" | awk \
+              'match($0, /([0-9]+) passed/, p) {passed_val=p[1]} \
+               match($0, /([0-9]+) failed/, f) {failed_val=f[1]} \
+               match($0, /([0-9]+) (skipped|pending)/, s) {skipped_val=s[1]} \
+               END {print (passed_val+0)":"(failed_val+0)":"(skipped_val+0)}')
+            passed_tests=$(echo "$parsed_counts" | cut -d: -f1)
+            failed_tests=$(echo "$parsed_counts" | cut -d: -f2)
+            skipped_tests=$(echo "$parsed_counts" | cut -d: -f3)
+          else
+            echo "Debug: Summary line not found or empty. Defaulting counts to 0."
+            passed_tests=0
+            failed_tests=0
+            skipped_tests=0
+          fi
+
+          echo "Debug: Parsed passed_tests: '${passed_tests}'"
+          echo "Debug: Parsed failed_tests: '${failed_tests}'"
+          echo "Debug: Parsed skipped_tests: '${skipped_tests}'"
 
           echo "passed_tests=${passed_tests}" >> $GITHUB_OUTPUT
           echo "failed_tests=${failed_tests}" >> $GITHUB_OUTPUT
           echo "skipped_tests=${skipped_tests}" >> $GITHUB_OUTPUT
 
-          # Output the full test log to GitHub Actions for debugging
-          echo "--- Test Output ---"
-          cat test_output.txt
-          echo "--- End Test Output ---"
-
           # Exit with the original test exit code to reflect test status accurately
           # Or, if parsing found failed tests and original exit code was 0 (e.g. from a misconfigured test runner), still fail.
-          if [ "$failed_tests" -gt 0 ]; then
-            echo "Failing tests detected by parsing."
+          if [ "${failed_tests}" -gt 0 ]; then
+            echo "Failing tests detected by parsing (${failed_tests} failed). Exiting with 1."
             exit 1
-          elif [ "$test_exit_code" -ne 0 ]; then
-            echo "Test runner exited with code $test_exit_code."
-            exit $test_exit_code
+          elif [ "${test_exit_code}" -ne 0 ]; then
+            echo "Test runner exited with code ${test_exit_code}. Exiting with this code."
+            exit ${test_exit_code}
+          else
+            echo "Tests passed (exit code ${test_exit_code}, ${failed_tests} parsed failed). Exiting with 0."
+            exit 0
           fi
 
       # - name: Upload Coverage Report
