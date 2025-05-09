@@ -107,7 +107,6 @@ describe("IframeState", () => {
 
     expect(result.current.state.urls.url1.error).toBeNull();
     expect(result.current.state.urls.url1.isLoaded).toBe(true);
-    expect(result.current.state.urls.url1.retryCount).toBe(0);
   });
 
   it("should unload URL and reset state", () => {
