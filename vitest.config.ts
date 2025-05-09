@@ -16,6 +16,23 @@ export default defineConfig({
       "**/cypress/**",
       "**/.{idea,git,cache,output,temp}/**",
     ],
+    pool: "threads",
+    poolOptions: {
+      threads: {
+        singleThread: false,
+        isolate: true,
+      },
+    },
+    isolate: true,
+    maxConcurrency: 5,
+    sequence: {
+      hooks: "stack",
+      shuffle: false,
+    },
+    silent: false,
+    testTimeout: 10000,
+    hookTimeout: 10000,
+    teardownTimeout: 5000,
     coverage: {
       provider: "v8",
       reporter: ["text", "json", "html", "lcov", "cobertura"],
