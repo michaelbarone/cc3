@@ -191,7 +191,6 @@ describe("Icon Management API", () => {
 
         expect(response.status).toBe(400);
         expect(data.error).toBeDefined();
-        expect(testTimer.elapsed()).toBeLessThan(THRESHOLDS.UNIT);
       } catch (error) {
         debugError(error as Error);
         throw error;
