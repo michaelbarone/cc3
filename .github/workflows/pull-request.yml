@@ -173,8 +173,9 @@ jobs:
         id: test
         run: |
           start_time=$(date +%s)
-          # Capture test output and allow continuation even if tests fail, so we can parse results
-          npm run test > test_output.txt 2>&1 || true
+          # Capture test output
+          npm run test > test_output.txt 2>&1
+          test_exit_code=$? # Capture the exit code of npm run test
           end_time=$(date +%s)
           duration=$((end_time - start_time))
           echo "duration=$duration" >> $GITHUB_OUTPUT
@@ -196,6 +197,16 @@ jobs:
           echo "--- Test Output ---"
           cat test_output.txt
           echo "--- End Test Output ---"
+
+          # Exit with the original test exit code to reflect test status accurately
+          # Or, if parsing found failed tests and original exit code was 0 (e.g. from a misconfigured test runner), still fail.
+          if [ "$failed_tests" -gt 0 ]; then
+            echo "Failing tests detected by parsing."
+            exit 1
+          elif [ "$test_exit_code" -ne 0 ]; then
+            echo "Test runner exited with code $test_exit_code."
+            exit $test_exit_code
+          fi
 
       # - name: Upload Coverage Report
       #   uses: actions/upload-artifact@v4
