@@ -1,6 +1,31 @@
 /// <reference types="node" />
+
+// External dependencies first
+import fs from "fs/promises";
 import { NextRequest } from "next/server";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import sharp from "sharp";
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+// Internal dependencies
+import { DELETE, POST } from "@/app/api/admin/icons/route";
+import { JwtPayload, verifyToken } from "@/app/lib/auth/jwt";
+import {
+  debugError,
+  debugMockCalls,
+  debugResponse,
+  measureTestTime,
+  THRESHOLDS,
+} from "@/test/helpers/debug";
+import { createTestFileBlob } from "@/test/mocks/factories/file.factory";
+
+// Type definitions
+type IconResponse = {
+  iconUrl: string;
+};
+
+type ErrorResponse = {
+  error: string;
+};
 
 // Mock modules
 vi.mock("@/app/lib/auth/jwt", () => {
@@ -25,20 +50,37 @@ vi.mock("fs/promises", () => {
   };
 });
 
-// Import modules after mocking
-import { DELETE, POST } from "@/app/api/admin/icons/route";
-import { verifyToken } from "@/app/lib/auth/jwt";
-import fs from "fs/promises";
-import sharp from "sharp";
+// Factory functions for test data
+const createMockIconFile = (content = "test-image", name = "test.png") =>
+  createTestFileBlob(name, "image/png", content);
+
+const createIconRequest = (file?: File, method = "POST") => {
+  const formData = new FormData();
+  if (file) formData.append("icon", file);
+  return new NextRequest("http://localhost:3000/api/admin/icons", {
+    method,
+    body: formData,
+  });
+};
 
 describe("Icon Management API", () => {
+  const suiteTimer = measureTestTime("Icon Management API Suite");
+
   beforeEach(() => {
     vi.clearAllMocks();
 
-    // Setup verifyToken mock
-    vi.mocked(verifyToken).mockResolvedValue({ id: "admin-user", isAdmin: true });
+    // Setup verifyToken mock with admin user by default
+    vi.mocked(verifyToken).mockResolvedValue({
+      id: "admin-user-id",
+      username: "admin",
+      email: "admin@example.com",
+      name: "Admin User",
+      isAdmin: true,
+      iat: Math.floor(Date.now() / 1000),
+      exp: Math.floor(Date.now() / 1000) + 3600,
+    } as JwtPayload);
 
-    // Setup sharp mock
+    // Setup sharp mock with chainable methods
     vi.mocked(sharp).mockImplementation(
       () =>
         ({
@@ -48,212 +90,312 @@ describe("Icon Management API", () => {
         }) as any,
     );
 
-    // Setup fs mock
+    // Setup fs mock with successful operations by default
     vi.mocked(fs.mkdir).mockResolvedValue(undefined);
     vi.mocked(fs.access).mockResolvedValue(undefined);
     vi.mocked(fs.unlink).mockResolvedValue(undefined);
   });
 
+  afterEach(() => {
+    // Debug mock states after each test
+    debugMockCalls(vi.mocked(verifyToken), "verifyToken");
+    debugMockCalls(vi.mocked(fs.mkdir), "fs.mkdir");
+    debugMockCalls(vi.mocked(fs.access), "fs.access");
+    debugMockCalls(vi.mocked(fs.unlink), "fs.unlink");
+    debugMockCalls(vi.mocked(sharp), "sharp");
+  });
+
+  afterAll(() => {
+    suiteTimer.end();
+  });
+
   describe("POST /api/admin/icons", () => {
     it("returns 401 when not authenticated", async () => {
-      vi.mocked(verifyToken).mockRejectedValueOnce(new Error("Unauthorized"));
+      const testTimer = measureTestTime("unauthorized POST test");
+      try {
+        vi.mocked(verifyToken).mockRejectedValueOnce(new Error("Unauthorized"));
 
-      const formData = new FormData();
-      const file = new File(["test-image"], "test.png", { type: "image/png" });
-      formData.append("icon", file);
+        const request = createIconRequest(createMockIconFile());
+        const response = await POST(request);
+        const data = await debugResponse<ErrorResponse>(response);
 
-      const request = new NextRequest("http://localhost:3000/api/admin/icons", {
-        method: "POST",
-        body: formData,
-      });
-
-      const response = await POST(request);
-      expect(response.status).toBe(401);
+        expect(response.status).toBe(401);
+        expect(data.error).toBeDefined();
+        expect(testTimer.elapsed()).toBeLessThan(THRESHOLDS.UNIT);
+      } catch (error) {
+        debugError(error as Error);
+        throw error;
+      } finally {
+        testTimer.end();
+      }
     });
 
     it("returns 403 when not admin", async () => {
-      vi.mocked(verifyToken).mockImplementationOnce(async () => ({
-        id: "regular-user",
-        isAdmin: false,
-      }));
+      const testTimer = measureTestTime("non-admin POST test");
+      try {
+        vi.mocked(verifyToken).mockImplementationOnce(
+          async () =>
+            ({
+              id: "regular-user-id",
+              username: "user",
+              email: "user@example.com",
+              name: "Regular User",
+              isAdmin: false,
+              iat: Math.floor(Date.now() / 1000),
+              exp: Math.floor(Date.now() / 1000) + 3600,
+            }) as JwtPayload,
+        );
 
-      const formData = new FormData();
-      const file = new File(["test-image"], "test.png", { type: "image/png" });
-      formData.append("icon", file);
+        const request = createIconRequest(createMockIconFile());
+        const response = await POST(request);
+        const data = await debugResponse<ErrorResponse>(response);
 
-      const request = new NextRequest("http://localhost:3000/api/admin/icons", {
-        method: "POST",
-        body: formData,
-      });
-
-      const response = await POST(request);
-      expect(response.status).toBe(403);
+        expect(response.status).toBe(403);
+        expect(data.error).toBeDefined();
+        expect(testTimer.elapsed()).toBeLessThan(THRESHOLDS.UNIT);
+      } catch (error) {
+        debugError(error as Error);
+        throw error;
+      } finally {
+        testTimer.end();
+      }
     });
 
     it("returns 400 when no icon file provided", async () => {
-      const formData = new FormData();
-      const request = new NextRequest("http://localhost:3000/api/admin/icons", {
-        method: "POST",
-        body: formData,
-      });
+      const testTimer = measureTestTime("missing file POST test");
+      try {
+        const request = createIconRequest();
+        const response = await POST(request);
+        const data = await debugResponse<ErrorResponse>(response);
 
-      const response = await POST(request);
-      expect(response.status).toBe(400);
+        expect(response.status).toBe(400);
+        expect(data.error).toBeDefined();
+        expect(testTimer.elapsed()).toBeLessThan(THRESHOLDS.UNIT);
+      } catch (error) {
+        debugError(error as Error);
+        throw error;
+      } finally {
+        testTimer.end();
+      }
     });
 
     it("returns 400 when file is too large", async () => {
-      const formData = new FormData();
-      const largeFile = new File(["x".repeat(5 * 1024 * 1024 + 1)], "large.png", {
-        type: "image/png",
-      });
-      formData.append("icon", largeFile);
+      const testTimer = measureTestTime("large file POST test");
+      try {
+        // Create a large string that will exceed the size limit when converted to a buffer
+        const largeContent = "x".repeat(5 * 1024 * 1024 + 1);
+        const largeFile = createTestFileBlob("large.png", "image/png", largeContent);
+        const request = createIconRequest(largeFile);
+        const response = await POST(request);
+        const data = await debugResponse<ErrorResponse>(response);
 
-      const request = new NextRequest("http://localhost:3000/api/admin/icons", {
-        method: "POST",
-        body: formData,
-      });
-
-      const response = await POST(request);
-      expect(response.status).toBe(400);
+        expect(response.status).toBe(400);
+        expect(data.error).toBeDefined();
+      } catch (error) {
+        debugError(error as Error);
+        throw error;
+      } finally {
+        testTimer.end();
+      }
     });
 
     it("returns 400 when file is not an image", async () => {
-      const formData = new FormData();
-      const file = new File(["not-an-image"], "test.txt", { type: "text/plain" });
-      formData.append("icon", file);
+      const testTimer = measureTestTime("invalid file type POST test");
+      try {
+        const nonImageFile = createTestFileBlob("test.txt", "text/plain", "not-an-image");
+        const request = createIconRequest(nonImageFile);
+        const response = await POST(request);
+        const data = await debugResponse<ErrorResponse>(response);
 
-      const request = new NextRequest("http://localhost:3000/api/admin/icons", {
-        method: "POST",
-        body: formData,
-      });
-
-      const response = await POST(request);
-      expect(response.status).toBe(400);
+        expect(response.status).toBe(400);
+        expect(data.error).toBeDefined();
+        expect(testTimer.elapsed()).toBeLessThan(THRESHOLDS.UNIT);
+      } catch (error) {
+        debugError(error as Error);
+        throw error;
+      } finally {
+        testTimer.end();
+      }
     });
 
     it("successfully uploads and processes icon", async () => {
-      const formData = new FormData();
-      const file = new File(["test-image"], "test.png", { type: "image/png" });
-      formData.append("icon", file);
+      const testTimer = measureTestTime("successful POST test");
+      try {
+        const request = createIconRequest(createMockIconFile());
+        const response = await POST(request);
+        const data = await debugResponse<IconResponse>(response);
 
-      const request = new NextRequest("http://localhost:3000/api/admin/icons", {
-        method: "POST",
-        body: formData,
-      });
+        expect(response.status).toBe(200);
+        expect(data.iconUrl).toMatch(/^\/icons\/icon-\d+\.webp$/);
 
-      const response = await POST(request);
-      const data = await response.json();
-
-      expect(response.status).toBe(200);
-      expect(data).toHaveProperty("iconUrl");
-      expect(data.iconUrl).toMatch(/^\/icons\/icon-\d+\.webp$/);
-
-      // Verify file operations
-      expect(vi.mocked(fs.mkdir)).toHaveBeenCalled();
-      expect(vi.mocked(sharp)).toHaveBeenCalled();
+        // Verify file operations
+        expect(vi.mocked(fs.mkdir)).toHaveBeenCalled();
+        expect(vi.mocked(sharp)).toHaveBeenCalled();
+        expect(testTimer.elapsed()).toBeLessThan(THRESHOLDS.API);
+      } catch (error) {
+        debugError(error as Error);
+        throw error;
+      } finally {
+        testTimer.end();
+      }
     });
 
     it("handles file system errors gracefully", async () => {
-      vi.mocked(fs.mkdir).mockRejectedValueOnce(new Error("File system error"));
+      const testTimer = measureTestTime("file system error POST test");
+      try {
+        vi.mocked(fs.mkdir).mockRejectedValueOnce(new Error("File system error"));
 
-      const formData = new FormData();
-      const file = new File(["test-image"], "test.png", { type: "image/png" });
-      formData.append("icon", file);
+        const request = createIconRequest(createMockIconFile());
+        const response = await POST(request);
+        const data = await debugResponse<ErrorResponse>(response);
 
-      const request = new NextRequest("http://localhost:3000/api/admin/icons", {
-        method: "POST",
-        body: formData,
-      });
-
-      const response = await POST(request);
-      expect(response.status).toBe(500);
+        expect(response.status).toBe(500);
+        expect(data.error).toBeDefined();
+        expect(testTimer.elapsed()).toBeLessThan(THRESHOLDS.UNIT);
+      } catch (error) {
+        debugError(error as Error);
+        throw error;
+      } finally {
+        testTimer.end();
+      }
     });
   });
 
   describe("DELETE /api/admin/icons", () => {
+    const createDeleteRequest = (iconPath?: string) => {
+      const url = iconPath
+        ? `http://localhost:3000/api/admin/icons?iconPath=${iconPath}`
+        : "http://localhost:3000/api/admin/icons";
+      return new NextRequest(url, { method: "DELETE" });
+    };
+
     it("returns 401 when not authenticated", async () => {
-      vi.mocked(verifyToken).mockRejectedValueOnce(new Error("Unauthorized"));
+      const testTimer = measureTestTime("unauthorized DELETE test");
+      try {
+        vi.mocked(verifyToken).mockRejectedValueOnce(new Error("Unauthorized"));
 
-      const request = new NextRequest(
-        "http://localhost:3000/api/admin/icons?iconPath=/icons/test.webp",
-        {
-          method: "DELETE",
-        },
-      );
+        const request = createDeleteRequest("/icons/test.webp");
+        const response = await DELETE(request);
+        const data = await debugResponse<ErrorResponse>(response);
 
-      const response = await DELETE(request);
-      expect(response.status).toBe(401);
+        expect(response.status).toBe(401);
+        expect(data.error).toBeDefined();
+        expect(testTimer.elapsed()).toBeLessThan(THRESHOLDS.UNIT);
+      } catch (error) {
+        debugError(error as Error);
+        throw error;
+      } finally {
+        testTimer.end();
+      }
     });
 
     it("returns 403 when not admin", async () => {
-      vi.mocked(verifyToken).mockImplementationOnce(async () => ({
-        id: "regular-user",
-        isAdmin: false,
-      }));
+      const testTimer = measureTestTime("non-admin DELETE test");
+      try {
+        vi.mocked(verifyToken).mockImplementationOnce(
+          async () =>
+            ({
+              id: "regular-user-id",
+              username: "user",
+              email: "user@example.com",
+              name: "Regular User",
+              isAdmin: false,
+              iat: Math.floor(Date.now() / 1000),
+              exp: Math.floor(Date.now() / 1000) + 3600,
+            }) as JwtPayload,
+        );
 
-      const request = new NextRequest(
-        "http://localhost:3000/api/admin/icons?iconPath=/icons/test.webp",
-        {
-          method: "DELETE",
-        },
-      );
+        const request = createDeleteRequest("/icons/test.webp");
+        const response = await DELETE(request);
+        const data = await debugResponse<ErrorResponse>(response);
 
-      const response = await DELETE(request);
-      expect(response.status).toBe(403);
+        expect(response.status).toBe(403);
+        expect(data.error).toBeDefined();
+        expect(testTimer.elapsed()).toBeLessThan(THRESHOLDS.UNIT);
+      } catch (error) {
+        debugError(error as Error);
+        throw error;
+      } finally {
+        testTimer.end();
+      }
     });
 
     it("returns 400 when no icon path provided", async () => {
-      const request = new NextRequest("http://localhost:3000/api/admin/icons", {
-        method: "DELETE",
-      });
+      const testTimer = measureTestTime("missing path DELETE test");
+      try {
+        const request = createDeleteRequest();
+        const response = await DELETE(request);
+        const data = await debugResponse<ErrorResponse>(response);
 
-      const response = await DELETE(request);
-      expect(response.status).toBe(400);
+        expect(response.status).toBe(400);
+        expect(data.error).toBeDefined();
+        expect(testTimer.elapsed()).toBeLessThan(THRESHOLDS.UNIT);
+      } catch (error) {
+        debugError(error as Error);
+        throw error;
+      } finally {
+        testTimer.end();
+      }
     });
 
     it("successfully deletes icon file", async () => {
-      const request = new NextRequest(
-        "http://localhost:3000/api/admin/icons?iconPath=/icons/test.webp",
-        {
-          method: "DELETE",
-        },
-      );
+      const testTimer = measureTestTime("successful DELETE test");
+      try {
+        const request = createDeleteRequest("/icons/test.webp");
+        const response = await DELETE(request);
+        const data = await debugResponse<IconResponse>(response);
 
-      const response = await DELETE(request);
-      expect(response.status).toBe(200);
-
-      // Verify file operations
-      expect(vi.mocked(fs.access)).toHaveBeenCalled();
-      expect(vi.mocked(fs.unlink)).toHaveBeenCalled();
+        expect(response.status).toBe(200);
+        expect(vi.mocked(fs.access)).toHaveBeenCalled();
+        expect(vi.mocked(fs.unlink)).toHaveBeenCalled();
+        expect(testTimer.elapsed()).toBeLessThan(THRESHOLDS.API);
+      } catch (error) {
+        debugError(error as Error);
+        throw error;
+      } finally {
+        testTimer.end();
+      }
     });
 
     it("handles non-existent file gracefully", async () => {
-      const error = Object.assign(new Error("File not found"), { code: "ENOENT" });
-      vi.mocked(fs.access).mockRejectedValueOnce(error);
+      const testTimer = measureTestTime("non-existent file DELETE test");
+      try {
+        const error = Object.assign(new Error("File not found"), { code: "ENOENT" });
+        vi.mocked(fs.access).mockRejectedValueOnce(error);
 
-      const request = new NextRequest(
-        "http://localhost:3000/api/admin/icons?iconPath=/icons/test.webp",
-        {
-          method: "DELETE",
-        },
-      );
+        const request = createDeleteRequest("/icons/test.webp");
+        const response = await DELETE(request);
+        const data = await debugResponse<ErrorResponse>(response);
 
-      const response = await DELETE(request);
-      expect(response.status).toBe(404);
+        expect(response.status).toBe(404);
+        expect(data.error).toBeDefined();
+        expect(testTimer.elapsed()).toBeLessThan(THRESHOLDS.UNIT);
+      } catch (error) {
+        debugError(error as Error);
+        throw error;
+      } finally {
+        testTimer.end();
+      }
     });
 
     it("handles file system errors gracefully", async () => {
-      vi.mocked(fs.unlink).mockRejectedValueOnce(new Error("File system error"));
+      const testTimer = measureTestTime("file system error DELETE test");
+      try {
+        vi.mocked(fs.unlink).mockRejectedValueOnce(new Error("File system error"));
 
-      const request = new NextRequest(
-        "http://localhost:3000/api/admin/icons?iconPath=/icons/test.webp",
-        {
-          method: "DELETE",
-        },
-      );
+        const request = createDeleteRequest("/icons/test.webp");
+        const response = await DELETE(request);
+        const data = await debugResponse<ErrorResponse>(response);
 
-      const response = await DELETE(request);
-      expect(response.status).toBe(500);
+        expect(response.status).toBe(500);
+        expect(data.error).toBeDefined();
+        expect(testTimer.elapsed()).toBeLessThan(THRESHOLDS.UNIT);
+      } catch (error) {
+        debugError(error as Error);
+        throw error;
+      } finally {
+        testTimer.end();
+      }
     });
   });
 });

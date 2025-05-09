@@ -1,8 +1,8 @@
+import { authHandlers } from '@/test/mocks/services/handlers/auth'
 import '@testing-library/jest-dom'
 import { cleanup } from '@testing-library/react'
 import { setupServer } from 'msw/node'
 import { afterAll, afterEach, beforeAll, vi } from 'vitest'
-import { authHandlers } from './mocks/handlers/auth'
 
 // Extend Vitest's expect with Testing Library's matchers
 import '@testing-library/jest-dom/vitest'

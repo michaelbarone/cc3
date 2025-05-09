@@ -1,6 +1,6 @@
 # Project Plan
 
-*Last updated: 2025-04-05 19:00*
+*Last updated: 2025-05-09 08:29*
 
 This document serves as the main project plan and tracks the status of all tasks related to the project.
 
@@ -21,44 +21,23 @@ This document serves as the main project plan and tracks the status of all tasks
 
 ### 2. Testing Framework Implementation
 - **Location**: `/docs/working-memory/open/testing-framework`
-- **Created**: `2025-03-15`
-- **Description**: Establish comprehensive testing framework with documentation
+- **Created**: `2025-02-15`
+- **Description**: Implement comprehensive testing framework for unit, integration, and API testing
 - **Key Milestones**:
-  - Unit testing patterns
-  - Integration testing approach
-  - E2E testing framework
-  - Test documentation standards
-- **Priority**: Medium
-- **Target**: 2025-04-20
-- **Progress**: 60% complete
-
-### 3. API Test Standards Review
-- **Location**: `/docs/working-memory/open/api-test-review-20250405`
-- **Created**: `2025-04-05`
-- **Description**: Comprehensive review of all API tests to ensure compliance with testing standards
-- **Key Milestones**:
-  - Review all API test files against standards
-  - Update testing patterns for consistency
-  - Add debugging capabilities
-  - Improve error handling
-  - Enhance test data management
+  - ✅ Vitest + Testing Library Setup
+  - ✅ Performance monitoring tools
+  - ✅ Error handling patterns
+  - ✅ API test coverage metrics
+  - ✅ Test data management
+  - ⏳ Backup/Restore endpoint testing
+  - ⏳ URL Group Management endpoint testing
+  - ⏳ Test stability monitoring
 - **Priority**: High
-- **Target**: 2025-04-12
-- **Progress**: 40% complete
+- **Target**: 2025-05-31
+- **Progress**: 85% complete
+- **Last Update**: Added comprehensive API test review improvements, standardized error handling and performance monitoring patterns
 
-**Recent Updates**:
-- ✓ Completed review of health check API tests
-- ✓ Updated app config API tests
-- ✓ Added improved error logging and debugging capabilities
-- ✓ Standardized test data management with factory functions
-- ✓ Fixed and enhanced favicon API tests with proper path validation
-- ✓ Restored and optimized admin statistics boundary tests
-- ☐ Remaining: Review 13+ additional API test files
-
-**Dependencies**:
-- Testing Framework Implementation (60% complete)
-
-### 4. IFrame State Management Refactor
+### 3. IFrame State Management Refactor
 - **Location**: `/docs/working-memory/open/iframe-state-refactor-20240401`
 - **Created**: `2025-04-01`
 - **Description**: Simplify iframe state management and improve performance
@@ -71,12 +50,6 @@ This document serves as the main project plan and tracks the status of all tasks
 - **Priority**: High
 - **Target**: 2025-04-15
 - **Progress**: 90% complete - Pending edge case testing
-
-### [Library and Test Directory Refactoring](/docs/working-memory/open/lib-test-refactor-20240405/.plan)
-- **Status**: Planning
-- **Priority**: High
-- **Dependencies**: Testing Framework Implementation, API Test Review
-- **Description**: Reorganizing library and test directories to improve maintainability and follow better practices
 
 ## Future Tasks
 
@@ -102,17 +75,36 @@ This document serves as the main project plan and tracks the status of all tasks
 
 ## Closed Tasks
 
+### Library and Test Directory Refactoring
+- **Location**: `/docs/working-memory/done/lib-test-refactor-20240405`
+- **Completion Date**: `2025-05-08`
+- **Description**: Reorganized library and test directories to improve maintainability and follow better practices
+- **Key Achievements**:
+  - Consolidated test helpers and utilities into proper directory structure
+  - Improved debug utilities with better type safety and documentation
+  - Created dedicated directories for fixtures, mocks, and helpers
+  - Consolidated file system mock and cleanup utilities
+  - Reorganized library code structure for better maintainability
+  - Improved types and interfaces for mock data
+  - Fixed TypeScript errors in test utilities
+  - Completed E2E test migration
+  - Verified all tests pass with updated structure
+  - Documented new structure for team reference
+
 ### API Test Standards Review
 - **Location**: `/docs/working-memory/done/api-test-review-20250405`
-- **Completion Date**: `2025-04-05`
+- **Completion Date**: `2025-05-08`
 - **Description**: Comprehensive review of all API tests to ensure compliance with testing standards
 - **Key Achievements**:
-  - Reviewed and updated boundary tests for admin statistics API
-  - Improved test organization and readability
-  - Enhanced error case coverage
-  - Implemented proper mock data management
-  - Added performance testing
-  - Standardized test patterns across API tests
+  - Reviewed and updated all API test files to meet standards
+  - Improved error handling with try/catch/finally blocks and debugError utility
+  - Added consistent performance monitoring with measureTestTime
+  - Enhanced type safety with proper response type assertions
+  - Updated test data management with factory functions
+  - Verified all tests pass with proper mock implementation
+  - Updated testing documentation with examples from improvements
+  - Achieved 100% route and HTTP method coverage
+  - Standardized test patterns across all API tests
 
 ### URL Menu State Management
 - **Location**: `/docs/working-memory/done/url-menu-state-management`

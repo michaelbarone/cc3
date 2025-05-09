@@ -9,26 +9,34 @@ alwaysApply: true
 ## Context
 - Applies to all test types (E2E, unit, integration)
 - Works with 053-playwright-e2e-standards.mdc
-- Integrates with 054-test-data-management.mdc
+- Integrates with 054-test-data-management.mdc and 057-test-performance-standards.mdc
 
 ## Critical Rules
 
-1. Error Logging:
+1. Error Logging and Performance Monitoring:
    ```typescript
-   // GOOD: Detailed error logging
+   // GOOD: Detailed error logging with performance metrics
    try {
+     const timer = measureTestTime('submit-button-click');
      await page.click("[data-testid='submit']");
+     expect(timer.elapsed()).toBeLessThan(THRESHOLDS.E2E);
    } catch (error) {
      console.error("Failed to click submit button:", {
        error,
        url: page.url(),
        html: await page.content(),
-       viewport: page.viewportSize()
+       viewport: page.viewportSize(),
+       performanceMetrics: {
+         elapsed: timer.elapsed(),
+         threshold: THRESHOLDS.E2E
+       }
      });
      throw error;
+   } finally {
+     timer.end();
    }
 
-   // BAD: Poor error handling
+   // BAD: Poor error handling without performance monitoring
    try {
      await page.click("[data-testid='submit']");
    } catch (error) {
@@ -37,30 +45,39 @@ alwaysApply: true
    }
    ```
 
-2. Debug Helpers:
+2. Debug Helpers with Performance Tracking:
    ```typescript
-   // GOOD: Reusable debug helpers
+   // GOOD: Reusable debug helpers with performance monitoring
    export async function debugElement(page: Page, selector: string) {
-     const element = await page.$(selector);
-     if (!element) {
-       console.log("Element not found:", selector);
-       console.log("Current URL:", page.url());
-       console.log("Page content:", await page.content());
-       return null;
-     }
+     const timer = measureTestTime(`debugElement-${selector}`);
+     try {
+       const element = await page.$(selector);
+       if (!element) {
+         console.log("Element not found:", selector);
+         console.log("Current URL:", page.url());
+         console.log("Page content:", await page.content());
+         return null;
+       }
 
-     const isVisible = await element.isVisible();
-     const isEnabled = await element.isEnabled();
-     console.log("Element state:", {
-       selector,
-       isVisible,
-       isEnabled,
-       boundingBox: await element.boundingBox()
-     });
-     return element;
+       const isVisible = await element.isVisible();
+       const isEnabled = await element.isEnabled();
+       console.log("Element state:", {
+         selector,
+         isVisible,
+         isEnabled,
+         boundingBox: await element.boundingBox(),
+         performanceMetrics: {
+           elapsed: timer.elapsed(),
+           threshold: THRESHOLDS.UNIT
+         }
+       });
+       return element;
+     } finally {
+       timer.end();
+     }
    }
 
-   // BAD: No debug helpers
+   // BAD: No debug helpers or performance tracking
    const element = await page.$(selector);
    await element.click();
    ```
@@ -83,10 +100,13 @@ alwaysApply: true
    });
    ```
 
-4. Network Logging:
+4. Network Logging with Performance Metrics:
    ```typescript
-   // GOOD: Network request logging
+   // GOOD: Network request logging with performance tracking
+   const requestTimer = new Map();
+
    page.on("request", request => {
+     requestTimer.set(request.url(), measureTestTime(`request-${request.url()}`));
      console.log("Request:", {
        url: request.url(),
        method: request.method(),
@@ -95,80 +115,132 @@ alwaysApply: true
    });
 
    page.on("response", response => {
+     const timer = requestTimer.get(response.url());
+     const elapsed = timer ? timer.elapsed() : null;
+     timer?.end();
+     requestTimer.delete(response.url());
+
      console.log("Response:", {
        url: response.url(),
        status: response.status(),
-       headers: response.headers()
+       headers: response.headers(),
+       performanceMetrics: {
+         elapsed,
+         threshold: THRESHOLDS.API
+       }
      });
    });
 
-   // BAD: No network logging
-   // Missing network monitoring
+   // BAD: No network or performance logging
+   // Missing network and performance monitoring
    ```
+
+## Performance Thresholds
+```typescript
+export const THRESHOLDS = {
+  UNIT: 100,      // 100ms
+  INTEGRATION: 1000, // 1 second
+  E2E: 5000,      // 5 seconds
+  API: 2000       // 2 seconds
+} as const;
+```
 
 ## Examples
 
 <example>
-// Good: Complete debugging setup
+// Good: Complete debugging setup with performance monitoring
 import { test } from "@playwright/test";
 import { debugElement } from "../helpers/debug";
+import { measureTestTime, THRESHOLDS } from "../helpers/performance";
 
 test.beforeEach(async ({ page }) => {
-  // Network logging
-  page.on("request", request => {
-    console.log(`Request: ${request.method()} ${request.url()}`);
-  });
+  const setupTimer = measureTestTime('test-setup');
+  try {
+    // Network logging with performance tracking
+    const requestTimer = new Map();
 
-  page.on("response", async response => {
-    const status = response.status();
-    if (status >= 400) {
-      console.log("Failed response:", {
-        url: response.url(),
-        status,
-        body: await response.text().catch(() => "Unable to get body")
-      });
-    }
-  });
+    page.on("request", request => {
+      requestTimer.set(request.url(), measureTestTime(`request-${request.url()}`));
+      console.log(`Request: ${request.method()} ${request.url()}`);
+    });
+
+    page.on("response", async response => {
+      const timer = requestTimer.get(response.url());
+      const elapsed = timer ? timer.elapsed() : null;
+      timer?.end();
+      requestTimer.delete(response.url());
+
+      const status = response.status();
+      if (status >= 400) {
+        console.log("Failed response:", {
+          url: response.url(),
+          status,
+          body: await response.text().catch(() => "Unable to get body"),
+          performanceMetrics: {
+            elapsed,
+            threshold: THRESHOLDS.API
+          }
+        });
+      }
+    });
+  } finally {
+    setupTimer.end();
+  }
 });
 
 test("user login", async ({ page }) => {
+  const testTimer = measureTestTime('login-test');
   try {
     await page.goto("/login");
 
-    // Debug element state
+    // Debug element state with performance tracking
     const loginButton = await debugElement(page, "[data-testid='login-button']");
     if (!loginButton) {
       throw new Error("Login button not found");
     }
 
-    await loginButton.click();
+    const clickTimer = measureTestTime('login-button-click');
+    try {
+      await loginButton.click();
+      expect(clickTimer.elapsed()).toBeLessThan(THRESHOLDS.E2E);
+    } finally {
+      clickTimer.end();
+    }
 
   } catch (error) {
-    // Capture failure state
+    // Capture failure state with performance metrics
     await page.screenshot({ path: "test-results/login-failure.png" });
     console.error("Login test failed:", {
       error,
       url: page.url(),
-      content: await page.content()
+      content: await page.content(),
+      performanceMetrics: {
+        elapsed: testTimer.elapsed(),
+        threshold: THRESHOLDS.E2E
+      }
     });
     throw error;
+  } finally {
+    testTimer.end();
   }
 });
 </example>
 
 <example type="invalid">
-// Bad: Poor debugging practices
+// Bad: Poor debugging practices without performance monitoring
 test("user login", async ({ page }) => {
   await page.goto("/login");
   await page.click("button");  // No debug info
   // No error handling
   // No failure capture
+  // No performance monitoring
 });
 </example>
 
 ## Dependencies
 - 053-playwright-e2e-standards.mdc
 - 054-test-data-management.mdc
+- 057-test-performance-standards.mdc
 
 metadata:
   priority: high
@@ -177,3 +249,4 @@ metadata:
     - testing
     - debugging
     - error-handling
+    - performance

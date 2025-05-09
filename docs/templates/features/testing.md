@@ -50,6 +50,32 @@ describe("{ComponentName}", () => {
 });
 ```
 
+### API Tests
+
+#### Handling Redirect Responses
+
+When testing API endpoints that return redirects (3xx status codes), follow these guidelines:
+
+```typescript
+describe("API Redirect Handling", () => {
+  test("handles redirect response correctly", async () => {
+    // Do not use debugResponse for redirect responses
+    // as they don't contain a response body to debug
+    const response = await performRedirect();
+    
+    // Instead, directly check the status and Location header
+    expect(response.status).toBe(307); // or appropriate 3xx code
+    expect(response.headers.get("Location")).toBe(expectedUrl);
+  });
+});
+```
+
+Key points:
+- Skip response body debugging for redirect responses
+- Focus on status code and Location header
+- Use appropriate 3xx status code expectations
+- Document when redirect behavior is expected
+
 ### Integration Tests
 
 #### Feature Flow
@@ -196,3 +222,21 @@ const testConfig = {
 - Troubleshooting steps
 - Recovery procedures
 - Prevention measures
+
+#### Handling Redirect Responses
+
+When testing endpoints that return redirect responses (3xx status codes), be mindful that the `debugResponse` helper function should not be used. Redirect responses typically do not contain a response body to debug, and attempting to parse them as JSON will result in an error.
+
+Instead, when testing redirects:
+- Assert the response status code directly (301, 302, etc.)
+- Check the `Location` header for the redirect destination
+- Use the appropriate test assertions for redirect scenarios
+
+Example:
+```typescript
+test('should redirect to login page', async () => {
+  const response = await fetch('/protected-route');
+  expect(response.status).toBe(302);
+  expect(response.headers.get('Location')).toBe('/login');
+});
+```

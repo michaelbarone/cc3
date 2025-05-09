@@ -13,109 +13,148 @@ alwaysApply: true
 - Integrates with 051-vitest-react-testing-lib-testing-standards.mdc
 
 ## Critical Rules
+- ALWAYS use fixtures for API layer tests
+- ONLY use Prisma mocks for service layer tests
+- Keep data transformations in fixtures
+- Follow proper directory structure
+- Use factory functions for test data
+- Clean up test data after use
+- Document data dependencies
+- Maintain type safety
 
-1. Test Data Organization:
-   ```typescript
-   // Required directory structure
-   test/
-   ├── fixtures/           # Shared test fixtures
-   │   ├── users.ts       # User data
-   │   └── responses/     # API responses
-   └── mocks/             # Mock implementations
-       └── handlers/      # API handlers
+## Test Data Organization
 
-   e2e/
-   ├── fixtures/          # E2E specific fixtures
-   └── data/             # Test data sets
-   ```
+### 1. Directory Structure
+```typescript
+test/
+├── fixtures/           # API layer test fixtures
+│   ├── factories.ts   # Factory functions with API transformations
+│   ├── data/         # Static test data
+│   └── responses/    # Expected API responses
+├── mocks/             # Service layer mocks
+│   ├── prisma.ts     # Prisma client mock
+│   └── services/     # Service-specific mocks
+└── helpers/           # Test utilities
+    ├── setup.ts
+    └── cleanup.ts
+```
 
-2. Factory Functions:
-   ```typescript
-   // GOOD: Flexible factory function
-   function createTestUser(overrides = {}) {
-     return {
-       id: "test-id",
-       username: "testuser",
-       email: "test@example.com",
-       ...overrides
-     };
-   }
+### 2. Layer-Specific Data Management
 
-   // BAD: Hard-coded test data
-   const testUser = {
-     id: "test-id",
-     username: "testuser"
-   };
-   ```
+#### API Layer
+```typescript
+// GOOD: Factory function with API transformations
+export function createMockUser(overrides?: Partial<User>): User {
+  const now = new Date();
+  return {
+    id: `user-${Math.random().toString(36).slice(2, 9)}`,
+    createdAt: now.toISOString(), // API format
+    updatedAt: now.toISOString(), // API format
+    ...overrides
+  };
+}
+
+// Usage in API test
+test("GET /api/users/:id", async () => {
+  const mockUser = createMockUser();
+  prismaMock.user.findUnique.mockResolvedValue(mockUser);
+
+  const response = await GET(`/api/users/${mockUser.id}`);
+  const data = await response.json();
+
+  expect(data).toEqual(mockUser); // Dates match API format
+});
+```
+
+#### Service Layer
+```typescript
+// GOOD: Raw data for service tests
+const rawUserData = {
+  id: "1",
+  createdAt: new Date(), // Native Date object
+  updatedAt: new Date()
+};
+
+// Usage in service test
+test("createUser service", async () => {
+  prismaMock.user.create.mockResolvedValue(rawUserData);
+  const result = await userService.createUser(rawUserData);
+  expect(result.createdAt).toBeInstanceOf(Date);
+});
+```
+
+## Factory Functions
+
+### 1. API Fixtures
+```typescript
+// Factory with API transformations
+export function createMockPost(
+  author: User,
+  overrides?: Partial<Post>
+): Post {
+  const now = new Date();
+  return {
+    id: `post-${Date.now()}`,
+    title: "Test Post",
+    content: "Test content",
+    authorId: author.id,
+    createdAt: now.toISOString(), // API format
+    updatedAt: now.toISOString(), // API format
+    ...overrides
+  };
+}
+```
+
+### 2. Service Layer Data
+```typescript
+// Raw data factory for services
+export function createRawPost(
+  author: User,
+  overrides?: Partial<Post>
+): Post {
+  const now = new Date();
+  return {
+    id: `post-${Date.now()}`,
+    title: "Test Post",
+    content: "Test content",
+    authorId: author.id,
+    createdAt: now, // Date object
+    updatedAt: now, // Date object
+    ...overrides
+  };
+}
+```
+
+## Best Practices
+
+1. Data Transformations:
+   - Keep transformations in fixtures
+   - Document transformation logic
+   - Maintain consistency across fixtures
+   - Test transformation edge cases
+
+2. Type Safety:
+   - Use TypeScript interfaces
+   - Validate fixture data
+   - Test type compatibility
+   - Document type requirements
 
 3. Data Cleanup:
-   ```typescript
-   // GOOD: Comprehensive cleanup
-   afterEach(async () => {
-     await prisma.$transaction([
-       prisma.user.deleteMany({ where: { email: { startsWith: "test-" } } }),
-       prisma.session.deleteMany({ where: { userId: { startsWith: "test-" } } })
-     ]);
-   });
-
-   // BAD: Incomplete cleanup
-   afterEach(async () => {
-     await prisma.user.deleteMany();
-   });
-   ```
-
-## Examples
-
-<example>
-// Good: Complete test data management
-import { createTestUser } from "../fixtures/users";
-import { createTestGroup } from "../fixtures/groups";
-
-describe("User Management", () => {
-  let testUser;
-  let testGroup;
-
-  beforeEach(async () => {
-    testUser = createTestUser({ role: "admin" });
-    testGroup = createTestGroup({ owner: testUser });
-
-    await prisma.$transaction([
-      prisma.user.create({ data: testUser }),
-      prisma.group.create({ data: testGroup })
-    ]);
-  });
-
-  afterEach(async () => {
-    await prisma.$transaction([
-      prisma.group.deleteMany({ where: { id: testGroup.id } }),
-      prisma.user.deleteMany({ where: { id: testUser.id } })
-    ]);
-  });
-
-  test("user can manage group", async () => {
-    // Test implementation
-  });
-});
-</example>
-
-<example type="invalid">
-// Bad: Poor test data management
-describe("User Tests", () => {
-  test("user management", () => {
-    const user = { name: "test" };  // Hard-coded, no cleanup
-    // Test implementation
-  });
-});
-</example>
+   - Clean up after each test
+   - Use transaction boundaries
+   - Handle cleanup failures
+   - Document cleanup requirements
 
 ## Dependencies
 - 053-playwright-e2e-standards.mdc
 - 051-vitest-react-testing-lib-testing-standards.mdc
+- 056-test-prisma-standards.mdc
 
 metadata:
   priority: high
-  version: 1.0.0
+  version: 1.2.0
   tags:
     - testing
     - data
     - fixtures
+    - mocking

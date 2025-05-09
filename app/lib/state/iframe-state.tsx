@@ -132,8 +132,17 @@ function iframeReducer(state: IframeState, action: IframeAction): IframeState {
 }
 
 // Provider component
-export function IframeProvider({ children }: { children: ReactNode }) {
-  const [state, dispatch] = useReducer(iframeReducer, initialState);
+interface IframeProviderProps {
+  children: ReactNode;
+  initialActiveUrlId?: string;
+}
+
+export function IframeProvider({ children, initialActiveUrlId }: IframeProviderProps) {
+  const [state, dispatch] = useReducer(iframeReducer, {
+    ...initialState,
+    activeUrlId: initialActiveUrlId ?? null,
+    initialUrlId: initialActiveUrlId ?? null,
+  });
 
   return <IframeContext.Provider value={{ state, dispatch }}>{children}</IframeContext.Provider>;
 }

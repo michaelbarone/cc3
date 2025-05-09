@@ -49,15 +49,15 @@ afterAll(async () => {
 ### Test Utilities
 
 ```typescript
-// test/utils/test-utils.tsx
-import { render } from '@testing-library/react';
-import { ConfigProvider } from '@/components/config-provider';
+// test/utils/setup/providers.tsx
+import { render } from '@testing-library/react'
+import { ThemeProvider } from '@mui/material/styles'
 
 export function renderWithProviders(ui: React.ReactElement) {
   return render(
-    <ConfigProvider>
+    <ThemeProvider>
       {ui}
-    </ConfigProvider>
+    </ThemeProvider>
   );
 }
 ```

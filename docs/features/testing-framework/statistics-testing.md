@@ -70,7 +70,8 @@ Key Points:
 ### Using Mock Helpers
 
 ```typescript
-import { createMockUserData, createMockUrlData, statisticsTestScenarios } from "@/app/lib/test/statistics";
+import { createMockUserData, createMockUrlData, statisticsTestScenarios } from "@/test/fixtures/statistics";
+import { validateApiResponse } from "@/test/utils/validation/type-validation";
 
 // Example: Testing empty system
 const emptySystem = statisticsTestScenarios.emptySystem;
@@ -184,7 +185,7 @@ const userData = createMockUserData({
 ### Response Validation
 
 ```typescript
-import { validateApiResponse } from "@/app/lib/test/validation";
+import { validateApiResponse } from "@/test/utils/validation/type-validation";
 
 it("should validate response structure", async () => {
   const response = await getStatistics();

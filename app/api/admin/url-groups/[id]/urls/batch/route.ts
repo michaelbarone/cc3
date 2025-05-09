@@ -64,7 +64,7 @@ export async function POST(request: NextRequest, { params }: RouteContext): Prom
     });
 
     if (urls.length !== urlIds.length) {
-      return NextResponse.json({ error: "One or more URLs not found" }, { status: 404 });
+      return NextResponse.json({ error: "One or more URLs not found" }, { status: 400 });
     }
 
     await prisma.$transaction(async (tx) => {
@@ -77,31 +77,14 @@ export async function POST(request: NextRequest, { params }: RouteContext): Prom
 
         let displayOrder = (maxDisplayOrder._max?.displayOrder || -1) + 1;
 
-        // Add URLs to group
-        await Promise.all(
-          urlIds.map(async (urlId: string) => {
-            // Check if URL is already in group
-            const existingUrlInGroup = await tx.urlsInGroups.findUnique({
-              where: {
-                urlId_groupId: {
-                  urlId,
-                  groupId: id,
-                },
-              },
-            });
-
-            if (!existingUrlInGroup) {
-              return tx.urlsInGroups.create({
-                data: {
-                  urlId,
-                  groupId: id,
-                  displayOrder: displayOrder++,
-                },
-              });
-            }
-            return null;
-          }),
-        );
+        // Add URLs to group using createMany
+        await tx.urlsInGroups.createMany({
+          data: urlIds.map((urlId: string) => ({
+            urlId,
+            groupId: id,
+            displayOrder: displayOrder++,
+          })),
+        });
       } else if (operation === "remove") {
         // Remove URLs from group
         await tx.urlsInGroups.deleteMany({

@@ -1,17 +1,21 @@
-import { debugMockCalls } from "@/app/lib/test/debug";
+import { GET } from "@/app/api/admin/statistics/route";
+import {
+  debugError,
+  debugMockCalls,
+  debugResponse,
+  measureTestTime,
+  THRESHOLDS,
+} from "@/test/helpers/debug";
 import type { PrismaClient } from "@prisma/client";
 import { cookies } from "next/headers";
 import { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { DeepMockProxy } from "vitest-mock-extended";
 
+import { GET as getBasicStats } from "@/app/api/admin/stats/route";
 import { verifyToken } from "@/app/lib/auth/jwt";
 import { prisma } from "@/app/lib/db/prisma";
-import { logTestTiming } from "@/app/lib/test/debug";
-import { createMockUser } from "@/app/lib/test/factories";
-
-import { GET as getStatistics } from "@/app/api/admin/statistics/route";
-import { GET as getBasicStats } from "@/app/api/admin/stats/route";
+import { createMockUser } from "@/test/fixtures/data/factories";
 
 // Mock the auth token verification
 vi.mock("@/app/lib/auth/jwt", () => ({
@@ -67,7 +71,7 @@ describe("Statistics API Endpoints", () => {
 
   describe("GET /api/admin/statistics", () => {
     it("should return 401 when not authenticated", async () => {
-      const startTime = performance.now();
+      const timer = measureTestTime("unauthorized-test");
       try {
         // Mock no token in cookies
         (cookies as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
@@ -76,31 +80,24 @@ describe("Statistics API Endpoints", () => {
         // Mock token verification to return null
         (verifyToken as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(null);
 
-        const response = await getStatistics(mockRequest);
-        const responseText = await response.text();
-
-        // Debug using the text
-        console.log("Response debug:", {
-          status: response.status,
-          statusText: response.statusText,
-          headers: Object.fromEntries(response.headers.entries()),
-          body: responseText,
-          bodyUsed: true,
-        });
+        const response = await GET(mockRequest);
+        const data = await debugResponse(response);
 
         expect(response.status).toBe(401);
-        const data = JSON.parse(responseText);
         expect(data).toEqual({ error: "Unauthorized" });
+        expect(timer.elapsed()).toBeLessThan(THRESHOLDS.UNIT);
       } catch (error) {
-        console.error("Test failed:", { error, request: mockRequest });
+        debugError(error instanceof Error ? error : new Error("Test failed"), {
+          request: mockRequest,
+        });
         throw error;
       } finally {
-        logTestTiming("Unauthorized test", startTime);
+        timer.end();
       }
     });
 
     it("should return 403 when authenticated as non-admin", async () => {
-      const startTime = performance.now();
+      const timer = measureTestTime("non-admin-test");
       try {
         // Mock non-admin user
         (cookies as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
@@ -108,53 +105,36 @@ describe("Statistics API Endpoints", () => {
         });
         (verifyToken as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(mockRegularUser);
 
-        const response = await getStatistics(mockRequest);
-        const responseText = await response.text();
-
-        // Debug using the text
-        console.log("Response debug:", {
-          status: response.status,
-          statusText: response.statusText,
-          headers: Object.fromEntries(response.headers.entries()),
-          body: responseText,
-          bodyUsed: true,
-        });
+        const response = await GET(mockRequest);
+        const data = await debugResponse(response);
 
         expect(response.status).toBe(403);
-        const data = JSON.parse(responseText);
         expect(data).toEqual({ error: "Forbidden" });
+        expect(timer.elapsed()).toBeLessThan(THRESHOLDS.UNIT);
       } catch (error) {
-        console.error("Test failed:", { error, request: mockRequest });
+        debugError(error instanceof Error ? error : new Error("Test failed"), {
+          request: mockRequest,
+        });
         throw error;
       } finally {
-        logTestTiming("Non-admin test", startTime);
+        timer.end();
       }
     });
 
     it("should handle database errors gracefully", async () => {
-      const startTime = performance.now();
+      const timer = measureTestTime("database-error-test");
       try {
         const dbError = new Error("Database error");
         (prisma.user.aggregate as any).mockRejectedValue(dbError);
 
-        const response = await getStatistics(mockRequest);
-        const responseText = await response.text();
-
-        // Debug using the text
-        console.log("Response debug:", {
-          status: response.status,
-          statusText: response.statusText,
-          headers: Object.fromEntries(response.headers.entries()),
-          body: responseText,
-          bodyUsed: true,
-        });
+        const response = await GET(mockRequest);
+        const data = await debugResponse(response);
 
         expect(response.status).toBe(500);
-        const data = JSON.parse(responseText);
         expect(data).toEqual({ error: "Failed to fetch statistics" });
+        expect(timer.elapsed()).toBeLessThan(THRESHOLDS.UNIT);
       } catch (error) {
-        console.error("Test failed:", {
-          error,
+        debugError(error instanceof Error ? error : new Error("Test failed"), {
           mockState: {
             prisma: debugMockCalls(prisma.user.aggregate as any, "user.aggregate"),
             auth: debugMockCalls(verifyToken as any, "verifyToken"),
@@ -162,41 +142,31 @@ describe("Statistics API Endpoints", () => {
         });
         throw error;
       } finally {
-        logTestTiming("Database error test", startTime);
+        timer.end();
       }
     });
   });
 
   describe("GET /api/admin/stats", () => {
     it("should return basic statistics when authenticated as admin", async () => {
-      const startTime = performance.now();
+      const timer = measureTestTime("basic-stats-test");
       try {
         (prisma.user.count as any).mockResolvedValue(100);
         (prisma.urlGroup.count as any).mockResolvedValue(20);
         (prisma.url.count as any).mockResolvedValue(200);
 
         const response = await getBasicStats();
-        const responseText = await response.text();
-
-        // Debug using the text
-        console.log("Response debug:", {
-          status: response.status,
-          statusText: response.statusText,
-          headers: Object.fromEntries(response.headers.entries()),
-          body: responseText,
-          bodyUsed: true,
-        });
+        const data = await debugResponse(response);
 
         expect(response.status).toBe(200);
-        const data = JSON.parse(responseText);
         expect(data).toEqual({
           totalUsers: 100,
           totalUrlGroups: 20,
           totalUrls: 200,
         });
+        expect(timer.elapsed()).toBeLessThan(THRESHOLDS.API);
       } catch (error) {
-        console.error("Test failed:", {
-          error,
+        debugError(error instanceof Error ? error : new Error("Test failed"), {
           mockState: {
             userCount: debugMockCalls(prisma.user.count as any, "user.count"),
             urlGroupCount: debugMockCalls(prisma.urlGroup.count as any, "urlGroup.count"),
@@ -205,12 +175,12 @@ describe("Statistics API Endpoints", () => {
         });
         throw error;
       } finally {
-        logTestTiming("Basic stats test", startTime);
+        timer.end();
       }
     });
 
     it("should return 401 when not authenticated", async () => {
-      const startTime = performance.now();
+      const timer = measureTestTime("unauthorized-basic-stats-test");
       try {
         // Mock no token in cookies
         (cookies as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
@@ -220,30 +190,21 @@ describe("Statistics API Endpoints", () => {
         (verifyToken as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(null);
 
         const response = await getBasicStats();
-        const responseText = await response.text();
-
-        // Debug using the text
-        console.log("Response debug:", {
-          status: response.status,
-          statusText: response.statusText,
-          headers: Object.fromEntries(response.headers.entries()),
-          body: responseText,
-          bodyUsed: true,
-        });
+        const data = await debugResponse(response);
 
         expect(response.status).toBe(401);
-        const data = JSON.parse(responseText);
         expect(data).toEqual({ error: "Unauthorized" });
+        expect(timer.elapsed()).toBeLessThan(THRESHOLDS.UNIT);
       } catch (error) {
-        console.error("Test failed:", { error });
+        debugError(error instanceof Error ? error : new Error("Test failed"));
         throw error;
       } finally {
-        logTestTiming("Unauthorized basic stats test", startTime);
+        timer.end();
       }
     });
 
     it("should return 403 when authenticated as non-admin", async () => {
-      const startTime = performance.now();
+      const timer = measureTestTime("non-admin-basic-stats-test");
       try {
         // Mock non-admin user
         (cookies as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
@@ -252,59 +213,40 @@ describe("Statistics API Endpoints", () => {
         (verifyToken as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(mockRegularUser);
 
         const response = await getBasicStats();
-        const responseText = await response.text();
-
-        // Debug using the text
-        console.log("Response debug:", {
-          status: response.status,
-          statusText: response.statusText,
-          headers: Object.fromEntries(response.headers.entries()),
-          body: responseText,
-          bodyUsed: true,
-        });
+        const data = await debugResponse(response);
 
         expect(response.status).toBe(403);
-        const data = JSON.parse(responseText);
         expect(data).toEqual({ error: "Forbidden" });
+        expect(timer.elapsed()).toBeLessThan(THRESHOLDS.UNIT);
       } catch (error) {
-        console.error("Test failed:", { error });
+        debugError(error instanceof Error ? error : new Error("Test failed"));
         throw error;
       } finally {
-        logTestTiming("Non-admin basic stats test", startTime);
+        timer.end();
       }
     });
 
     it("should handle database errors gracefully", async () => {
-      const startTime = performance.now();
+      const timer = measureTestTime("database-error-basic-stats-test");
       try {
         const dbError = new Error("Database error");
         (prisma.user.count as any).mockRejectedValue(dbError);
 
         const response = await getBasicStats();
-        const responseText = await response.text();
-
-        // Debug using the text
-        console.log("Response debug:", {
-          status: response.status,
-          statusText: response.statusText,
-          headers: Object.fromEntries(response.headers.entries()),
-          body: responseText,
-          bodyUsed: true,
-        });
+        const data = await debugResponse(response);
 
         expect(response.status).toBe(500);
-        const data = JSON.parse(responseText);
         expect(data).toEqual({ error: "Internal Server Error" });
+        expect(timer.elapsed()).toBeLessThan(THRESHOLDS.UNIT);
       } catch (error) {
-        console.error("Test failed:", {
-          error,
+        debugError(error instanceof Error ? error : new Error("Test failed"), {
           mockState: {
             userCount: debugMockCalls(prisma.user.count as any, "user.count"),
           },
         });
         throw error;
       } finally {
-        logTestTiming("Database error basic stats test", startTime);
+        timer.end();
       }
     });
   });

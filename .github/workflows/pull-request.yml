@@ -173,10 +173,59 @@ jobs:
         id: test
         run: |
           start_time=$(date +%s)
-          npm run test
+          # Capture test output
+          npm run test > test_output.txt 2>&1
+          test_exit_code=$? # Capture the exit code of npm run test
           end_time=$(date +%s)
           duration=$((end_time - start_time))
           echo "duration=$duration" >> $GITHUB_OUTPUT
+
+          echo "--- Full Test Output (test_output.txt) ---"
+          cat test_output.txt
+          echo "--- End Full Test Output ---"
+
+          # Attempt to parse Vitest summary line
+          # Example: Tests:      2 failed, 2 passed, 1 skipped, 5 total
+          summary_line=$(grep -E "^Tests:([[:space:]]+.*)" test_output.txt | tail -n 1)
+          echo "Debug: Captured summary_line: '${summary_line}'"
+
+          if [ -n "$summary_line" ]; then
+            # Use awk to parse counts from the summary_line
+            parsed_counts=$(echo "$summary_line" | awk \
+              'match($0, /([0-9]+) passed/, p) {passed_val=p[1]} \
+               match($0, /([0-9]+) failed/, f) {failed_val=f[1]} \
+               match($0, /([0-9]+) (skipped|pending)/, s) {skipped_val=s[1]} \
+               END {print (passed_val+0)":"(failed_val+0)":"(skipped_val+0)}')
+            passed_tests=$(echo "$parsed_counts" | cut -d: -f1)
+            failed_tests=$(echo "$parsed_counts" | cut -d: -f2)
+            skipped_tests=$(echo "$parsed_counts" | cut -d: -f3)
+          else
+            echo "Debug: Summary line not found or empty. Defaulting counts to 0."
+            passed_tests=0
+            failed_tests=0
+            skipped_tests=0
+          fi
+
+          echo "Debug: Parsed passed_tests: '${passed_tests}'"
+          echo "Debug: Parsed failed_tests: '${failed_tests}'"
+          echo "Debug: Parsed skipped_tests: '${skipped_tests}'"
+
+          echo "passed_tests=${passed_tests}" >> $GITHUB_OUTPUT
+          echo "failed_tests=${failed_tests}" >> $GITHUB_OUTPUT
+          echo "skipped_tests=${skipped_tests}" >> $GITHUB_OUTPUT
+
+          # Exit with the original test exit code to reflect test status accurately
+          # Or, if parsing found failed tests and original exit code was 0 (e.g. from a misconfigured test runner), still fail.
+          if [ "${failed_tests}" -gt 0 ]; then
+            echo "Failing tests detected by parsing (${failed_tests} failed). Exiting with 1."
+            exit 1
+          elif [ "${test_exit_code}" -ne 0 ]; then
+            echo "Test runner exited with code ${test_exit_code}. Exiting with this code."
+            exit ${test_exit_code}
+          else
+            echo "Tests passed (exit code ${test_exit_code}, ${failed_tests} parsed failed). Exiting with 0."
+            exit 0
+          fi
 
       # - name: Upload Coverage Report
       #   uses: actions/upload-artifact@v4
@@ -190,15 +239,39 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            let output = `### 🧪 Test Results`;
-            if ( "${{ job.status }}" == "success" ) {
-              output = `### 🧪 Test Results
-                ✅ Tests completed successfully in ${{ steps.test.outputs.duration }} seconds`;
-            } else {
-              output = `### 🧪 Test Results
-                ❌ Tests failed
-                Please check the test logs for more details.`;
+            const duration = "${{ steps.test.outputs.duration }}";
+            const passed = parseInt("${{ steps.test.outputs.passed_tests }}", 10) || 0;
+            const failed = parseInt("${{ steps.test.outputs.failed_tests }}", 10) || 0;
+            const skipped = parseInt("${{ steps.test.outputs.skipped_tests }}", 10) || 0;
+            const jobStatus = "${{ job.status }}";
+            let result_summary;
+
+            if (jobStatus === "success") {
+                result_summary = `✅ Tests completed successfully in ${duration}s.\\n`;
+                result_summary += `   Passed: ${passed}`;
+                if (skipped > 0) {
+                    result_summary += `\\n   Skipped: ${skipped}`;
+                }
+                // This case is unlikely if jobStatus is "success" but good for completeness
+                if (failed > 0) {
+                    result_summary += `\\n   Warning: ${failed} failed tests reported (job status was success).`;
+                }
+            } else { // jobStatus === "failure"
+                // If all counts are 0 despite failure, it suggests a crash before summary or parsing error
+                if (failed === 0 && passed === 0 && skipped === 0) {
+                    result_summary = `❌ Tests failed or did not report results correctly in ${duration}s.\\n`;
+                } else {
+                    result_summary = `❌ Tests failed in ${duration}s.\\n`;
+                    result_summary += `   Failed: ${failed}\\n`;
+                    result_summary += `   Passed: ${passed}`;
+                    if (skipped > 0) {
+                        result_summary += `\\n   Skipped: ${skipped}`;
+                    }
+                }
+                result_summary += `\\n   Please check the test logs for more details.`;
             }
+            output = `### 🧪 Test Results\\n${result_summary}`;
+
             github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,

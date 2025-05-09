@@ -1,5 +1,5 @@
+import { getPrismaClient } from "@/app/lib/db/provider";
 import { SelectedGroupProvider } from "@/app/lib/state/selected-group-context";
-import { getPrismaClient } from "@/lib/db/provider";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import React from "react";

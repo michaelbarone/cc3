@@ -1,10 +1,11 @@
 import { UrlMenu } from "@/app/components/url-menu/UrlMenu";
 import { IframeProvider } from "@/app/lib/state/iframe-state";
+import { measureTestTime, THRESHOLDS } from "@/test/helpers/debug";
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ReactNode } from "react";
 import { act } from "react-dom/test-utils";
-import { describe, expect, it, vi } from "vitest";
+import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 /**
  * UrlMenu Component Tests
@@ -80,6 +81,16 @@ const TestWrapper = ({ children }: { children: ReactNode }) => {
 };
 
 describe("UrlMenu", () => {
+  const suiteTimer = measureTestTime("UrlMenu Suite");
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  afterAll(() => {
+    suiteTimer.end();
+  });
+
   const renderUrlMenu = (props = {}) => {
     return render(
       <TestWrapper>
@@ -91,279 +102,354 @@ describe("UrlMenu", () => {
   const expandGroup = async (groupName: string) => {
     const groupHeader = screen.getByText(groupName).closest("[data-group-id]") as HTMLElement;
     fireEvent.click(groupHeader);
-    await waitFor(() => {
-      const list = screen.getByRole("list", { name: `${groupName} URLs` });
-      expect(list).toBeInTheDocument();
-    });
-    return groupHeader;
-  };
-
-  it("should render all groups", () => {
-    renderUrlMenu();
-    expect(screen.getByText("Group 1")).toBeInTheDocument();
-    expect(screen.getByText("Group 2")).toBeInTheDocument();
-  });
-
-  it("should expand/collapse groups", async () => {
-    renderUrlMenu();
-
-    // Initially all groups are collapsed
-    const group1Header = screen.getByText("Group 1").closest("[data-group-id]") as HTMLElement;
-    expect(group1Header).toBeInTheDocument();
-
-    // Click to expand
-    fireEvent.click(group1Header);
-
-    // Wait for list to be visible
-    await waitFor(() => {
-      const list = screen.getByRole("list", { name: "Group 1 URLs" });
-      expect(list).toBeInTheDocument();
-      expect(within(list).getByText("URL 1")).toBeInTheDocument();
-      expect(within(list).getByText("URL 2")).toBeInTheDocument();
-    });
-
-    // Click to collapse
-    fireEvent.click(group1Header);
-
-    // Wait for list to be hidden
-    await waitFor(() => {
-      expect(screen.queryByRole("list", { name: "Group 1 URLs" })).not.toBeInTheDocument();
-    });
-  });
-
-  it("should handle keyboard navigation", async () => {
-    renderUrlMenu();
-    const user = userEvent.setup();
-
-    // Focus first group header
-    const group1Header = screen.getByRole("button", { name: "Group 1" });
-    await user.click(group1Header);
-
-    // Wait for the animation to complete and the list to be visible
     await waitFor(
       () => {
-        const list = screen.queryByRole("list", { name: "Group 1 URLs" });
+        const list = screen.getByRole("list", { name: `${groupName} URLs` });
         expect(list).toBeInTheDocument();
       },
       { timeout: 2000 },
     );
+    return groupHeader;
+  };
 
-    // Press / to focus search
-    await user.keyboard("/");
-    expect(document.activeElement?.getAttribute("placeholder")).toBe("Search URLs");
+  it("should render all groups", () => {
+    const testTimer = measureTestTime("render all groups");
+    try {
+      renderUrlMenu();
+      expect(screen.getByText("Group 1")).toBeInTheDocument();
+      expect(screen.getByText("Group 2")).toBeInTheDocument();
+      expect(testTimer.elapsed()).toBeLessThan(THRESHOLDS.UNIT);
+    } finally {
+      testTimer.end();
+    }
+  });
 
-    // Press Escape to return focus to group header
-    await user.keyboard("{Escape}");
-    expect(document.activeElement).toBe(group1Header);
+  it("should expand/collapse groups", async () => {
+    const testTimer = measureTestTime("expand/collapse groups");
+    try {
+      renderUrlMenu();
+
+      // Initially all groups are collapsed
+      const group1Header = screen.getByText("Group 1").closest("[data-group-id]") as HTMLElement;
+      expect(group1Header).toBeInTheDocument();
+
+      // Click to expand
+      fireEvent.click(group1Header);
+
+      // Wait for list to be visible
+      await waitFor(() => {
+        const list = screen.getByRole("list", { name: "Group 1 URLs" });
+        expect(list).toBeInTheDocument();
+        expect(within(list).getByText("URL 1")).toBeInTheDocument();
+        expect(within(list).getByText("URL 2")).toBeInTheDocument();
+      });
+
+      // Click to collapse
+      fireEvent.click(group1Header);
+
+      // Wait for list to be hidden
+      await waitFor(() => {
+        expect(screen.queryByRole("list", { name: "Group 1 URLs" })).not.toBeInTheDocument();
+      });
+      expect(testTimer.elapsed()).toBeLessThan(THRESHOLDS.UNIT);
+    } finally {
+      testTimer.end();
+    }
+  });
+
+  it("should handle keyboard navigation", async () => {
+    const testTimer = measureTestTime("handle keyboard navigation");
+    try {
+      renderUrlMenu();
+      const user = userEvent.setup();
+
+      // Focus first group header
+      const group1Header = screen.getByRole("button", { name: "Group 1" });
+      await user.click(group1Header);
+
+      // Wait for the animation to complete and the list to be visible
+      await waitFor(
+        () => {
+          const list = screen.queryByRole("list", { name: "Group 1 URLs" });
+          expect(list).toBeInTheDocument();
+        },
+        { timeout: 2000 },
+      );
+
+      // Press / to focus search
+      await user.keyboard("/");
+      expect(document.activeElement?.getAttribute("placeholder")).toBe("Search URLs");
+
+      // Press Escape to return focus to group header
+      await user.keyboard("{Escape}");
+      expect(document.activeElement).toBe(group1Header);
+      expect(testTimer.elapsed()).toBeLessThan(THRESHOLDS.UNIT);
+    } finally {
+      testTimer.end();
+    }
   });
 
   it("should handle URL selection", async () => {
-    const onUrlSelect = vi.fn();
-    renderUrlMenu({ onUrlSelect });
+    const testTimer = measureTestTime("handle URL selection");
+    try {
+      const onUrlSelect = vi.fn();
+      renderUrlMenu({ onUrlSelect });
 
-    // Expand group 1
-    const group1Header = screen.getByRole("button", { name: "Group 1" });
-    await userEvent.click(group1Header);
+      // Expand group 1
+      const group1Header = screen.getByRole("button", { name: "Group 1" });
+      await userEvent.click(group1Header);
 
-    // Wait for the animation to complete
-    await waitFor(
-      () => {
-        const list = screen.queryByRole("list", { name: "Group 1 URLs" });
-        expect(list).toBeInTheDocument();
-      },
-      { timeout: 1000 },
-    );
+      // Wait for the animation to complete
+      await waitFor(
+        () => {
+          const list = screen.queryByRole("list", { name: "Group 1 URLs" });
+          expect(list).toBeInTheDocument();
+        },
+        { timeout: 1000 },
+      );
 
-    // Find the URL button
-    const urlButton = screen.getByRole("button", { name: /URL 1/ });
+      // Find the URL button
+      const urlButton = screen.getByRole("button", { name: /URL 1/ });
 
-    // Click the URL button
-    await userEvent.click(urlButton);
+      // Click the URL button
+      await userEvent.click(urlButton);
 
-    // Verify the click handler was called
-    await waitFor(
-      () => {
-        expect(onUrlSelect).toHaveBeenCalledWith("url1");
-      },
-      { timeout: 1000 },
-    );
+      // Verify the click handler was called
+      await waitFor(
+        () => {
+          expect(onUrlSelect).toHaveBeenCalledWith("url1");
+        },
+        { timeout: 1000 },
+      );
+      expect(testTimer.elapsed()).toBeLessThan(THRESHOLDS.UNIT);
+    } finally {
+      testTimer.end();
+    }
   });
 
   it("should handle URL state transitions", async () => {
-    renderUrlMenu({ activeUrlId: "url1" });
+    const testTimer = measureTestTime("handle URL state transitions");
+    try {
+      renderUrlMenu({ activeUrlId: "url1" });
 
-    // Expand group 1
-    await expandGroup("Group 1");
+      // Expand group 1
+      await expandGroup("Group 1");
 
-    // Check URL 1 is selected
-    const list = screen.getByRole("list", { name: "Group 1 URLs" });
-    const url1Button = within(list).getByRole("button", { name: /URL 1/ });
-    expect(url1Button).toHaveClass("Mui-selected");
+      // Check URL 1 is selected
+      const list = screen.getByRole("list", { name: "Group 1 URLs" });
+      const url1Button = within(list).getByRole("button", { name: /URL 1/ });
+      expect(url1Button).toHaveClass("Mui-selected");
+      expect(testTimer.elapsed()).toBeLessThan(THRESHOLDS.UNIT);
+    } finally {
+      testTimer.end();
+    }
   });
 
   it("should persist group collapse state", async () => {
-    renderUrlMenu();
+    const testTimer = measureTestTime("persist group collapse state");
+    try {
+      renderUrlMenu();
 
-    // Expand group 1
-    await expandGroup("Group 1");
+      // Expand group 1
+      await expandGroup("Group 1");
 
-    // Check URLs are visible
-    const list = screen.getByRole("list", { name: "Group 1 URLs" });
-    const urlItems = within(list).getAllByRole("listitem");
-    expect(urlItems).toHaveLength(2);
+      // Check URLs are visible
+      const list = screen.getByRole("list", { name: "Group 1 URLs" });
+      const urlItems = within(list).getAllByRole("listitem");
+      expect(urlItems).toHaveLength(2);
+      expect(testTimer.elapsed()).toBeLessThan(THRESHOLDS.UNIT);
+    } finally {
+      testTimer.end();
+    }
   });
 
   it("should handle search filtering", async () => {
-    renderUrlMenu();
+    const testTimer = measureTestTime("handle search filtering");
+    try {
+      renderUrlMenu();
 
-    // Expand both groups
-    await expandGroup("Group 1");
-    await expandGroup("Group 2");
+      // Expand both groups
+      await expandGroup("Group 1");
+      await expandGroup("Group 2");
 
-    // Type in search
-    const searchInput = screen.getByPlaceholderText("Search URLs");
-    await userEvent.type(searchInput, "URL 1");
+      // Type in search
+      const searchInput = screen.getByPlaceholderText("Search URLs");
+      await userEvent.type(searchInput, "URL 1");
 
-    // Check filtered results
-    await waitFor(() => {
-      const group1List = screen.getByRole("list", { name: "Group 1 URLs" });
-      expect(within(group1List).getByText("URL 1")).toBeInTheDocument();
-      expect(within(group1List).queryByText("URL 2")).not.toBeInTheDocument();
-      expect(screen.queryByRole("list", { name: "Group 2 URLs" })).not.toBeInTheDocument();
-    });
+      // Check filtered results
+      await waitFor(() => {
+        const group1List = screen.getByRole("list", { name: "Group 1 URLs" });
+        expect(within(group1List).getByText("URL 1")).toBeInTheDocument();
+        expect(within(group1List).queryByText("URL 2")).not.toBeInTheDocument();
+        expect(screen.queryByRole("list", { name: "Group 2 URLs" })).not.toBeInTheDocument();
+      });
+      expect(testTimer.elapsed()).toBeLessThan(THRESHOLDS.UNIT);
+    } finally {
+      testTimer.end();
+    }
   });
 
   it("should handle empty states", () => {
-    render(
-      <TestWrapper>
-        <UrlMenu urlGroups={[]} />
-      </TestWrapper>,
-    );
+    const testTimer = measureTestTime("handle empty states");
+    try {
+      render(
+        <TestWrapper>
+          <UrlMenu urlGroups={[]} />
+        </TestWrapper>,
+      );
 
-    expect(screen.getByText("No URLs available")).toBeInTheDocument(); // Update based on your actual empty state message
+      expect(screen.getByText("No URLs available")).toBeInTheDocument(); // Update based on your actual empty state message
+      expect(testTimer.elapsed()).toBeLessThan(THRESHOLDS.UNIT);
+    } finally {
+      testTimer.end();
+    }
   });
 
   it("should handle long press to unload URL", async () => {
-    const user = userEvent.setup();
-    render(
-      <TestWrapper>
-        <UrlMenu urlGroups={mockUrlGroups} />
-      </TestWrapper>,
-    );
+    const testTimer = measureTestTime("handle long press to unload URL");
+    try {
+      const user = userEvent.setup();
+      render(
+        <TestWrapper>
+          <UrlMenu urlGroups={mockUrlGroups} />
+        </TestWrapper>,
+      );
 
-    // Expand Group 1
-    const group1Header = screen.getByRole("button", { name: "Group 1" });
-    await user.click(group1Header);
+      // Expand Group 1
+      const group1Header = screen.getByRole("button", { name: "Group 1" });
+      await user.click(group1Header);
 
-    // Wait for list to be visible and animation to complete
-    await waitFor(() => {
-      const list = screen.getByRole("list", { name: "Group 1 URLs" });
-      expect(list).toBeInTheDocument();
-      expect(list.closest(".MuiCollapse-root")).toHaveClass("MuiCollapse-entered");
-    });
+      // Wait for list to be visible and animation to complete
+      await waitFor(() => {
+        const list = screen.getByRole("list", { name: "Group 1 URLs" });
+        expect(list).toBeInTheDocument();
+        expect(list.closest(".MuiCollapse-root")).toHaveClass("MuiCollapse-entered");
+      });
 
-    // Find the URL button
-    const urlItem = screen.getByText("URL 1").closest("li");
-    const urlButton = within(urlItem!).getByRole("button");
+      // Find the URL button
+      const urlItem = screen.getByText("URL 1").closest("li");
+      const urlButton = within(urlItem!).getByRole("button");
 
-    // Simulate long press by firing mouseDown and waiting
-    await act(async () => {
-      fireEvent.mouseDown(urlButton);
-      await new Promise((resolve) => setTimeout(resolve, 600)); // Wait longer than the 500ms threshold
-      fireEvent.mouseUp(urlButton);
-    });
+      // Simulate long press by firing mouseDown and waiting
+      await act(async () => {
+        fireEvent.mouseDown(urlButton);
+        await new Promise((resolve) => setTimeout(resolve, 600)); // Wait longer than the 500ms threshold
+        fireEvent.mouseUp(urlButton);
+      });
 
-    // Check for unload effect (can be checked through classes or aria-attributes based on your implementation)
-    // This needs to be updated based on how your component shows unload state
-    expect(urlButton).toHaveAttribute("aria-pressed", "false");
+      // Check for unload effect (can be checked through classes or aria-attributes based on your implementation)
+      // This needs to be updated based on how your component shows unload state
+      expect(urlButton).toHaveAttribute("aria-pressed", "false");
+      expect(testTimer.elapsed()).toBeLessThan(THRESHOLDS.UNIT);
+    } finally {
+      testTimer.end();
+    }
   });
 
   // New test for rapid clicks between different URLs
   it("should handle rapid clicks between different URLs", async () => {
-    const onUrlSelect = vi.fn();
-    renderUrlMenu({ onUrlSelect });
+    const testTimer = measureTestTime("handle rapid clicks between different URLs");
+    try {
+      const onUrlSelect = vi.fn();
+      renderUrlMenu({ onUrlSelect });
 
-    // Expand group 1
-    await expandGroup("Group 1");
+      // Expand group 1
+      await expandGroup("Group 1");
 
-    // Find URL buttons
-    const url1Button = screen.getByRole("button", { name: /URL 1/ });
-    const url2Button = screen.getByRole("button", { name: /URL 2/ });
+      // Find URL buttons
+      const url1Button = screen.getByRole("button", { name: /URL 1/ });
+      const url2Button = screen.getByRole("button", { name: /URL 2/ });
 
-    // Rapid clicks between URLs
-    await act(async () => {
-      fireEvent.click(url1Button);
-      fireEvent.click(url2Button);
-      fireEvent.click(url1Button);
-      fireEvent.click(url2Button);
-      fireEvent.click(url1Button);
-    });
+      // Rapid clicks between URLs
+      await act(async () => {
+        fireEvent.click(url1Button);
+        fireEvent.click(url2Button);
+        fireEvent.click(url1Button);
+        fireEvent.click(url2Button);
+        fireEvent.click(url1Button);
+      });
 
-    // Verify the last click was registered correctly
-    await waitFor(() => {
-      expect(onUrlSelect).toHaveBeenLastCalledWith("url1");
-      expect(onUrlSelect).toHaveBeenCalledTimes(5);
-    });
+      // Verify the last click was registered correctly
+      await waitFor(() => {
+        expect(onUrlSelect).toHaveBeenLastCalledWith("url1");
+        expect(onUrlSelect).toHaveBeenCalledTimes(5);
+      });
+      expect(testTimer.elapsed()).toBeLessThan(THRESHOLDS.UNIT);
+    } finally {
+      testTimer.end();
+    }
   });
 
   // New test for interrupted long press behavior
   it("should handle interrupted long press correctly", async () => {
-    const user = userEvent.setup();
-    renderUrlMenu();
+    const testTimer = measureTestTime("handle interrupted long press correctly");
+    try {
+      const user = userEvent.setup();
+      renderUrlMenu();
 
-    // Expand Group 1
-    await expandGroup("Group 1");
+      // Expand Group 1
+      await expandGroup("Group 1");
 
-    // Find the URL button
-    const urlItem = screen.getByText("URL 1").closest("li");
-    const urlButton = within(urlItem!).getByRole("button");
+      // Find the URL button
+      const urlItem = screen.getByText("URL 1").closest("li");
+      const urlButton = within(urlItem!).getByRole("button");
 
-    // Start long press but interrupt before threshold
-    await act(async () => {
-      fireEvent.mouseDown(urlButton);
-      // Wait less than the long press threshold (500ms)
-      await new Promise((resolve) => setTimeout(resolve, 250));
-      // Interrupt by moving mouse
-      fireEvent.mouseMove(urlButton, { clientX: 10, clientY: 10 });
-      fireEvent.mouseUp(urlButton);
-    });
+      // Start long press but interrupt before threshold
+      await act(async () => {
+        fireEvent.mouseDown(urlButton);
+        // Wait less than the long press threshold (500ms)
+        await new Promise((resolve) => setTimeout(resolve, 250));
+        // Interrupt by moving mouse
+        fireEvent.mouseMove(urlButton, { clientX: 10, clientY: 10 });
+        fireEvent.mouseUp(urlButton);
+      });
 
-    // Verify no long press action occurred
-    // This depends on your implementation - check a specific property or state
-    // that indicates long press was not completed
-    expect(urlButton).not.toHaveAttribute("data-long-press-active", "true");
-    expect(urlButton).toHaveAttribute("aria-pressed", "false");
+      // Verify no long press action occurred
+      // This depends on your implementation - check a specific property or state
+      // that indicates long press was not completed
+      expect(urlButton).not.toHaveAttribute("data-long-press-active", "true");
+      expect(urlButton).toHaveAttribute("aria-pressed", "false");
+      expect(testTimer.elapsed()).toBeLessThan(THRESHOLDS.UNIT);
+    } finally {
+      testTimer.end();
+    }
   });
 
   // New test for browser tab switching during long operations
   it("should handle browser tab switching during operations", async () => {
-    renderUrlMenu();
+    const testTimer = measureTestTime("handle browser tab switching during operations");
+    try {
+      renderUrlMenu();
 
-    // Expand Group 1
-    await expandGroup("Group 1");
+      // Expand Group 1
+      await expandGroup("Group 1");
 
-    // Find the URL button
-    const urlItem = screen.getByText("URL 1").closest("li");
-    const urlButton = within(urlItem!).getByRole("button");
+      // Find the URL button
+      const urlItem = screen.getByText("URL 1").closest("li");
+      const urlButton = within(urlItem!).getByRole("button");
 
-    // Start long press
-    await act(async () => {
-      fireEvent.mouseDown(urlButton);
+      // Start long press
+      await act(async () => {
+        fireEvent.mouseDown(urlButton);
 
-      // Simulate tab losing focus during long press
-      fireEvent.blur(window);
+        // Simulate tab losing focus during long press
+        fireEvent.blur(window);
 
-      // Wait enough time for long press to trigger
-      await new Promise((resolve) => setTimeout(resolve, 600));
+        // Wait enough time for long press to trigger
+        await new Promise((resolve) => setTimeout(resolve, 600));
 
-      // Tab gaining focus again
-      fireEvent.focus(window);
+        // Tab gaining focus again
+        fireEvent.focus(window);
 
-      fireEvent.mouseUp(urlButton);
-    });
+        fireEvent.mouseUp(urlButton);
+      });
 
-    // Verify the long press was canceled when focus was lost
-    expect(urlButton).not.toHaveAttribute("data-long-press-active", "true");
-    expect(urlButton).toHaveAttribute("aria-pressed", "false");
+      // Verify the long press was canceled when focus was lost
+      expect(urlButton).not.toHaveAttribute("data-long-press-active", "true");
+      expect(urlButton).toHaveAttribute("aria-pressed", "false");
+      expect(testTimer.elapsed()).toBeLessThan(THRESHOLDS.UNIT);
+    } finally {
+      testTimer.end();
+    }
   });
 });
