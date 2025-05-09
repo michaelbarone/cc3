@@ -140,7 +140,7 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
       },
     });
 
-    if (!user) {
+    if (!user?.id) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
