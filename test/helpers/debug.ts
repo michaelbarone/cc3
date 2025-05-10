@@ -1,4 +1,4 @@
- 
+
 /**
  * Debug helper functions for test files
  * @module test/utils/helpers/debug
@@ -203,8 +203,8 @@ export function logTestTiming(testName: string, startTime: number): void {
  * ```
  */
 export const THRESHOLDS = {
-  UNIT: 100,      // 100ms
+  UNIT: 200, // 200ms
   INTEGRATION: 1000, // 1 second
-  E2E: 5000,      // 5 seconds
-  API: 2000       // 2 seconds
+  E2E: 5000, // 5 seconds
+  API: 2000, // 2 seconds
 } as const;
