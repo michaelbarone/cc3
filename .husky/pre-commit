@@ -1,4 +1,3 @@
-
 echo "running pre-commit"
 
 # Check if package.json is staged
@@ -19,6 +18,18 @@ fi
 if git diff --cached --name-only | grep -q "package-lock.json"; then
   if ! git diff --cached --name-only | grep -q "package.json"; then
     echo "Warning: package-lock.json committed without package.json"
+  fi
+fi
+
+# Type-check staged test files (*.test.ts, *.test.tsx) using tsc
+# stagedTestFiles=$(git diff --cached --name-only | grep -E '\.test\.tsx?$')
+# if [ -n "$stagedTestFiles" ]; then
+if git diff --cached --name-only | grep -q '\.test\.tsx?$'; then
+  echo "TypeScript type-checking for staged test files..."
+  npx tsc --noEmit
+  if [ $? -ne 0 ]; then
+    echo "TypeScript errors detected in staged test files. Commit aborted."
+    exit 1
   fi
 fi
 
