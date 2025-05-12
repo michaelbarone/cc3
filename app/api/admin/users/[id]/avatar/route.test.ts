@@ -1,5 +1,5 @@
 import { DELETE, POST } from "@/app/api/admin/users/[id]/avatar/route";
-import { verifyToken } from "@/app/lib/auth/jwt";
+import { JwtPayload, verifyToken } from "@/app/lib/auth/jwt";
 import { prisma } from "@/app/lib/db/prisma";
 import { debugError, debugResponse, measureTestTime, THRESHOLDS } from "@/test/helpers/debug";
 import { createMockUser } from "@/test/mocks/factories/user.factory";
@@ -52,7 +52,11 @@ const createTestFileBlob = (content = "test", name = "test.png", type = "image/p
 };
 
 describe("Admin Avatar API", () => {
-  const mockAdminUser = createMockUser({ id: "admin-1", username: "admin", isAdmin: true });
+  const mockAdminUser: JwtPayload = createMockUser({
+    id: "admin-1",
+    username: "admin",
+    isAdmin: true,
+  }) as unknown as JwtPayload;
   const mockTargetUser = createMockUser({ id: "user-1", username: "testuser" });
   const mockFile = createTestFileBlob();
   const mockFormData = new FormData();
