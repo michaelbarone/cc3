@@ -32,8 +32,8 @@ jobs:
       - name: Install Dependencies
         run: npm ci
 
-  build:
-    name: Build
+  build-nextjs:
+    name: Build-nextjs
     needs: setup
     runs-on: ubuntu-latest
     steps:
@@ -82,12 +82,61 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            let output = `### 🏗️ Build Results`;
+            let output = `### 🏗️ Build NextJS Results`;
             if ( "${{ job.status }}" == "success" ) {
-              output = `### 🏗️ Build Results
+              output = `### 🏗️ Build NextJS Results
                 ✅ Build completed successfully in ${{ steps.build.outputs.duration }} seconds`;
             } else {
-              output = `### 🏗️ Build Results
+              output = `### 🏗️ Build NextJS Results
+                ❌ Build failed
+                Please check the build logs for more details.`;
+            }
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: output
+            });
+
+  build-tsc:
+    name: Build-tsc
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Read .nvmrc
+        run: echo "NVMRC=$(cat .nvmrc)" >> $GITHUB_ENV
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "${{ env.NVMRC }}"
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Build
+        id: build
+        run: |
+          start_time=$(date +%s)
+          npx tsc
+          end_time=$(date +%s)
+          duration=$((end_time - start_time))
+          echo "duration=$duration" >> $GITHUB_OUTPUT
+
+      - name: Post Build Comment
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            let output = `### 🏗️ Build TSC Results`;
+            if ( "${{ job.status }}" == "success" ) {
+              output = `### 🏗️ Build TSC Results
+                ✅ Build completed successfully in ${{ steps.build.outputs.duration }} seconds`;
+            } else {
+              output = `### 🏗️ Build TSC Results
                 ❌ Build failed
                 Please check the build logs for more details.`;
             }
