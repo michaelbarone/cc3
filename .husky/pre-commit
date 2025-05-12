@@ -24,7 +24,7 @@ fi
 # Type-check staged test files (*.test.ts, *.test.tsx) using tsc
 # stagedTestFiles=$(git diff --cached --name-only | grep -E '\.test\.tsx?$')
 # if [ -n "$stagedTestFiles" ]; then
-if git diff --cached --name-only | grep -q '\.test\.tsx?$'; then
+if git diff --cached --name-only --diff-filter=ACM | grep -E '\.test\.tsx?$' > /dev/null; then
   echo "TypeScript type-checking for staged test files..."
   npx tsc --noEmit
   if [ $? -ne 0 ]; then
