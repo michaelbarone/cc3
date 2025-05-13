@@ -13,7 +13,7 @@ test.describe("Smoke Tests", () => {
     await expect(page).toHaveURL("/login");
 
     // Login
-    await login(page, "test-user");
+    await login(page, "test-user", "test-password");
     await expect(page).toHaveURL("/dashboard");
 
     // Verify seeded data is visible

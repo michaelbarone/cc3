@@ -23,6 +23,12 @@ const mockUser = {
   avatarUrl: "/avatars/test.jpg",
   createdAt: new Date("2025-01-01"),
   updatedAt: new Date("2025-01-02"),
+  passwordHash: null,
+  isAdmin: false,
+  lastActiveUrl: null,
+  lastLoginAt: new Date("2025-01-02"),
+  menuPosition: null,
+  themeMode: null,
 };
 
 const mockTokenPayload = {
@@ -66,11 +72,18 @@ describe("Profile Settings API", () => {
       const data = await response.json();
 
       expect(response.status).toBe(200);
-      expect(data.profile).toEqual({
-        ...mockUser,
-        createdAt: mockUser.createdAt.toISOString(),
-        updatedAt: mockUser.updatedAt.toISOString(),
-      });
+      expect(data.profile).toBeDefined();
+      expect(data.profile.id).toBe(mockUser.id);
+      expect(data.profile.username).toBe(mockUser.username);
+      expect(data.profile.avatarUrl).toBe(mockUser.avatarUrl);
+      expect(data.profile.createdAt).toBe(mockUser.createdAt.toISOString());
+      expect(data.profile.updatedAt).toBe(mockUser.updatedAt.toISOString());
+      expect(data.profile.passwordHash).toBe(mockUser.passwordHash);
+      expect(data.profile.isAdmin).toBe(mockUser.isAdmin);
+      expect(data.profile.lastActiveUrl).toBe(mockUser.lastActiveUrl);
+      expect(data.profile.lastLoginAt).toBe(mockUser.lastLoginAt.toISOString());
+      expect(data.profile.menuPosition).toBe(mockUser.menuPosition);
+      expect(data.profile.themeMode).toBe(mockUser.themeMode);
     });
 
     it("handles database errors gracefully", async () => {
@@ -135,12 +148,18 @@ describe("Profile Settings API", () => {
       const data = await response.json();
 
       expect(response.status).toBe(200);
-      expect(data.profile).toEqual({
-        ...mockUser,
-        username: "newname",
-        createdAt: mockUser.createdAt.toISOString(),
-        updatedAt: mockUser.updatedAt.toISOString(),
-      });
+      expect(data.profile).toBeDefined();
+      expect(data.profile.id).toBe(mockUser.id);
+      expect(data.profile.username).toBe("newname");
+      expect(data.profile.avatarUrl).toBe(mockUser.avatarUrl);
+      expect(data.profile.createdAt).toBe(mockUser.createdAt.toISOString());
+      expect(data.profile.updatedAt).toBe(mockUser.updatedAt.toISOString());
+      expect(data.profile.passwordHash).toBe(mockUser.passwordHash);
+      expect(data.profile.isAdmin).toBe(mockUser.isAdmin);
+      expect(data.profile.lastActiveUrl).toBe(mockUser.lastActiveUrl);
+      expect(data.profile.lastLoginAt).toBe(mockUser.lastLoginAt.toISOString());
+      expect(data.profile.menuPosition).toBe(mockUser.menuPosition);
+      expect(data.profile.themeMode).toBe(mockUser.themeMode);
       expect(data.message).toBe("Profile updated successfully");
     });
 

@@ -1,6 +1,7 @@
 import { PATCH } from "@/app/api/admin/app-config/registration/route";
 import { verifyToken } from "@/app/lib/auth/jwt";
 import { prisma } from "@/app/lib/db/prisma";
+import { createTestAppConfig } from "@/test/fixtures/data/factories";
 import { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 // test
@@ -30,13 +31,11 @@ describe("Registration Settings API", () => {
     });
 
   it("updates registration enabled setting when authenticated as admin", async () => {
-    const updatedConfig = {
-      id: "app-config",
-      appName: "Control Center",
-      appLogo: null,
-      loginTheme: "dark",
+    const updatedConfig = createTestAppConfig({
       registrationEnabled: true,
-    };
+      createdAt: "2025-04-16T23:07:40.232Z",
+      updatedAt: "2025-04-16T23:07:40.232Z",
+    });
 
     vi.mocked(verifyToken).mockResolvedValueOnce({
       id: "admin-id",

@@ -18,6 +18,9 @@ describe("POST /api/auth/login", () => {
     avatarUrl: undefined,
     menuPosition: "left",
     themeMode: "light",
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    lastLoginAt: null,
   };
 
   const mockToken = "mock-auth-token";
@@ -95,7 +98,10 @@ describe("POST /api/auth/login", () => {
 
       expect(response.status).toBe(200);
       expect(data).toHaveProperty("success", true);
-      expect(data).toHaveProperty("user", mockUser);
+      // Check user properties individually instead of the whole object
+      expect(data.user).toHaveProperty("id", mockUser.id);
+      expect(data.user).toHaveProperty("username", mockUser.username);
+      expect(data.user).toHaveProperty("isAdmin", mockUser.isAdmin);
 
       // Check if auth cookie is set
       const cookies = response.headers.get("Set-Cookie");

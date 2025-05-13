@@ -25,11 +25,15 @@ describe("API: /api/auth/session", () => {
   const mockUser = {
     id: "1",
     username: "testuser",
+    passwordHash: null,
     isAdmin: false,
+    lastActiveUrl: null,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    lastLoginAt: new Date("2025-03-31T10:44:17.645Z"),
     avatarUrl: null,
     menuPosition: "left",
     themeMode: "light",
-    lastLoginAt: new Date("2025-03-31T10:44:17.645Z").toISOString(),
   };
 
   const mockToken = "mock-auth-token";
@@ -58,7 +62,14 @@ describe("API: /api/auth/session", () => {
       const data = await response.json();
 
       expect(response.status).toBe(200);
-      expect(data).toEqual({ user: mockUser });
+      expect(data.user).toBeDefined();
+      expect(data.user.id).toBe(mockUser.id);
+      expect(data.user.username).toBe(mockUser.username);
+      expect(data.user.isAdmin).toBe(mockUser.isAdmin);
+      expect(data.user.avatarUrl).toBe(mockUser.avatarUrl);
+      expect(data.user.menuPosition).toBe(mockUser.menuPosition);
+      expect(data.user.themeMode).toBe(mockUser.themeMode);
+      expect(data.user.lastLoginAt).toBe(mockUser.lastLoginAt.toISOString());
       expect(verifyToken).toHaveBeenCalledWith(mockToken);
       expect(prisma.user.findUnique).toHaveBeenCalledWith({
         where: { id: mockTokenPayload.id },

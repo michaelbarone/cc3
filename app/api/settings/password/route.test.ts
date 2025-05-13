@@ -29,6 +29,14 @@ describe("Password Settings API", () => {
     id: "user-1",
     username: "testuser",
     passwordHash: "current-hash",
+    isAdmin: false,
+    lastActiveUrl: null,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    lastLoginAt: new Date(),
+    avatarUrl: null,
+    menuPosition: null,
+    themeMode: null,
   };
 
   const mockToken = {

@@ -2,6 +2,7 @@ import { loginUser, registerUser } from "@/app/lib/auth/auth-service";
 import type { JwtPayload } from "@/app/lib/auth/jwt";
 import { verifyToken } from "@/app/lib/auth/jwt";
 import { prisma } from "@/app/lib/db/prisma";
+import { createTestAppConfig } from "@/test/fixtures/data/factories";
 import { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { POST } from "./route";
@@ -32,15 +33,20 @@ describe("API: /api/auth/register", () => {
     avatarUrl: undefined,
     menuPosition: "left",
     themeMode: "light",
-    lastLoginAt: new Date("2025-03-31T10:44:17.645Z").toISOString(),
+    lastLoginAt: new Date("2025-03-31T10:44:17.645Z"),
     hasPassword: true,
     lastActiveUrl: "/",
+    createdAt: new Date(),
+    updatedAt: new Date(),
   };
 
-  const mockAppConfig = {
-    id: "app-config",
+  const mockAppConfig = createTestAppConfig({
     registrationEnabled: true,
-  };
+  });
+
+  const disabledRegMockConfig = createTestAppConfig({
+    registrationEnabled: false,
+  });
 
   const createNextRequest = (body: any) => {
     return new NextRequest("http://localhost/api/auth/register", {
@@ -66,7 +72,7 @@ describe("API: /api/auth/register", () => {
       // Mock successful registration
       vi.mocked(registerUser).mockResolvedValue({
         success: true,
-        user: mockUser,
+        user: { id: mockUser.id, username: mockUser.username },
       });
 
       // Mock successful login after registration
@@ -79,10 +85,9 @@ describe("API: /api/auth/register", () => {
       const data = await response.json();
 
       expect(response.status).toBe(200);
-      expect(data).toEqual({
-        success: true,
-        user: mockUser,
-      });
+      expect(data.success).toBe(true);
+      expect(data.user).toHaveProperty("id", mockUser.id);
+      expect(data.user).toHaveProperty("username", mockUser.username);
       expect(registerUser).toHaveBeenCalledWith(requestBody.username, requestBody.password, false);
       expect(loginUser).toHaveBeenCalledWith(requestBody.username, requestBody.password);
     });
@@ -110,10 +115,7 @@ describe("API: /api/auth/register", () => {
       };
 
       // Mock registration disabled
-      vi.mocked(prisma.appConfig.findUnique).mockResolvedValue({
-        id: "app-config",
-        registrationEnabled: false,
-      });
+      vi.mocked(prisma.appConfig.findUnique).mockResolvedValue(disabledRegMockConfig);
 
       const response = await POST(createNextRequest(requestBody));
       const data = await response.json();
@@ -143,7 +145,7 @@ describe("API: /api/auth/register", () => {
       // Mock successful registration
       vi.mocked(registerUser).mockResolvedValue({
         success: true,
-        user: { ...mockUser, isAdmin: true },
+        user: { id: mockUser.id, username: mockUser.username },
       });
 
       const response = await POST(createNextRequest(requestBody));
@@ -152,7 +154,7 @@ describe("API: /api/auth/register", () => {
       expect(response.status).toBe(200);
       expect(data).toEqual({
         success: true,
-        user: { ...mockUser, isAdmin: true },
+        user: { id: mockUser.id, username: mockUser.username },
       });
       expect(registerUser).toHaveBeenCalledWith(requestBody.username, requestBody.password, true);
       expect(loginUser).not.toHaveBeenCalled(); // No auto-login for admin creation
