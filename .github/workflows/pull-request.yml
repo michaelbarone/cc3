@@ -121,7 +121,7 @@ jobs:
         id: build
         run: |
           start_time=$(date +%s)
-          npx tsc
+          npx tsc --noEmit
           end_time=$(date +%s)
           duration=$((end_time - start_time))
           echo "duration=$duration" >> $GITHUB_OUTPUT
