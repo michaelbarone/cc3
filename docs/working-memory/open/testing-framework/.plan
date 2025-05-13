@@ -7,6 +7,7 @@
 - Focus on crucial and complicated parts of the codebase
 - Coverage requirements set: 80% general, 90% for critical paths
 - Following Next.js conventions with **tests** directory naming
+- All testing standards documented in [Testing Framework Documentation](/docs/features/testing-framework/)
 
 ### Selected Stack
 
@@ -16,6 +17,7 @@
 - React Testing Library
 - MSW for API mocking
 - Testing Library User Event for interactions
+- See [Unit Testing Guidelines](/docs/features/testing-framework/unit-testing.md) for best practices
 
 2. E2E Testing:
 
@@ -23,6 +25,7 @@
 - Built-in test recorder
 - Cross-browser testing
 - Mobile viewport testing
+- See [E2E Testing Guidelines](/docs/features/testing-framework/e2e-testing.md) for implementation details
 
 ### Implementation Plan
 
@@ -33,6 +36,7 @@ Step 1: Vitest + Testing Library Setup
 [X] Create test utilities and common mocks
 [X] Add basic smoke test to verify setup
 [X] Standardize test directory structure using **tests** prefix
+[X] Document setup in [Test Environment Setup](/docs/features/testing-framework/environment-setup.md)
 
 Step 2: Critical Path Testing Setup
 [X] Set up test structure for core features
@@ -40,12 +44,14 @@ Step 2: Critical Path Testing Setup
 [X] Implement MSW handlers for API mocking
 [X] Add common test utilities and fixtures
 [X] Set up coverage reporting with thresholds (80% general, 90% critical paths)
+[X] Document in [Testing Coverage Standards](/docs/features/testing-framework/coverage-standards.md)
 
 Step 3: Initial Test Implementation
 [X] Test IframeContainer state management
 [X] Test URL menu state transitions
 [X] Test authentication flows
 [X] Test API route handlers
+[X] Reference patterns from [Component Test Patterns](/docs/features/testing-framework/component-patterns.md)
 
 Step 4: Playwright Setup
 [X] Install and configure Playwright
@@ -53,6 +59,7 @@ Step 4: Playwright Setup
 [X] Add authentication test helpers
 [X] Create test database seeding utilities
 [✓] E2E testing moved to dedicated plan (see: docs/working-memory/open/e2e-test-expansion-20250331/.plan)
+[X] Follow guidelines in [Playwright E2E Standards](/docs/features/testing-framework/playwright-standards.md)
 
 Step 5: Comprehensive API Route Testing
 [X] Map all API endpoints and their expected responses
@@ -76,6 +83,7 @@ Step 5: Comprehensive API Route Testing
     - System Routes:
       * Health Check (/api/health)
       * First Run (/api/first-run/*)
+[X] Document API endpoints in [API Testing Map](/docs/features/testing-framework/api-endpoints.md)
 
 [X] Implement standardized test patterns for each endpoint:
     - Success cases with expected data
@@ -95,6 +103,7 @@ Step 5: Comprehensive API Route Testing
       * Upload limits
       * File type validation
       * Storage/cleanup
+[X] Follow [API Test Patterns](/docs/features/testing-framework/api-test-patterns.md) for implementation
 
 [~] Implement missing tests for identified endpoints:
     1. App Config Endpoints:
@@ -102,19 +111,22 @@ Step 5: Comprehensive API Route Testing
        - [X] /api/admin/app-config/theme (PATCH) - Completed in API test review
     2. Backup/Restore Endpoints:
        - [~] /api/admin/backup (GET, POST) - In progress
-       - [ ] /api/first-run/restore (POST)
+       - [X] /api/first-run/restore (POST) - Completed
     3. User Endpoints:
        - [X] /api/user/avatar (GET) - Completed in API test review
     4. URL Group Management:
        - [X] /api/admin/url-groups/[id]/urls/batch (GET, POST) - Completed in API test review
        - [ ] /api/admin/url-groups/[id]/urls (GET, POST)
        - [ ] /api/admin/url-groups/[id]/urls/[urlId] (GET, PATCH, DELETE)
+[X] Reference examples from [API Test Examples](/docs/features/testing-framework/api-test-examples.md)
 
 [~] Add response schema validation using TypeScript types
+    - Follow [Type Validation Standards](/docs/features/testing-framework/type-validation.md)
 [~] Create performance benchmarks:
     - [X] Response time tracking - Added with measureTestTime in API test review
     - [X] Memory usage monitoring - Added in API test review
     - [~] File operation metrics
+    - Reference [Performance Testing Guidelines](/docs/features/testing-framework/performance-testing.md)
 [X] Create future plan to expand e2e coverage
 
 ### Current Status (Updated 2025-05-08 22:07)
@@ -125,18 +137,21 @@ Step 5: Comprehensive API Route Testing
    [✓] Verify proper error handling in admin routes
    [✓] Ensure consistent mocking patterns across all tests
    [✓] Create centralized mocking utilities
+   [✓] All fixes documented in [Test Fixes Guide](/docs/features/testing-framework/test-fixes.md)
 
 2. Enhance Test Coverage
    [✓] Add comprehensive tests for error states in statistics endpoints
    [✓] Implement boundary testing for admin dashboard data
    [✓] Add tests for cookie persistence scenarios
    [✓] Verify proper cleanup in all file operation tests
+   [✓] Follow coverage standards in [Testing Coverage Standards](/docs/features/testing-framework/coverage-standards.md)
 
 3. Test Infrastructure Improvements
    [✓] Implement standardized cookie mocking utilities
    [✓] Create helpers for common statistics test scenarios
    [✓] Add type validation utilities for response structures
    [ ] Set up automated test stability monitoring
+   [✓] Based on [Test Utilities Guide](/docs/features/testing-framework/test-utilities.md)
 
 4. Documentation Updates
    [✓] Document cookie handling patterns in tests
@@ -148,9 +163,13 @@ Step 5: Comprehensive API Route Testing
       - Included best practices and common pitfalls to avoid
       - Added performance testing guidelines
    [✓] Document error handling patterns - Completed in API test review
+      - See [Error Handling Patterns](/docs/features/testing-framework/error-handling-patterns.md)
    [✓] Document test data management practices - Completed in API test review
+      - See [Test Data Management](/docs/features/testing-framework/test-data-management.md)
    [✓] Document API test coverage metrics - Completed in API test review
+      - See [API Test Coverage](/docs/features/testing-framework/api-test-coverage.md)
    [✓] Add performance monitoring guidelines - Completed in API test review
+      - See [Performance Testing Guidelines](/docs/features/testing-framework/performance-testing.md)
 
 5. Quality Assurance
    [✓] Run full test suite audit for flaky tests
@@ -160,6 +179,7 @@ Step 5: Comprehensive API Route Testing
       - Documented network-dependent test issues
       - Created comprehensive recommendations for fixes
       - Established monitoring and prevention strategies
+      - Documented in [Test Stability Guide](/docs/features/testing-framework/test-stability.md)
    [~] Verify coverage metrics meet thresholds
    [✓] Review error handling comprehensiveness
    [✓] Check for proper cleanup in all tests
@@ -167,6 +187,24 @@ Step 5: Comprehensive API Route Testing
    [~] Add performance benchmarks for critical paths - Partially completed in API test review
 
 ### Progress History
+
+### 2025-05-12 18:20 - First Run Restore Testing Completion
+- ✓ Completed: Implementation of /api/first-run/restore API tests
+- ✓ Achievements:
+  * Implemented comprehensive test suite for restore endpoint
+  * Added proper mock implementation for fs/promises and path modules
+  * Implemented tests for all key scenarios: successful restore, authorization, validation, errors
+  * Applied performance monitoring with measureTestTime
+  * Used proper error handling and debugging
+  * Fixed mock implementation issues
+- 🤔 Decisions:
+  * Used consistent mock patterns for file system operations
+  * Aligned test status code expectations with actual implementation
+  * Applied standardized test lifecycle hooks
+- ⏭️ Next:
+  * Complete backup API test implementation
+  * Implement URL Group Management endpoint tests
+  * Update plan to reflect progress
 
 ### 2025-05-12 18:14 - Backup API Testing Progress
 - ✓ Completed: Initial implementation of /api/admin/backup API tests
@@ -177,18 +215,22 @@ Step 5: Comprehensive API Route Testing
   * Added test cases for both GET and POST methods
   * Fixed issues with response body consumption
   * Set up test lifecycle with proper before/after hooks
+  * Referenced [File Operation Testing Guide](/docs/features/testing-framework/file-operation-testing.md)
 - 🤔 Decisions:
   * Used proper mocking for file system operations instead of direct file access
   * Applied structured error handling pattern with try/catch/finally blocks
   * Followed performance monitoring standards with THRESHOLDS constants
   * Applied test data management best practices
+  * Based on patterns from [API Test Patterns](/docs/features/testing-framework/api-test-patterns.md)
 - ❌ Issues:
   * Remaining test errors related to mock implementation and response handling
   * Need to fix undefined property access in tests
+  * Will troubleshoot using [Troubleshooting Guide](/docs/features/testing-framework/troubleshooting-guide.md)
 - ⏭️ Next:
   * Fix remaining backup API test issues
   * Complete POST method test implementation
   * Begin /api/first-run/restore endpoint tests
+  * Reference [API Test Examples](/docs/features/testing-framework/api-test-examples.md) for implementation
 
 ### 2025-05-08 22:07 - API Test Review Integration
 - ✓ Completed: Comprehensive API test review project integrated with testing framework
@@ -205,11 +247,13 @@ Step 5: Comprehensive API Route Testing
     - /api/admin/app-config/theme (PATCH)
     - /api/user/avatar (GET)
     - /api/admin/url-groups/[id]/urls/batch
+  * All implementations follow [API Test Standards](/docs/features/testing-framework/api-test-standards.md)
 - 🤔 Decisions:
   * Integrated all improvements from API test review
   * Updated documentation with real-world examples
   * Standardized patterns across all API tests
   * Used measureTestTime and THRESHOLDS consistently
+  * Applied patterns from [Performance Testing Guidelines](/docs/features/testing-framework/performance-testing.md)
 - ⏭️ Next: Focus on implementing remaining Backup/Restore endpoints
 
 2024-04-03:
@@ -219,6 +263,7 @@ Step 5: Comprehensive API Route Testing
 - [X] Added test data generation utilities
 - [X] Implemented response validation helpers
 - [X] Created comprehensive API test coverage metrics documentation
+- [X] All patterns documented in [Testing Framework Documentation](/docs/features/testing-framework/)
 
 ## Remaining Tasks
 
@@ -230,31 +275,44 @@ Step 5: Comprehensive API Route Testing
     * Priority 2: URL Group Management endpoints
       - /api/admin/url-groups/[id]/urls (GET, POST)
       - /api/admin/url-groups/[id]/urls/[urlId] (GET, PATCH, DELETE)
+    * Follow patterns in [API Test Patterns](/docs/features/testing-framework/api-test-patterns.md)
 - [~] Add response schema validation for all endpoints - Partially completed in API test review
+    * Reference [Type Validation Standards](/docs/features/testing-framework/type-validation.md)
 - [X] Document API test coverage metrics
-      See: docs/features/testing-framework/api-test-coverage.md
+      See: [API Test Coverage](/docs/features/testing-framework/api-test-coverage.md)
 - [~] Add performance benchmarks for critical API endpoints - Started with measureTestTime in API test review
+      * Follow guidelines in [Performance Testing Guidelines](/docs/features/testing-framework/performance-testing.md)
 
 2. Test Infrastructure
 - [ ] Set up automated test stability monitoring
+    * Use guidance from [Test Stability Guide](/docs/features/testing-framework/test-stability.md)
 - [ ] Implement test result aggregation and reporting
+    * Follow standards in [Test Reporting Guide](/docs/features/testing-framework/test-reporting.md)
 - [ ] Add test runtime performance tracking
+    * Reference [Performance Testing Guidelines](/docs/features/testing-framework/performance-testing.md)
 
 3. Documentation
 - [X] Complete error handling patterns documentation
-      See: docs/features/testing-framework/error-handling-patterns.md
+      See: [Error Handling Patterns](/docs/features/testing-framework/error-handling-patterns.md)
 - [X] Add troubleshooting guide for common test failures
-      See: docs/features/testing-framework/troubleshooting-guide.md
+      See: [Troubleshooting Guide](/docs/features/testing-framework/troubleshooting-guide.md)
 - [X] Document test data management best practices
-      See: docs/features/testing-framework/test-data-management.md
+      See: [Test Data Management](/docs/features/testing-framework/test-data-management.md)
 
 4. Quality Assurance
 - [ ] Verify test coverage meets thresholds
+    * Use criteria from [Testing Coverage Standards](/docs/features/testing-framework/coverage-standards.md)
 - [ ] Implement automated flaky test detection
+    * Follow approach in [Test Stability Guide](/docs/features/testing-framework/test-stability.md)
 - [ ] Add performance benchmarks for critical paths
+    * Based on [Performance Testing Guidelines](/docs/features/testing-framework/performance-testing.md)
 
 ## Next Steps
 1. Implement remaining Backup/Restore endpoint tests
+    * Reference [API Test Patterns](/docs/features/testing-framework/api-test-patterns.md)
 2. Complete URL Group Management endpoint tests
+    * Follow examples in [API Test Examples](/docs/features/testing-framework/api-test-examples.md)
 3. Set up automated test stability monitoring
+    * Use guidance from [Test Stability Guide](/docs/features/testing-framework/test-stability.md)
 4. Verify coverage metrics meet thresholds
+    * Based on [Testing Coverage Standards](/docs/features/testing-framework/coverage-standards.md)
