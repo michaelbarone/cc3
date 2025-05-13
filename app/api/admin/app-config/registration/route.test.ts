@@ -4,7 +4,7 @@ import { prisma } from "@/app/lib/db/prisma";
 import { createTestAppConfig } from "@/test/fixtures/data/factories";
 import { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-// test
+
 // Mock dependencies
 vi.mock("@/app/lib/auth/jwt", () => ({
   verifyToken: vi.fn(),
