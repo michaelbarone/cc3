@@ -102,6 +102,7 @@ export async function GET() {
       })),
     }));
 
+    // Return the array directly for consistency with other endpoints
     return NextResponse.json(transformedGroups);
   } catch (error) {
     console.error("Error fetching URL groups:", error);

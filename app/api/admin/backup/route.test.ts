@@ -2,6 +2,7 @@ import { GET, POST } from "@/app/api/admin/backup/route";
 import { createBackup, restoreBackup, validateArchive } from "@/app/lib/archive/archive";
 import { verifyToken } from "@/app/lib/auth/jwt";
 import { debugError, debugResponse, measureTestTime, THRESHOLDS } from "@/test/helpers/debug";
+import { createTestFileBlob } from "@/test/mocks/factories/file.factory";
 import fs from "fs/promises";
 import { NextRequest } from "next/server";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, Mock, vi } from "vitest";
@@ -34,6 +35,12 @@ vi.mock("fs/promises", () => ({
   },
 }));
 
+// Test file paths for cleanup
+const TEST_PATHS = {
+  backupFile: "/path/to/backup.zip",
+  tempDir: "/path/to/temp",
+};
+
 describe("Admin Backup API", () => {
   // Shared setup for all tests
   beforeAll(async () => {
@@ -49,13 +56,14 @@ describe("Admin Backup API", () => {
     const setupTimer = measureTestTime("Test Setup");
     try {
       vi.clearAllMocks();
-      // Reset mock implementations
+
+      // Reset mock implementations with proper types
       (fs.mkdir as Mock).mockResolvedValue(undefined);
       (fs.writeFile as Mock).mockResolvedValue(undefined);
       (fs.unlink as Mock).mockResolvedValue(undefined);
       (fs.readFile as Mock).mockResolvedValue(Buffer.from("test backup content"));
       (validateArchive as Mock).mockResolvedValue(true);
-      (createBackup as Mock).mockResolvedValue("/path/to/backup.zip");
+      (createBackup as Mock).mockResolvedValue(TEST_PATHS.backupFile);
     } finally {
       setupTimer.end();
     }
@@ -64,7 +72,11 @@ describe("Admin Backup API", () => {
   afterEach(async () => {
     const cleanupTimer = measureTestTime("Test Cleanup");
     try {
-      // Cleanup any resources
+      // Clean up any test files that might have been created
+      await Promise.all([
+        (fs.unlink as Mock)(TEST_PATHS.backupFile).catch(() => {}),
+        (fs.unlink as Mock)(TEST_PATHS.tempDir).catch(() => {}),
+      ]);
     } finally {
       cleanupTimer.end();
     }
@@ -74,23 +86,70 @@ describe("Admin Backup API", () => {
     it("creates and downloads backup for admin user", async () => {
       const testTimer = measureTestTime("create-backup");
       try {
-        (verifyToken as Mock).mockResolvedValueOnce({
-          id: "1",
-          username: "admin",
-          isAdmin: true,
-        });
+        // ARRANGE
+        const setupTimer = measureTestTime("test-setup");
+        try {
+          (verifyToken as Mock).mockResolvedValueOnce({
+            id: "1",
+            username: "admin",
+            isAdmin: true,
+          });
 
-        const response = await GET();
-        // Don't try to read response body, as it's a binary download
-        // Just check headers and status
+          // Create test backup content using existing factory
+          const backupContent = Buffer.from(
+            createTestFileBlob("backup.zip", "application/zip").toString(),
+          );
+          (fs.readFile as Mock).mockResolvedValueOnce(backupContent);
+        } finally {
+          setupTimer.end();
+        }
 
-        expect(response.status).toBe(200);
-        expect(response.headers.get("Content-Type")).toBe("application/zip");
-        expect(response.headers.get("Content-Disposition")).toContain("attachment");
-        expect(fs.unlink as Mock).toHaveBeenCalledWith("/path/to/backup.zip");
-        expect(testTimer.elapsed()).toBeLessThan(THRESHOLDS.API);
+        // ACT
+        const actionTimer = measureTestTime("perform-backup");
+        let response;
+        try {
+          response = await GET();
+        } finally {
+          actionTimer.end();
+        }
+
+        // ASSERT
+        const assertTimer = measureTestTime("verify-response");
+        try {
+          // Verify response structure
+          expect(response.status).toBe(200);
+          expect(response.headers.get("Content-Type")).toBe("application/zip");
+          expect(response.headers.get("Content-Disposition")).toContain("attachment");
+          expect(response.headers.get("Content-Disposition")).toContain("backup");
+
+          // Verify backup creation and cleanup
+          expect(createBackup).toHaveBeenCalledTimes(1);
+          expect(fs.readFile as Mock).toHaveBeenCalledWith(TEST_PATHS.backupFile);
+          expect(fs.unlink as Mock).toHaveBeenCalledWith(TEST_PATHS.backupFile);
+
+          // Verify performance
+          expect(actionTimer.elapsed()).toBeLessThan(THRESHOLDS.API);
+          expect(testTimer.elapsed()).toBeLessThan(THRESHOLDS.API * 1.5);
+        } finally {
+          assertTimer.end();
+        }
       } catch (error) {
-        debugError(error instanceof Error ? error : new Error(String(error)));
+        // Enhanced error logging with context
+        debugError(error instanceof Error ? error : new Error(String(error)), {
+          context: "Backup creation test",
+          mockState: {
+            verifyToken: (verifyToken as Mock).mock.calls,
+            createBackup: (createBackup as Mock).mock.calls,
+            fsOperations: {
+              readFile: (fs.readFile as Mock).mock.calls,
+              unlink: (fs.unlink as Mock).mock.calls,
+            },
+          },
+          performanceMetrics: {
+            totalTime: testTimer.elapsed(),
+            threshold: THRESHOLDS.API,
+          },
+        });
         throw error;
       } finally {
         testTimer.end();
