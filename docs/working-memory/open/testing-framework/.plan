@@ -105,22 +105,28 @@ Step 5: Comprehensive API Route Testing
       * Storage/cleanup
 [X] Follow [API Test Patterns](/docs/features/testing-framework/api-test-patterns.md) for implementation
 
-[~] Implement missing tests for identified endpoints:
+[X] Implement missing tests for identified endpoints:
     1. App Config Endpoints:
        - [X] /api/admin/app-config/favicon (GET, POST, DELETE) - Completed in API test review
        - [X] /api/admin/app-config/theme (PATCH) - Completed in API test review
     2. Backup/Restore Endpoints:
-       - [~] /api/admin/backup (GET, POST) - In progress
+       - [X] /api/admin/backup (GET, POST) - Completed
        - [X] /api/first-run/restore (POST) - Completed
     3. User Endpoints:
        - [X] /api/user/avatar (GET) - Completed in API test review
     4. URL Group Management:
        - [X] /api/admin/url-groups/[id]/urls/batch (GET, POST) - Completed in API test review
-       - [ ] /api/admin/url-groups/[id]/urls (GET, POST)
-       - [ ] /api/admin/url-groups/[id]/urls/[urlId] (GET, PATCH, DELETE)
+       - [X] /api/admin/url-groups/[id]/urls (GET, POST) - Completed
+       - [X] /api/admin/url-groups/[id]/urls/[urlId] (GET, PATCH, DELETE) - Completed
 [X] Reference examples from [API Test Examples](/docs/features/testing-framework/api-test-examples.md)
 
 [~] Add response schema validation using TypeScript types
+    - [X] Create type-validation.ts utility with validators for common types
+    - [X] Document validation approach in type-validation.md
+    - [X] Implement validation for backup API (GET, POST)
+    - [X] Implement validation for restore API (POST)
+    - [ ] Create shared validators for common response patterns
+    - [ ] Implement validators for URL group endpoints
     - Follow [Type Validation Standards](/docs/features/testing-framework/type-validation.md)
 [~] Create performance benchmarks:
     - [X] Response time tracking - Added with measureTestTime in API test review
@@ -129,7 +135,7 @@ Step 5: Comprehensive API Route Testing
     - Reference [Performance Testing Guidelines](/docs/features/testing-framework/performance-testing.md)
 [X] Create future plan to expand e2e coverage
 
-### Current Status (Updated 2025-05-08 22:07)
+### Current Status (Updated 2025-05-15 16:42)
 
 1. Fix Remaining Test Issues
    [✓] Review and update all cookie-related tests to use async methods
@@ -187,6 +193,30 @@ Step 5: Comprehensive API Route Testing
    [~] Add performance benchmarks for critical paths - Partially completed in API test review
 
 ### Progress History
+
+### 2025-05-15 16:42 - Response Schema Validation Implementation
+- ✓ Completed: Implementation of type validation for API responses
+- ✓ Achievements:
+  * Implemented type-validation.ts utility with comprehensive validator functions
+  * Added proper type validators for backup and restore endpoints
+  * Created detailed documentation in type-validation.md
+  * Successfully validated both success and error response structures
+  * Integrated validation with performance monitoring
+  * Fixed formatting issues in response validation
+  * Used consistent validation patterns across tests
+  * All tests passing with proper validation
+- 🤔 Decisions:
+  * Used TypeScript generics for type safety
+  * Created reusable validator patterns for common response structures
+  * Implemented both validation and assertion functions
+  * Provided detailed error messages for debugging
+  * Used composition pattern for nested object validation
+- ⏭️ Next:
+  * Create shared validators for common response patterns
+  * Implement validators for URL group endpoints
+  * Set up automated test stability monitoring
+  * Verify coverage metrics meet thresholds
+  * Continue with file operation metrics implementation
 
 ### 2025-05-15 14:03 - URL Group URL ID Testing Completion
 - ✓ Completed: Implementation of /api/admin/url-groups/[id]/urls/[urlId] API tests
@@ -338,7 +368,12 @@ Step 5: Comprehensive API Route Testing
       - [✓] /api/admin/url-groups/[id]/urls (GET, POST, PUT, DELETE) - Completed
       - [✓] /api/admin/url-groups/[id]/urls/[urlId] (GET, PATCH, DELETE) - Completed
     * Follow patterns in [API Test Patterns](/docs/features/testing-framework/api-test-patterns.md)
-- [~] Add response schema validation for all endpoints - Partially completed in API test review
+- [~] Add response schema validation for all endpoints
+    * [✓] Implemented type-validation utility
+    * [✓] Documented validation approach
+    * [✓] Applied validation to backup and restore endpoints
+    * [ ] Create shared validators for common response patterns
+    * [ ] Apply validation to URL group endpoints
     * Reference [Type Validation Standards](/docs/features/testing-framework/type-validation.md)
 - [X] Document API test coverage metrics
       See: [API Test Coverage](/docs/features/testing-framework/api-test-coverage.md)
@@ -370,14 +405,28 @@ Step 5: Comprehensive API Route Testing
     * Based on [Performance Testing Guidelines](/docs/features/testing-framework/performance-testing.md)
 
 ## Next Steps
-1. Set up automated test stability monitoring
-    * Use guidance from [Test Stability Guide](/docs/features/testing-framework/test-stability.md)
-2. Verify coverage metrics meet thresholds
-    * Based on [Testing Coverage Standards](/docs/features/testing-framework/coverage-standards.md)
-3. Add test runtime performance tracking for remaining endpoints
-    * Reference [Performance Testing Guidelines](/docs/features/testing-framework/performance-testing.md)
-4. Implement test result aggregation and reporting
-    * Follow standards in [Test Reporting Guide](/docs/features/testing-framework/test-reporting.md)
+1. Create shared validators for common response patterns
+   * Extract common validator patterns (error responses, pagination, etc.)
+   * Add to test/helpers/validators/ directory
+   * Document in type-validation.md
+
+2. Apply response schema validation to URL group endpoints
+   * Add validators to /api/admin/url-groups/[id]/urls tests
+   * Add validators to /api/admin/url-groups/[id]/urls/[urlId] tests
+   * Validate success, error, and edge case responses
+
+3. Set up automated test stability monitoring
+   * Research options for test stability metrics collection
+   * Create reporting mechanism for flaky tests
+   * Integrate with CI pipeline
+   * Document in [Test Stability Guide](/docs/features/testing-framework/test-stability.md)
+
+4. Verify coverage metrics meet thresholds
+   * Run coverage report for entire test suite
+   * Identify areas below thresholds
+   * Create plan to address low-coverage areas
+   * Document in [Testing Coverage Standards](/docs/features/testing-framework/coverage-standards.md)
+
 5. Fix remaining test failures in:
    * app/api/admin/url-groups/route.test.ts:
      - GET test where data.urls is undefined instead of array

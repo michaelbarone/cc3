@@ -43,6 +43,64 @@ We use a custom validation system defined in `test/helpers/type-validation.ts` t
    expectApiResponse<T>(response, validator, path)
    ```
 
+## Shared Validators
+
+Common validators for frequently used response structures are available in the `test/helpers/validators` directory:
+
+### Basic Response Types
+
+```typescript
+import { errorResponseValidator, successResponseValidator, messageResponseValidator } from "@/test/helpers/validators";
+
+// Error response: { error: string }
+expectApiResponse(data, errorResponseValidator, "Error response");
+
+// Success response: { success: boolean }
+expectApiResponse(data, successResponseValidator, "Success response");
+
+// Message response: { message: string }
+expectApiResponse(data, messageResponseValidator, "Message response");
+```
+
+### Domain-Specific Validators
+
+```typescript
+import { 
+  createUserValidator, 
+  createUrlValidator, 
+  createUrlGroupValidator,
+  createPaginatedValidator
+} from "@/test/helpers/validators";
+
+// User validation
+const userValidator = createUserValidator();
+expectApiResponse(userData, userValidator, "User data");
+
+// URL validation
+const urlValidator = createUrlValidator();
+expectApiResponse(urlData, urlValidator, "URL data");
+
+// URL Group validation
+const urlGroupValidator = createUrlGroupValidator();
+expectApiResponse(groupData, urlGroupValidator, "URL Group data");
+
+// Paginated data validation
+const paginatedUsersValidator = createPaginatedValidator(userValidator);
+expectApiResponse(paginatedData, paginatedUsersValidator, "Paginated users");
+```
+
+### Error Cases Testing
+
+```typescript
+import { invalidDataValidators } from "@/test/helpers/validators";
+
+// Validate missing required field response
+expectApiResponse(errorData, invalidDataValidators.missingRequiredField, "Missing field error");
+
+// Validate invalid data type response
+expectApiResponse(errorData, invalidDataValidators.invalidDataType, "Invalid type error");
+```
+
 ## Implementation Pattern
 
 ### 1. Define Response Type Validators
@@ -105,12 +163,13 @@ const urlGroupsValidator = validators.object({
 
 ## Best Practices
 
-1. **Reuse Validators**: Define common validators centrally for reuse across tests
-2. **Path Context**: Provide descriptive path context for easier error identification
-3. **Validation First**: Apply validation before specific assertions to catch structural issues early
-4. **Comprehensive Coverage**: Include validation for both success and error responses
-5. **Nested Validation**: Use composition for complex nested object validation
-6. **Performance Awareness**: Apply validation inside the performance measurement blocks
+1. **Use Shared Validators**: Leverage the shared validators in `test/helpers/validators` for common patterns
+2. **Reuse Validators**: Define common validators centrally for reuse across tests
+3. **Path Context**: Provide descriptive path context for easier error identification
+4. **Validation First**: Apply validation before specific assertions to catch structural issues early
+5. **Comprehensive Coverage**: Include validation for both success and error responses
+6. **Nested Validation**: Use composition for complex nested object validation
+7. **Performance Awareness**: Apply validation inside the performance measurement blocks
 
 ## Examples
 
@@ -189,6 +248,16 @@ it("validates response within time constraints", async () => {
   }
 });
 ```
+
+## Extending Validators
+
+To add new shared validators:
+
+1. Add them to the appropriate file in `test/helpers/validators/`
+2. For common API responses, use `common.ts`
+3. For domain-specific validators, consider creating separate files
+4. Export them from the `index.ts` file
+5. Document their usage in this guide
 
 ## Implementation Status
 
