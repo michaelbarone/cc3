@@ -2,6 +2,7 @@ import { GET, POST } from "@/app/api/admin/backup/route";
 import { createBackup, restoreBackup, validateArchive } from "@/app/lib/archive/archive";
 import { verifyToken } from "@/app/lib/auth/jwt";
 import { debugError, debugResponse, measureTestTime, THRESHOLDS } from "@/test/helpers/debug";
+import { expectApiResponse, TypeValidator, validators } from "@/test/helpers/type-validation";
 import { createTestFileBlob } from "@/test/mocks/factories/file.factory";
 import fs from "fs/promises";
 import { NextRequest } from "next/server";
@@ -34,6 +35,17 @@ vi.mock("fs/promises", () => ({
     writeFile: vi.fn(),
   },
 }));
+
+// Define response type validators
+const errorResponseValidator: TypeValidator<{ error: string }> = validators.object({
+  error: validators.string,
+});
+
+const successResponseValidator: TypeValidator<{ message: string; rollbackFile: string }> =
+  validators.object({
+    message: validators.string,
+    rollbackFile: validators.string,
+  });
 
 // Test file paths for cleanup
 const TEST_PATHS = {
@@ -166,6 +178,8 @@ describe("Admin Backup API", () => {
 
         expect(response.status).toBe(401);
         expect(data).toEqual({ error: "Unauthorized" });
+        // Validate response structure
+        expectApiResponse(data, errorResponseValidator, "GET 401 response");
         expect(testTimer.elapsed()).toBeLessThan(THRESHOLDS.API);
       } catch (error) {
         debugError(error instanceof Error ? error : new Error(String(error)));
@@ -189,6 +203,8 @@ describe("Admin Backup API", () => {
 
         expect(response.status).toBe(403);
         expect(data).toEqual({ error: "Admin privileges required" });
+        // Validate response structure
+        expectApiResponse(data, errorResponseValidator, "GET 403 response");
         expect(testTimer.elapsed()).toBeLessThan(THRESHOLDS.API);
       } catch (error) {
         debugError(error instanceof Error ? error : new Error(String(error)));
@@ -213,6 +229,8 @@ describe("Admin Backup API", () => {
 
         expect(response.status).toBe(500);
         expect(data).toEqual({ error: "Error creating backup" });
+        // Validate response structure
+        expectApiResponse(data, errorResponseValidator, "GET 500 response");
         expect(testTimer.elapsed()).toBeLessThan(THRESHOLDS.API);
       } catch (error) {
         debugError(error instanceof Error ? error : new Error(String(error)));
@@ -250,6 +268,8 @@ describe("Admin Backup API", () => {
           message: "Backup restored successfully",
           rollbackFile: "backup.zip",
         });
+        // Validate response structure
+        expectApiResponse(data, successResponseValidator, "POST 200 response");
         expect(restoreBackup).toHaveBeenCalled();
         expect(fs.unlink as Mock).toHaveBeenCalled();
         expect(testTimer.elapsed()).toBeLessThan(THRESHOLDS.API);
@@ -276,6 +296,8 @@ describe("Admin Backup API", () => {
 
         expect(response.status).toBe(401);
         expect(data).toEqual({ error: "Unauthorized" });
+        // Validate response structure
+        expectApiResponse(data, errorResponseValidator, "POST 401 response");
         expect(testTimer.elapsed()).toBeLessThan(THRESHOLDS.API);
       } catch (error) {
         debugError(error instanceof Error ? error : new Error(String(error)));
@@ -304,6 +326,8 @@ describe("Admin Backup API", () => {
 
         expect(response.status).toBe(403);
         expect(data).toEqual({ error: "Admin privileges required" });
+        // Validate response structure
+        expectApiResponse(data, errorResponseValidator, "POST 403 response");
         expect(testTimer.elapsed()).toBeLessThan(THRESHOLDS.API);
       } catch (error) {
         debugError(error instanceof Error ? error : new Error(String(error)));
@@ -333,6 +357,8 @@ describe("Admin Backup API", () => {
 
         expect(response.status).toBe(400);
         expect(data).toEqual({ error: "No backup file provided" });
+        // Validate response structure
+        expectApiResponse(data, errorResponseValidator, "POST 400 response");
         expect(testTimer.elapsed()).toBeLessThan(THRESHOLDS.API);
       } catch (error) {
         debugError(error instanceof Error ? error : new Error(String(error)));
@@ -362,6 +388,8 @@ describe("Admin Backup API", () => {
 
         expect(response.status).toBe(400);
         expect(data).toEqual({ error: "Invalid backup file" });
+        // Validate response structure
+        expectApiResponse(data, errorResponseValidator, "POST 400 response");
         expect(fs.unlink as Mock).toHaveBeenCalled();
         expect(testTimer.elapsed()).toBeLessThan(THRESHOLDS.API);
       } catch (error) {
@@ -394,6 +422,8 @@ describe("Admin Backup API", () => {
 
         expect(response.status).toBe(500);
         expect(data).toEqual({ error: "Restore failed, rolled back to previous state" });
+        // Validate response structure
+        expectApiResponse(data, errorResponseValidator, "POST 500 response");
         expect(restoreBackup).toHaveBeenCalledTimes(2);
         // Don't assert on unlink being called if the implementation doesn't call it
         // expect(fs.unlink as Mock).toHaveBeenCalled();
@@ -432,6 +462,8 @@ describe("Admin Backup API", () => {
         expect(data).toEqual({
           error: "Restore and rollback failed. Manual intervention required.",
         });
+        // Validate response structure
+        expectApiResponse(data, errorResponseValidator, "POST 500 response");
         expect(restoreBackup).toHaveBeenCalledTimes(2);
         // Don't assert on unlink being called if the implementation doesn't call it
         // expect(fs.unlink as Mock).toHaveBeenCalled();

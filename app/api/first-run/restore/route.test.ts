@@ -2,6 +2,7 @@ import { POST } from "@/app/api/first-run/restore/route";
 import { restoreBackup } from "@/app/lib/archive/archive";
 import { prisma } from "@/app/lib/db/prisma";
 import { debugError, debugResponse, measureTestTime, THRESHOLDS } from "@/test/helpers/debug";
+import { expectApiResponse, TypeValidator, validators } from "@/test/helpers/type-validation";
 import fs from "fs/promises";
 import { NextRequest } from "next/server";
 import path from "path";
@@ -42,6 +43,15 @@ vi.mock("path", () => {
       join: vi.fn(),
     },
   };
+});
+
+// Define response type validators
+const errorResponseValidator: TypeValidator<{ error: string }> = validators.object({
+  error: validators.string,
+});
+
+const successResponseValidator: TypeValidator<{ success: boolean }> = validators.object({
+  success: validators.boolean,
 });
 
 // Mock user template
@@ -118,6 +128,8 @@ describe("First Run Restore API", () => {
 
         expect(response.status).toBe(200);
         expect(data).toEqual({ success: true });
+        // Validate response structure
+        expectApiResponse(data, successResponseValidator, "POST 200 response");
         expect(restoreBackup).toHaveBeenCalled();
         expect(fs.unlink).toHaveBeenCalled(); // Verify cleanup
         expect(testTimer.elapsed()).toBeLessThan(THRESHOLDS.API);
@@ -147,6 +159,8 @@ describe("First Run Restore API", () => {
 
         expect(response.status).toBe(403);
         expect(data).toEqual({ error: "Restore is only available during first run" });
+        // Validate response structure
+        expectApiResponse(data, errorResponseValidator, "POST 403 response");
         expect(testTimer.elapsed()).toBeLessThan(THRESHOLDS.API);
       } catch (error) {
         debugError(error instanceof Error ? error : new Error(String(error)));
@@ -175,6 +189,8 @@ describe("First Run Restore API", () => {
 
         expect(response.status).toBe(403);
         expect(data).toEqual({ error: "Restore is only available during first run" });
+        // Validate response structure
+        expectApiResponse(data, errorResponseValidator, "POST 403 response");
         expect(testTimer.elapsed()).toBeLessThan(THRESHOLDS.API);
       } catch (error) {
         debugError(error instanceof Error ? error : new Error(String(error)));
@@ -203,6 +219,8 @@ describe("First Run Restore API", () => {
 
         expect(response.status).toBe(400);
         expect(data).toEqual({ error: "No backup file provided" });
+        // Validate response structure
+        expectApiResponse(data, errorResponseValidator, "POST 400 response");
         expect(testTimer.elapsed()).toBeLessThan(THRESHOLDS.API);
       } catch (error) {
         debugError(error instanceof Error ? error : new Error(String(error)));
@@ -234,6 +252,8 @@ describe("First Run Restore API", () => {
 
         expect(response.status).toBe(400);
         expect(data).toEqual({ error: "Invalid file type. Please upload a .zip file" });
+        // Validate response structure
+        expectApiResponse(data, errorResponseValidator, "POST 400 response");
         expect(testTimer.elapsed()).toBeLessThan(THRESHOLDS.API);
       } catch (error) {
         debugError(error instanceof Error ? error : new Error(String(error)));
@@ -266,6 +286,8 @@ describe("First Run Restore API", () => {
         expect(data).toEqual({
           error: "Restore failed",
         });
+        // Validate response structure
+        expectApiResponse(data, errorResponseValidator, "POST 400 response - restore error");
         expect(fs.unlink).toHaveBeenCalled(); // Verify cleanup still happens
         expect(testTimer.elapsed()).toBeLessThan(THRESHOLDS.API);
       } catch (error) {
@@ -294,6 +316,8 @@ describe("First Run Restore API", () => {
         expect(data).toEqual({
           error: "Database error",
         });
+        // Validate response structure
+        expectApiResponse(data, errorResponseValidator, "POST 500 response - database error");
         expect(testTimer.elapsed()).toBeLessThan(THRESHOLDS.API);
       } catch (error) {
         debugError(error instanceof Error ? error : new Error(String(error)));
@@ -326,6 +350,8 @@ describe("First Run Restore API", () => {
         expect(data).toEqual({
           error: "Write error",
         });
+        // Validate response structure
+        expectApiResponse(data, errorResponseValidator, "POST 400 response - filesystem error");
         expect(testTimer.elapsed()).toBeLessThan(THRESHOLDS.API);
       } catch (error) {
         debugError(error instanceof Error ? error : new Error(String(error)));
