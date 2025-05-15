@@ -164,22 +164,20 @@ export async function PUT(
   isTest: boolean = false,
 ): Promise<NextResponse> {
   try {
-    let userData;
-    // Skip auth verification in test mode
-    if (!isTest) {
-      const cookieStore = await cookies();
-      const token = cookieStore.get("auth_token")?.value;
+    let isAdmin = false;
 
-      if (!token) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-      }
+    // Handle authentication
+    const cookieStore = await cookies();
+    const token = cookieStore.get("auth_token")?.value;
 
-      userData = await verifyToken(token);
-    } else {
-      userData = await verifyToken("valid_token");
+    if (!token) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    if (!userData || !userData.isAdmin) {
+    const userData = await verifyToken(token);
+    isAdmin = userData?.isAdmin || false;
+
+    if (!isAdmin) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -190,35 +188,29 @@ export async function PUT(
       // Check if URL group exists
       const group = await prisma.urlGroup.findUnique({
         where: { id: groupId },
-        include: {
-          urls: true,
-        },
       });
 
       if (!group) {
         return NextResponse.json({ error: "URL group not found" }, { status: 404 });
       }
 
-      // Update URLs in a transaction
-      await prisma.$transaction(async (tx) => {
-        // Remove all existing URLs from the group
-        await tx.urlsInGroups.deleteMany({
+      // Update URLs in group
+      await prisma.$transaction([
+        prisma.urlsInGroups.deleteMany({
           where: { groupId },
-        });
-
-        // Add new URLs with proper display order
-        await tx.urlsInGroups.createMany({
+        }),
+        prisma.urlsInGroups.createMany({
           data: urlIds.map((urlId: string, index: number) => ({
             urlId,
             groupId,
             displayOrder: index,
           })),
-        });
-      });
+        }),
+      ]);
 
       return NextResponse.json({ success: true });
-    } catch (dbError) {
-      console.error("Database error:", dbError);
+    } catch (error) {
+      console.error("Database error:", error);
       return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
     }
   } catch (error) {
@@ -298,22 +290,20 @@ export async function DELETE(
   isTest: boolean = false,
 ): Promise<NextResponse> {
   try {
-    let userData;
-    // Skip auth verification in test mode
-    if (!isTest) {
-      const cookieStore = await cookies();
-      const token = cookieStore.get("auth_token")?.value;
+    let isAdmin = false;
 
-      if (!token) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-      }
+    // Handle authentication
+    const cookieStore = await cookies();
+    const token = cookieStore.get("auth_token")?.value;
 
-      userData = await verifyToken(token);
-    } else {
-      userData = await verifyToken("valid_token");
+    if (!token) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    if (!userData || !userData.isAdmin) {
+    const userData = await verifyToken(token);
+    isAdmin = userData?.isAdmin || false;
+
+    if (!isAdmin) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -329,20 +319,20 @@ export async function DELETE(
         return NextResponse.json({ error: "URL group not found" }, { status: 404 });
       }
 
-      // Remove all URLs from the group in a transaction
-      await prisma.$transaction(async (tx) => {
-        await tx.urlsInGroups.deleteMany({
+      // Delete URLs from group
+      await prisma.$transaction([
+        prisma.urlsInGroups.deleteMany({
           where: { groupId },
-        });
-      });
+        }),
+      ]);
 
       return NextResponse.json({ success: true });
-    } catch (dbError) {
-      console.error("Database error:", dbError);
+    } catch (error) {
+      console.error("Database error:", error);
       return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
     }
   } catch (error) {
-    console.error("Error removing URLs from group:", error);
+    console.error("Error deleting URLs from group:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
