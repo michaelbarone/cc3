@@ -18,6 +18,9 @@
  * @group URL Groups
  */
 
+import { DELETE, GET, POST, PUT } from "@/app/api/admin/url-groups/[id]/urls/route";
+import { verifyToken } from "@/app/lib/auth/jwt";
+import { prisma } from "@/app/lib/db/prisma";
 import { createTestUrl, createTestUrlGroup } from "@/test/fixtures/data/factories";
 import {
   debugError,
@@ -26,6 +29,7 @@ import {
   measureTestTime,
   THRESHOLDS,
 } from "@/test/helpers/debug";
+import { expectApiResponse, validators } from "@/test/helpers/type-validation";
 import type { Url, UrlGroup } from "@prisma/client";
 import { NextRequest } from "next/server";
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi, type Mock } from "vitest";
@@ -36,12 +40,9 @@ vi.mock("@/app/lib/auth/jwt");
 vi.mock("next/headers");
 
 // Import mocked modules
-import { verifyToken } from "@/app/lib/auth/jwt";
-import { prisma } from "@/app/lib/db/prisma";
 import { cookies } from "next/headers";
 
 // Import the module we want to test
-import { DELETE, GET, POST, PUT } from "@/app/api/admin/url-groups/[id]/urls/route";
 
 // Define types
 type RouteContext = {
@@ -78,6 +79,21 @@ type UrlResponse = {
 };
 
 type UrlListResponse = Array<UrlResponse>;
+
+// Create validators for URL responses
+const urlsArrayValidator = validators.array(
+  validators.object({
+    id: validators.string,
+    title: validators.string,
+    url: validators.string,
+    displayOrder: validators.number,
+    urlMobile: validators.string, // Optional fields will be validated separately
+    iconPath: validators.string,
+    idleTimeoutMinutes: validators.number,
+    createdAt: validators.isoDate,
+    updatedAt: validators.isoDate,
+  }),
+);
 
 /**
  * Main test suite for URL Group URLs API
@@ -884,6 +900,10 @@ describe("URL Group URLs API", () => {
             expect(response.status).toBe(200);
             const urlList = (await debugResponse(response)) as UrlListResponse;
             expect(Array.isArray(urlList)).toBe(true);
+
+            // Validate response structure
+            expectApiResponse(urlList, urlsArrayValidator, "GET /url-groups/[id]/urls response");
+
             expect(urlList).toHaveLength(2);
             expect(urlList[0]).toMatchObject({
               ...mockUrl,

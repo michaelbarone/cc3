@@ -36,11 +36,24 @@ vi.mock("next/headers");
 
 // Import mocked modules
 import { verifyToken } from "@/app/lib/auth/jwt";
-import { db } from "@/app/lib/db";
+import { prisma } from "@/app/lib/db/prisma";
 import { cookies } from "next/headers";
 
 // Import the module we want to test
-import { DELETE, PATCH, PUT } from "./route";
+import { DELETE, PATCH, PUT } from "@/app/api/admin/url-groups/[id]/urls/[urlId]/route";
+
+// Define response types
+type ErrorResponse = { error: string };
+type SuccessResponse = { success: boolean };
+type UrlResponse = {
+  id: string;
+  title: string;
+  url: string;
+  displayOrder: number;
+  urlMobile?: string | null;
+  iconPath?: string | null;
+  idleTimeoutMinutes?: number | null;
+};
 
 // Define types
 type RouteContext = {
@@ -53,16 +66,6 @@ type MockUrlGroup = UrlGroup & {
     displayOrder: number;
   }>;
   urlCount?: number;
-};
-
-// Response types
-type ErrorResponse = {
-  error: string;
-};
-
-type SuccessResponse = {
-  success: boolean;
-  url?: Url;
 };
 
 /**
@@ -219,11 +222,11 @@ describe("URL Group URL API", () => {
       };
 
       // Setup transaction mock
-      Object.assign(db, {
+      Object.assign(prisma, {
         $transaction: vi.fn().mockImplementation(async (callback) => {
           const timer = measureTestTime("db.$transaction");
           try {
-            return await callback(db);
+            return await callback(prisma);
           } finally {
             timer.end();
           }
@@ -241,8 +244,8 @@ describe("URL Group URL API", () => {
     try {
       // Debug mock calls for performance analysis
       debugMockCalls(verifyToken as Mock, "verifyToken");
-      debugMockCalls(db.urlsInGroups.findUnique as Mock, "db.urlsInGroups.findUnique");
-      debugMockCalls(db.$transaction as Mock, "db.$transaction");
+      debugMockCalls(prisma.urlsInGroups.findUnique as Mock, "db.urlsInGroups.findUnique");
+      debugMockCalls(prisma.$transaction as Mock, "db.$transaction");
     } finally {
       cleanupTimer.end();
     }
@@ -368,7 +371,7 @@ describe("URL Group URL API", () => {
             (verifyToken as Mock).mockResolvedValueOnce(mockAdminUser);
 
             // Mock URL in group exists check
-            (db.urlsInGroups.findUnique as Mock).mockResolvedValueOnce({
+            (prisma.urlsInGroups.findUnique as Mock).mockResolvedValueOnce({
               urlId: mockUrl.id,
               groupId: mockUrlGroup.id,
               displayOrder: 0,
@@ -422,7 +425,7 @@ describe("URL Group URL API", () => {
             mockCookieStore.get.mockReturnValueOnce({ value: "valid_token" });
 
             // Mock URL in group exists check
-            (db.urlsInGroups.findUnique as Mock).mockResolvedValueOnce({
+            (prisma.urlsInGroups.findUnique as Mock).mockResolvedValueOnce({
               urlId: mockUrl.id,
               groupId: mockUrlGroup.id,
               displayOrder: 0,
@@ -482,18 +485,18 @@ describe("URL Group URL API", () => {
             vi.clearAllMocks();
 
             // Mock URL in group exists check
-            (db.urlsInGroups.findUnique as Mock).mockResolvedValueOnce({
+            (prisma.urlsInGroups.findUnique as Mock).mockResolvedValueOnce({
               urlId: mockUrl.id,
               groupId: mockUrlGroup.id,
               displayOrder: 0,
             });
 
             // Mock transaction success
-            (db.$transaction as Mock).mockImplementationOnce(async (callback) => {
+            (prisma.$transaction as Mock).mockImplementationOnce(async (callback) => {
               const timer = measureTestTime("db.$transaction");
               try {
                 // Mock the transaction operations
-                await callback(db);
+                await callback(prisma);
                 return { success: true };
               } finally {
                 timer.end();
@@ -524,8 +527,8 @@ describe("URL Group URL API", () => {
             expect(response.status).toBe(200);
             const successResponse = (await debugResponse(response)) as SuccessResponse;
             expect(successResponse).toEqual({ success: true });
-            expect(db.urlsInGroups.findUnique).toHaveBeenCalledTimes(1);
-            expect(db.$transaction).toHaveBeenCalledTimes(1);
+            expect(prisma.urlsInGroups.findUnique).toHaveBeenCalledTimes(1);
+            expect(prisma.$transaction).toHaveBeenCalledTimes(1);
             expect(actionTimer.elapsed()).toBeLessThan(THRESHOLDS.API);
           } finally {
             assertTimer.end();
@@ -547,7 +550,7 @@ describe("URL Group URL API", () => {
           const setupTimer = measureTestTime("test-setup");
           try {
             // Mock URL in group not found
-            (db.urlsInGroups.findUnique as Mock).mockResolvedValueOnce(null);
+            (prisma.urlsInGroups.findUnique as Mock).mockResolvedValueOnce(null);
           } finally {
             setupTimer.end();
           }
@@ -596,14 +599,14 @@ describe("URL Group URL API", () => {
             mockCookieStore.get.mockReturnValueOnce({ value: "valid_token" });
 
             // Mock URL in group exists check
-            (db.urlsInGroups.findUnique as Mock).mockResolvedValueOnce({
+            (prisma.urlsInGroups.findUnique as Mock).mockResolvedValueOnce({
               urlId: mockUrl.id,
               groupId: mockUrlGroup.id,
               displayOrder: 0,
             });
 
             // Make the transaction throw to simulate database error
-            (db.$transaction as Mock).mockRejectedValueOnce(new Error("Database error"));
+            (prisma.$transaction as Mock).mockRejectedValueOnce(new Error("Database error"));
           } finally {
             setupTimer.end();
           }
@@ -757,14 +760,14 @@ describe("URL Group URL API", () => {
             (verifyToken as Mock).mockResolvedValueOnce(mockAdminUser);
 
             // Mock URL in group exists check
-            (db.urlsInGroups.findUnique as Mock).mockResolvedValueOnce({
+            (prisma.urlsInGroups.findUnique as Mock).mockResolvedValueOnce({
               urlId: mockUrl.id,
               groupId: mockUrlGroup.id,
               displayOrder: 0,
             });
 
             // Mock findMany to return remaining URLs after delete
-            (db.urlsInGroups.findMany as Mock).mockResolvedValueOnce([
+            (prisma.urlsInGroups.findMany as Mock).mockResolvedValueOnce([
               {
                 urlId: "url-id-2",
                 groupId: mockUrlGroup.id,
@@ -773,25 +776,25 @@ describe("URL Group URL API", () => {
             ]);
 
             // Mock delete operation
-            (db.urlsInGroups.delete as Mock).mockResolvedValueOnce({
+            (prisma.urlsInGroups.delete as Mock).mockResolvedValueOnce({
               urlId: mockUrl.id,
               groupId: mockUrlGroup.id,
               displayOrder: 0,
             });
 
             // Mock update operation for reordering
-            (db.urlsInGroups.update as Mock).mockResolvedValueOnce({
+            (prisma.urlsInGroups.update as Mock).mockResolvedValueOnce({
               urlId: "url-id-2",
               groupId: mockUrlGroup.id,
               displayOrder: 0, // Reordered to position 0
             });
 
             // Mock transaction success
-            (db.$transaction as Mock).mockImplementationOnce(async (callback) => {
+            (prisma.$transaction as Mock).mockImplementationOnce(async (callback) => {
               const timer = measureTestTime("db.$transaction");
               try {
                 // Execute the callback directly to trigger the mocked functions
-                await callback(db);
+                await callback(prisma);
                 return { success: true };
               } finally {
                 timer.end();
@@ -821,8 +824,8 @@ describe("URL Group URL API", () => {
             expect(response.status).toBe(200);
             const successResponse = (await debugResponse(response)) as SuccessResponse;
             expect(successResponse).toEqual({ success: true });
-            expect(db.urlsInGroups.findUnique).toHaveBeenCalledTimes(1);
-            expect(db.$transaction).toHaveBeenCalledTimes(1);
+            expect(prisma.urlsInGroups.findUnique).toHaveBeenCalledTimes(1);
+            expect(prisma.$transaction).toHaveBeenCalledTimes(1);
             expect(actionTimer.elapsed()).toBeLessThan(THRESHOLDS.API);
           } finally {
             assertTimer.end();
@@ -848,7 +851,7 @@ describe("URL Group URL API", () => {
             mockCookieStore.get.mockReturnValueOnce({ value: "valid_token" });
 
             // Mock URL in group not found
-            (db.urlsInGroups.findUnique as Mock).mockResolvedValueOnce(null);
+            (prisma.urlsInGroups.findUnique as Mock).mockResolvedValueOnce(null);
           } finally {
             setupTimer.end();
           }
@@ -896,14 +899,14 @@ describe("URL Group URL API", () => {
             mockCookieStore.get.mockReturnValueOnce({ value: "valid_token" });
 
             // Mock URL in group exists check
-            (db.urlsInGroups.findUnique as Mock).mockResolvedValueOnce({
+            (prisma.urlsInGroups.findUnique as Mock).mockResolvedValueOnce({
               urlId: mockUrl.id,
               groupId: mockUrlGroup.id,
               displayOrder: 0,
             });
 
             // Make the transaction throw to simulate database error
-            (db.$transaction as Mock).mockRejectedValueOnce(new Error("Database error"));
+            (prisma.$transaction as Mock).mockRejectedValueOnce(new Error("Database error"));
           } finally {
             setupTimer.end();
           }
@@ -1087,7 +1090,7 @@ describe("URL Group URL API", () => {
             (verifyToken as Mock).mockResolvedValueOnce(mockAdminUser);
 
             // Mock URL in group exists check
-            (db.urlsInGroups.findUnique as Mock).mockResolvedValueOnce({
+            (prisma.urlsInGroups.findUnique as Mock).mockResolvedValueOnce({
               urlId: mockUrl.id,
               groupId: mockUrlGroup.id,
               displayOrder: 0,
@@ -1172,7 +1175,7 @@ describe("URL Group URL API", () => {
             (verifyToken as Mock).mockResolvedValueOnce(mockAdminUser);
 
             // Mock URL in group exists check
-            (db.urlsInGroups.findUnique as Mock).mockResolvedValueOnce({
+            (prisma.urlsInGroups.findUnique as Mock).mockResolvedValueOnce({
               urlId: mockUrl.id,
               groupId: mockUrlGroup.id,
               displayOrder: 0,
@@ -1180,7 +1183,7 @@ describe("URL Group URL API", () => {
             });
 
             // Mock transaction success
-            (db.$transaction as Mock).mockResolvedValueOnce(updatedUrl);
+            (prisma.$transaction as Mock).mockResolvedValueOnce(updatedUrl);
           } finally {
             setupTimer.end();
           }
@@ -1209,8 +1212,8 @@ describe("URL Group URL API", () => {
               success: true,
               url: updatedUrl,
             });
-            expect(db.urlsInGroups.findUnique).toHaveBeenCalledTimes(1);
-            expect(db.$transaction).toHaveBeenCalledTimes(1);
+            expect(prisma.urlsInGroups.findUnique).toHaveBeenCalledTimes(1);
+            expect(prisma.$transaction).toHaveBeenCalledTimes(1);
             expect(actionTimer.elapsed()).toBeLessThan(THRESHOLDS.API);
           } finally {
             assertTimer.end();
@@ -1241,7 +1244,7 @@ describe("URL Group URL API", () => {
             mockCookieStore.get.mockReturnValueOnce({ value: "valid_token" });
 
             // Mock URL in group not found
-            (db.urlsInGroups.findUnique as Mock).mockResolvedValueOnce(null);
+            (prisma.urlsInGroups.findUnique as Mock).mockResolvedValueOnce(null);
           } finally {
             setupTimer.end();
           }
@@ -1295,7 +1298,7 @@ describe("URL Group URL API", () => {
             mockCookieStore.get.mockReturnValueOnce({ value: "valid_token" });
 
             // Mock URL in group exists check
-            (db.urlsInGroups.findUnique as Mock).mockResolvedValueOnce({
+            (prisma.urlsInGroups.findUnique as Mock).mockResolvedValueOnce({
               urlId: mockUrl.id,
               groupId: mockUrlGroup.id,
               displayOrder: 0,
@@ -1303,7 +1306,7 @@ describe("URL Group URL API", () => {
             });
 
             // Make the transaction throw to simulate database error
-            (db.$transaction as Mock).mockRejectedValueOnce(new Error("Database error"));
+            (prisma.$transaction as Mock).mockRejectedValueOnce(new Error("Database error"));
           } finally {
             setupTimer.end();
           }
