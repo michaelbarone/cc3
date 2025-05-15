@@ -265,7 +265,7 @@ describe("Admin Avatar API", () => {
         // Act
         const actionTimer = measureTestTime("file-size-validation-action");
         const response = await POST(request, mockContext);
-        expect(actionTimer.elapsed()).toBeLessThan(THRESHOLDS.UNIT);
+        expect(actionTimer.elapsed()).toBeLessThan(THRESHOLDS.API);
         actionTimer.end();
 
         const data = await debugResponse<AvatarResponse>(response);

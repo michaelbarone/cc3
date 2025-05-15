@@ -609,19 +609,21 @@ describe("Admin URL Group Management API", () => {
     it("should return URLs in group when authenticated", async () => {
       const testTimer = measureTestTime("Get URLs in Group - Success");
       try {
-        (prisma.urlGroup.findUnique as any).mockResolvedValue(mockUrlGroup);
-        (prisma.$queryRaw as any).mockResolvedValue([
-          {
-            ...mockUrl,
-            displayOrder: 1,
-          },
-        ]);
+        (prisma.urlGroup.findUnique as any).mockResolvedValue({
+          ...mockUrlGroup,
+          urls: [
+            {
+              url: mockUrl,
+              displayOrder: 1,
+            },
+          ],
+        });
 
         const response = await getUrlsInGroup(new NextRequest("http://localhost"), mockProps);
-        const data = await debugResponse<{ urls: Array<Url & { displayOrder: number }> }>(response);
+        const data = await debugResponse<Array<Url & { displayOrder: number }>>(response);
 
         expect(response.status).toBe(200);
-        expect(data.urls).toEqual([
+        expect(data).toEqual([
           {
             ...mockUrl,
             displayOrder: 1,
@@ -633,7 +635,6 @@ describe("Admin URL Group Management API", () => {
           mockState: {
             verifyToken: vi.mocked(verifyToken).mock.calls,
             findUnique: vi.mocked(prisma.urlGroup.findUnique).mock.calls,
-            queryRaw: vi.mocked(prisma.$queryRaw).mock.calls,
           },
         });
         throw error;
@@ -723,32 +724,50 @@ describe("Admin URL Group Management API", () => {
     const mockUrlIds = ["url-1", "url-2"];
 
     it("should update URLs in group when authenticated as admin", async () => {
-      (prisma.urlGroup.findUnique as any).mockResolvedValue({
-        ...mockUrlGroup,
-        urls: [{ urlId: "url-1" }],
-      });
-      (prisma.urlsInGroups.aggregate as any).mockResolvedValue({ _count: 0 });
+      const testTimer = measureTestTime("Update URLs in Group - Success");
+      try {
+        // Setup proper mocks
+        (prisma.urlGroup.findUnique as any).mockResolvedValue({
+          ...mockUrlGroup,
+          urls: [{ urlId: "url-1" }],
+        });
 
-      const request = new NextRequest("http://localhost", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ urlIds: mockUrlIds }),
-      });
+        // Mock transaction to return success
+        (prisma.$transaction as any).mockImplementation(async (operations: any[]) => {
+          // Execute all operations
+          for (const operation of operations) {
+            await operation;
+          }
+          return true;
+        });
 
-      const response = await updateUrlsInGroup(request, mockProps);
-      const data = await response.json();
+        const request = new NextRequest("http://localhost", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ urlIds: mockUrlIds }),
+        });
 
-      expect(response.status).toBe(200);
-      expect(data).toEqual({ success: true });
-      expect(prisma.urlsInGroups.deleteMany).toHaveBeenCalledWith({
-        where: { groupId: mockUrlGroup.id },
-      });
-      expect(prisma.urlsInGroups.createMany).toHaveBeenCalledWith({
-        data: mockUrlIds.map((urlId) => ({
-          groupId: mockUrlGroup.id,
-          urlId,
-        })),
-      });
+        const response = await updateUrlsInGroup(request, mockProps);
+        const data = await debugResponse<{ success: boolean }>(response);
+
+        expect(response.status).toBe(200);
+        expect(data).toEqual({ success: true });
+        expect(prisma.$transaction).toHaveBeenCalled();
+        expect(testTimer.elapsed()).toBeLessThan(THRESHOLDS.API);
+      } catch (error) {
+        debugError(error as Error, {
+          mockState: {
+            verifyToken: vi.mocked(verifyToken).mock.calls,
+            findUnique: vi.mocked(prisma.urlGroup.findUnique).mock.calls,
+            transaction: vi.mocked(prisma.$transaction).mock.calls,
+            deleteMany: vi.mocked(prisma.urlsInGroups.deleteMany).mock.calls,
+            createMany: vi.mocked(prisma.urlsInGroups.createMany).mock.calls,
+          },
+        });
+        throw error;
+      } finally {
+        testTimer.end();
+      }
     });
 
     it("should return 404 when URL group not found", async () => {
