@@ -1,0 +1,352 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# ESLint and Prettier Standards
+
+Guidelines for maintaining consistent code quality and formatting with ESLint and Prettier.
+
+<rule>
+name: eslint_prettier_standards
+description: Standards for ESLint and Prettier configuration, usage patterns, and integration with the development workflow
+
+filters:
+  - type: file_extension
+    pattern: "\\.(js|jsx|ts|tsx|json)$"
+  - type: content
+    pattern: "eslint|prettier|lint"
+
+actions:
+  - type: suggest
+    message: |
+      ## ESLint & Prettier Best Practices
+
+      ### Configuration
+
+      1. Base Configuration Files:
+         ```javascript
+         // .eslintrc.js
+         module.exports = {
+           root: true,
+           extends: [
+             'eslint:recommended',
+             'plugin:@typescript-eslint/recommended',
+             'plugin:react/recommended',
+             'plugin:react-hooks/recommended',
+             'plugin:react-native/all',
+             'prettier' // Always last to override conflicting rules
+           ],
+           parser: '@typescript-eslint/parser',
+           parserOptions: {
+             ecmaFeatures: {
+               jsx: true,
+             },
+             ecmaVersion: 'latest',
+             sourceType: 'module',
+           },
+           plugins: [
+             'react',
+             'react-native',
+             '@typescript-eslint',
+             'prettier'
+           ],
+           rules: {
+             // Project-specific rules
+           },
+           settings: {
+             react: {
+               version: 'detect',
+             },
+           },
+         };
+
+         // .prettierrc.js
+         module.exports = {
+           semi: true,
+           trailingComma: 'all',
+           singleQuote: true,
+           printWidth: 100,
+           tabWidth: 2,
+           endOfLine: 'auto',
+           bracketSpacing: true,
+           bracketSameLine: false,
+         };
+         ```
+
+      2. Ignoring Files:
+         ```
+         // .eslintignore
+         node_modules/
+         dist/
+         build/
+         coverage/
+         *.d.ts
+         
+         // .prettierignore
+         node_modules/
+         dist/
+         build/
+         coverage/
+         *.d.ts
+         ```
+
+      ### Usage Patterns
+
+      1. Import Order:
+         ```typescript
+         // GOOD: Organized imports
+         // 1. React imports
+         import React, { useState, useEffect } from 'react';
+         import { View, Text, StyleSheet } from 'react-native';
+         
+         // 2. Third-party libraries
+         import { useNavigation } from '@react-navigation/native';
+         import { format } from 'date-fns';
+         
+         // 3. Project imports (absolute)
+         import { useAuth } from '@/hooks/useAuth';
+         import { Button } from '@/components/ui';
+         
+         // 4. Project imports (relative)
+         import { styles } from './styles';
+         import { formatData } from '../../utils';
+         ```
+
+      2. Component Structure:
+         ```typescript
+         // GOOD: Consistent component structure
+         import React from 'react';
+         import { View, Text, StyleSheet } from 'react-native';
+         
+         // Types at the top
+         interface ProfileProps {
+           name: string;
+           bio?: string;
+         }
+         
+         // Component definition
+         const Profile: React.FC<ProfileProps> = ({ name, bio }) => {
+           // Hook calls at the top
+           const [isExpanded, setIsExpanded] = useState(false);
+           
+           // Handler functions
+           const handleToggle = () => {
+             setIsExpanded(prev => !prev);
+           };
+           
+           // JSX
+           return (
+             <View style={styles.container}>
+               <Text style={styles.name}>{name}</Text>
+               {bio && (
+                 <Text style={styles.bio}>{bio}</Text>
+               )}
+             </View>
+           );
+         };
+         
+         // Styles at the bottom
+         const styles = StyleSheet.create({
+           container: {
+             padding: 16,
+             backgroundColor: '#fff',
+           },
+           name: {
+             fontSize: 18,
+             fontWeight: 'bold',
+           },
+           bio: {
+             marginTop: 8,
+             fontSize: 14,
+           },
+         });
+         
+         export default Profile;
+         ```
+
+      3. ESLint Comments:
+         ```typescript
+         // GOOD: Well-documented disabling rules
+         
+         // Disable for a single line
+         const id = String(user.id); // eslint-disable-line @typescript-eslint/no-explicit-any
+         
+         // Disable for next line
+         // eslint-disable-next-line @typescript-eslint/no-unused-vars
+         const unused = fetchData();
+         
+         // Disable for a block
+         /* eslint-disable react-native/no-inline-styles */
+         const SpecialComponent = () => (
+           <View style={{ marginTop: 10, opacity: loading ? 0.5 : 1 }}>
+             <Text>Special case with inline styles</Text>
+           </View>
+         );
+         /* eslint-enable react-native/no-inline-styles */
+         ```
+
+      ### Integration with Workflow
+
+      1. Scripts in package.json:
+         ```json
+         {
+           "scripts": {
+             "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
+             "lint:fix": "eslint . --ext .js,.jsx,.ts,.tsx --fix",
+             "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,md}\"",
+             "typecheck": "tsc --noEmit",
+             "validate": "npm run typecheck && npm run lint"
+           }
+         }
+         ```
+
+      2. Pre-commit Hooks with Husky:
+         ```json
+         // .husky/pre-commit
+         #!/bin/sh
+         . "$(dirname "$0")/_/husky.sh"
+         
+         npx lint-staged
+         ```
+
+      3. Lint-staged Configuration:
+         ```json
+         // package.json
+         {
+           "lint-staged": {
+             "*.{js,jsx,ts,tsx}": [
+               "eslint --fix",
+               "prettier --write"
+             ],
+             "*.{json,md}": [
+               "prettier --write"
+             ]
+           }
+         }
+         ```
+
+      ### Common Rules & Customizations
+
+      1. Essential Rules:
+         ```javascript
+         // .eslintrc.js (rules section)
+         rules: {
+           // React & React Native
+           'react/prop-types': 'off', // Use TypeScript instead
+           'react/react-in-jsx-scope': 'off', // Not needed in React 17+
+           'react-native/no-raw-text': ['error', { skip: ['Button', 'Link'] }],
+           'react-native/no-inline-styles': 'error',
+           
+           // TypeScript
+           '@typescript-eslint/explicit-module-boundary-types': 'off',
+           '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
+           '@typescript-eslint/no-explicit-any': 'warn',
+           
+           // General
+           'no-console': ['warn', { allow: ['warn', 'error'] }],
+           'prefer-const': 'error',
+           'no-var': 'error',
+           'eqeqeq': ['error', 'always', { null: 'ignore' }],
+         },
+         ```
+
+      2. React Native Specific Rules:
+         ```javascript
+         // .eslintrc.js (rules section)
+         'react-native/no-unused-styles': 'error',
+         'react-native/split-platform-components': 'warn',
+         'react-native/no-color-literals': 'warn',
+         'react-native/no-single-element-style-arrays': 'error',
+         ```
+
+examples:
+  - input: |
+      import React, { useState } from 'react';
+      import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+      import { useNavigation } from '@react-navigation/native';
+      
+      interface UserCardProps {
+        name: string;
+        email: string;
+        onPress?: () => void;
+      }
+      
+      const UserCard: React.FC<UserCardProps> = ({ name, email, onPress }) => {
+        const [isExpanded, setIsExpanded] = useState(false);
+        const navigation = useNavigation();
+        
+        const handlePress = () => {
+          setIsExpanded(!isExpanded);
+          if (onPress) onPress();
+        };
+        
+        return (
+          <TouchableOpacity style={styles.card} onPress={handlePress}>
+            <Text style={styles.name}>{name}</Text>
+            {isExpanded && (
+              <Text style={styles.email}>{email}</Text>
+            )}
+          </TouchableOpacity>
+        );
+      };
+      
+      const styles = StyleSheet.create({
+        card: {
+          padding: 16,
+          backgroundColor: '#fff',
+          borderRadius: 8,
+          marginBottom: 8,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.1,
+          shadowRadius: 4,
+          elevation: 2,
+        },
+        name: {
+          fontSize: 16,
+          fontWeight: 'bold',
+        },
+        email: {
+          marginTop: 8,
+          fontSize: 14,
+          color: '#666',
+        },
+      });
+      
+      export default UserCard;
+    output: "Valid component with good ESLint/Prettier structure"
+
+  - input: |
+      import React from 'react'
+      import { View, Text, StyleSheet } from 'react-native'
+      
+      function BadComponent(props) {
+        var name = props.name;
+        var items = props.items;
+        
+        console.log("Rendering component for", name);
+        
+        return (
+          <View style={{padding: 10, margin: 5, backgroundColor: "#f0f0f0"}}>
+            <Text style={{color: "blue", fontSize: 16}}>{name}</Text>
+            {items.map(item => {
+              return <Text key={item.id}>{item.text}</Text>
+            })}
+          </View>
+        )
+      }
+      
+      export default BadComponent
+    output: "Invalid: Missing semicolons, using var, inline styles, and console.log"
+
+metadata:
+  priority: high
+  version: 1.0.0
+  tags:
+    - eslint
+    - prettier
+    - linting
+    - formatting
+    - code-quality
+</rule>

@@ -66,6 +66,52 @@ When planning implementations:
    - Cross-reference maintenance
    - Version control practices
 
+## Documentation Standards
+
+### Component Documentation
+```typescript
+/**
+ * LoginForm Component
+ * @component
+ * @description Handles user authentication through form submission
+ *
+ * @example
+ * ```tsx
+ * <LoginForm
+ *   onSuccess={handleSuccess}
+ *   redirectPath="/dashboard"
+ * />
+ * ```
+ */
+interface LoginFormProps {
+  /** Callback fired when login succeeds */
+  onSuccess: (user: User) => void;
+  /** Path to redirect after successful login */
+  redirectPath?: string;
+}
+```
+
+### State Management Documentation
+```typescript
+/**
+ * Authentication State
+ * @typedef {Object} AuthState
+ *
+ * @example
+ * ```tsx
+ * const [authState, dispatch] = useReducer(authReducer, initialState);
+ * ```
+ */
+interface AuthState {
+  /** Current user object, null if not authenticated */
+  user: User | null;
+  /** Loading state for auth operations */
+  loading: boolean;
+  /** Last error message if any */
+  error?: string;
+}
+```
+
 ### Type Documentation Requirements
 1. Required Documentation:
    - Every exported type must have JSDoc comment
@@ -271,6 +317,21 @@ actions:
                - Created security followup
                </example>
 
+               <example type="invalid">
+               # Bad: Incomplete Milestone Addition
+               1. Added milestone without questions
+               2. Updated only plan.md
+               3. No implementation details
+               4. No security consideration
+               5. Missing dependencies
+
+               ## Missing:
+               - No scope definition
+               - No security review
+               - Incomplete documentation
+               - No dependency check
+               </example>
+
          c) Risk Management:
             - Potential blockers
             - Mitigation strategies
@@ -321,179 +382,37 @@ actions:
               - Link verification process
               - Content accuracy review
 
-      4. Documentation Template:
-         ```markdown
-         ## Task Status Notation
-         - Use [X] (capital X) for completed tasks
-         - Use [ ] for incomplete tasks
-         - Never use [x] (lowercase x)
-         Example:
-         - [X] Completed task
-         - [ ] Incomplete task
-         - [X] Another completed task
+         f) Specialized Testing:
+            - For API issues: Follow api_debugging_methodology test patterns
+              ```ruby
+              # Example API test structure from api_debugging_methodology
+              RSpec.describe ApiClient do
+                describe 'configuration' do
+                  it 'loads environment variables' do
+                    # Test env vars
+                  end
 
-         ## Future Tasks
+                  it 'configures the client properly' do
+                    # Test client setup
+                  end
+                end
+              end
+              ```
 
-         ### [Task Name]
-         - **Description**: [Clear task description]
-         - **Priority**: [High/Medium/Low]
-         - **Estimated Effort**: [Duration]
-         - **Related Tasks**:
-           - Active: [Task Name] (explanation of relationship)
-           - Completed: [Task Name] (explanation of relationship)
-           - Future: [Task Name] (explanation of relationship)
-
-         ## Problem Analysis
-
-         ### Issue Description
-         - What: [Clear problem statement]
-         - Why: [Business/technical impact]
-         - Who: [Affected users/systems]
-         - When: [Occurrence pattern]
-         - Type: [Issue type - API/UI/Performance/Security]
-
-         ### Steps
-         1. [X] Completed step
-            - Tasks:
-              - [X] Completed task 1.1
-              - [X] Completed task 1.2
-            - Dependencies:
-              - [List dependencies]
-
-         2. [ ] Pending step
-            - Tasks:
-              - [ ] Task 2.1
-              - [ ] Task 2.2
-            - Dependencies:
-              - [List dependencies]
-
-         ### Root Cause
-         - Identified causes:
-           1. [Primary cause]
-           2. [Secondary factors]
-         - Evidence:
-           - [Supporting data]
-           - [Observations]
-
-         ### System Impact
-         - Components:
-           - [List affected systems]
-         - Dependencies:
-           - [Upstream/downstream effects]
-
-         ### Specialized Analysis
-         - If API issue:
-           - Follow api_debugging_methodology steps
-           - Include debug script results
-           - Document VCR test results
-
-         ## Solution Design
-
-         ### Proposed Solutions
-         1. Solution A:
-            - Approach: [Description]
-            - Pros: [Benefits]
-            - Cons: [Drawbacks]
-            - Risks: [Potential issues]
-
-         2. Solution B:
-            - Approach: [Description]
-            - Pros: [Benefits]
-            - Cons: [Drawbacks]
-            - Risks: [Potential issues]
-
-         ### Selected Solution
-         - Choice: [Solution name]
-         - Rationale: [Decision factors]
-         - Trade-offs: [Accepted compromises]
-         - Specialized Approach:
-           - For API: Follow api_debugging_methodology patterns
-           - For UI: Follow UI patterns
-           - For Performance: Follow optimization patterns
-           - For Security: Follow security patterns
-
-         ## Implementation Plan
-
-         ### Steps
-         1. [ ] Step 1
-            - Tasks:
-              - [X] Task 1.1 (completed)
-              - [ ] Task 1.2
-            - Dependencies:
-              - [List dependencies]
-            - Specialized Steps:
-              - Follow relevant methodology (API/UI/Performance/Security)
-
-         ### Risk Mitigation
-         - Risks:
-           1. [Risk description]
-              - Mitigation: [Strategy]
-              - Fallback: [Plan B]
-
-         ### Testing
-         - Test cases:
-           1. [Test scenario]
-           2. [Test scenario]
-         - Performance:
-           - [Benchmarks]
-         - Specialized Testing:
-           - Follow relevant testing methodology
-         ```
-
-      Remember:
-      - Document all decisions
-      - Consider long-term impact
-      - Validate assumptions
-      - Plan for failure scenarios
-      - Keep documentation current
-      - Use specialized methodologies when applicable
-      - Reference specific debugging rules for different types of issues
-
-      5. Plan File Maintenance:
+      4. Plan File Maintenance:
          a) Task Plan Files (.plan):
             - Located in task directory under /docs/working-memory/open/{task-id}/.plan
             - Must be updated in real-time as work progresses
             - Use [X] for completed items, [ ] for pending items
             - Include timestamps for all updates
-            - ALWAYS run a command to get timestamps, NEVER estimate timestamps in .plan or plan.md files
-
-            Structure and Update Flow:
-            ```markdown
-            # Task Name
-
-            ## Current Status
-            ### YYYY-MM-DD HH:mm
-
-            **Status**: [Planning|In Progress|Completed|Blocked]
-            - What's working: [Current achievements]
-            - What's not: [Current challenges]
-            - Blocking issues: [If any]
-            - Next actions: [Immediate next steps]
-
-            ## Problem Analysis
-            [... analysis sections ...]
-
-            ## Implementation Steps
-            1. [ ] Step One
-               - [ ] Subtask A
-               - [X] Subtask B  # Mark as complete in-place
-
-            ## Progress History
-            ### YYYY-MM-DD HH:mm - Brief Title
-            - ✓ Completed: [Major milestone or achievement]
-            - 🤔 Decisions: [Key decisions made]
-            - ❌ Issues: [Problems encountered]
-            - 📚 Documentation: [Documentation updates]
-            - ⏭️ Next: [Next major focus]
-            ```
+            - Follow the template at /docs/templates/task-plan-template.md
 
             Update Rules:
             1. Current Status:
-               - ONLY show most recent status
-               - Update timestamp and status
+               - Update timestamp and status first
                - Reflect current state of work
-               - Move previous status updates to Progress History
-               - Consolidate related updates under same timestamp
+               - List immediate achievements and challenges
+               - NEVER duplicate completed items here
 
             2. Implementation Steps:
                - Mark items complete with [X] in-place
@@ -503,56 +422,17 @@ actions:
 
             3. Progress History:
                - Add new entries at TOP
-               - Include previous status updates as historical entries
-               - Consolidate related updates under same timestamp
                - Only record MAJOR milestones
                - Keep entries concise
                - Focus on decisions and learnings
                - DO NOT duplicate task checklist here
-
-            Example of Correct Updates:
-            ```markdown
-            ## Current Status
-            ### 2025-03-30 21:30
-
-            **Status**: In Progress
-            - What's working: File structure reorganized
-            - What's not: Import paths need updating
-            - Blocking issues: None
-            - Next actions: Update configuration
-
-            ## Implementation Steps
-            1. [X] Preparation Phase
-               - [X] Document current structure
-               - [X] Analyze dependencies
-               - [X] Plan new organization
-
-            2. [ ] Configuration Updates
-               - [ ] Update test patterns
-               - [ ] Move setup files
-
-            ## Progress History
-            ### 2025-03-30 21:30 - Completed Preparation
-            - ✓ Completed: Preparation phase analysis
-            - 🤔 Decisions: Chose co-located test structure
-            - ❌ Issues: None encountered
-            - 📚 Documentation: Updated plan with findings
-            - ⏭️ Next: Begin configuration updates
-            ```
 
          b) Main Project Plan (plan.md):
             - Located in /docs/working-memory/plan.md
             - Must be synchronized with individual task plans
             - Update task status and milestones immediately when changed
             - Maintain consistent formatting across all sections
-            ```markdown
-            ### Task Name (In Progress)
-            - **Location**: `/docs/working-memory/open/task-name`
-            - **Status**: In Progress
-            - **Key Milestones**:
-              - [X] Completed milestone
-              - [ ] Pending milestone
-            ```
+            - Follow the template at /docs/templates/plan-template.md
 
          c) Plan Synchronization Rules:
             - Always update both .plan and plan.md together
@@ -566,15 +446,6 @@ actions:
             - Document completed items immediately
             - Note any blockers or dependencies
             - Update affected documentation
-            ```markdown
-            ## Progress History
-            ### 2025-03-19 15:45 - Milestone Completion
-            - ✓ Completed: Visual design updates
-            - 🤔 Decisions: Selected modern design pattern
-            - ❌ Issues: None
-            - 📚 Documentation: Updated component docs
-            - ⏭️ Next: Begin accessibility enhancements
-            ```
 
 ## Examples
 
