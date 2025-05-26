@@ -1,3 +1,16 @@
-
 # Don't index SpecStory auto-save files, but allow explicit context inclusion via @ references
 .specstory/**
+
+.cursor/
+
+.husky/
+
+.gitignore
+
+.expo/
+
+.vscode/
+
+.env
+
+/bmad-agent/
