@@ -12,6 +12,10 @@
   - Develop tile-based login page UI
   - Implement "First Run" experience for initial admin setup
   - Secure routes with middleware and client-side validation
+  - Create and maintain relationship between User and UserSetting models
+  - Configure environment variables for authentication and session management
+  - Implement "Remember Me" functionality for extended sessions
+  - Include user preferences in session data
 
 ## Current Status
 
@@ -27,6 +31,8 @@
   - [ ] Project structure documentation
   - [ ] Authentication flow documentation
   - [ ] Database schema documentation
+  - [ ] Environment variables documentation
+  - [ ] Session management flow diagrams
 
 ## Implementation Steps
 
@@ -38,6 +44,12 @@
   - [ ] Set up Husky and commitlint
   - [ ] Create Dockerfile and .dockerignore
   - [ ] Update README.md with project information
+  - [ ] Create `.env.local` template with required environment variables:
+    - `NEXTAUTH_SECRET` for JWT tokens
+    - `NEXTAUTH_SESSION_MAX_AGE_SECONDS` (default: 1 week)
+    - `NEXTAUTH_REMEMBER_ME_MAX_AGE_SECONDS` (extended session duration)
+    - `DATABASE_URL` for SQLite database path
+  - [ ] Create `/data` directory in project root with appropriate gitignore rules
   - Success criteria: Project successfully runs, lints, formats, and can be containerized
   - Dependencies: None
 
@@ -45,8 +57,14 @@
   - [ ] Install Prisma CLI and Client
   - [ ] Initialize Prisma with SQLite configuration
   - [ ] Define User model with required fields and relations
+  - [ ] Define UserSetting model with fields:
+    - `userId` (String, `@id`, relations to User)
+    - `theme` (enum: LIGHT, DARK, SYSTEM; `@default(SYSTEM)`)
+    - `menuPosition` (enum: TOP, SIDE; `@default(SIDE)`)
+  - [ ] Ensure referential integrity with `onDelete: Cascade` for UserSetting when User is deleted
   - [ ] Create migration and apply to database
   - [ ] Implement seeding for default admin user
+  - [ ] Implement logic to create default UserSetting record when User is created
   - Success criteria: User schema defined, migrations created, and default admin user seeded
   - Dependencies: Story 1.1
 
@@ -57,6 +75,16 @@
   - [ ] Configure JWT strategy and callbacks
   - [ ] Implement session management with HTTP-only cookies
   - [ ] Integrate secure password hashing
+  - [ ] Implement "Remember Me" functionality:
+    - Add checkbox to login form
+    - Extend session duration based on checkbox state
+    - Configure cookie maxAge dynamically
+  - [ ] Include user preferences in session:
+    - Fetch UserSetting record with User during authentication
+    - Include theme and menuPosition in JWT payload
+    - Expose these in session.user object for client-side access
+  - [ ] Update User.lastLoginAt on successful authentication
+  - [ ] Add comprehensive error handling for authentication edge cases
   - Success criteria: Users can authenticate with name/password, sessions properly managed
   - Dependencies: Story 1.2
 
@@ -64,6 +92,8 @@
   - [ ] Create API route for fetching user profiles
   - [ ] Implement transformation of User records to UserTile objects
   - [ ] Ensure proper error handling
+  - [ ] Format lastLoginAt as ISO 8601 string in response
+  - [ ] Implement ordering by User.createdAt (ascending)
   - Success criteria: API returns formatted user tiles with required information
   - Dependencies: Story 1.2
 
@@ -73,15 +103,23 @@
   - [ ] Add tile transformation animations
   - [ ] Implement in-tile password form
   - [ ] Add client-side auth logic and feedback
+  - [ ] Add "Remember Me" checkbox to in-tile password form
+  - [ ] Implement avatar fallback logic:
+    - Use 1st letter of username, or 1st letter of first 2 words if space exists
+    - Generate background color based on hash of username
+  - [ ] Implement clicking outside active tile to revert it to initial state
   - Success criteria: Functional, animated tile-based login UI
   - Dependencies: Story 1.3, Story 1.3.5
 
 - [ ] **Story 1.5: Implement "First Run" Experience on Login Page**
-  - [ ] Add first run state detection
+  - [ ] Add first run state determination
   - [ ] Create UI for first run options
   - [ ] Implement passwordless admin login flow
   - [ ] Create admin password setup page
   - [ ] Add session termination for canceled setup
+  - [ ] Ensure User.lastLoginAt is only updated after successful password setup
+  - [ ] Add disabled "Restore System from Backup" button with tooltip
+  - [ ] Implement comprehensive error handling for the first run flow
   - Success criteria: First run experience allows admin setup with password creation
   - Dependencies: Story 1.4
 
@@ -90,6 +128,13 @@
   - [ ] Configure route protection
   - [ ] Implement session/account status checking
   - [ ] Add client-side proactive session validation
+  - [ ] Configure matcher for protected routes:
+    - '/dashboard/:path*'
+    - '/settings/:path*'
+    - '/admin/:path*'
+  - [ ] Ensure middleware checks both authentication and User.isActive status
+  - [ ] Implement client-side session validation in root layout to check session.user.isActive
+  - [ ] Add logic to automatically sign out and redirect if user becomes inactive
   - Success criteria: Protected routes secure, inactive users can't access protected content
   - Dependencies: Story 1.3
 
@@ -101,6 +146,8 @@
 - Login UI components
 - Middleware for route protection
 - Client-side session validation
+- UserSetting model and integration
+- Environment variable configuration
 
 ## Dependencies
 
@@ -112,6 +159,8 @@
 - Prisma ORM v6.5.0
 - NextAuth.js v4
 - SQLite
+- bcryptjs for password hashing
+- Zod for API validation
 
 ## Technical Considerations
 
@@ -119,6 +168,10 @@
 - Password hashing requires secure implementation
 - "First Run" experience must maintain secure state transitions
 - Must ensure middleware correctly validates both authentication and isActive status
+- UserSetting record must be created in the same transaction as User creation
+- Consider implementing database transactions for multi-step database operations
+- Plan for comprehensive testing of authentication flows and middleware
+- Remember to document all environment variables and their purposes
 
 ## Progress History
 
@@ -129,3 +182,13 @@
 - ❌ Issues: None at this stage
 - 📚 Documentation: Will need to document authentication flow, database schema, and project structure
 - ⏭️ Next: This plan enables systematic implementation of the foundational aspects of the application
+
+## Follow-up Considerations
+
+- **Testing Strategy:** Develop a comprehensive testing plan for authentication flows, first run experience, and middleware functionality.
+- **Documentation:** Create visual diagrams for authentication flow and database schema to aid understanding.
+- **Performance:** Monitor performance impact of session data size, especially when including user preferences.
+- **Security Review:** Conduct a security review of authentication implementation, focusing on session management and password handling.
+- **User Experience:** Ensure smooth transitions between authentication states, especially for the first run experience.
+- **Error Handling:** Develop a consistent approach to error handling across all authentication-related components.
+- **Backup Considerations:** While backup functionality is disabled for Epic 1, ensure the architecture can support it in future epics.

@@ -13,7 +13,7 @@
 
 ## Current Status
 
-### 2025-05-27 07:19
+### 2025-05-27 07:40
 
 **Status**: Planned
 
@@ -29,96 +29,121 @@
 ## Implementation Steps
 
 - [ ] **Story 3.1: Define Core Content & Access Prisma Schemas**
-  - [ ] Update schema.prisma with Url model
-  - [ ] Add Group model definition
-  - [ ] Create UrlInGroup relation model
-  - [ ] Define UserGroupAccess relation model
-  - [ ] Update User model with necessary relations
+  - [ ] Update schema.prisma with Url model (including `id`, `originalUrl` (unique), `title` (required), `faviconUrl` (optional), `notes` (optional), `mobileSpecificUrl` (optional), timestamps, and relations)
+  - [ ] Add Group model definition (including `id`, `name` (NOT globally unique), `description` (optional), `displayOrder` (optional), timestamps, and relations)
+  - [ ] Create UrlInGroup relation model with `@@unique([urlId, groupId])` constraint and appropriate fields (`groupSpecificTitle`, `displayOrderInGroup`)
+  - [ ] Define UserGroupAccess relation model with `@@unique([userId, groupId])` constraint
+  - [ ] Update User model with necessary relations (`addedUrls`, `createdGroups`, `groupAccesses`)
+  - [ ] Implement proper referential actions (`onDelete: SetNull` for creator fields, `onDelete: Cascade` for join tables)
   - [ ] Generate and apply migrations
   - Success criteria: Complete database schema for content entities with appropriate relations
   - Dependencies: Epic 1 (User Schema)
 
 - [ ] **Story 3.2: Implement Admin API Endpoints for CRUD Operations on URL Groups**
   - [ ] Create API routes under /api/admin/urlGroups
-  - [ ] Implement group creation endpoint
+  - [ ] Implement group creation endpoint (with `name`, `description?`, `displayOrder?`, setting `createdByUserId` to authenticated admin)
   - [ ] Add endpoints for listing, updating, and deleting groups
   - [ ] Ensure proper sorting (displayOrder then name)
-  - [ ] Add comprehensive error handling
+  - [ ] Implement cascade deletion for related UrlInGroup and UserGroupAccess entries
+  - [ ] Add comprehensive error handling with appropriate HTTP status codes and clear JSON error messages
   - Success criteria: Complete, secure API for group management
   - Dependencies: Story 3.1
 
 - [ ] **Story 3.3: Implement Admin API Endpoints for Global URLs**
   - [ ] Create API routes under /api/admin/urls
   - [ ] Implement URL creation with icon auto-discovery
-  - [ ] Add endpoints for listing, updating, and deleting URLs
-  - [ ] Create URL update logic with icon re-check on URL change
-  - [ ] Add proper error handling for duplicates
+  - [ ] Implement enhanced icon auto-discovery logic with 3-5 second timeout, prioritizing higher-resolution images
+  - [ ] Check for favicons, apple-touch-icons, manifest icons, and Open Graph images during auto-discovery
+  - [ ] Skip auto-discovery if `faviconUrl` is manually provided
+  - [ ] Store discovered favicon URL in `Url.faviconUrl` (store link, not re-hosted file)
+  - [ ] Add endpoints for listing (sorted by `title`), updating, and deleting URLs
+  - [ ] Create URL update logic that re-checks for icon on `originalUrl` change (unless explicit `faviconUrl` provided)
+  - [ ] Add proper error handling for duplicates (409 status with descriptive message)
+  - [ ] Set `addedByUserId` to authenticated admin on creation
   - Success criteria: Complete API for global URL management with icon discovery
   - Dependencies: Story 3.1
 
 - [ ] **Story 3.4: Implement Admin API Endpoints for Managing URLs within Groups**
   - [ ] Create nested API routes for URL-in-Group operations
-  - [ ] Implement adding URLs to groups
+  - [ ] Implement adding URLs to groups with validation for existing group and URL
   - [ ] Add endpoints for listing, updating, and removing URLs from groups
   - [ ] Ensure proper sorting by displayOrderInGroup
-  - [ ] Add comprehensive error handling
+  - [ ] Add comprehensive error handling including unique constraint violations
+  - [ ] Ensure deletion does not remove the global URL or group, only the association
   - Success criteria: Complete API for managing URL membership in groups
   - Dependencies: Stories 3.2, 3.3
 
 - [ ] **Story 3.5: Develop Admin UI for URL Group Management**
-  - [ ] Create group management page
-  - [ ] Implement group listing with sorting
+  - [ ] Create group management page at `/admin/url-groups`
+  - [ ] Implement group listing with sorting (displayOrder then name)
   - [ ] Add UI for creating, editing, and deleting groups
-  - [ ] Include confirmation dialogs
+  - [ ] Include confirmation dialogs with clear warnings about cascade deletion effects
+  - [ ] Add links/actions to manage URLs within each group (leads to Story 3.6 UI)
   - [ ] Connect to APIs from Story 3.2
+  - [ ] Implement consistent MUI components with loading indicators and feedback
   - Success criteria: Functional UI for group management
   - Dependencies: Stories 2.1, 3.2
 
 - [ ] **Story 3.6: Develop Admin UI for Managing URLs within Groups**
-  - [ ] Create URL-in-Group management UI
-  - [ ] Implement listing URLs in selected group
-  - [ ] Add UI for adding global URLs to group
-  - [ ] Create UI for reordering and editing group-specific properties
-  - [ ] Add UI for removing URLs from group
+  - [ ] Create URL-in-Group management UI at `/admin/url-groups/[groupId]/urls`
+  - [ ] Implement listing URLs in selected group (sorted by displayOrderInGroup)
+  - [ ] Add UI for adding global URLs to group (searchable selector, options for initial displayOrderInGroup and groupSpecificTitle)
+  - [ ] Create UI for reordering (drag-and-drop or Up/Down buttons) and editing group-specific properties
+  - [ ] Add UI for removing URLs from group with confirmation ("does not delete global URL")
   - [ ] Connect to APIs from Story 3.4
+  - [ ] Add easy navigation back to main group management
   - Success criteria: Functional UI for managing URLs within groups
   - Dependencies: Stories 3.4, 3.5
 
 - [ ] **Story 3.6.5: Develop Admin UI for Global URL Management**
-  - [ ] Create global URL management page
-  - [ ] Implement URL listing with sorting
+  - [ ] Create global URL management page at `/admin/global-urls`
+  - [ ] Implement URL listing with sorting by title
   - [ ] Add UI for creating, editing, and deleting global URLs
   - [ ] Create favicon management UI with auto-discovery feedback
+  - [ ] Implement file upload for custom icons (JPG/PNG/ICO, max 100KB) to `/public/url_favicons/`
+  - [ ] Add UI options to "Upload Custom Icon", "Re-check for Auto-Discovered Icon", and "Remove Icon"
+  - [ ] Implement proper handling of duplicate `originalUrl` errors ("Error: URL exists as '[Existing Title]'...")
+  - [ ] Add confirmation dialogs for deletions with warnings about removal from all groups
   - [ ] Connect to APIs from Story 3.3
   - Success criteria: Functional UI for global URL management
   - Dependencies: Stories 2.1, 3.3
 
 - [ ] **Story 3.7: Implement API for Users to Fetch Their Accessible Groups and URLs**
-  - [ ] Create API endpoint for authenticated users
-  - [ ] Implement data fetching for user-accessible groups
-  - [ ] Add proper data structure with effective titles
-  - [ ] Ensure dates are formatted as ISO strings
-  - [ ] Optimize database queries
+  - [ ] Create API endpoint for authenticated users at `/api/dashboard/urlGroups`
+  - [ ] Implement data fetching for user-accessible groups through UserGroupAccess
+  - [ ] Add proper data structure with effective titles (UrlInGroup.groupSpecificTitle or Url.title)
+  - [ ] Ensure all dates are formatted as ISO strings in JSON response
+  - [ ] Return groups sorted by displayOrder then name, with URLs sorted by displayOrderInGroup
+  - [ ] Optimize database queries to minimize database round-trips
   - Success criteria: API returns personalized content for users
   - Dependencies: Story 3.1
 
 - [ ] **Story 3.8: Implement Global User Menu and Application Header**
-  - [ ] Create AppBar component with conditional display
-  - [ ] Implement User Menu dropdown
-  - [ ] Add theme toggle functionality
-  - [ ] Create mobile hamburger menu
-  - [ ] Ensure responsive design
+  - [ ] Create AppBar component with conditional display (always on mobile, only when menuPosition=TOP on desktop)
+  - [ ] Implement three-section structure for TOP menu: Logo/Name (Left), Central Area for Navigation (Center-Left), User Menu Button (Right)
+  - [ ] Implement User Menu dropdown with Dashboard, Settings, Admin links (conditional), Theme Toggle, and Logout
+  - [ ] Add theme toggle functionality with persisted preferences
+  - [ ] Create mobile hamburger menu that toggles drawer navigation
+  - [ ] Ensure responsive design with appropriate layout changes for different screen sizes
   - Success criteria: Consistent header with user menu across application
   - Dependencies: Epic 1 (Authentication)
 
 - [ ] **Story 3.9: Implement User Dashboard UI with Multi-Iframe Handling**
-  - [ ] Create dashboard page with data fetching
-  - [ ] Implement mobile drawer navigation
-  - [ ] Add URL item visual states
-  - [ ] Create multi-iframe management
-  - [ ] Implement initial iframe loading
-  - [ ] Add group state persistence
-  - [ ] Handle broken favicons gracefully
+  - [ ] Create dashboard page with data fetching from Story 3.7
+  - [ ] Implement mobile drawer navigation (accordion groups/URLs, selected group expanded by default)
+  - [ ] Ensure selecting a URL closes the mobile drawer
+  - [ ] Add URL item visual states:
+    - [ ] Non-active/non-loaded URLs: opacity 0.5
+    - [ ] Non-active/loaded URLs: opacity 1.0
+    - [ ] Active/loaded URLs: opacity 1.0 + blue underline (Top Menu) or blue right border (Side Menu & Mobile Drawer)
+  - [ ] Create multi-iframe management system:
+    - [ ] One iframe per unique URL kept in DOM
+    - [ ] Use visibility:hidden and position:absolute for inactive iframes to preserve state
+    - [ ] Add proper sandbox attributes: `allow-scripts allow-same-origin allow-popups allow-forms allow-downloads allow-popups-to-escape-sandbox`
+  - [ ] Implement initial iframe loading (first URL of first group)
+  - [ ] Add group state persistence during current session
+  - [ ] Handle broken favicons gracefully by showing title prominently
+  - [ ] Ensure main layout fits 100% viewport height, no main scrollbars
   - Success criteria: Functional dashboard displaying URLs in iframes with state indicators
   - Dependencies: Stories 3.7, 3.8
 
@@ -140,11 +165,12 @@
 
 ## Technical Considerations
 
-- Iframe security requires proper sandbox attributes
-- State preservation between iframe switching needs careful implementation
-- Icon auto-discovery requires robust error handling
+- Iframe security requires proper sandbox attributes (`allow-scripts allow-same-origin allow-popups allow-forms allow-downloads allow-popups-to-escape-sandbox`)
+- State preservation between iframe switching needs careful implementation using CSS visibility and positioning
+- Icon auto-discovery requires robust error handling with reasonable timeouts (3-5 seconds)
 - Proper error handling for unique constraints in database
 - Performance optimization for user content fetching
+- File storage paths: favicon files should be stored in `/public/url_favicons/`
 
 ## Progress History
 
@@ -155,3 +181,23 @@
 - ❌ Issues: None at this stage
 - 📚 Documentation: Will need comprehensive documentation for URL/Group schemas and iframe handling
 - ⏭️ Next: This plan enables core content management and display functionality
+
+### 2025-05-27 07:40 - Plan Enhancement
+
+- ✓ Completed: Updated plan with more detailed context from project documentation
+- 🤔 Decisions: Added specific implementation details for each story based on PRD and epic documentation
+- ❌ Issues: None at this stage
+- 📚 Documentation: Added clarification on technical requirements and file storage paths
+- ⏭️ Next: Proceed with implementation after completing Epics 1 and 2
+
+## Future Follow-up Items
+
+1. **Iframe Interaction Behaviors** - The more advanced iframe interactions (click to activate/reload, long-press to unload with visual progress bar) are part of Epic 4, but we should ensure our iframe implementation in Story 3.9 is compatible with these future enhancements.
+
+2. **Desktop Side Menu Navigation** - While we're implementing the "Top Menu" experience in Epic 3, the complete "Side Menu" navigation experience is planned for Epic 4 (Story 4.4). Our implementation should lay the groundwork for this.
+
+3. **User Settings Integration** - Story 4.1 will implement persistent user settings for layout and theme. We should ensure our AppBar implementation in Story 3.8 can adapt to these settings when they become available.
+
+4. **Mobile Haptic Feedback** - For the long-press interaction planned in Epic 4, we should research how to implement haptic feedback on mobile devices.
+
+5. **Performance Monitoring** - Consider adding monitoring for iframe loading performance to identify any potential issues with external sites.

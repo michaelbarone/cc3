@@ -9,6 +9,9 @@
   - Build admin user management interface
   - Create application branding management
   - Implement user registration control setting
+  - Define SystemSetting model for persisting application settings
+  - Implement confirmation dialogs for critical actions
+  - Create safeguards for user management operations
 
 ## Current Status
 
@@ -24,51 +27,124 @@
   - [ ] Admin dashboard structure documentation
   - [ ] User management flows
   - [ ] Branding configuration guide
+  - [ ] SystemSetting model documentation
+  - [ ] API response formats and error handling
 
 ## Implementation Steps
 
 - [ ] **Story 2.1: Create Basic Admin Dashboard Layout and Navigation**
-  - [ ] Create admin route protection logic
-  - [ ] Implement admin layout component
-  - [ ] Build persistent left sidebar navigation
-  - [ ] Add ordered navigation links for all admin functions
-  - [ ] Create admin landing page
+  - [ ] Create admin route protection logic (extending middleware from Story 1.6)
+  - [ ] Implement admin layout component (using MUI v6)
+  - [ ] Build persistent left sidebar navigation (fixed width, always expanded on desktop/tablet)
+  - [ ] Add ordered navigation links for all admin functions (following the specified order)
+  - [ ] Create admin landing page with welcome message
+  - [ ] Implement visual indication for currently active/selected admin section
+  - [ ] Ensure responsive design (note: admin sidebar doesn't need to be collapsible on mobile for MVP)
   - Success criteria: Admin dashboard with secure routes and consistent navigation
   - Dependencies: Epic 1 (Authentication, Middleware)
 
 - [ ] **Story 2.2: Implement User Profile Management (Self-Service)**
-  - [ ] Create dedicated profile page
-  - [ ] Add read-only user name display
-  - [ ] Implement password change section
-  - [ ] Create avatar management section (upload, preview, remove)
-  - [ ] Build backend APIs for profile operations
+  - [ ] Create dedicated profile page at `/settings/profile`
+  - [ ] Add read-only user name display (disabled MUI TextField)
+  - [ ] Implement password change section:
+    - [ ] Add fields for current password (if set), new password, confirm password
+    - [ ] Implement client-side validation (passwords match, validation based on admin app settings)
+    - [ ] Add inline error messages
+  - [ ] Create avatar management section:
+    - [ ] Implement current avatar display or initials fallback
+    - [ ] Add drag-and-drop upload and file select button (JPG/PNG/GIF, max 1MB)
+    - [ ] Implement optional preview
+    - [ ] Add "Remove Avatar" button with confirmation dialog
+  - [ ] Implement avatar fallback logic:
+    - [ ] Use 1st letter of username or 1st letter of first 2 words if space exists
+    - [ ] Generate background color based on hash of username
+  - [ ] Add Layout & Appearance Preferences section (from Story 4.1)
+  - [ ] Build backend APIs for profile operations:
+    - [ ] Password change endpoint with validation
+    - [ ] Avatar upload endpoint with file handling
+    - [ ] Avatar removal endpoint
+  - [ ] Implement UI state management for async operations (loading, success, error)
+  - [ ] Add success/error feedback via MUI Snackbar/Alert
   - Success criteria: Users can manage their profiles (password, avatar)
   - Dependencies: Epic 1 (Authentication, User Schema)
 
 - [ ] **Story 2.3: Implement Admin User Management**
-  - [ ] Create user management page
-  - [ ] Build user list display with all required columns
-  - [ ] Implement "Create New User" functionality
-  - [ ] Add "Edit User" capability
-  - [ ] Create backend APIs for user management
+  - [ ] Create user management page at `/admin/users`
+  - [ ] Build user list display with all required columns:
+    - [ ] Avatar (with fallback)
+    - [ ] Login Name
+    - [ ] Role
+    - [ ] Status (Active/Disabled as MUI Chip)
+    - [ ] Last Login (formatted)
+    - [ ] Created At (formatted)
+    - [ ] Actions column
+  - [ ] Implement "Create New User" functionality:
+    - [ ] Add prominent green MUI Button
+    - [ ] Create dialog with form fields (name, role)
+    - [ ] Implement client-side validation
+    - [ ] Add confirmation dialog before submission
+  - [ ] Add "Edit User" capability:
+    - [ ] Create dialog with pre-filled fields
+    - [ ] Add confirmation dialog before saving changes
+  - [ ] Implement disabled "Delete User" button with tooltip
+  - [ ] Add safeguards:
+    - [ ] Prevent admin from changing own role if sole active admin
+    - [ ] Prevent admin from disabling own account if sole active admin
+  - [ ] Create backend APIs for user management:
+    - [ ] GET endpoint to list all users
+    - [ ] POST endpoint to create new user (with automatic UserSetting creation)
+    - [ ] PUT endpoint to update user details
+  - [ ] Integrate with user registration control setting (Story 2.5)
+  - [ ] Implement UI refresh after operations
+  - [ ] Add success/error feedback via MUI Snackbar
   - Success criteria: Admins can list, create, and edit users (name, role, status)
   - Dependencies: Story 2.1, Epic 1 (User Schema)
 
 - [ ] **Story 2.4: Implement Application Branding Management**
-  - [ ] Create branding management page
-  - [ ] Add application name customization
-  - [ ] Implement logo image upload
-  - [ ] Add favicon image upload
-  - [ ] Build backend APIs for branding management
+  - [ ] Define SystemSetting model fields for branding:
+    - [ ] appName (String, default "ControlCenter")
+    - [ ] logoPath (String, optional)
+    - [ ] faviconPath (String, optional)
+  - [ ] Create branding management page at `/admin/branding`
+  - [ ] Add application name customization:
+    - [ ] MUI TextField for app name
+    - [ ] Save button with confirmation dialog
+  - [ ] Implement logo image upload:
+    - [ ] Create drag-and-drop zone and file select button
+    - [ ] Add client-side validation (JPG/PNG/SVG, max 1MB)
+    - [ ] Implement optional preview
+    - [ ] Add "Remove Custom Logo" option with confirmation
+  - [ ] Add favicon image upload:
+    - [ ] Create drag-and-drop zone and file select button
+    - [ ] Add client-side validation (ICO/PNG, defined dimensions)
+    - [ ] Add "Remove Custom Favicon" option with confirmation
+  - [ ] Build backend APIs for branding management:
+    - [ ] GET endpoint to retrieve current branding settings
+    - [ ] PUT endpoint to update branding settings
+    - [ ] POST endpoints for file uploads
+    - [ ] DELETE endpoints for removing custom files
+  - [ ] Implement dynamic application of branding settings in UI
+  - [ ] Create proper file storage strategy in `/public/branding/`
+  - [ ] Add success/error feedback via MUI Snackbar
   - Success criteria: Admins can customize app name, logo, and favicon
   - Dependencies: Story 2.1
 
 - [ ] **Story 2.5: Implement User Registration Control Setting**
-  - [ ] Add section to admin settings page
-  - [ ] Create UI for toggling user creation permission
-  - [ ] Implement persistence mechanism
-  - [ ] Update user creation UI based on setting
-  - [ ] Build backend API for settings management
+  - [ ] Define SystemSetting model field:
+    - [ ] allowAdminUserCreation (Boolean, default true)
+  - [ ] Add section to admin settings page at `/admin/settings`
+  - [ ] Create UI for toggling user creation permission:
+    - [ ] MUI Switch for "Allow New User Creation by Admins"
+    - [ ] Display current state
+    - [ ] Add confirmation dialog before applying changes
+  - [ ] Implement persistence mechanism using SystemSetting model
+  - [ ] Update user creation UI based on setting:
+    - [ ] Hide/disable "Create New User" button when disabled
+    - [ ] Add backend validation to reject creation when disabled
+  - [ ] Build backend API for settings management:
+    - [ ] GET endpoint to retrieve current settings
+    - [ ] PUT endpoint to update settings
+  - [ ] Add success/error feedback via MUI Snackbar
   - Success criteria: Admins can enable/disable user creation with confirmation
   - Dependencies: Story 2.1, Story 2.3
 
@@ -80,6 +156,9 @@
 - Application branding configuration
 - System settings management
 - Backend APIs for all admin functions
+- SystemSetting model for persisting application settings
+- Confirmation dialog components for critical actions
+- File upload and processing utilities
 
 ## Dependencies
 
@@ -87,14 +166,21 @@
 - Material UI v6
 - File upload handling (formidable)
 - Image processing
+- Zod for API validation
 
 ## Technical Considerations
 
 - Admin routes require strict access control
-- File uploads need proper validation and security
-- Avatar and branding images require proper storage strategy
+- File uploads need proper validation and security (type, size, dimensions)
+- Avatar and branding images require proper storage strategy (overwriting old files)
 - User management must include safeguards (can't remove last admin)
 - Settings must be properly persisted and retrieved
+- Confirmation dialogs must be implemented for critical actions
+- API responses should include proper error handling and validation feedback
+- UI should provide clear feedback for async operations (loading, success, error)
+- Admin interfaces should be responsive, though primarily focused on desktop/tablet
+- SystemSetting model should have a consistent structure for different setting types
+- File paths should be stored consistently and accessed efficiently
 
 ## Progress History
 
@@ -105,3 +191,13 @@
 - ❌ Issues: None at this stage
 - 📚 Documentation: Will need to document admin interfaces, user management, and branding configuration
 - ⏭️ Next: This plan enables admin functionality and multi-user capabilities
+
+## Follow-up Considerations
+
+- **Responsive Design Strategy:** While admin interfaces are primarily desktop/tablet focused, consider mobile usability testing
+- **Performance Monitoring:** Track performance of user list loading and file uploads with larger data sets
+- **Security Review:** Conduct a security review of file upload implementation
+- **Accessibility:** Ensure admin interfaces meet basic accessibility requirements
+- **Error Handling:** Develop a consistent approach to error handling across all admin components
+- **Documentation:** Create user guides for admin operations and profile management
+- **Testing:** Develop comprehensive testing strategy for user management operations, especially the safeguards
