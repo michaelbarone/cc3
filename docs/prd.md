@@ -45,7 +45,7 @@ This section summarizes the core functionalities for the ControlCenter MVP, deri
 
 **I. Core Application & User Foundation:**
     * **Project Setup:** Standardized Next.js project with TypeScript, core tooling (ESLint, Prettier), version control enhancements (Husky, commitlint), and Docker containerization.
-    * **Database Schema:** Prisma ORM with SQLite defining models for Users (with `isActive` status, `lastLoginAt`), User Settings (for theme and menu position preferences), URLs (with required title and optional server-hosted `faviconUrl`), Groups, URL-in-Group relationships (with group-specific titles), User-Group Access, and Activity Logs (with structured JSON details).
+    * **Database Schema:** Prisma ORM with SQLite defining models for Users (with `isActive` status, `lastLoginAt`), User Settings (for theme and menu position preferences), URLs (with required title and optional server-hosted `faviconUrl`), Groups, URL-in-Group relationships (with group-specific titles), User-Group Access, Activity Logs (with structured JSON details), and System Settings (for app-wide configurations like log retention). Referential actions like `onDelete: SetNull` for creator fields and `onDelete: Cascade` for join table records are defined.
     * **Authentication:**
         * User identification by unique `name` with an optional password.
         * NextAuth.js for credential-based login.
@@ -61,7 +61,7 @@ This section summarizes the core functionalities for the ControlCenter MVP, deri
             * Option to restore application state from a backup file (button present but disabled for Epic 1 MVP, with tooltip "Full restore functionality will be enabled with Admin features.").
             * Option for the default 'admin' user to log in without a password (via their user tile).
         * After first passwordless admin login, user is redirected to a mandatory password setup page (`/first-run/set-admin-password`).
-            * If admin cancels password setup, they are logged out, and the system remains in "first run" state (admin `lastLoginAt` not updated).
+            * If admin cancels password setup from this page, they are logged out, and the system remains in "first run" state (admin `lastLoginAt` not updated).
         * "First run" state concludes (and admin `lastLoginAt` updated) only after initial admin password has been successfully set.
     * **Authorization & Access Control:**
         * Role-based access (ADMIN/USER).
@@ -69,34 +69,34 @@ This section summarizes the core functionalities for the ControlCenter MVP, deri
         * Middleware checks for authentication and `User.isActive` status from session/token; redirects to login if unauthenticated or inactive.
         * Client-side proactive session validation (e.g., in root layout) checks `session.user.isActive` and logs out/redirects if false.
 
-**II. User Interface - Global Elements:**
+**II. User Interface - Global Elements & Personalization:**
     * **Application Header (AppBar - Conditional Display & Structure):**
         * Rendered on mobile (always) and on desktop/tablet if user's `menuPosition` preference is "TOP". Hidden on desktop/tablet if preference is "SIDE".
         * Displays application logo/name (from branding settings).
         * Includes a User Menu button (avatar/name) on the right, providing dropdown access to: Dashboard link, User Settings link, Admin Area link (conditional on ADMIN role), Theme Toggle (persists choice of Light/Dark/System), Logout button.
         * On mobile, includes a hamburger icon on the left to toggle the main navigation drawer.
-        * If "Top Menu" preference is active on desktop/tablet, AppBar has a central area for rich URL/Group navigation.
-    * **User Preferences (Persisted):**
-        * Users can set preferred desktop menu position (Top/Side).
-        * Users can set preferred theme (Light/Dark/System).
-        * Preferences stored in `UserSetting` table and available in user session.
+        * If "Top Menu" preference is active on desktop/tablet, AppBar has a central area for rich URL/Group navigation content (from Story 4.3).
+    * **User Preferences (Persisted in `UserSetting` table):**
+        * Users can set preferred desktop menu position ("Top Menu" / "Side Menu").
+        * Users can set preferred theme ("Light" / "Dark" / "System").
+        * Preferences stored via API and available in user session for immediate UI adaptation.
+        * User Settings page (`/settings/profile`) provides UI for these choices with previews (static images for menu, themed boxes for theme).
 
 **III. User Dashboard & URL Interaction (adapts to Menu Preference):**
-    * **Personalized Content Fetching:** API endpoint (`/api/dashboard/urlGroups`) for authenticated users to fetch their accessible URL Groups and contained URLs (ordered, with effective titles, global favicons).
+    * **Personalized Content Fetching:** API endpoint (`/api/dashboard/urlGroups`) for authenticated users to fetch their accessible URL Groups and contained URLs (ordered, with effective titles, global favicons; dates as ISO strings).
     * **Desktop "Top Menu" Navigation (if preference is "TOP"):**
         * Rich, interactive "hover-to-expand" menu within the AppBar's central area.
         * Normal state: displays current group name + its horizontal URL items.
         * Hover state: expands to show other groups + their URLs.
-        * Clicking a URL updates selection and collapses expansion.
         * Responsive for tablets (condensed, scrollable URL rows, "more" button for overflow).
     * **Desktop "Side Menu" Navigation (if preference is "SIDE"):**
         * Persistent, full-height "Side Navigation Panel" on the left (replaces AppBar on desktop/tablet).
         * Contains: App Logo/Name (top), vertical accordion-style URL/Group navigation (middle), User Menu (bottom, as accordion/links).
-        * Collapsible on desktop/tablet to an icons-only view (groups show initials, URLs show favicons, tooltips on hover) via a toggle button in the panel.
+        * Collapsible on desktop/tablet to an icons-only view (groups show initials avatar, URLs show favicons, tooltips on hover) via a toggle button in the panel.
     * **Mobile Navigation (Always Drawer-based):**
-        * Hamburger icon in AppBar toggles a left-side drawer.
+        * Hamburger icon in AppBar toggles a left-side MUI `Drawer`.
         * Drawer contains URL/Group navigation (accordion style: groups expand to show URLs, mimicking desktop Side Menu content).
-        * Selecting a URL closes the drawer.
+        * Selecting a URL closes the drawer. Active URL indicator: blue right side border.
     * **URL Item Visual State Indicators (Universal in all menus):**
         * Opacity `0.5` for "unloaded" URLs.
         * Opacity `1.0` for "loaded" URLs (iframe content has been loaded, even if hidden).
@@ -112,57 +112,32 @@ This section summarizes the core functionalities for the ControlCenter MVP, deri
         * Single click on URL item: Activates it (loads if unloaded using `src` from `data-src`, makes visible). If already active & loaded, reloads its content.
         * Long press (2 seconds) on URL item: Unloads its iframe content (sets `src=""`, updates state to "unloaded"). Visual progress bar (orange, 2-3px, bottom edge of item) during press. Haptic feedback on mobile.
         * If active URL is unloaded: iframe area shows centered "Content Unloaded" message + "Reload Content" button (MUI outlined with refresh icon).
-    * **UI Feedback:** Broken favicons in URL lists revert to showing title prominently. Neutral UI if no groups are assigned (console log for dev). Selected group state persists during current session (resets on full reload/new login).
+    * **UI Feedback:** Broken favicons in URL lists revert to showing title prominently. Neutral UI if no groups are assigned (console log for dev). Selected group state persists during current active session (resets on full reload/new login).
 
 **IV. User Settings (Self-Service - `/settings/profile` page):**
     * Single, scrollable page with sections.
     * **Profile Info:** View read-only login `name` (styled as disabled MUI `TextField`).
-    * **Password Change:** "Current Password" (if set), "New Password," "Confirm New Password." Inline error messages. Basic complexity: min 8 chars for MVP.
-    * **Avatar Management:** Display current avatar (or initials fallback: 1st letter of name, or 1st of first 2 words if space; background color hashed from name). "Upload/Change Avatar" (supports drag-and-drop & file select button; JPG/PNG/GIF, max 1MB). Optional preview. "Remove Avatar" option. Server-hosted in `/public/avatars/`.
-    * **Layout & Appearance Preferences:**
-        * Select preferred desktop menu position ("Top Menu" / "Side Menu") with small static image previews.
-        * Select preferred theme ("Light" / "Dark" / "System") with themed preview boxes (showing bg color, themed text "AppName" & logo placeholder, theme name text; selected theme preview has blue highlight).
-        * Single "Save Layout & Appearance Preferences" button for this section. Changes apply immediately.
+    * **Password Change:** "Current Password" (if set), "New Password," "Confirm New Password." Inline error messages. MVP password complexity: minimum 8 characters.
+    * **Avatar Management:** Display current avatar (or initials fallback: 1st letter of name, or 1st of first 2 words if space; background color hashed from name). "Upload/Change Avatar" (supports drag-and-drop & file select button; JPG/PNG/GIF, max 1MB). Optional preview. "Remove Avatar" option. Server-hosted in `/public/avatars/`, path in `User.avatarUrl`. Old avatar file overwritten/deleted.
+    * **Layout & Appearance Preferences (persisted via Story 4.1):** Menu position and theme selection with previews and save button.
 
 **V. Administrator Functions (Admin Dashboard - `/admin/*` routes):**
     * **Layout & Navigation:** Persistent Left Sidebar (fixed width, always expanded on desktop/tablet) with direct links to admin functions. Main content area to the right. Common CRUD page patterns (MUI Table, green "Create" button, Edit/Delete icon buttons in actions column, forms in Dialogs).
-    * **Admin Sidebar Links Order:** Admin Dashboard (Overview), User Management, URL Groups, Global URLs, Application Branding, Application Settings, System Operations (B&R), System Statistics, Activity Log.
-    * **User Management:**
-        * List all users (name, role, avatar, `isActive` status, dates).
-        * Create new users (name, role; `passwordHash` is null initially, `isActive: true` default).
-        * Edit existing users' login `name` (ensuring uniqueness).
-        * Edit existing users' `role` (ADMIN/USER), with safeguard for sole admin.
-        * Disable/Enable user accounts (`User.isActive` flag). Disabling prevents login.
-        * Confirmation dialogs for critical actions.
-    * **URL Group Management (Admin UI):**
-        * Create, list (sorted by `displayOrder` then `name`), update (name, description, displayOrder), and delete URL Groups. Confirmation dialogs.
-    * **Global URL Management (Admin UI - new dedicated page `/admin/global-urls`):**
-        * List all global URLs. Create new global URLs (`originalUrl`, `title` required). Edit global properties (`originalUrl`, `title`, `notes`, `mobileSpecificUrl`). Delete global URLs.
-        * Manage global `Url.faviconUrl`: UI shows current (auto-fetched or manually uploaded). Options to "Upload Custom Icon" (drag-and-drop + button; JPG/PNG/ICO, max 100KB; to `/public/url_favicons/`), "Re-check for Auto-Discovered Icon", "Remove Icon".
-        * Icon auto-fetch (backend Story 3.3 attempts on new/updated `originalUrl`): UI displays auto-discovered icon preview and `Snackbar` on fetch failure.
-        * UI handles duplicate `originalUrl` error from API with specific message.
-    * **Managing URLs *within* a Selected Group (Admin UI - accessed from URL Groups page):**
-        * Add existing global URLs to a group (searchable selector).
-        * Remove URLs from a group.
-        * Reorder URLs within a group (`UrlInGroup.displayOrderInGroup`).
-        * Edit `UrlInGroup.groupSpecificTitle`.
-        * Confirmation dialogs.
-    * **Application Branding Management:**
-        * Customize application name. Upload app logo, upload app favicon (drag-and-drop + button; JPG/PNG/SVG for logo, ICO/PNG for app favicon; defined size limits). Persisted in `SystemSetting`, files in `/public/branding/`.
-        * Confirmation dialogs.
-    * **Application Settings Page (groups multiple settings):**
-        * **User Registration Control:** Admin can toggle a system setting (`allowAdminUserCreation: Boolean @default(true)` in `SystemSetting`) to allow/disallow creation of new users by admins. Confirmation dialog.
+    * **Admin Sidebar Links (Ordered):** Admin Dashboard (Overview), User Management, URL Groups, Global URLs, Application Branding, Application Settings, System Operations (B&R), System Statistics, Activity Log.
+    * **User Management:** List users (name, role, avatar, `isActive` status, dates). Create new users (name, role; `passwordHash: null`, `isActive: true` default). Edit users' login `name` (unique). Edit users' `role` (ADMIN/USER, sole admin safeguard). Disable/Enable user accounts (`User.isActive`). Confirmation dialogs.
+    * **URL Group Management (Admin UI):** Create, list (sorted `displayOrder` then `name`), update (name, desc, displayOrder), delete URL Groups. Confirmations.
+    * **Global URL Management (Admin UI - page `/admin/global-urls`):** List global URLs. Create new global URLs (`originalUrl`, `title` req). Edit global properties. Delete global URLs. Manage global `Url.faviconUrl`: UI shows current (auto-fetched or uploaded), options to "Upload Custom Icon" (drag-and-drop + button; JPG/PNG/ICO, max 100KB; to `/public/url_favicons/`), "Re-check for Auto-Discovered Icon", "Remove Icon". Icon auto-fetch (backend Story 3.3 attempts on new/updated `originalUrl`): UI displays preview & `Snackbar` on fail. Handles duplicate `originalUrl` error with specific message. Confirmations.
+    * **Managing URLs *within* a Selected Group (Admin UI - accessed from URL Groups page):** Add existing global URLs (searchable selector). Remove from group. Reorder (`UrlInGroup.displayOrderInGroup`). Edit `UrlInGroup.groupSpecificTitle`. Confirmations.
+    * **Application Branding Management:** Customize app name, upload app logo, upload app favicon (drag-and-drop + button; JPG/PNG/SVG for logo, ICO/PNG for app favicon; defined size limits). Persisted in `SystemSetting`, files in `/public/branding/`. Confirmations.
+    * **Application Settings Page:**
+        * **User Registration Control:** Admin can toggle system setting (`allowAdminUserCreation: Boolean @default(true)` in `SystemSetting`) to allow/disallow creation of new users by admins. Confirmation dialog.
         * **Log Retention Policy:** Admin can configure `logRetentionDays` (default 180, 0=forever; in `SystemSetting`). Confirmation dialog. UI button "Prune Logs Now" to trigger manual pruning.
     * **System Operations (Backup & Restore):**
         * **Backup:** Asynchronous API & UI to create full backup (`.zip`: SQLite DB, all assets, manifest with DB schema version & app version). UI shows "initiated" toast, manual refresh for backup list.
         * **Backup File Management:** API & UI to list existing backup files (name, date, size), download a backup, delete a backup (with confirmation).
         * **Restore:** Asynchronous API & UI to restore from an uploaded `.zip`. UI suggests creating fresh backup first. Stern confirmation. Handles "initiated" toast. UI shows overlay "Restore in progress... app may restart..." with refresh button. Backend validates, reads manifest, restores DB then runs Prisma migrations, then restores assets.
-    * **System Statistics Display:**
-        * Admin dashboard section shows: Total Users, Total Groups, Total Global URLs. Data via API. Read-only. Optional refresh.
-    * **User Activity Tracking Log:**
-        * `ActivityLog` Prisma model (stores timestamp, actor, action, structured `details` as JSON, target, success).
-        * Backend service logs key actions (logins, admin CRUD, branding, B/R, user settings, system log pruning).
-        * Admin UI to view paginated activity log (reverse chronological). Details from JSON parsed and displayed. Basic client-side search on displayed data if MUI table supports.
+    * **System Statistics Display:** Admin dashboard section shows: Total Users, Total Groups, Total Global URLs. Data via API. Read-only. Optional refresh.
+    * **User Activity Tracking Log:** `ActivityLog` Prisma model (stores timestamp, actor, action, structured `details` as JSON, target, success). Backend service logs key actions. Admin UI to view paginated activity log (reverse chronological). Details from JSON parsed/displayed. Basic client-side search on displayed data if MUI table supports easily.
     * **Automated Log Pruning:** Backend scheduled task (`node-cron`) prunes `ActivityLog` based on `logRetentionDays` policy. Pruning action itself logged to `ActivityLog`.
 
 ---
@@ -177,62 +152,57 @@ This section summarizes the core functionalities for the ControlCenter MVP, deri
     * Intuitive navigation. Clear visual feedback for actions.
     * Desktop/tablet first design approach, with fully functional responsive mobile experience (optimized layouts, e.g., adaptive/collapsible menus).
 * **Security:**
-    * Standard input sanitization for all user-provided data (e.g., URL titles, group names) to prevent XSS.
+    * Standard input sanitization for all user-provided data to prevent XSS.
     * Secure session management via NextAuth.js (JWT, HTTP-only cookies).
     * Role-based access control for admin functions.
-    * Passwordless login for new users (admin-created) and initial admin; users set their own passwords thereafter. Password complexity for self-set passwords: minimum 8 characters for MVP (admin config of rules is future).
+    * Backend API input validation using Zod.
+    * Standard best-practice security headers for API responses where appropriate and not overly complex for MVP.
+    * Safe filename generation for uploads.
 * **Reliability:**
     * High availability for home use (designed for 24/7 operation on local server).
     * Data integrity for all user data, URLs, groups, and settings.
     * Backup and restore functionality to prevent data loss.
+    * Use of database transactions (Prisma `$transaction`) for multi-step database write operations.
     * Graceful error handling in UI and API.
 * **Maintainability:**
-    * Adherence to defined tech stack (Next.js, TypeScript, Prisma, MUI).
+    * Adherence to defined tech stack. Backend service layer pattern for business logic. Standardized imports for utilities.
     * Code quality following best practices (DRY, ESLint, Prettier, Conventional Commits).
-    * Logical project structure and well-commented code where necessary for readability and future expansion.
+    * Logical project structure and well-commented code where necessary.
 * **Accessibility:**
-    * Basic accessibility considerations for MVP (e.g., semantic HTML where possible, aiming for reasonable color contrast in default themes, keyboard navigation for core MUI components).
+    * Basic accessibility considerations for MVP (semantic HTML, reasonable color contrast in default themes, keyboard navigation for core MUI components).
     * Comprehensive accessibility (e.g., WCAG AA+) is a post-MVP goal.
 
 ---
 
 ## 4. User Interaction and Design Goals
 
-* **Overall Vision & Experience:**
-    * The UI and overall experience should be: simple, focused, clean, uncluttered, and easy to understand, embodying a "nice clean modern UX look and feel." The application should feel efficient and intuitive.
+* **Overall Vision & Experience:** Simple, focused, clean, uncluttered, easy to understand, modern UX. Efficient and intuitive.
 * **Key Interaction Paradigms:**
-    * **Dashboard URL Interaction (Epic 4):** User interaction with URL menu items will involve single-click (activate/load/reload) and long-press (2s, unload with orange progress bar along bottom edge of item, haptic feedback on mobile). URL menu items will show visual states (opacity 0.5 for unloaded, 1.0 for loaded; blue underline for active in Top Menu, blue right border for active in Side Menu/Mobile Drawer).
-    * **URL/Group Management (Admin):** Primarily via forms, tables, and dialogs within the admin panel.
+    * **Dashboard URL Interaction:** Single-click (activate/load/reload). Long-press (2s, unload, orange progress bar along bottom edge of item, haptic on mobile). URL menu items show visual states (opacity 0.5 unloaded, 1.0 loaded; blue underline for active in Top Menu, blue right border for active in Side Menu/Mobile Drawer). "Content Unloaded" message in iframe area with "Reload" button (MUI outlined with refresh icon).
     * **Menu Navigation (User Dashboard):**
         * Desktop: User-selectable preference (Top Menu or Side Menu) via User Settings.
-            * Top Menu: `AppBar` contains `[Logo/Name (Left)] [Hover-to-expand URL/Group Navigation (Center-Left)] [User Menu Button (Right)]`. Hover-expand area shows current group + its URLs, then other groups + their URLs. Clicking URL updates main display & collapses.
-            * Side Menu: Top `AppBar` is hidden. Full-height Left Side Panel contains `[Logo/Name (Top)] [Accordion URL/Group Navigation (Middle)] [User Menu (Bottom, as accordion/links)]`. Panel is collapsible on desktop/tablet to icons-only (groups show initials, URLs show favicons, tooltips on hover) via toggle in panel.
-        * Mobile: Always a collapsible left-side MUI `Drawer` (accordion groups/URLs) toggled by a hamburger icon in a persistent top `AppBar`. `AppBar` also contains App Name/Logo and User Menu button.
-* **Core Screens/Views (Conceptual for MVP):**
-    * **Login Screen (`/login`):** Tile-based UI. User tiles (avatar/initials, username, password indicator) in responsive grid. Clicking passwordless tile logs in. Clicking password-protected tile transforms it (inner section slides up, username moves to top, password form with "Remember Me" checkbox & login button revealed). Clicking outside active tile reverts it. Page-level alert for login errors. During "first run," offers conditional options (disabled "Restore" button, passwordless admin login via admin tile).
-    * **Main Dashboard (`/dashboard`):** Primary workspace. Displays chosen navigation menu. Contains main iframe display area. Iframe area shows "Content Unloaded" message + "Reload Content" button (MUI outlined with refresh icon) if active URL is unloaded.
-    * **User Settings (`/settings/profile`):** Single scrollable page with sections: Profile Info (read-only login `name` as disabled field), Change Password (inline errors), Avatar Management (drag-and-drop + button for upload), Layout & Appearance Preferences (Menu Position choice with static image previews, Theme choice with themed preview boxes; single "Save" button for this section).
-    * **Admin Area (`/admin/*`):** Accessed via User Menu (if Admin). Persistent Left Sidebar (fixed width, always expanded on desktop/tablet) for navigation to admin pages. Main content area to the right.
-        * Admin Pages: Admin Dashboard/Overview, User Management, URL Groups, Global URLs, Application Branding, Application Settings (groups Registration Control, Log Retention), System Operations (Backup & Restore), System Statistics, Activity Log.
-    * **First Run Admin Password Setup Page (`/first-run/set-admin-password`):** Modal page for initial admin to set their password after first passwordless login. Has "Cancel Setup" button which reverts to first-run login state.
-* **Accessibility Aspirations (MVP):**
-    * Adherence to best practices regarding color contrast in default light/dark/system themes.
-    * Strive for reasonable keyboard navigation for core tasks.
-* **Branding Considerations (MVP):**
-    * Application defaults to clean light/dark themes. "System" theme option respects OS preference (on load/reload).
-    * Admin can customize application name, logo, and favicon.
-    * Theming engine designed to easily accommodate additional themes later.
-* **Target Devices/Platforms:**
-    * Web application. Desktop/tablet first design, with fully functional responsive mobile experience.
+            * Top Menu: `AppBar` contains `[Logo/Name (Left)] [Hover-to-expand URL/Group Navigation (Center-Left)] [User Menu Button (Right)]`. Hover-expand area shows current group + its URLs, then other groups + their URLs.
+            * Side Menu: Top `AppBar` hidden. Full-height Left Side Panel: `[Logo/Name (Top)] [Accordion URL/Group Navigation (Middle)] [User Menu (Bottom, as accordion/links)]`. Panel collapsible on desktop/tablet to icons-only (groups show initials avatar, URLs show favicons, tooltips) via toggle in panel.
+        * Mobile: Always a collapsible left-side MUI `Drawer` (accordion groups/URLs, active URL has blue right border) toggled by hamburger icon in persistent top `AppBar`.
+* **Core Screens/Views (Conceptual):**
+    * **Login Screen (`/login`):** Tile-based UI. User tiles (avatar/initials - 1st letter of name or 1st of 2 words, bg color hashed from name; username; password lock icon). Clicking passwordless logs in. Clicking password-protected tile: inner section slides up, username moves to top, password form ("Remember Me" checkbox, login button) revealed. Clicking outside active tile reverts it. Page-level MUI `Alert` or Snackbar for login errors. During "first run," offers disabled "Restore" button and passwordless admin login path.
+    * **Main Dashboard (`/dashboard`):** Primary workspace. Displays chosen navigation menu. Contains main iframe display area.
+    * **User Settings (`/settings/profile`):** Single scrollable page. Sections: Profile Info (read-only login `name` as disabled field), Change Password (inline errors), Avatar Management (drag-and-drop + button for upload; JPG/PNG/GIF, max 1MB), Layout & Appearance Preferences (Menu Position choice with static image previews, Theme choice with themed preview boxes; single "Save" button for this section).
+    * **Admin Area (`/admin/*`):** Persistent Left Sidebar (fixed width, always expanded desktop/tablet) for navigation. Main content area to right. CRUD pages use MUI Tables, green "Create" button, Edit/Delete icons in Actions column, forms in Dialogs.
+    * **First Run Admin Password Setup Page (`/first-run/set-admin-password`):** For initial admin password set. "Cancel Setup" button reverts to first-run login state.
+* **Accessibility (MVP):** Color contrast in default themes. Reasonable keyboard nav.
+* **Branding (MVP):** Admin can set app name, logo, favicon. Defaults exist. Themes (Light/Dark/System) user-selectable and persisted.
+* **Target Devices:** Web app. Desktop/tablet first, responsive mobile.
 
 ---
 
 ## 5. Technical Assumptions
 
-* **Repository & Service Architecture:** Monorepo, Monolith (Next.js full-stack). Rationale: Simplicity for personal app.
-* **Languages, Frameworks, & Libraries:** Core tech stack pre-defined (Section 6).
-* **Starter Templates & Existing Code:** Built upon user's existing bootstrapped repository.
-* **Testing Requirements:** Vitest, React Testing Library, MSW, Happy DOM, Playwright (E2E). No specific MVP test coverage %.
+* **Repository & Service Architecture:** Monorepo, Monolith (Next.js full-stack).
+* **Languages, Frameworks, & Libraries:** Core tech stack pre-defined (Section 6). Robust libraries like `formidable` for uploads, `archiver`/`unzipper` for zipping. Zod for API validation.
+* **Starter Project:** From user's existing bootstrap.
+* **Testing:** Vitest, RTL, MSW, Happy DOM, Playwright. No specific MVP coverage %.
+* **Deployment Environment:** Continuous Node.js process in Docker on a local home server (allows `node-cron`).
 
 ---
 
@@ -240,15 +210,17 @@ This section summarizes the core functionalities for the ControlCenter MVP, deri
 
 **1. Technology Stack Selections:**
 * Frontend: Next.js 15.2.2 (App Router), React 19, TypeScript 5, Material UI v6, Emotion.
-* Backend: Next.js API Routes, Prisma ORM v6.5.0, NextAuth.js v4, JWT.
-* State Management (Client): React Context/Hooks.
+* Backend: Next.js API Routes, Prisma ORM v6.5.0, NextAuth.js v4, JWT, Zod for validation.
+* State Management (Client): React Context/Hooks (for `IframeProvider`, `UserSettingsProvider`, `ThemeProvider`).
 * Database: SQLite with Prisma ORM.
 * Testing: Vitest, RTL, MSW, Happy DOM, Playwright.
 * Dev Tooling: ESLint, Prettier, Husky, Conventional Commits, Docker.
+* File Handling Libraries: `formidable` (uploads), `archiver`/`unzipper` (zip).
+* Scheduling: `node-cron`.
 
 **2. Database System:** SQLite with Prisma ORM v6.5.0.
 
-**3. Deployment and Operational Environment:** Local home server via Docker container. Uses `.env` files for environment variables.
+**3. Deployment and Operational Environment:** Local home server via Docker container. Uses `.env` files.
 
 **4. Application Directory Structure:**
     ```
@@ -258,20 +230,20 @@ This section summarizes the core functionalities for the ControlCenter MVP, deri
     ├── components/       # Shared UI components (e.g., UserTile, IframeWrapper, AdminPageLayout, UserMenuComponent, specific menu nav components)
     ├── contexts/         # React contexts (e.g., IframeProvider, ThemeProvider, UserSettingsProvider, SessionProvider from NextAuth)
     ├── dashboard/        # Main dashboard page (/app/dashboard/page.tsx)
-    ├── lib/              # App-specific utilities (client-side hooks like useIframeManager, useLongPress; shared utils)
+    ├── lib/              # App-specific client-side utilities (e.g., hooks like useIframeManager, useLongPress; shared utils)
     ├── login/            # Authentication pages (/app/login/page.tsx)
     ├── providers/        # Root app providers wrapper component
     ├── settings/         # User settings pages (e.g., /app/settings/profile/page.tsx)
     ├── first-run/        # Pages for first-run flow (e.g., /app/first-run/set-admin-password/page.tsx)
     ├── theme/            # Theme configuration (MUI theme objects, custom theme tokens)
-    ├── types/            # TypeScript type definitions (global types, API response types)
+    ├── types/            # TypeScript type definitions (global types, API response types, Zod schemas)
     ├── layout.tsx        # Root layout component (hosts global providers, conditional AppBar/SidePanel)
-    ├── page.tsx          # Root page component
+    ├── page.tsx          # Root page component (e.g., redirect to login or dashboard)
     └── globals.css       # Global CSS styles
 
     /lib/                 # Project-level server-side or shared utilities
     ├── db/               # Prisma client instance, seeding scripts
-    └── services/         # Backend services (e.g., backupService, restoreService, activityLogService)
+    └── services/         # Backend services (e.g., authService, userService, groupService, urlService, backupService, restoreService, activityLogService, settingsService)
     └── auth.ts           # NextAuth.js configuration options
 
     /prisma/              # Prisma ORM schema and migrations
@@ -284,7 +256,7 @@ This section summarizes the core functionalities for the ControlCenter MVP, deri
     ├── avatars/          # User uploaded avatars
     ├── url_favicons/     # Admin uploaded URL-specific favicons
     ├── branding/         # Admin uploaded app logo/favicon
-    └── (other static assets)
+    └── (other static assets like default images, menu layout previews)
 
     /data/                # Data storage (NOT publicly accessible, gitignored)
     ├── controlcenter.db  # SQLite database file
@@ -299,11 +271,7 @@ This section summarizes the core functionalities for the ControlCenter MVP, deri
 
 ## 7. Epic Overview & Detailed User Stories
 
-*(This section will contain the full "As a...", "I want...", "So that..." and all detailed Acceptance Criteria for every story within Epics 1 through 5, as captured and approved throughout our extensive interactive sessions. Due to the extreme length this would create in a single response here, I will provide a link or reference to where these fully detailed stories are stored if this were a real project document. For this output, I will list the Epics and their approved stories by title only. The full ACs exist in our conversation history and are assumed to be appended here in a final document.)*
-
-**[Placeholder for Full Detailed Stories - For actual generation, all approved stories and ACs would be inserted here, organized by Epic]**
-
-**Epic List & Story Titles:**
+**(Full detailed User Stories and Acceptance Criteria for Epics 1-5, as captured in our extensive interactive session, are to be appended here. For brevity in this AI response, only titles are listed. The complete ACs are in the preceding dialogue history and are integral to this PRD.)**
 
 ### Epic 1: Foundational Setup & Core User Authentication
 **Goal:** Establish the initial project structure, database schema for users (including `isActive` status and `lastLoginAt`), implement robust user authentication for the initial admin (including the defined "First Run" experience with conditional login options and mandatory password setup), secure basic application access via middleware (checking `isActive`), and implement client-side session validation for `isActive` status.
@@ -346,7 +314,7 @@ This section summarizes the core functionalities for the ControlCenter MVP, deri
 * **Story 4.6:** Ensure Advanced Features & Opacity/Underline/Border Indicators Work in Mobile Drawer Navigation
 
 ### Epic 5: Admin Dashboard - System Operations & Monitoring
-**Goal:** Equip administrators with critical system operation tools, including database backup and restore functionality (accessible from the admin dashboard post-initial setup, and also powering the "first run" restore capability), provide basic system statistics, implement user activity tracking with structured details, and configurable log retention with automated pruning (default 180 days).
+**Goal:** Equip administrators with critical system operation tools, including database backup and restore functionality (accessible from the admin dashboard post-initial setup, and also powering the "first run" restore capability), provide basic system statistics, implement user activity tracking with structured details, and configurable log retention with automated pruning (default 180 days) and manual trigger.
 * **Story 5.1:** Implement Backend Logic and API for Application Backup (Async, with Backup Manifest)
 * **Story 5.1.5:** Implement API Endpoints for Managing Backup Files (List, Download, Delete)
 * **Story 5.2:** Implement Backend Logic and API for Application Restore from Backup (Async, Refined Restore Order, Manifest Reading & Migration Handling)
@@ -362,16 +330,16 @@ This section summarizes the core functionalities for the ControlCenter MVP, deri
 * **Comprehensive Accessibility (WCAG AA+):** Beyond basic considerations, full WCAG AA+ compliance and dedicated testing is post-MVP.
 * **URL Search Functionality:** The planned URL search feature within navigation menus has been deferred.
 * **Specific Quantitative Test Coverage Targets:** Will be defined post-MVP.
-* **User Self-Management of URL Groups/Global URLs:** For MVP, only admins manage these. User self-management is a future enhancement.
-* **Advanced Async Backup/Restore UI Feedback:** Real-time progress beyond "initiated" toasts (e.g., polling, WebSockets) is post-MVP.
+* **User Self-Management of URL Groups and Global URLs:** For MVP, only administrators can create and manage URL groups and global URLs. The ability for regular users to create and manage their own private sets is a future enhancement.
+* **Sophisticated Async Backup/Restore UI Feedback:** Real-time progress beyond "initiated" toasts for asynchronous backup/restore operations (e.g., status polling, WebSockets) is post-MVP.
 * **Application Version in Backup Manifest:** Currently optional/recommended in Story 5.1; full integration if complex may be deferred.
 * **Advanced Admin List Filtering/Sorting:** Server-side filtering/sorting for admin tables beyond basics is post-MVP.
-* **Automatic Downloading/Re-hosting of Discovered URL Icons:** Story 3.3's auto-fetch stores discovered links; a system to download, validate, and re-host these locally is a future enhancement.
-* **Full "Between Sessions" Persistence of Minor UI States:** While core preferences (theme, menu position) and "Remember Me" sessions are persisted, finer-grained UI states like last selected group/URL within the dashboard, or accordion states, resetting on new login is acceptable for MVP. (Story 3.9 implements selected group persistence for the *current active session*).
+* **Automatic Downloading/Re-hosting of Discovered URL Icons:** Story 3.3's auto-fetch stores discovered links; a system to download, validate, and re-host these icons locally is a future enhancement.
+* **Full "Between Sessions" Persistence of Minor UI States:** While core preferences (theme, menu position) and "Remember Me" sessions are persisted, finer-grained UI states like the *specifically selected group/URL* within the dashboard, or accordion states, resetting on new login is acceptable for MVP. (Story 3.9 implements selected group persistence for the *current active session*).
 * **Live Application Theme Change on OS Theme Change:** Currently, "System" theme updates on reload if OS theme changes; live update without reload is post-MVP.
-* **Advanced Iframe Resource Management:** Beyond manual unload and keeping iframes mounted, strategies like LRU cache for DOM element removal are post-MVP.
-* **Admin Ability to Reset User Passwords / Manage User Avatars:** Story 2.3 focuses on admin managing user name, role, status. Direct password resets or avatar management for other users by an admin is deferred.
-* **Public Self-Registration for Users:** Current model is admin-created users. Implementing public self-registration workflows is post-MVP.
+* **Advanced Iframe Resource Management:** Beyond manual unload (`src=""`) and keeping iframes mounted with `visibility:hidden`, strategies like an LRU cache for completely removing very old/unused iframe *elements* from the DOM are post-MVP.
+* **Admin Ability to Reset User Passwords / Manage User Avatars (for other users):** Current admin user management (Story 2.3) focuses on name, role, and active status for other users. Direct password resets or avatar management for other users by an admin is deferred.
+* **Public Self-Registration for Users:** The current model is admin-created users. Implementing public self-registration workflows is post-MVP.
 * **Detailed Audit Log Pruning Feedback in Admin UI:** Beyond logging pruning to ActivityLog (Story 5.6), more direct UI feedback on the settings page (e.g., "Last prune: [date], X entries deleted") is a polish item.
 
 ---
@@ -384,19 +352,19 @@ This section summarizes the core functionalities for the ControlCenter MVP, deri
 | 2. MVP Scope Definition                | PASS              | "Out of Scope / Future Enhancements" section (Section 8 above) now explicitly populated.                                                          |
 | 3. User Experience Requirements        | PARTIAL           | No separate formal User Journey diagrams created; flows embedded in highly detailed stories and refined via Design Architect session (acceptable).    |
 | 4. Functional Requirements             | PARTIAL           | Explicit CLI-based local testability for backend services not formally part of ACs; dev relies on API/unit tests.                                     |
-| 5. Non-Functional Requirements         | PASS              | Well-contextualized for a personal project.                                                                                                         |
+| 5. Non-Functional Requirements         | PASS              | Well-contextualized for a personal project. Architectural decisions (Zod, Service Layer, Transactions) enhance robustness.                          |
 | 6. Epic & Story Structure              | PASS              | Clear Epics and detailed stories with ACs.                                                                                                          |
-| 7. Technical Guidance                  | PASS              | "Very Technical" workflow has integrated much of this into requirements directly.                                                                     |
+| 7. Technical Guidance                  | PASS              | "Very Technical" workflow and Architect review have integrated much of this into requirements directly.                                               |
 | 8. Cross-Functional Requirements       | PASS              | Data schemas, operational needs (backup/restore, logging) well-defined.                                                                             |
-| 9. Clarity & Communication             | PASS              | Iterative process with PM and Design Architect ensured clarity. Final document should be enhanced with system diagrams if possible (post this generation). |
+| 9. Clarity & Communication             | PASS              | Iterative process with PM, Design Architect, and Architect ensured clarity. Final document should be enhanced with system diagrams if possible (post this generation). |
 
 **Key Findings & Recommendations from PM Checklist (Addressed or Noted):**
 * **Formalize "Out of Scope":** Addressed in Section 8.
 * **User Journeys:** Reliance on detailed stories and Design Architect input is acceptable.
 * **Backend CLI Testability:** Not a primary focus for ACs.
 * **Admin UI List Mgt.:** Basic sorting/pagination for MVP is acceptable.
-* **Icon Auto-Fetch:** "Best-effort" with manual override is the strategy.
-* **Async B/R UI Feedback:** MVP uses initiation toasts and manual refresh/app state change cues.
+* **Icon Auto-Fetch:** "Best-effort" with manual override and UI feedback is the strategy.
+* **Async B/R UI Feedback:** MVP relies on initiation toasts and defined UI patterns (refresh, overlay).
 * **App Version in Backup:** Optional status remains.
 
 **Overall PRD Readiness:** READY FOR DEVELOPMENT.
@@ -405,7 +373,7 @@ This section summarizes the core functionalities for the ControlCenter MVP, deri
 
 ## 10. Prompt for Design Architect (UI/UX Specification Mode)
 
-**(This prompt was already actioned. The Design Architect (Jane) session occurred, and its outputs have been integrated into the detailed User Stories within this PRD, particularly for Login, Dashboard, User Settings, and Admin Area general patterns and specific UI interactions.)**
+**(This phase was completed. Key UI/UX decisions from the Design Architect (Jane) session have been integrated into the detailed User Stories and relevant PRD sections like "User Interaction and Design Goals" and "Functional Requirements.")**
 
 **Original Prompt (for historical reference):**
 *Objective:** Elaborate on the UI/UX aspects of the product defined in this PRD for ControlCenter.
@@ -422,46 +390,27 @@ This section summarizes the core functionalities for the ControlCenter MVP, deri
 
 ## 11. Initial Architect Prompt
 
+**(This phase was completed. Key architectural decisions from the Architect (Alex) session have been integrated into relevant PRD sections like "Non-Functional Requirements," "Technical Assumptions," "Core Technical Decisions & Application Structure," and as guiding principles for story implementation.)**
+
+**Original Prompt (for historical reference):**
 Based on the comprehensive requirements detailed in this Product Requirements Document for the **ControlCenter** project, the following technical guidance, decisions, and assumptions should inform your architecture analysis and design when operating in "Architecture Creation Mode":
 
 **Key Technical Pillars (from PRD Sections 5 & 6):**
+* Repository & Service Architecture Decision: Monorepo. Next.js application handles both frontend and backend (API) functionalities. Architecture is a Monolith. Rationale: Simplicity for a personal application with limited users.
+* Core Technology Stack: (As detailed in PRD Section 6).
+* Deployment: Local home server via Docker container.
 
-* **Repository & Service Architecture Decision:** Monorepo. Next.js application handles both frontend and backend (API) functionalities. Architecture is a Monolith. Rationale: Simplicity for a personal application with limited users.
-* **Core Technology Stack:**
-    * Frontend: Next.js 15.2.2 (App Router), React 19, TypeScript 5, Material UI v6, Emotion.
-    * Backend: Next.js API Routes, Prisma ORM v6.5.0, NextAuth.js v4, JWT.
-    * Database: SQLite.
-    * State Management (Client): React Context/Hooks (including for Iframe State and User Settings).
-    * Testing: Vitest, React Testing Library, MSW, Happy DOM, Playwright (E2E).
-    * Dev Tooling: ESLint, Prettier, Husky, Conventional Commits, Docker.
-* **Deployment:** Local home server via Docker container.
-
-**Key Functional & Non-Functional Drivers for Architecture:**
-* **User Authentication & Authorization:** Robust role-based (ADMIN/USER) access control is critical. Secure session management. First-run admin setup flow.
-* **Content Management (Admin-centric for MVP):** Admins manage a global library of URLs and URL Groups. URLs have titles, optional paths to uploaded favicons (with best-effort auto-discovery of icon links), notes, etc. Groups organize URLs with group-specific titles and display order. Users are assigned access to specific groups.
-* **User Dashboard Experience (Highly Interactive & Personalized - Epic 4):**
-    * User-selectable desktop menu positions (Top Menu vs. Side Menu), with distinct layouts and behaviors for each, including how the main application header adapts or is replaced.
-    * Mobile always uses a collapsible drawer for main navigation, triggered by a hamburger icon in a persistent top AppBar.
-    * Advanced iframe management: multiple iframes mounted in DOM, `visibility:hidden` for inactive ones to preserve state, `src`/`data-src` pattern for loading/unloading content.
-    * Client-side state management (e.g., `IframeProvider`, `useIframeManager`) to track active URL and loaded/unloaded status of all iframes.
-    * Specific URL item visual indicators (opacity for loaded/unloaded, underline/border for active).
-    * Click (activate/load/reload) and Long-press (2s, unload with progress bar, haptic feedback on mobile) interactions for URLs.
-    * Persisted user preferences for theme (Light/Dark/System) and menu position.
-* **System Operations (Admin):**
-    * Asynchronous Backup (DB + all assets + version manifest) and Restore (from uploaded archive, includes DB migration). APIs and Admin UI for these, including backup file management (list, download, delete).
-    * Activity Logging (structured JSON details, persistent, admin view with pagination).
-    * Configurable Log Retention (default 180 days, admin UI to change, automated pruning task, manual trigger).
-* **Performance:** Snappy UI, fast initial load, graceful handling of iframe loading. Efficient backend operations (DB queries, backup/restore, logging).
-* **Security:** Standard web security practices (XSS prevention, secure auth).
-* **Reliability:** Designed for continuous operation on a home server. Data integrity via backups.
+**Key Functional & Non-Functional Drivers for Architecture:** (As detailed in PRD Functional Req Summary & NFRs, and expanded by Epics/Stories)
+* User Authentication & Authorization.
+* Content Management (Admin-centric for MVP).
+* User Dashboard Experience (Highly Interactive & Personalized - Epic 4).
+* System Operations (Admin - Epic 5).
+* Performance, Security, Reliability.
 
 **Architectural Focus Areas:**
-* Clear separation of concerns between frontend components, client-side state management, Next.js API routes, and backend services/database interactions.
-* Design for testability across all layers.
-* Robust error handling and user feedback mechanisms.
-* Efficient data fetching patterns, especially for personalized content on the dashboard.
-* Secure implementation of file uploads (avatars, branding images, URL favicons) and file system operations (backup/restore, asset storage).
-* Implementation of the scheduled task for log pruning.
-* Ensuring the "Very Technical" workflow chosen (developers implement from these detailed stories) is supported by a clear and understandable architecture.
+* Clear separation of concerns (frontend components, client-side state, API routes, backend services).
+* Design for testability. Robust error handling. Efficient data fetching.
+* Secure file uploads & file system operations. Implementation of scheduled tasks.
+* Supporting the "Very Technical" workflow with a clear architecture.
 
 Please use this PRD as your primary input. The detailed User Stories and Acceptance Criteria within each Epic provide granular requirements for all features.
