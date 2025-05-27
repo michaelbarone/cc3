@@ -126,7 +126,7 @@ This section summarizes the core functionalities for the ControlCenter MVP, deri
     * **Layout & Navigation:** Persistent Left Sidebar (fixed width, always expanded on desktop/tablet) for navigation. Main content area to the right. Common CRUD page patterns (MUI Table, green "Create" button, Edit/Delete icon buttons in actions column, forms in Dialogs).
     * **Admin Sidebar Links (Ordered):** Admin Dashboard (Overview), User Management, URL Groups, Global URLs, Application Branding, Application Settings, System Operations (B&R), System Statistics, Activity Log.
     * **User Management:** List users (name, role, avatar, `isActive` status, dates). Create new users (name, role; `passwordHash: null`, `isActive: true` default; corresponding `UserSetting` record also created with defaults). Edit users' login `name` (ensuring uniqueness). Edit users' `role` (ADMIN/USER, sole admin safeguard). Disable/Enable user accounts (`User.isActive`). Confirmation dialogs.
-    * **URL Group Management (Admin UI):** Create, list (sorted `displayOrder` then `name`), update (name, desc, displayOrder), delete URL Groups. (Names are not globally unique). Confirmations.
+    * **URL Group Management (Admin UI):** Create, list (sorted `displayOrder` then `name`), update (name, desc, displayOrder), delete URL Groups. (`name` not globally unique). Confirmations.
     * **Global URL Management (Admin UI - page `/admin/global-urls`):** List global URLs. Create new global URLs (`originalUrl`, `title` req). Edit global properties. Delete global URLs. Manage global `Url.faviconUrl`: UI shows current (auto-fetched or uploaded), options to "Upload Custom Icon" (drag-and-drop + button; JPG/PNG/ICO, max 100KB; to `/public/url_favicons/`), "Re-check for Auto-Discovered Icon", "Remove Icon". Icon auto-fetch (backend Story 3.3 attempts on new/updated `originalUrl`, searches for app icons & favicons): UI displays preview & `Snackbar` on fetch failure. UI handles duplicate `originalUrl` error from API with specific message: "Error: This URL already exists as '[Existing URL Title]'...". Confirmations.
     * **Managing URLs *within* a Selected Group (Admin UI - accessed from URL Groups page):** Add existing global URLs (searchable selector). Remove from group. Reorder (`UrlInGroup.displayOrderInGroup`). Edit `UrlInGroup.groupSpecificTitle`. Confirmations.
     * **Application Branding Management:** Customize app name, upload app logo, upload app favicon (drag-and-drop + button; JPG/PNG/SVG for logo, ICO/PNG for app favicon; defined size limits). Persisted in `SystemSetting`, files in `/public/branding/`. Confirmations.
@@ -158,7 +158,7 @@ This section summarizes the core functionalities for the ControlCenter MVP, deri
     * Role-based access control for admin functions.
     * Backend API input validation using Zod.
     * Standard best-practice security headers for API responses where appropriate and not overly complex for MVP (e.g., via Helmet-like defaults if easy to integrate).
-    * Safe filename generation for all uploaded files.
+    * Safe filename generation for all uploaded files (e.g., using UUIDs or content hashes).
 * **Reliability:**
     * High availability for home use (designed for 24/7 operation on local server).
     * Data integrity for all user data, URLs, groups, and settings.
@@ -192,7 +192,7 @@ This section summarizes the core functionalities for the ControlCenter MVP, deri
     * **Admin Area (`/admin/*`):** Persistent Left Sidebar (fixed width, always expanded desktop/tablet) for navigation. Main content area to right. CRUD pages use MUI Tables, green "Create" button, Edit/Delete icons in Actions column, forms in Dialogs.
     * **First Run Admin Password Setup Page (`/first-run/set-admin-password`):** For initial admin password set. "Cancel Setup" button reverts to first-run login state.
 * **Accessibility (MVP):** Color contrast in default themes. Reasonable keyboard nav.
-* **Branding (MVP):** Admin can set app name, logo, favicon. Defaults exist. Themes (Light/Dark/System) user-selectable and persisted.
+* **Branding (MVP):** Admin can set app name, logo, favicon. Defaults exist. Themes (Light/Dark/System) user-selectable and persisted (`SYSTEM` default, falls back to `DARK` if OS pref undetectable).
 * **Target Devices:** Web app. Desktop/tablet first, responsive mobile.
 
 ---
@@ -224,7 +224,7 @@ This section summarizes the core functionalities for the ControlCenter MVP, deri
 **3. Deployment and Operational Environment:** Local home server via Docker container. Uses `.env` files for environment variables.
 
 **4. Application Directory Structure:**
-    ```
+    [triple-tick]
     /app/               # Next.js App Router root
     ├── admin/            # Admin area pages and components (e.g., /users, /url-groups, /global-urls, /branding, /settings, /system/operations, /stats, /activity-log)
     ├── api/              # API routes (e.g., /auth, /admin/*, /user/*, /dashboard/*, /first-run/*)
@@ -264,7 +264,7 @@ This section summarizes the core functionalities for the ControlCenter MVP, deri
     ├── backups/          # Backup archives
 
     /__tests__/           # Test directory
-    ```
+    [triple-tick]
 
 **5. Repository Structure:** Monorepo.
 
@@ -272,9 +272,8 @@ This section summarizes the core functionalities for the ControlCenter MVP, deri
 
 ## 7. Epic Overview & Detailed User Stories
 
-This section contains the full definition of all Epics and their constituent User Stories, including detailed Acceptance Criteria, for the ControlCenter MVP 1.0.
+**(Full detailed User Stories and Acceptance Criteria for Epics 1-5, as captured and approved throughout our extensive interactive sessions, are provided below.)**
 
----
 ### Epic 1: Foundational Setup & Core User Authentication
 **Goal:** Establish the initial project structure, database schema for users (including `isActive` status and `lastLoginAt`), implement robust user authentication for the initial admin (including the defined "First Run" experience with conditional login options and mandatory password setup), secure basic application access via middleware (checking `isActive`), and implement client-side session validation for `isActive` status.
 
@@ -304,107 +303,87 @@ This section contains the full definition of all Epics and their constituent Use
 
 * **Story 1.2: Integrate Prisma ORM and Define Initial User Schema**
     * **As a** Developer/System,
-    * **I want** to integrate Prisma ORM (v6.5.0) into the Next.js project, configure it to use an SQLite database, and define the initial `User` schema including `name` as identifier, optional passwords, a `lastLoginAt` field, an `isActive` status flag, and appropriate referential actions (`onDelete: SetNull`) for relations to `Url` and `Group` creator fields.
-    * **So that** the application has robust data persistence for users, supporting authentication, activity tracking, account status management, and maintains integrity if creator users are deleted.
+    * **I want** to integrate Prisma ORM (v6.5.0) into the Next.js project, configure it to use an SQLite database, and define the initial `User` schema including `name` as identifier, optional passwords, a `lastLoginAt` field, an `isActive` status flag, and appropriate referential actions (`onDelete: SetNull`) for relations to `Url` and `Group` creator fields. This process must also ensure a corresponding default `UserSetting` record is created when a `User` is created.
+    * **So that** the application has robust data persistence for users, supporting authentication, activity tracking, account status management, initial user preferences, and maintains integrity if creator users are deleted.
     * **Acceptance Criteria:**
         * `[ ]` Prisma CLI (compatible with v6.5.0) is installed as a project development dependency.
         * `[ ]` Prisma Client (compatible with v6.5.0) is installed as a project dependency.
         * `[ ]` Prisma is initialized within the project (e.g., via `npx prisma init`), creating the `/prisma` directory and a base `schema.prisma` file.
         * `[ ]` The `datasource db` block in `prisma/schema.prisma` is configured with `provider = "sqlite"`.
-        * `[ ]` The `url` for the datasource is correctly set to point to an SQLite database file located at `/data/controlcenter.db` (e.g., `url = "file:../data/controlcenter.db"` if schema is in `/prisma`, or configured via an environment variable like `DATABASE_URL=file:./data/controlcenter.db` in `.env`).
+        * `[ ]` The `url` for the datasource is correctly set to point to an SQLite database file located at `/data/controlcenter.db` (e.g., `url = "file:../data/controlcenter.db"` or configured via `DATABASE_URL=file:./data/controlcenter.db`).
         * `[ ]` The `/data` directory exists at the project root.
         * `[ ]` A `User` model is defined in `prisma/schema.prisma` with fields: `id` (String, `@id @default(cuid())`), `name` (String, `@unique`), `passwordHash` (String, Optional `?`), `avatarUrl` (String, Optional `?`), `role` (`UserRole` enum: USER, ADMIN; `@default(USER)`), `lastLoginAt` (DateTime, Optional `?`), `isActive` (Boolean, `@default(true)`), `createdAt` (DateTime, `@default(now())`), `updatedAt` (DateTime, `@updatedAt`).
         * `[ ]` The `User` model includes relation fields: `settings UserSetting?`, `addedUrls Url[] @relation("AddedUrls")`, `createdGroups Group[] @relation("CreatedGroups")`, `groupAccesses UserGroupAccess[]`, `activityLogs ActivityLog[] @relation("UserActivityLogs")`.
         * `[ ]` A `UserRole` enum (`USER`, `ADMIN`) is defined.
-        * `[ ]` A Prisma migration is successfully generated based on the defined `User` model and any other initial models (like `UserSetting` if its creation is tied here).
-        * `[ ]` This migration, when applied (e.g., via `npx prisma migrate dev`), successfully creates/alters the `User` table (and `UserRole` enum) in the SQLite database.
+        * `[ ]` A Prisma migration is successfully generated based on the defined `User` model (and `UserSetting` model if defined concurrently for AC 1.2.9).
+        * `[ ]` This migration, when applied, successfully creates/alters the `User` table (and `UserRole` enum) in the SQLite database.
         * `[ ]` The generated migration file(s) are present in the `/prisma/migrations` directory.
-        * `[ ]` Prisma Client is successfully (re)generated and is usable within the application code.
-        * `[ ]` Basic CRUD (Create, Read, Update, Delete) operations on the `User` table, including interaction with `isActive` and `lastLoginAt` fields, are functional (verified via a test script or simple API route).
-        * `[ ]` A mechanism is established to seed a default 'admin' user (`name: "admin"`, `role: ADMIN`, `isActive: true`, `lastLoginAt: null`) into the database if one doesn't already exist. This seeding process also creates a corresponding default `UserSetting` record for this admin user (as per Story 4.1 requirements).
+        * `[ ]` Prisma Client is successfully (re)generated and is usable. Basic CRUD on `User` table (including `isActive`, `lastLoginAt`) is functional.
+        * `[ ]` A mechanism is established (e.g., within the seeding script or user creation service) to seed a default 'admin' user (`name: "admin"`, `role: ADMIN`, `isActive: true`, `lastLoginAt: null`) if one doesn't already exist. This process also creates their corresponding default `UserSetting` record (as per Story 4.1).
 
 * **Story 1.3: Implement NextAuth.js for Core Authentication Logic**
     * **As a** Developer/System,
-    * **I want** to integrate and configure NextAuth.js (v4) to handle user authentication using the `name` field and an optional password, check for account `isActive` status, leverage the Prisma adapter, establish JWT-based session management with HTTP-only cookies, support configurable session durations, include "Remember Me" functionality, and include the `isActive` status and user preferences (theme, menuPosition from Story 4.1) in the session.
+    * **I want** to integrate and configure NextAuth.js (v4) to handle user authentication using the `name` field and an optional password, check for account `isActive` status, leverage the Prisma adapter, establish JWT-based session management with HTTP-only cookies, support configurable session durations, include "Remember Me" functionality, and include the `isActive` status and user preferences (theme, menuPosition from Story 4.1 via `UserSetting`) in the session.
     * **So that** ControlCenter has a secure, robust, and flexible core mechanism for authenticating users and managing their sessions, ensuring only active accounts can log in and maintain sessions, and user preferences are readily available.
     * **Acceptance Criteria:**
-        * `[ ]` The `next-auth` package (version 4.x) and the `@next-auth/prisma-adapter` are installed as project dependencies.
-        * `[ ]` The NextAuth.js dynamic API route (e.g., `/app/api/auth/[...nextauth].ts`) is created and correctly configured.
-        * `[ ]` Essential NextAuth.js global options are configured in the API route, including: `secret` (obtained from an environment variable `NEXTAUTH_SECRET`) and the `session` strategy explicitly set to `jwt`.
-        * `[ ]` The `@next-auth/prisma-adapter` is correctly configured and passed to the NextAuth.js options, linking it to the initialized Prisma Client instance.
-        * `[ ]` A `Credentials` provider is added to the NextAuth.js configuration.
-        * `[ ]` The `authorize` function within the Credentials provider is implemented to:
-            * Accept `name` (String) and `password` (String, which can be empty or undefined) as inputs.
-            * Query the database (via Prisma) for a user with the provided `name`.
-            * If a user is found, verify `User.isActive` is `true`. If `false`, authentication fails (returns `null`).
-            * If `isActive` is `true`:
-                * If the user's `passwordHash` field is populated, securely compare the provided password with the stored `passwordHash` (e.g., using `bcrypt.compare()`). A match results in success.
-                * If `User.passwordHash` is null (and provided password is also empty/null), consider this a successful authentication (for passwordless users or initial admin setup).
-            * If authentication is successful, return a user object containing at least `id`, `name`, `role`, `isActive`, and any fields from the related `UserSetting` record (like `theme`, `menuPosition`).
-            * If authentication fails, return `null`.
-        * `[ ]` JWT strategy callbacks (`jwt`, `session`) are configured:
-            * The `jwt` callback includes `id`, `name`, `role`, `isActive` status, `theme`, and `menuPosition` in the JWT payload.
-            * The `session` callback exposes these details (e.g., `session.user.id`, `name`, `role`, `isActive`, `theme`, `menuPosition`) to the client-side session object.
-            * The `jwt` callback logic considers a "Remember Me" flag (passed from login) to influence session/token expiry if custom logic beyond cookie `maxAge` is used for JWTs themselves.
-        * `[ ]` Session cookies generated by NextAuth.js are configured to be HTTP-only. Default session maximum age is set to 1 week (configurable via `NEXTAUTH_SESSION_MAX_AGE_SECONDS` environment variable).
-        * `[ ]` If "Remember Me" functionality is activated during login, the session cookie's `maxAge` is extended to a longer period (e.g., 30 days, configurable via `NEXTAUTH_REMEMBER_ME_MAX_AGE_SECONDS` environment variable).
-        * `[ ]` A secure password hashing library (e.g., `bcryptjs`) is integrated and used for comparing hashed passwords by the `authorize` function.
-        * `[ ]` Developers can verify the authentication flow: successful login for an `isActive: true` user returns appropriate session cookies with configured `maxAge`; login attempt for `isActive: false` user is rejected.
-        * `[ ]` Client-side `useSession()` hook correctly retrieves session data including `user.isActive`, `theme`, and `menuPosition`.
-        * `[ ]` Upon successful login (and completion of any first-run password setup for new admins), the `User.lastLoginAt` field for the authenticated user is updated with the current timestamp in the database.
+        * `[ ]` `next-auth` (v4.x) and `@next-auth/prisma-adapter` installed.
+        * `[ ]` NextAuth.js API route (e.g., `/app/api/auth/[...nextauth].ts`) configured with `secret` (env var `NEXTAUTH_SECRET`) and `session` strategy `jwt`.
+        * `[ ]` `@next-auth/prisma-adapter` correctly configured with Prisma Client.
+        * `[ ]` `Credentials` provider configured. `authorize` function:
+            * Accepts `name` and `password` (can be empty/null).
+            * Finds user by `name`.
+            * Verifies `User.isActive` is `true`. If `false`, auth fails.
+            * If `isActive`: validates optional `password` against `passwordHash` or allows passwordless login if `passwordHash` is null and no password provided. Fetches associated `UserSetting` data.
+            * Returns user object (`id`, `name`, `role`, `isActive`, `theme`, `menuPosition`) on success.
+        * `[ ]` JWT & Session callbacks (`jwt`, `session`) configured:
+            * `jwt` callback includes `id`, `name`, `role`, `isActive`, `theme`, `menuPosition` in JWT.
+            * `session` callback exposes these details to client.
+            * Considers "Remember Me" flag for session/token expiry influence.
+        * `[ ]` Session cookies HTTP-only. Default `maxAge` 1 week (env var `NEXTAUTH_SESSION_MAX_AGE_SECONDS`). Extended `maxAge` if "Remember Me" (env var `NEXTAUTH_REMEMBER_ME_MAX_AGE_SECONDS`).
+        * `[ ]` Secure password hashing library (e.g., `bcryptjs`) used for comparison.
+        * `[ ]` Auth flow verifiable. `isActive: false` login rejected. `useSession()` retrieves full session data.
+        * `[ ]` `User.lastLoginAt` updated on successful login (after any first-run password setup).
 
 * **Story 1.3.5: Create API Endpoint to List User Tiles**
     * **As the** Login Page,
     * **I want** to fetch a list of user profiles, formatted specifically for display as interactive login tiles (including username, avatar, password requirement status, admin status, and last login time), ordered by user creation date by default, with dates provided as ISO 8601 strings in the JSON response.
     * **So that** I can present users with a visual, intuitive, and consistently ordered way to select their profile and initiate the login process, and the frontend can format dates as needed for display.
     * **Acceptance Criteria:**
-        * `[ ]` A new Next.js API route is created at `/app/api/auth/user-tiles/route.ts` (or similar) that handles HTTP GET requests.
-        * `[ ]` The endpoint fetches all `User` records from the database using Prisma, ordered by their `createdAt` field in ascending order ("newest created users appear last" in the list).
-        * `[ ]` Each fetched `User` record is transformed into a `UserTile` object with the following structure:
-            ````typescript
-            interface UserTile {
-              id: string;
-              username: string;        // Mapped from User.name
-              avatarUrl: string | null;  // Mapped from User.avatarUrl
-              requiresPassword: boolean; // true if User.passwordHash is not null and not empty, else false
-              isAdmin: boolean;        // true if User.role is 'ADMIN', else false
-              lastLoginAt?: string;   // Mapped from User.lastLoginAt, serialized to ISO 8601 string if set
-            }
-            ````
-        * `[ ]` The API endpoint returns a JSON array of `UserTile` objects with an HTTP 200 OK status upon successful retrieval.
-        * `[ ]` If no users are found in the database, the endpoint returns an empty JSON array (`[]`) with an HTTP 200 OK status.
-        * `[ ]` In case of a database error or other server-side issue, the endpoint returns an appropriate HTTP 500 Internal Server Error status with a JSON error message.
-        * `[ ]` For the MVP, this API endpoint is publicly accessible (does not require prior authentication).
+        * `[ ]` API route `/app/api/auth/user-tiles/route.ts` handles GET.
+        * `[ ]` Fetches all `User` records (Prisma), ordered by `createdAt` ASC.
+        * `[ ]` Transforms each `User` to `UserTile`: `{ id, username (from User.name), avatarUrl, requiresPassword (bool from User.passwordHash), isAdmin (bool from User.role), lastLoginAt? (ISO string from User.lastLoginAt) }`.
+        * `[ ]` Returns JSON array of `UserTile` (200 OK). Empty array if no users. Handles errors (500).
+        * `[ ]` Publicly accessible.
 
 * **Story 1.4: Develop Rich Interactive Tile-Based Login Page UI**
     * **As an** End User,
-    * **I want** to interact with a visually distinct, tile-based login page where user profiles (fetched from API) are displayed as interactive tiles. Clicking a passwordless user tile logs me in immediately. Clicking a password-protected user tile smoothly transforms the tile (inner section slides up, username moves to top) to reveal an in-tile password form (which I can cancel by clicking outside the active tile). I also want a "Remember Me" option. Error messages are page-level. Avatar fallbacks use initials with hashed background colors.
+    * **I want** to interact with a visually distinct, tile-based login page where user profiles are displayed as interactive tiles. Clicking a passwordless user tile logs me in immediately. Clicking a password-protected user tile smoothly transforms the tile (inner section slides up, username moves to top) to reveal an in-tile password form (which I can cancel by clicking outside the active tile). I also want a "Remember Me" option. Error messages are page-level. Avatar fallbacks use initials with hashed background colors.
     * **So that** I can securely log into the application using a visually appealing, animated, and intuitive interface.
     * **Acceptance Criteria:**
-        * `[ ]` (Page Implementation & Routing) Login page at `/login`. Authenticated users redirected to `/dashboard`.
-        * `[ ]` (UI Layout & Styling) Displays user tiles (from Story 1.3.5 API) in a responsive grid (MUI `Grid`: 4/row desktop, 2/tablet, 1/mobile). Uses MUI v6, clean/modern/themed, fully responsive.
-        * `[ ]` (Individual User Tile Visuals) Tile is card-like (MUI `Card`/custom) with elevation. Initial state: `UserTile.username` middle-center. Displays avatar (if `UserTile.avatarUrl`, else initials fallback: 1st letter of `username`, or 1st of 2 words if space; background color hashed from `username`). Optional avatar as tile background. Lock icon if `UserTile.requiresPassword` is true. Gradient overlay.
-        * `[ ]` (User Tile Interaction & Transformation) Hover: slight elevation. Focus states. Clicking password-protected tile: inner section slides upward, `username` moves to top, password form elements revealed. Clicking outside active transformed tile reverts it to initial state.
-        * `[ ]` (In-Tile Password Form Elements) For transformed password-protected tile: MUI `TextField` for password, "Login" MUI `Button`, password visibility toggle, "Remember Me" MUI `Checkbox`.
-        * `[ ]` (Client-Side Auth Logic) Clicking passwordless tile: immediate `signIn()` (username, "Remember Me" state). Submitting in-tile password form: `signIn()` (username, password, "Remember Me" state). Redirect to `/dashboard` on success. Client-side validation (name for passwordless, password for form).
-        * `[ ]` (User Feedback & Error Handling) Loading indicator (e.g., on tile/button) during `signIn`. If `signIn` fails: generic, page-level MUI `Alert` (e.g., top/bottom of page or Snackbar/Toast) with "Invalid name or password." On failed in-tile form login, tile might revert to initial state (or error shown near tile if page-level alert is too disconnected - to be refined based on UX feel).
-        * `[ ]` (Accessibility & Animations) Keyboard nav for tiles (arrow keys, grid aware), tiles activatable (`Enter`/`Space`). Focus moves to password field. In-tile form keyboard accessible. `Escape` in form cancels, reverts tile. ARIA labels/roles. Smooth animations (300ms) for hover, selection, slide-up.
-        * `[ ]` (Integration with Story 1.5) Structured for conditional UI for "First Run".
+        * `[ ]` (Page & Routing) `/login` page. Authenticated users redirected to `/dashboard`.
+        * `[ ]` (UI Layout) User tiles (from Story 1.3.5 API) in responsive grid (MUI `Grid`: 4/desktop, 2/tablet, 1/mobile). MUI v6, clean/modern/themed, responsive.
+        * `[ ]` (User Tile Visuals) Card-like tile. Initial state: `UserTile.username` middle-center. Displays avatar (if `UserTile.avatarUrl`, else initials fallback: 1st letter of `username`, or 1st of 2 words if space; background color hashed from `username`). Optional avatar as tile background. Lock icon if `UserTile.requiresPassword`. Gradient overlay.
+        * `[ ]` (Tile Interaction & Transformation) Hover: elevation. Focus states. Clicking password-protected tile: inner section slides up, `username` moves to top, password form elements revealed. Clicking outside active transformed tile reverts it.
+        * `[ ]` (In-Tile Password Form) For transformed tile: MUI `TextField` for password, "Login" MUI `Button`, password visibility toggle, "Remember Me" MUI `Checkbox`.
+        * `[ ]` (Client Auth Logic) Clicking passwordless tile: `signIn()` (username, "Remember Me" state). Submitting in-tile form: `signIn()` (username, password, "Remember Me" state). Redirect to `/dashboard` on success. Client validation.
+        * `[ ]` (Feedback & Error) Loading indicator during `signIn`. If `signIn` fails: generic, page-level MUI `Alert` or Snackbar/Toast with "Invalid name or password." If in-tile form failed, tile may revert or stay open for correction (UX decision: for page-level error, tile reverts).
+        * `[ ]` (Accessibility & Animations) Keyboard nav for tiles (arrows, grid aware), tiles activatable. Focus to password field. In-tile form keyboard accessible. `Escape` in form cancels, reverts tile. ARIA. Smooth animations (300ms).
+        * `[ ]` (Integration with Story 1.5) Structured for conditional "First Run" UI.
 
 * **Story 1.5: Implement "First Run" Experience on Login Page**
     * **As an** Initial Administrator,
     * **I want** to be presented with special options on the tile-based login page when the application is in a "first run" state (defined by a single default admin user existing who has never logged in). This should allow me to either see a (currently disabled for Epic 1) option to restore from backup, or to log in as the default 'admin' without a password. This passwordless login must then direct me to a mandatory password setup page. If I cancel this password setup (via a "Cancel Setup" button), the application should remain in the "first run" state for subsequent login attempts (admin `lastLoginAt` not updated until password set).
     * **So that** I can easily and securely perform the initial setup of the ControlCenter application, establish the primary admin credentials, and have the option to restart the setup if needed.
     * **Acceptance Criteria:**
-        * `[ ]` (First Run State Determination) Login page determines "first run" status (server-side: exactly one `User`, `name=="admin"`, `role==ADMIN`, `User.lastLoginAt==null`). Status in page state.
-        * `[ ]` (Conditional UI for "Restore from Backup") If "first run": "Restore System from Backup" MUI `Button` displayed, **disabled**. Tooltip: "Full restore functionality will be enabled with Admin features."
-        * `[ ]` (Conditional UI & Interaction for 'Admin' Tile) If "first run": 'admin' user tile distinct/highlighted. Clicking it presents "Login & Setup Admin Account" option (bypasses password form).
-        * `[ ]` (Passwordless Admin Login Process) Activating "Login & Setup" calls `signIn()` for 'admin' (passwordless). `authorize` (Story 1.3) allows if backend confirms first run (`User.lastLoginAt` is null). Session established. `User.lastLoginAt` for admin is **NOT yet updated**.
+        * `[ ]` (First Run State Determination) Login page determines "first run" status (server-side: exactly one `User`, `name=="admin"`, `role==ADMIN`, `User.lastLoginAt==null`).
+        * `[ ]` (Conditional UI "Restore") If "first run": "Restore System from Backup" MUI `Button` displayed, **disabled**. Tooltip: "Full restore functionality will be enabled with Admin features."
+        * `[ ]` (Conditional UI 'Admin' Tile) If "first run": 'admin' tile distinct. Clicking it presents "Login & Setup Admin Account" (bypasses password form).
+        * `[ ]` (Passwordless Admin Login) Activating "Login & Setup" calls `signIn()` for 'admin' (passwordless). `authorize` (Story 1.3) allows if backend confirms first run. Session established. `User.lastLoginAt` **NOT yet updated**.
         * `[ ]` (Mandatory Admin Password Setup Page & Flow) After passwordless login, redirect to `/first-run/set-admin-password`. Page indicates mandatory setup. Form: "New Password," "Confirm New Password" (MUI `TextFields`, masked, client validation: match & min 8 chars). "Set Password" & "Cancel Setup" MUI `Buttons`.
-            * Submitting "Set Password": `POST /api/first-run/set-admin-password`. Backend verifies first-run admin state, hashes new password, updates `User.passwordHash`, **updates `User.lastLoginAt`**. Redirect to `/dashboard` on success. Success/error messages.
+            * Submitting "Set Password": `POST /api/first-run/set-admin-password`. Backend verifies first-run admin, hashes new password, updates `User.passwordHash`, **updates `User.lastLoginAt`**. Redirect to `/dashboard`. Success/error.
             * Clicking "Cancel Setup": Current session terminated (`signOut()`). Redirect to `/login`. `User.lastLoginAt` remains null. System stays in "first run".
-        * `[ ]` Access to other app parts from `/first-run/set-admin-password` restricted until password set or setup cancelled.
-        * `[ ]` (Conclusion of "First Run" UI State) After admin password successfully set (`User.lastLoginAt` updated, `passwordHash` set), subsequent visits to `/login` no longer show "first run" UI. 'Admin' tile prompts for the newly set password.
+        * `[ ]` Access from `/first-run/set-admin-password` restricted until password set or cancelled.
+        * `[ ]` (Conclusion of "First Run" UI) After admin password successfully set (`User.lastLoginAt` updated), subsequent visits to `/login` no longer show "first run" UI. 'Admin' tile prompts for password.
 
 * **Story 1.6: Implement Basic Protected Routes, Middleware, and Client-Side Session Validation**
     * **As the** System,
@@ -427,9 +406,9 @@ This section contains the full definition of all Epics and their constituent Use
 * **Story 2.1:** Create Basic Admin Dashboard Layout and Navigation
     * **As an** Administrator, **I want** to access a dedicated and secure `/admin` section with a persistent Left Sidebar (fixed width, always expanded on desktop/tablet) containing direct links to all key admin functions in a defined order, and a main content area for these functions. **So that** I have a clear, organized, and protected entry point for all administrative tasks.
     * **Acceptance Criteria:**
-        * `[ ]` (Admin Route Protection) `/admin/*` routes require `ADMIN` role. `USER` role redirected to `/dashboard` (with "Not Authorized" message). Unauth to `/login`.
+        * `[ ]` (Admin Route Protection) `/admin/*` routes require `ADMIN` role. `USER` role redirected to `/dashboard` (with "Not Authorized" message). Unauth to `/login`. Middleware (Story 1.6) or page-level checks.
         * `[ ]` (Admin Dashboard Layout) Dedicated layout `/app/admin/layout.tsx` using MUI. Persistent Left Sidebar (fixed width, always expanded on desktop/tablet, not mobile-optimized for admin itself). Main content area to the right. Responsive content area.
-        * `[ ]` (Admin Navigation Sidebar) Left Sidebar displays direct links in defined order: Admin Dashboard (Overview), User Management, URL Groups, Global URLs, Application Branding, Application Settings, System Operations (B&R), System Statistics, Activity Log.
+        * `[ ]` (Admin Navigation Sidebar) Left Sidebar displays direct links in order: Admin Dashboard (Overview), User Management, URL Groups, Global URLs, Application Branding, Application Settings, System Operations (B&R), System Statistics, Activity Log.
         * `[ ]` Clicking links navigates to respective admin pages (can be placeholder "Coming Soon" pages within admin layout initially for sections built in later stories). Active section visually indicated.
         * `[ ]` (Admin Area Landing Page) Base `/admin` route (`/app/admin/page.tsx`) renders basic landing page (e.g., "ControlCenter Administration") using admin layout.
         * `[ ]` (Visual Consistency) Clean, professional, uses app themes.
@@ -450,7 +429,7 @@ This section contains the full definition of all Epics and their constituent Use
     * **So that** I can manage the user base, credentials, permissions, and account status.
     * **Acceptance Criteria:**
         * `[ ]` (User Management Page) `/admin/users` page, admin layout, `ADMIN` role only.
-        * `[ ]` (User List Display) MUI `Table`/`List` of all users: `id`, login `name`, `role`, avatar (or fallback), `lastLoginAt` (formatted), `createdAt` (formatted), `isActive` status ("Active"/"Disabled" or MUI `Chip`). No pagination for MVP. Optional client/server sort.
+        * `[ ]` (User List Display) MUI `Table`/`List` of all users: `id`, login `name`, `role`, avatar (or fallback), `lastLoginAt` (formatted), `createdAt` (formatted), `isActive` status ("Active"/"Disabled" or MUI `Chip`). No pagination for MVP. Optional client/server sort. Actions column with Edit/Delete buttons.
         * `[ ]` (Create New User) Prominent green/success MUI `Button` "Create New User" opens `Dialog`/form. Fields: `name` (required), `role` (USER/ADMIN, default USER). No password field. Client validation for `name`. Confirmation dialog: "Are you sure... create user '[name]' role '[role]'? Passwordless initially." On confirm, `POST /api/admin/users`. Backend: verifies admin, unique `name`, creates `User` (`passwordHash: null`, `isActive: true`) and default `UserSetting` record. List updates. Success/error `Snackbar`.
         * `[ ]` (Edit User `name`) "Edit" action per user. Modal/form pre-filled. Admin edits `name`. Client validation. Confirmation dialog: "Are you sure... change login name for '[current_name]' to '[new_name]'?". On confirm, `PUT /api/admin/users/[userId]`. Backend: verifies admin, unique new `name` (if changed). Updates `User.name`. List updates. Success/error messages. Feedback about login name change.
         * `[ ]` (Edit User `role`) In same "Edit" modal/form, admin changes `role`. Confirmation: "Are you sure... change role for '[name]' to '[new_role]'?". On confirm, `PUT /api/admin/users/[userId]`. Backend: verifies admin. Safeguard: admin cannot change own role to `USER` if sole active `ADMIN`. Updates `User.role`. List updates. Success/error.
@@ -480,108 +459,86 @@ This section contains the full definition of all Epics and their constituent Use
         * `[ ]` (Default State)* "Allow New User Creation by Admins" is **ENABLED** by default.
         * `[ ]` (Backend API)* System settings API (`GET /api/admin/settings`, `PUT /api/admin/settings`) extended for this boolean setting. Admin only.
 
-## 7. Epic Overview & Detailed User Stories
-
-This section contains the full definition of Epics 3, 4, and 5, and their constituent User Stories, including detailed Acceptance Criteria, for the ControlCenter MVP 1.0. *(Epics 1 and 2 would precede this section in a complete document, with their full details as well).*
-
 ---
 ### Epic 3: Core URL & Group Management with Basic Iframe Display
 **Goal:** Enable administrators to create, manage, and organize URLs (with required titles, optional server-hosted favicons including auto-discovery attempts) and URL Groups (`name` not globally unique). Enable all authenticated users to view groups/URLs assigned to them. Implement basic functionality to display a selected URL in an iframe (with opacity/underline/border indicators for URL items and refined display logic for broken favicons, empty states), using a default desktop top-menu and mobile drawer navigation, and multi-iframe handling with `visibility:hidden` for state preservation.
 
 * **Story 3.1: Define Core Content & Access Prisma Schemas (URLs, Groups, UserGroupAccess, UrlInGroup)**
-    * **As the** System/Developer,
-    * **I want** robust Prisma schemas defined for `Url` entities (storing URL details like original URL, a **required** title, and paths to server-hosted favicons), `Group` entities (for organizing URLs, with properties like a unique name and description), a `UrlInGroup` relation (to manage URLs within groups, including their display order and group-specific properties), and a `UserGroupAccess` relation (to link specific users to groups they are permitted to access), with appropriate referential actions (`onDelete: SetNull`) for user deletion concerning creator fields.
-    * **So that** the application has a clear, relational, and extensible database structure for managing all core content, its organization, user-specific access rights, and maintains integrity if creator/assigner users are deleted.
+    * **As the** System/Developer, **I want** robust Prisma schemas defined for `Url` (required `title`, `faviconUrl?`), `Group` (`name` not unique, `displayOrder?`), `UrlInGroup` (no `groupSpecificFaviconUrl`, has `groupSpecificTitle?`, `displayOrderInGroup`), `UserGroupAccess`, with `onDelete: SetNull` for `Url.addedBy` & `Group.createdBy` relations. **So that** the app has a clear, relational DB structure for content, organization, access rights, and integrity.
     * **Acceptance Criteria:**
-        * `[ ]` The `prisma/schema.prisma` file is updated to include new model definitions for `Url`, `Group`, `UrlInGroup`, and `UserGroupAccess`.
-        * `[ ]` The existing `User` model (from Story 1.2) is updated to include necessary relation fields.
-        * `[ ]` A `Url` model is defined with at least: `id` (String, `@id @default(cuid())`), `originalUrl` (String, `@unique`), `title` (String) **(Required)**, `faviconUrl` (String, Optional `?` - Path to server-hosted, uploaded icon for this URL), `notes` (String, Optional `?`), `mobileSpecificUrl` (String, Optional `?`), `createdAt` (DateTime, `@default(now())`), `updatedAt` (DateTime, `@updatedAt`), `groups` (Relation field: `UrlInGroup[]`), `addedByUserId` (String, Optional `?`), `addedBy` (Relation field: `User? @relation("AddedUrls", fields: [addedByUserId], references: [id], onDelete: SetNull)`).
-        * `[ ]` A `Group` model is defined with at least: `id` (String, `@id @default(cuid())`), `name` (String - **Not globally unique**), `description` (String, Optional `?`), `displayOrder` (Int, Optional `?`), `createdAt` (DateTime, `@default(now())`), `updatedAt` (DateTime, `@updatedAt`), `urls` (Relation field: `UrlInGroup[]`), `accessibleToUsers` (Relation field: `UserGroupAccess[]`), `createdByUserId` (String, Optional `?`), `createdBy` (Relation field: `User? @relation("CreatedGroups", fields: [createdByUserId], references: [id], onDelete: SetNull)`).
-        * `[ ]` A `UrlInGroup` model is defined with: `id` (String, `@id @default(cuid())`), `urlId` (String), `url` (Relation: `Url @relation(fields: [urlId], references: [id], onDelete: Cascade)`), `groupId` (String), `group` (Relation: `Group @relation(fields: [groupId], references: [id], onDelete: Cascade)`), `displayOrderInGroup` (Int, default: 0), `groupSpecificTitle` (String, Optional `?`), `addedToGroupAt` (DateTime, `@default(now())`), `@@unique([urlId, groupId])`. (Field `groupSpecificFaviconUrl` was removed).
-        * `[ ]` A `UserGroupAccess` model is defined with: `id` (String, `@id @default(cuid())`), `userId` (String), `user` (Relation: `User @relation(fields: [userId], references: [id], onDelete: Cascade)`), `groupId` (String), `group` (Relation: `Group @relation(fields: [groupId], references: [id], onDelete: Cascade)`), `assignedAt` (DateTime, `@default(now())`), `@@unique([userId, groupId])`.
-        * `[ ]` The `User` model in `schema.prisma` is updated to include the inverse relations: `addedUrls: Url[] @relation("AddedUrls")`, `createdGroups: Group[] @relation("CreatedGroups")`, `groupAccesses: UserGroupAccess[]`.
-        * `[ ]` A new Prisma migration (e.g., `add_content_access_url_favicon_schemas_final`) is successfully generated from all schema updates.
-        * `[ ]` This migration is successfully applied to the SQLite database, creating/altering the necessary tables and relations.
-        * `[ ]` The migration files are present in `/prisma/migrations`.
-        * `[ ]` Prisma Client is successfully (re)generated (`npx prisma generate`) to include types and methods for interacting with all new and updated models.
+        * `[ ]` (Schema Update) `prisma/schema.prisma` updated with `Url`, `Group`, `UrlInGroup`, `UserGroupAccess` models. `User` model updated for relations.
+        * `[ ]` (`Url` Model) `id`, `originalUrl (@unique)`, `title (String, required)`, `faviconUrl (String?)`, `notes (String?)`, `mobileSpecificUrl (String?)`, `createdAt`, `updatedAt`, `groups (UrlInGroup[])`, `addedByUserId (String?)`, `addedBy (User? @relation("AddedUrls", fields: [addedByUserId], references: [id], onDelete: SetNull))`.
+        * `[ ]` (`Group` Model) `id`, `name (String - not @unique)`, `description (String?)`, `displayOrder (Int?)`, `createdAt`, `updatedAt`, `urls (UrlInGroup[])`, `accessibleToUsers (UserGroupAccess[])`, `createdByUserId (String?)`, `createdBy (User? @relation("CreatedGroups", fields: [createdByUserId], references: [id], onDelete: SetNull))`.
+        * `[ ]` (`UrlInGroup` Model) `id`, `urlId`, `url` (relation, `onDelete: Cascade`), `groupId`, `group` (relation, `onDelete: Cascade`), `displayOrderInGroup (Int, default: 0)`, `groupSpecificTitle (String?)`, `addedToGroupAt`, `@@unique([urlId, groupId])`.
+        * `[ ]` (`UserGroupAccess` Model) `id`, `userId`, `user` (relation, `onDelete: Cascade`), `groupId`, `group` (relation, `onDelete: Cascade`), `assignedAt`, `@@unique([userId, groupId])`.
+        * `[ ]` (Updates to `User` Model) Includes relations: `addedUrls: Url[] @relation("AddedUrls")`, `createdGroups: Group[] @relation("CreatedGroups")`, `groupAccesses: UserGroupAccess[]`.
+        * `[ ]` (Migration & Client) Prisma migration generated/applied. Client regenerated.
 
 * **Story 3.2: Implement Admin API Endpoints for CRUD Operations on URL Groups**
-    * **As an** Administrator (interacting via a future Admin UI),
-    * **I want** to have secure backend API endpoints, specifically at the path `/api/admin/urlGroups`, that allow me to Create new URL groups, Read (list) all existing groups (sorted by `displayOrder` then `name`), Update the properties of a specific group (like its name, description, or global display order), and Delete a group.
-    * **So that** I can centrally manage the library of URL groups that will form the organizational backbone for the URLs presented to users.
+    * **As an** Administrator, **I want** secure APIs at `/api/admin/urlGroups` to Create, Read (list all, sorted by `displayOrder` then `name`), Update (name, description, displayOrder), and Delete URL groups. **So that** I can centrally manage the group library.
     * **Acceptance Criteria:**
-        * `[ ]` New API route handlers are created under the path `/api/admin/urlGroups` (e.g., `/app/api/admin/urlGroups/route.ts` for list/create, and `/app/api/admin/urlGroups/[groupId]/route.ts` for get/update/delete).
-        * `[ ]` All endpoints under `/api/admin/urlGroups` are protected and strictly require the requester to be authenticated with an `ADMIN` role. Unauthorized (401) or forbidden (403) access attempts are rejected with appropriate HTTP error responses.
-        * `[ ]` (`POST /api/admin/urlGroups` - Create Group): Accepts JSON request body with `name` (String, required), `description` (String, optional), `displayOrder` (Integer, optional - defaults to a sensible value like 0 or end-of-list if not provided). Server-side validation: `name` is provided and not empty. (Uniqueness for `name` is NOT enforced at DB level per Story 3.1 update). `createdByUserId` field is populated with the ID of the authenticated admin. Returns the newly created `Group` object (HTTP 201 Created). Handles errors.
-        * `[ ]` (`GET /api/admin/urlGroups` - List Groups): Fetches all `Group` records. Returns JSON array of `Group` objects (incl. `id, name, description, displayOrder, createdAt, updatedAt, createdByUserId`). List is sorted primarily by `displayOrder` (ascending, nulls last/first consistently), secondarily by `name` (ascending). Returns empty array (`[]`) (HTTP 200 OK) if no groups exist.
-        * `[ ]` (`GET /api/admin/urlGroups/[groupId]` - Get Single Group): Accepts `groupId`. Fetches specific `Group`. Returns `Group` object (HTTP 200 OK) or 404 if not found.
-        * `[ ]` (`PUT /api/admin/urlGroups/[groupId]` - Update Group): Accepts `groupId`. Accepts JSON body with optional `name`, `description`, `displayOrder`. Validates `name` is not empty if provided. Updates specified fields. Returns updated `Group` (HTTP 200 OK) or 404. Handles errors.
-        * `[ ]` (`DELETE /api/admin/urlGroups/[groupId]` - Delete Group): Accepts `groupId`. Deletes `Group`. Related `UrlInGroup` and `UserGroupAccess` entries cascade delete (verified). Returns HTTP 204 No Content or 200 OK, or 404.
-        * `[ ]` (Error Handling) Consistent HTTP status codes and JSON error messages for all endpoints.
+        * `[ ]` (API Structure & Security) Routes under `/api/admin/urlGroups`. `ADMIN` role required.
+        * `[ ]` (`POST /api/admin/urlGroups` - Create Group) Accepts `name` (req), `description?`, `displayOrder?` (default 0/end). `createdByUserId` populated. Returns 201 with new Group. (No server-side unique check for `name`). Handles errors.
+        * `[ ]` (`GET /api/admin/urlGroups` - List Groups) Returns array of all Groups, sorted `displayOrder` ASC (nulls consistent), then `name` ASC.
+        * `[ ]` (`GET /api/admin/urlGroups/[groupId]` - Get Single Group) Returns group or 404.
+        * `[ ]` (`PUT /api/admin/urlGroups/[groupId]` - Update Group) Accepts `name?`, `description?`, `displayOrder?`. Validates `name` not empty if provided. Returns updated Group or 404.
+        * `[ ]` (`DELETE /api/admin/urlGroups/[groupId]` - Delete Group) Deletes Group. `UrlInGroup` and `UserGroupAccess` cascade. Returns 204/200 or 404.
+        * `[ ]` (Error Handling) Consistent.
 
 * **Story 3.3: Implement Admin API Endpoints for CRUD Operations on Global URLs (with Enhanced Icon Auto-Fetch)**
-    * **As an** Administrator,
-    * **I want** to have secure backend API endpoints that allow me to Create new global URL entries (where the system attempts to auto-discover and fetch a link to the best available **application icon/favicon**, and a `title` is required), Read all existing global URLs (sorted by `title`), Update their properties, and Delete global URL entries.
-    * **So that** I can centrally manage the master library of URLs, with an attempt to automatically populate representative icons for convenience, while still allowing manual override by uploading a custom icon.
+    * **As an** Administrator, **I want** secure APIs to CRUD global URLs (API attempts auto-discovery of app icon/favicon link for new/updated `originalUrl`, `title` required), sorted by `title`. **So that** I manage the master URL library with icon auto-discovery convenience.
     * **Acceptance Criteria:**
-        * `[ ]` (API Endpoint Structure & Security) API routes under `/api/admin/urls`. `ADMIN` role required.
-        * `[ ]` (`POST /api/admin/urls` - Create Global URL) Accepts `originalUrl` (req, unique, valid URL), `title` (req, not empty), `faviconUrl?` (manual path), `notes?`, `mobileSpecificUrl?` (valid URL if provided).
-            * **Enhanced Icon Auto-Discovery Logic:** If `faviconUrl` not provided in request: backend attempts best-effort (short timeout) discovery of best available icon link for `originalUrl` (checks favicons, apple-touch-icons, manifest icons, Open Graph images, prioritizing higher-res). Discovered URL stored in `Url.faviconUrl` (stores link, not re-hosted file). Manual `faviconUrl` path overrides.
-        * `[ ]` New `Url` record created with details, determined `faviconUrl`, and `addedByUserId`. Returns new `Url` object (HTTP 201). Handles errors.
-        * `[ ]` (`GET /api/admin/urls` - List URLs) Fetches all `Url` records. Returns JSON array of `Url` objects. Sorted by `title` alphabetically (ascending).
-        * `[ ]` (`GET /api/admin/urls/[urlId]` - Get Single URL) Returns `Url` object (200 OK) or 404.
-        * `[ ]` (`PUT /api/admin/urls/[urlId]` - Update URL) Accepts optional fields. If `originalUrl` changed & no new `faviconUrl` given, re-attempts icon auto-discovery. Explicit `faviconUrl` path takes precedence. Validates. Returns updated `Url` (200 OK) or 404.
-        * `[ ]` (`DELETE /api/admin/urls/[urlId]` - Delete URL) Deletes `Url`. `UrlInGroup` entries cascade delete. Returns 204/200 or 404.
+        * `[ ]` (API Structure & Security) Routes under `/api/admin/urls`. `ADMIN` role required.
+        * `[ ]` (`POST /api/admin/urls` - Create URL) Accepts `originalUrl` (req, unique, valid URL), `title` (req, not empty), `faviconUrl?` (manual path), `notes?`, `mobileSpecificUrl?` (valid URL if provided).
+            * Enhanced Icon Auto-Discovery: If `faviconUrl` not provided, backend attempts best-effort discovery of app icon/favicon link from `originalUrl` (checks common tags, manifest, OG images, prioritizes higher-res). Stores discovered link. Manual `faviconUrl` path overrides.
+        * `[ ]` `addedByUserId` populated. Returns 201 with new Url. Handles errors (e.g., 409 for duplicate `originalUrl`).
+        * `[ ]` (`GET /api/admin/urls` - List URLs) Returns array of all Urls, sorted by `title` (ASC).
+        * `[ ]` (`GET /api/admin/urls/[urlId]` - Get Single URL) Returns Url or 404.
+        * `[ ]` (`PUT /api/admin/urls/[urlId]` - Update URL) Accepts optional fields. If `originalUrl` changed & no new `faviconUrl` given, re-attempts icon auto-discovery. Explicit `faviconUrl` path takes precedence. Validates. Returns updated Url or 404.
+        * `[ ]` (`DELETE /api/admin/urls/[urlId]` - Delete URL) Deletes Url. `UrlInGroup` entries cascade. Returns 204/200 or 404.
         * `[ ]` (Error Handling) Consistent.
 
 * **Story 3.4: Implement Admin API Endpoints for Managing URLs within Specific Groups**
-    * **As an** Administrator,
-    * **I want** secure backend API endpoints to add an existing global URL to a group, list URLs within a group (ordered), update URL properties specific to that group membership (display order, group-specific title), and remove a URL from a group.
-    * **So that** I can precisely curate group content.
+    * **As an** Administrator, **I want** secure backend APIs to add an existing global URL to a group, list URLs within a group (ordered), update `UrlInGroup` properties (display order, `groupSpecificTitle`), and remove URL from group. **So that** I can curate group content.
     * **Acceptance Criteria:**
         * `[ ]` (API Structure & Security) Routes: `POST /api/admin/urlGroups/[groupId]/urls`, `GET /api/admin/urlGroups/[groupId]/urls`, `PUT /api/admin/urlGroups/[groupId]/urls/[urlInGroupId]`, `DELETE /api/admin/urlGroups/[groupId]/urls/[urlInGroupId]`. `ADMIN` role.
-        * `[ ]` (`POST .../[groupId]/urls` - Add URL to Group) Accepts `groupId` (path), body: `urlId` (req), `displayOrderInGroup?` (default 0/end), `groupSpecificTitle?`. Validates existing Group/Url, unique combo (`@@unique` in `UrlInGroup`). Creates `UrlInGroup`. Returns 201 with `UrlInGroup` or augmented URL.
-        * `[ ]` (`GET .../[groupId]/urls` - List URLs in Group) Accepts `groupId`. Fetches `UrlInGroup` records for `groupId`, including related `Url` data. Response: JSON array (global `Url` data + `UrlInGroup` overrides like `effectiveTitle`, `urlInGroupId`, `displayOrderInGroup`), sorted by `UrlInGroup.displayOrderInG`roup (ASC). 404 if group not found. Empty array if group has no URLs.
+        * `[ ]` (`POST .../[groupId]/urls` - Add URL to Group) Accepts `groupId` (path), body: `urlId` (req), `displayOrderInGroup?` (default 0/end), `groupSpecificTitle?`. Validates existing Group/Url, unique combo (`@@unique` in `UrlInGroup`). Creates `UrlInGroup`. Returns 201.
+        * `[ ]` (`GET .../[groupId]/urls` - List URLs in Group) Accepts `groupId`. Fetches `UrlInGroup` records for `groupId`, including related `Url` data. Response: JSON array (global `Url` data + `UrlInGroup` overrides), sorted by `UrlInGroup.displayOrderInGroup` (ASC). 404 if group not found.
         * `[ ]` (`PUT .../[groupId]/urls/[urlInGroupId]` - Update URL-in-Group) Accepts `groupId`, `urlInGroupId`. Body: `displayOrderInGroup?`, `groupSpecificTitle?`. Updates `UrlInGroup`. Returns updated object or 404.
-        * `[ ]` (`DELETE .../[groupId]/urls/[urlInGroupId]` - Remove URL from Group) Accepts `groupId`, `urlInGroupId`. Deletes `UrlInGroup` association. Returns 204/200 or 404.
+        * `[ ]` (`DELETE .../[groupId]/urls/[urlInGroupId]` - Remove URL from Group) Accepts `groupId`, `urlInGroupId`. Deletes `UrlInGroup`. Returns 204/200 or 404.
         * `[ ]` (Error Handling) Consistent.
 
 * **Story 3.5: Develop Admin UI for URL Group Management**
-    * **As an** Administrator,
-    * **I want** an admin UI to CRUD URL Groups (list sorted by `displayOrder` then `name`), with confirmations.
-    * **So that** I can visually manage URL groups.
+    * **As an** Administrator, **I want** admin UI to CRUD URL Groups (list sorted by `displayOrder` then `name`), with confirmations. **So that** I can visually manage groups.
     * **Acceptance Criteria:**
         * `[ ]` (UI Page & Access) `/admin/url-groups` page, admin layout, `ADMIN` only.
-        * `[ ]` (List Groups) Fetches from `GET /api/admin/urlGroups`. Loading/error states. MUI `Table`/`List` shows `name`, `description?`, `displayOrder`. Sorted by API default. Message if no groups. Actions column with Edit/Delete buttons.
-        * `[ ]` (Create Group) Prominent green/success MUI `Button` "Create New Group" opens `Dialog` with form (`name` (req), `description?`, `displayOrder?`). Client validation. Confirmation dialog ("Are you sure... create group '[name]'?"). On confirm, `POST` API. List refreshes. Success/error `Snackbar`.
-        * `[ ]` (Edit Group) "Edit" action -> `Dialog` pre-filled. Admin modifies. Client validation. Confirmation dialog ("Are you sure... save changes to group '[original/new name]'?"). On confirm, `PUT` API. List refreshes. Success/error.
+        * `[ ]` (List Groups) Fetches from `GET /api/admin/urlGroups`. Loading/error. MUI `Table`/`List` shows `name`, `description?`, `displayOrder`. Sorted by API. Message if no groups. Actions column with Edit/Delete buttons.
+        * `[ ]` (Create Group) Green/Success "Create Group" `Button` -> `Dialog` with form (`name` (req), `description?`, `displayOrder?`). Client validation. Confirmation. `POST` API. List refreshes. Success/error `Snackbar`.
+        * `[ ]` (Edit Group) "Edit" action -> `Dialog` pre-filled. Admin modifies. Client validation. Confirmation. `PUT` API. List refreshes. Success/error.
         * `[ ]` (Delete Group) "Delete" action -> `Dialog` with stern warning about cascade. `DELETE` API. List refreshes. Success/error.
-        * `[ ]` (UX) MUI components, loading indicators, feedback. Responsive (desktop/tablet focus).
+        * `[ ]` (UX) MUI components, loading, feedback. Responsive (desktop/tablet focus).
 
 * **Story 3.6: Develop Admin UI for Managing URLs *within* a Selected Group**
     * **As an** Administrator,
     * **I want** a UI where, after selecting a Group, I can add existing global URLs, remove them, reorder (`displayOrderInGroup`), and edit their `groupSpecificTitle`.
     * **So that** I can curate content within each group.
     * **Acceptance Criteria:**
-        * `[ ]` (UI Context) Accessed after selecting a group from Story 3.5 UI (e.g., clicking "Manage Content" for a group, route like `/admin/url-groups/[groupId]/urls`). Uses admin layout. `ADMIN` only.
-        * `[ ]` (Display URLs in Group) Clearly indicates group being managed. API call `GET /api/admin/urlGroups/[groupId]/urls`. Loading/error. URLs in MUI `Table`/List, sorted by `UrlInGroup.displayOrderInGroup`. Shows global `Url.faviconUrl` (or fallback, title if broken), `effectiveTitle` (group-specific or global), `Url.originalUrl`, `displayOrderInGroup`. Message if group empty. Actions column.
-        * `[ ]` (Add Existing Global URL to Group) "Add URL to Group" green/success `Button`. Opens `Dialog` with searchable list of global URLs (from `GET /api/admin/urls`). URLs already in current group de-emphasized/filtered. Admin selects URL, optionally sets initial `displayOrderInGroup`, `groupSpecificTitle`. Confirmation dialog. `POST /api/admin/urlGroups/[groupId]/urls`. List refreshes. Success/error `Snackbar`.
-        * `[ ]` (Edit URL Properties *within* Group - `UrlInGroup`) "Edit Settings in Group" `IconButton` per URL. Opens `Dialog` pre-filled: `displayOrderInGroup`, `groupSpecificTitle`. Read-only global `Url.title`/`originalUrl` for reference. Confirmation. `PUT /api/admin/urlGroups/[groupId]/urls/[urlInGroupId]`. List refreshes.
-        * `[ ]` (Reorder URLs in Group) Drag-and-drop or Up/Down `IconButtons` to change `displayOrderInGroup`. Triggers API updates. UI reflects new order.
+        * `[ ]` (UI Context) Accessed after selecting group from Story 3.5 UI (e.g., `/admin/url-groups/[groupId]/urls`). Admin layout. `ADMIN` only.
+        * `[ ]` (Display URLs in Group) Indicates group managed. `GET /api/admin/urlGroups/[groupId]/urls`. Loading/error. URLs in MUI `Table`/List, sorted `UrlInGroup.displayOrderInGroup`. Shows global `Url.faviconUrl` (or fallback, title if broken), `effectiveTitle`, `Url.originalUrl`, `displayOrderInGroup`. Message if empty. Actions column.
+        * `[ ]` (Add Existing Global URL to Group) "Add URL to Group" green/success `Button`. `Dialog` with searchable list of global URLs (from `GET /api/admin/urls`). URLs already in group de-emphasized/filtered. Admin selects URL, optionally sets initial `displayOrderInGroup`, `groupSpecificTitle`. Confirmation. `POST /api/admin/urlGroups/[groupId]/urls`. List refreshes. Success/error `Snackbar`.
+        * `[ ]` (Edit URL Properties *within* Group - `UrlInGroup`) "Edit Settings in Group" `IconButton`. `Dialog` pre-filled: `displayOrderInGroup`, `groupSpecificTitle`. Read-only global `Url.title`/`originalUrl` for reference. Confirmation. `PUT /api/admin/urlGroups/[groupId]/urls/[urlInGroupId]`. List refreshes.
+        * `[ ]` (Reorder URLs in Group) Drag-and-drop or Up/Down `IconButtons` for `displayOrderInGroup`. Triggers API updates. UI reflects order.
         * `[ ]` (Remove URL from Group) "Remove from Group" `IconButton`. Confirmation ("...does not delete global URL."). `DELETE /api/admin/urlGroups/[groupId]/urls/[urlInGroupId]`. List refreshes.
-        * `[ ]` (Navigation & UX) Easy navigation back to Story 3.5 UI. MUI, loading, feedback. Responsive.
+        * `[ ]` (Navigation & UX) Easy nav back to Story 3.5. MUI, loading, feedback. Responsive.
 
 * **Story 3.6.5: Develop Admin UI for Global URL Management**
-    * **As an** Administrator,
-    * **I want** a dedicated admin page (`/admin/global-urls`) to list all global URLs, create new ones (with UI for icon auto-fetch feedback & manual `Url.faviconUrl` upload via drag-and-drop + button), edit global properties, and delete them, with confirmations.
-    * **So that** I have a central place to manage the master URL library.
+    * **As an** Administrator, **I want** a dedicated admin page (`/admin/global-urls`) to list all global URLs, create new ones (with UI for icon auto-fetch feedback & manual `Url.faviconUrl` upload via drag-and-drop + button), edit global properties, and delete them, with confirmations. **So that** I have a central place to manage the master URL library.
     * **Acceptance Criteria:**
         * `[ ]` (UI Page & Access) `/admin/global-urls` page, admin layout, `ADMIN` only.
-        * `[ ]` (List Global URLs) Fetches from `GET /api/admin/urls`. Loading/error. MUI `Table` shows `Url.faviconUrl` (or fallback, title if broken), `title`, `originalUrl`. Sorted by `title` ASC. Client/server pagination for many URLs. Message if no global URLs. Actions column.
-        * `[ ]` (Create Global URL UI) Prominent green/success "Create New Global URL" `Button`. Opens `Dialog` with form: `originalUrl` (req), `title` (req), `notes?`, `mobileSpecificUrl?`.
-            * Global Favicon Management Section: On `originalUrl` input, client triggers icon auto-discovery (Story 3.3). Preview auto-discovered icon. `Snackbar` if auto-fetch fails. "Upload Custom Icon" (drag-and-drop + button; JPG/PNG/ICO, max 100KB, client validation, preview). Admin chooses auto-discovered or uploaded for `Url.faviconUrl`.
-        * `[ ]` Client validation. Confirmation. `POST /api/admin/urls`. Handles 409 duplicate `originalUrl` error from API in UI ("Error: URL exists as '[Existing Title]'..."). List refreshes. Success/error `Snackbar`.
-        * `[ ]` (Edit Global URL UI) "Edit" `IconButton` per URL. `Dialog` pre-filled with global props. Admin modifies. Global Favicon Management UI (as in Create, including Re-check Auto-Discover, Remove Custom Icon) available. Confirmation. `PUT /api/admin/urls/[urlId]`. List refreshes.
+        * `[ ]` (List Global URLs) Fetches from `GET /api/admin/urls`. Loading/error. MUI `Table` shows `Url.faviconUrl` (or fallback, title if broken), `title`, `originalUrl`. Sorted `title` ASC. Client/server pagination. Message if no global URLs. Actions column.
+        * `[ ]` (Create Global URL UI) Green/success "Create Global URL" `Button`. `Dialog` with form: `originalUrl` (req), `title` (req), `notes?`, `mobileSpecificUrl?`. Global Favicon Mgt Section: On `originalUrl` input, client triggers icon auto-discovery (Story 3.3). Preview auto-discovered icon. `Snackbar` if fetch fails. "Upload Custom Icon" (drag-and-drop + button; JPG/PNG/ICO, max 100KB, client validation, preview). Admin chooses for `Url.faviconUrl`.
+        * `[ ]` Client validation. Confirmation. `POST /api/admin/urls`. Handles 409 duplicate `originalUrl` error ("Error: URL exists as '[Existing Title]'..."). List refreshes. Success/error `Snackbar`.
+        * `[ ]` (Edit Global URL UI) "Edit" `IconButton`. `Dialog` pre-filled with global props. Admin modifies. Global Favicon Mgt UI (as in Create, including Re-check Auto-Discover, Remove Custom Icon) available. Confirmation. `PUT /api/admin/urls/[urlId]`. List refreshes.
         * `[ ]` (Delete Global URL UI) "Delete" `IconButton`. Confirmation ("...delete global URL '[title]'? Removed from all groups..."). `DELETE /api/admin/urls/[urlId]`. List refreshes.
         * `[ ]` (UX) MUI, loading, feedback. Responsive. Icon upload limits enforced.
 
@@ -612,48 +569,38 @@ This section contains the full definition of Epics 3, 4, and 5, and their consti
         * `[ ]` (Desktop Group/URL Display - "Top Menu" Style - when `menuPosition === 'TOP'`) `AppBar` (Story 3.8) hosts content from Story 4.3 (hover-to-expand menu with group selection & horizontal URLs).
         * `[ ]` (Mobile Group/URL Display - Collapsible Left Drawer) On mobile: hamburger in `AppBar` (Story 3.8) toggles MUI `Drawer`. Inside Drawer: list of groups (sorted); each group MUI `Accordion` header. Clicking group expands in-place to show its URLs as sub-list. Selecting URL closes drawer.
         * `[ ]` (URL Item Visual States - for Desktop & Mobile lists) Active/selected URL: opacity `1.0` + blue underline (Top Menu) / blue right border (Side Menu & Mobile Drawer). Inactive but loaded URL: opacity `1.0`. Inactive and unloaded URL: opacity `0.5`.
-        * `[ ]` (Multi-Iframe Management & Display - Basic Version for Epic 3, enhanced by Story 4.2) One iframe per unique `originalUrl` selected, added to DOM if new. Active URL's iframe: `visibility: visible`. Others: `visibility: hidden; position:absolute; left:-9999px;`. State preserved. `src`/`data-src` pattern used for loading.
-        * `[ ]` (Initial Iframe Load & Basic State Indicators) First URL of default group auto-loads. Iframe `src` set first time: loading indicator (MUI `CircularProgress`/text). On success, indicator removed, URL item "loaded" state. On failure, error message in iframe area, URL item "unloaded".
+        * `[ ]` (Multi-Iframe Management & Display - Basic Version for Epic 3, foundation for Story 4.2) One iframe per unique `originalUrl` selected, added to DOM if new. Active URL's iframe: `visibility: visible`. Others: `visibility: hidden; position:absolute; left:-9999px;`. State preserved. `src`/`data-src` pattern used for loading.
+        * `[ ]` (Initial Iframe Load & Basic State Indicators) First URL of default group auto-loads into iframe. Iframe `src` set first time: loading indicator (MUI `CircularProgress`/text). On success, indicator removed, URL item "loaded" state. On failure, error message in iframe area, URL item "unloaded".
         * `[ ]` (Selected Group State Persistence - Current Session) Selected group maintained during current active session (e.g., React Context/state). Resets on full reload/new login for Epic 3.
         * `[ ]` (Broken Favicon Handling) If `Url.faviconUrl` image fails to load, broken icon hidden, `effectiveTitle` is primary identifier.
         * `[ ]` (UX & Layout) Intuitive flow. Clear layout separation. No main page scrollbars, 100% viewport height.
 
+---
 ### Epic 4: Advanced Iframe Interaction & User Personalization
-**Goal:** Implement a highly interactive and customizable user dashboard experience, including user-selectable menu positions (Side or Top for desktop URL/Group navigation), advanced iframe state management (persisting multiple loaded iframes with CSS `visibility` for state retention, and an explicit unload mechanism via long-press), clear visual indicators in the menus for URL states (active/inactive, loaded/unloaded using opacity/underline/border), and specific performance optimizations. (Search feature was removed).
+**Goal:** Implement a highly interactive and customizable user dashboard experience, including user-selectable menu positions (Side or Top for desktop URL/Group navigation), advanced iframe state management (persisting multiple loaded iframes with CSS `visibility` for state retention, and an explicit unload mechanism via long-press), clear visual indicators in the menus for URL states (active/inactive, loaded/unloaded using opacity/underline/border), and specific performance optimizations.
 
 * **Story 4.1: Implement Persistent User Settings for Layout (Menu Position & Theme)**
-    * **As an** Authenticated User,
-    * **I want** to be able to choose my preferred main navigation menu position for desktop viewing (Top Menu or Side Menu) and my preferred application theme (Light, Dark, or System default) via my User Settings page. These preferences should be saved to my account and applied consistently across the application, with the header and dashboard layouts dynamically adapting to my chosen menu position and theme.
-    * **So that** I can personalize my ControlCenter interface for optimal usability, comfort, and visual preference, and have these settings persist across my sessions and devices.
+    * **As an** Authenticated User, **I want** to choose and save preferred desktop menu position (Top/Side with static image previews) and theme (Light/Dark/System with themed box previews) via User Settings, with these persisted in a new `UserSetting` table (`userId` as `@id`, enums `Theme`, `MenuPosition`, default theme `SYSTEM` fallback to `DARK` if OS undetectable, default menu `TOP`) and applied dynamically. **So that** I can personalize my interface across sessions.
     * **Acceptance Criteria:**
-        * `[ ]` (Schema Definition - `UserSetting` Model) A new Prisma model `UserSetting` is defined with a strict one-to-one relationship to `User` (`userId String @id`, `user User @relation(...)`).
-        * `[ ]` `UserSetting` includes: `theme Theme @default(SYSTEM)` (Enum: `LIGHT DARK SYSTEM`), `menuPosition MenuPosition @default(TOP)` (Enum: `TOP SIDE`), `updatedAt DateTime @updatedAt`.
-        * `[ ]` `User` model updated with `settings UserSetting?` relation.
-        * `[ ]` Prisma migration generated and applied. Prisma Client regenerated.
-        * `[ ]` Logic is added to the user creation process (e.g., Story 1.2 for initial admin, Story 2.3 for admin-created users) to automatically create a corresponding `UserSetting` record with default values (`theme: SYSTEM`, `menuPosition: TOP`) whenever a new `User` is created.
-        * `[ ]` (Backend API for User Settings) New secure API endpoints `GET /api/user/settings` and `PUT /api/user/settings` are created.
-        * `[ ]` `GET /api/user/settings` fetches the `UserSetting` record for the authenticated user (should always find a record due to AC 1.5).
-        * `[ ]` `PUT /api/user/settings` accepts `theme` (LIGHT/DARK/SYSTEM) and/or `menuPosition` (TOP/SIDE), updates the existing `UserSetting` record. Validates enum values. Returns updated settings. Both endpoints protected, user-specific.
-        * `[ ]` (Session Data Enhancement) NextAuth.js session object (and JWT) includes persisted `theme` and `menuPosition` from `UserSetting`.
-        * `[ ]` (User Settings Page UI - on `/settings/profile`) A "Layout & Appearance Preferences" section is added.
-        * `[ ]` UI controls (MUI `RadioGroup` or `SegmentedButton`) for "Preferred Menu Position (Desktop)" (Options: Top, Side) with small static image previews, reflecting current saved preference.
-        * `[ ]` UI controls (MUI `RadioGroup` or `SegmentedButton`) for "Preferred Theme" (Options: Light, Dark, System) with themed preview boxes (showing bg color, themed text "AppName" & logo placeholder, theme name text; selected theme preview has blue highlight), reflecting current saved preference.
-        * `[ ]` "Save Preferences" button calls `PUT /api/user/settings`. Success/error `Snackbar`. UI dynamically updates on save without full page reload.
-        * `[ ]` (Dynamic Header Adaptation - affects Story 3.8) Global Application Header reads `menuPosition` from session/settings. Desktop: Adapts structure (three-section for "Top Menu" pref vs. hidden for "Side Menu" pref). Mobile header consistent.
-        * `[ ]` (Dynamic Dashboard Layout - affects Story 3.9) Dashboard reads `menuPosition`. Desktop: "Top Menu" pref -> URL/Group nav in AppBar's central area (content by Story 4.3). "Side Menu" pref -> persistent side panel for URL/Group nav (content by Story 4.4); top AppBar URL nav area hidden, AppBar itself hidden. Mobile: always drawer.
-        * `[ ]` (Theme Application & Header Toggle Update - affects Story 3.8) MUI ThemeProvider uses persisted `UserSetting.theme`. Header theme toggle reads/writes persisted setting via API. "SYSTEM" theme respects OS `prefers-color-scheme` (reload pick-up sufficient for MVP, fallback to DARK if OS pref undetectable).
+        * `[ ]` (Schema Definition - `UserSetting` Model) New Prisma model `UserSetting` (1-to-1 with `User`, `userId String @id`). Fields: `theme Theme @default(SYSTEM)` (Enum: `LIGHT DARK SYSTEM`), `menuPosition MenuPosition @default(TOP)` (Enum: `TOP SIDE`), `updatedAt`. `User` model gets `settings UserSetting?`. Migration. Client regen. Logic added to user creation (Story 1.2/2.3) to auto-create `UserSetting` with defaults.
+        * `[ ]` (Backend API for User Settings) `GET /api/user/settings` (fetches settings) and `PUT /api/user/settings` (updates `theme` and/or `menuPosition`). Protected, user-specific. Validation.
+        * `[ ]` (Session Data Enhancement) NextAuth.js session/JWT includes persisted `theme` and `menuPosition`.
+        * `[ ]` (User Settings Page UI - on `/settings/profile`) "Layout & Appearance Preferences" section. MUI controls for "Preferred Menu Position (Desktop)" (Top/Side) with small static image previews, reflecting current saved preference. MUI controls for "Preferred Theme" (Light/Dark/System) with themed preview boxes (selected has blue highlight), reflecting current saved preference. "Save Preferences" button calls `PUT` API. Success/error `Snackbar`. UI dynamically updates on save.
+        * `[ ]` (Dynamic Header Adaptation - affects Story 3.8) Global Header (Story 3.8) reads `menuPosition` from session. Desktop: Renders three-section for "Top Menu" pref; Hidden for "Side Menu" pref. Mobile header consistent.
+        * `[ ]` (Dynamic Dashboard Layout - affects Story 3.9) Dashboard (Story 3.9) reads `menuPosition`. Desktop: "Top Menu" pref -> URL/Group nav in AppBar's center (content by Story 4.3). "Side Menu" pref -> persistent side panel for URL/Group nav (content by Story 4.4); top AppBar URL nav area hidden, AppBar itself hidden. Mobile: always drawer.
+        * `[ ]` (Theme Application & Header Toggle Update - affects Story 3.8) MUI ThemeProvider uses persisted `UserSetting.theme`. Header theme toggle (Story 3.8) displays current persisted state and updates it via `PUT /api/user/settings`. "SYSTEM" theme respects OS `prefers-color-scheme` (reload pick-up sufficient, fallback to DARK if OS pref undetectable).
         * `[ ]` (Default Values & Persistence) Settings saved to backend. Defaults (`theme: SYSTEM`, `menuPosition: TOP`) applied on `UserSetting` creation.
 
 * **Story 4.2: Implement Core Iframe State Management (Tracking Multiple Mounted Iframes, Loaded/Unloaded States, Active URL with `src`/`data-src` control)**
     * **As the** Frontend System / Dashboard UI,
-    * **I want** a robust client-side state management system (e.g., using React Context via an `IframeProvider` and a custom hook like `useIframeManager`) that tracks multiple iframes (kept mounted with visibility controlled by CSS `visibility: hidden`), manages their "loaded" (content in `src`) vs. "unloaded" (`src=""`) states using a `src`/`data-src` attribute pattern, and identifies the "active" URL for display. It must also apply default restrictive `sandbox` attributes to iframes.
+    * **I want** a robust client-side state management system (e.g., React Context via an `IframeProvider` and a custom hook like `useIframeManager`) that tracks multiple iframes (kept mounted with visibility controlled by CSS `visibility: hidden`), manages their "loaded" (content in `src`) vs. "unloaded" (`src=""`) states using a `src`/`data-src` attribute pattern, and identifies the "active" URL for display. It must also apply default restrictive `sandbox` attributes to iframes.
     * **So that** the application can support efficient, stateful switching between iframes, with precise control over content loading and resource usage, providing accurate data for visual state indicators (opacity for loaded/unloaded states) in the navigation menus, while maintaining security.
     * **Acceptance Criteria:**
         * `[ ]` (`IframeProvider` Context) React Context (`IframeStateContext`) & Provider (`<IframeProvider>`) wraps dashboard. Stores: `managedIframes: Map<string, { originalSrc: string; currentSrc: string; isLoaded: boolean; }>` (key: URL identifier), `activeUrlIdentifier: string | null`.
-        * `[ ]` (`useIframeManager` Hook) Exposes: `activeUrlIdentifier`, `getIframeData(id)`, `isUrlLoaded(id)`, `setActiveUrl(id, originalSrc)` (signals iframe `src` set from `data-src` if unloaded/new), `markAsLoaded(id)` (on iframe `onload`), `markAsUnloaded(id)` (signals iframe `src` to `""`), `triggerReload(id)`, `getAllManagedIframesForRender()` (returns array `{ identifier, dataSrc, srcToRender, isLoaded, isActive }`). Hook interface is optimized for efficient updates using memoized React Context and `React.memo` on consumers.
+        * `[ ]` (`useIframeManager` Hook) Exposes: `activeUrlIdentifier`, `getIframeData(id)`, `isUrlLoaded(id)`, `setActiveUrl(id, srcForDataSrc)` (signals iframe `src` set from `data-src` if unloaded/new), `markAsLoaded(id)` (on iframe `onload`), `markAsUnloaded(id)` (signals iframe `src` to `""`), `triggerReload(id)`, `getAllManagedIframesForRender()` (returns array `{ identifier, dataSrc, srcToRender, isLoaded, isActive }`). Hook interface optimized (memoized Context, `React.memo` for consumers).
         * `[ ]` (Dashboard Iframe Rendering) Uses `useIframeManager`. Iterates `getAllManagedIframesForRender()` to render `<iframe>`s. Each has `key`, `src` (bound to `srcToRender`, initially `""`), `data-src` (actual `originalUrl`). `setActiveUrl` needing load triggers dashboard to update target iframe `src` from `data-src`.
         * `[ ]` (CSS Visibility Control) Active iframe: `visibility: visible`. Others: `visibility: hidden; position: absolute; left: -9999px;`.
-        * `[ ]` (Iframe Sandbox Attributes) All iframes rendered by this system include a default `sandbox` attribute string: `"allow-scripts allow-same-origin allow-popups allow-forms allow-downloads allow-popups-to-escape-sandbox"`. (Top navigation is implicitly blocked).
+        * `[ ]` (Iframe Sandbox Attributes) All iframes rendered include `sandbox="allow-scripts allow-same-origin allow-popups allow-forms allow-downloads allow-popups-to-escape-sandbox"`.
         * `[ ]` (Updating "Loaded" Status) Iframe wrapper monitors `onload` (calls `markAsLoaded`) and `onerror` (status remains `loaded: false`). UI error display for active iframe.
         * `[ ]` (State Preservation Verification) Scenario: Load A -> scroll -> Load B -> Show A again; A's state (scroll, form inputs) preserved, no `src` reload.
         * `[ ]` (Initial URL Load) Integrates with Story 3.9's initial auto-load.
@@ -680,7 +627,7 @@ This section contains the full definition of Epics 3, 4, and 5, and their consti
         * `[ ]` (Conditional Rendering) Renders if `menuPosition === SIDE` & desktop/tablet (≥768px). Main `AppBar` (Story 3.8) is **not rendered**. Top Menu nav (Story 4.3) hidden.
         * `[ ]` (Side Panel Structure - Expanded Desktop ≥768px) Full-height, persistent left panel (MUI `Drawer` `variant="persistent"` or custom `div`, pushes content). Width ~20% or fixed (250-300px). Fixed position. Internal content scrollable. Main content (iframe) resizes. No main page scroll.
             * Panel Content (Expanded): Top: App Logo/Name (Story 2.4). Collapse/Expand toggle button (MUI `IconButton` chevron) in panel's top section (e.g. top right of panel). Middle (Navigation): Vertical list of URL Groups (accordion style), sorted. Expanding group shows its URLs. URL items: `faviconUrl` (or fallback, title if broken) AND `effectiveTitle`. Visual states: opacity 0.5 (unloaded), 1.0 (loaded), blue **right side border** (active). Selected group expanded by default. Bottom: Reusable User Menu component (Story 3.8) rendered as accordion section ("User Options") or list.
-        * `[ ]` (Side Panel Collapsible Behavior - Desktop/Tablet ≥768px) Clicking toggle animates panel width.
+        * `[ ]` (Side Panel Collapsible Behavior - Desktop/Tablet ≥768px) Clicking toggle animates panel width. Collapse toggle available on full desktop view.
             * Collapsed State (Icons-Only): Panel shrinks (~72px). Group headers show abbreviated initials in circle/avatar or generic group icon. URLs in (conceptually) expanded group show only `Url.faviconUrl`. User Menu collapses to icon trigger (opens small popper/menu). MUI `Tooltip` on hover for all icons.
         * `[ ]` Main content area resizes smoothly. User's collapsed/expanded state preference persists for session (e.g., `localStorage`).
         * `[ ]` (URL/Group Interaction) Click group header expands/collapses. Click URL sets active URL. Indicators update.
@@ -689,13 +636,15 @@ This section contains the full definition of Epics 3, 4, and 5, and their consti
 
 * **Story 4.5: Implement Click (Activate/Ensure Loaded/Reload) and Long-Press (Unload) for URLs with Specific Unload UI**
     * **As an** Authenticated User,
-    * **I want** specific and intuitive behaviors when I single-click or long-press (for 2 seconds with a visual progress indicator) on a URL item in any navigation menu: a single click should activate the URL (loading it if currently unloaded, making it visible if loaded but hidden, or reloading it if already active and visible). A successful long press should unload that URL's iframe content, make its iframe hidden, and display a "Content Unloaded" message with a reload option in the iframe area.
+    * **I want** specific and intuitive behaviors when I single-click or long-press (for 2 seconds with a visual progress indicator: orange, 2-3px thick, bottom edge of item, 0.3s delay before animation) on a URL item in any navigation menu:
+        * A single click should activate the URL (loading it if currently unloaded, making it visible if loaded but hidden, or reloading it if already active and visible).
+        * A successful long press should unload that URL's iframe content, make its iframe hidden, and display a "Content Unloaded" message (centered text) with a "Reload Content" button (MUI outlined with refresh icon) in the iframe area.
     * **So that** I have powerful and clear control over URL loading, viewing, resource management, and can easily recover unloaded content within the dashboard.
     * **Acceptance Criteria:**
-        * `[ ]` (Single-Click Behavior - All Menus) If URL not active OR unloaded: `setActiveUrl()` (loads via `src` from `data-src`). Menu item "active" (opacity 1.0 + indicator). "Content Unloaded" message (if visible) cleared. If URL active AND loaded: Reloads active iframe content (e.g., `src` from `data-src` again). Loading indicators. Menu item "active."
-        * `[ ]` (Long-Press Detection & Visual Feedback - `useLongPress`) Hook/logic detects 2s sustained press (mouse/touch) with 0.3s delay before animation. Visual progress bar (orange, 2-3px thick, animating left-to-right along bottom edge of URL item) during hold. Optional tooltip. Event listeners managed.
+        * `[ ]` (Single-Click Behavior - All Menus) If URL not active OR unloaded: `setActiveUrl()` (loads via `src` from `data-src`). Menu item "active" (opacity 1.0 + indicator). "Content Unloaded" message (if visible) cleared. If URL active AND loaded: Reloads active iframe content. Loading indicators. Menu item "active."
+        * `[ ]` (Long-Press Detection & Visual Feedback - `useLongPress`) Hook/logic detects 2s sustained press (mouse/touch) with 0.3s delay before animation. Visual progress bar (orange, 2-3px thick, animates left-to-right along bottom edge of URL item) during hold. Optional tooltip. Event listeners managed.
         * `[ ]` (Long-Press Action - Unload) On 2s press: `markUrlAsUnloaded()` (Story 4.2 - sets iframe `src=""`, state "loaded: false"). Menu item "unloaded" (opacity 0.5, loses active indicator). Haptic feedback on mobile.
-        * `[ ]` (Behavior if Active URL Unloaded) Unloaded URL's iframe `visibility: hidden`. Main content area displays: centered "Content Unloaded" text (contrasting color) + "Reload Content" MUI `Button` (`variant="outlined"` with refresh icon). Clicking "Reload" calls `setActiveUrl()` for that URL, re-initiating load; message/button removed; iframe loaders appear; menu item "active". `activeUrlIdentifier` may persist (but item not styled active until reloaded) or become null (reload button knows context). Selecting another URL loads it, clears "Content Unloaded" message.
+        * `[ ]` (Behavior if Active URL Unloaded) Unloaded URL's iframe `visibility: hidden`. Main content area displays: centered "Content Unloaded" text + "Reload Content" MUI `Button` (outlined, refresh icon). Clicking "Reload" calls `setActiveUrl()` for that URL, re-initiating load; message/button removed; iframe loaders appear; menu item "active". `activeUrlIdentifier` may persist (but item not styled active until reloaded) or become null (reload button knows context). Selecting another URL loads it, clears "Content Unloaded" message.
         * `[ ]` (Cancellation of Long Press) Release before 2s or move pointer away: long-press cancelled, progress indicator resets. No single-click triggered.
         * `[ ]` (Integration) Actions update `useIframeManager` states. Menu indicators update instantly.
 
@@ -752,7 +701,7 @@ This section contains the full definition of Epics 3, 4, and 5, and their consti
         * `[ ]` (Admin Page) "/admin/system/operations" page. `ADMIN` only. Sections: "Manage Existing Backups," "Create New Backup," "Restore Application."
         * `[ ]` (Manage Existing Backups UI) On load, `GET /api/admin/system/backups`. Loading/error. Backups in MUI `Table`/`List` (filename, createdAt, size). Sorted newest first. "No backups found" message. Actions per backup: "Download" `Button` (`GET .../[filename]`); "Delete" `Button` (Confirmation dialog -> `DELETE` API, refresh list, success/error `Snackbar`). "Refresh List" `Button`.
         * `[ ]` (Create New Backup UI - Async) "Create New Backup" `Button`. Confirmation: "Are you sure...run in background?". On confirm, `POST /api/admin/system/backup`. Loading indicator during API initiation. On 202 Accepted: `Snackbar` "Backup initiated...Refresh list soon." On API init failure: error `Snackbar`.
-        * `[ ]` (Restore from Backup UI - Async) Section displays strong warnings. Prominent suggestion/button: "Recommended: Create a fresh backup now?" -> triggers Create Backup flow. File input (`<input type="file" accept=".zip">`) + MUI `Button`. "Upload and Restore" `Button` (disabled until file selected). Clicking -> Stern confirmation ("WARNING...PERMANENTLY OVERWRITE...Are you sure?"). On confirm: Uploads to `POST /api/admin/system/restore`. Loading/progress messages. On 202 Accepted from API: `Snackbar`/message "Restore process initiated...Application might restart...log in again." UI might lock down with overlay and refresh button that enables after a delay. On API init failure: detailed error `Snackbar`.
+        * `[ ]` (Restore from Backup UI - Async) Section displays strong warnings. Prominent suggestion/button: "Recommended: Create a fresh backup now?" -> triggers Create Backup flow. File input (`<input type="file" accept=".zip">`) + MUI `Button`. "Upload and Restore" `Button` (disabled until file selected). Clicking -> Stern confirmation ("WARNING...PERMANENTLY OVERWRITE...Are you sure?"). On confirm: Uploads to `POST /api/admin/system/restore`. Loading/progress messages. On 202 Accepted from API: `Snackbar`/message "Restore process initiated...Application might restart...log in again." UI locks down with overlay and refresh button enabled after delay. On API init failure: detailed error `Snackbar`.
         * `[ ]` (UX) MUI components, clear feedback, loading states. Responsive (desktop/tablet admin).
 
 * **Story 5.4: Implement Basic System Statistics Display in Admin Dashboard**
@@ -775,14 +724,42 @@ This section contains the full definition of Epics 3, 4, and 5, and their consti
         * `[ ]` (Performance & Security) Logging efficient. No sensitive data.
 
 * **Story 5.6: Implement Configurable Log Retention Policy for Activity Logs (Default 180 days, Manual Trigger & Pruning Log)**
-    * **As an** Administrator/System, **I want** to configure log retention (default 180 days, 0=forever via `SystemSetting.logRetentionDays`), have the system auto-prune old logs (via `node-cron`), log pruning to ActivityLog, and allow manual pruning trigger via UI/API. **So that** I manage log storage and have control over cleanup.
+    * **As an** Administrator and as the System,
+    * **I want** to be able to configure a retention policy for user activity logs (defaulting to 180 days, where 0 means keep forever) via a setting in the admin dashboard. I also want the system to automatically prune old logs according to this policy, for this pruning action to be logged in the Activity Log, and to have an option to trigger this pruning manually.
+    * **So that** I can manage storage space effectively, adhere to data retention preferences, maintain a clean audit trail of pruning actions, and have control over immediate log cleanup if needed.
     * **Acceptance Criteria:**
-        * `[ ]` (`SystemSetting` Schema Enhancement) `SystemSetting` model updated with `logRetentionDays (Integer, @default(180))`. `0` means keep indefinitely. Migration. Default record created if none exists.
-        * `[ ]` (Admin UI for Log Retention) Section in admin page (e.g., Activity Log page or System Settings). Displays current policy. MUI `TextField` (number, min 0) or `Select` for `logRetentionDays` (options like "30d", "90d", "180d (Default)", "365d", "Keep Indefinitely (0)"). "Save Policy" `Button`. Confirmation dialog. API saves. Success/error `Snackbar`.
-        * `[ ]` (Backend API for Policy) API (e.g., `PUT /api/admin/settings`) updates `logRetentionDays`. Validates non-negative int. `ADMIN` role.
-        * `[ ]` (Automated Log Pruning - Scheduled Task) `node-cron` task runs periodically (e.g., daily 3 AM). Reads `logRetentionDays`. If > 0, calculates cutoff, `deleteMany` `ActivityLog` records older than cutoff. Efficient. Task logs its own execution to standard app logs. After successful pruning, task creates summary entry in `ActivityLog` table (e.g., `actionType: "SYSTEM_LOG_PRUNED"`, `actingUserName: "SYSTEM"`, `details: { entriesPruned: X, policyDays: Y }`).
-        * `[ ]` (Manual Log Pruning Trigger) UI `Button` "Prune Logs Now" in Log Retention section. Confirmation dialog ("...prune according to current policy [details]?"). On confirm, calls new API `POST /api/admin/system/logs/prune-now` (`ADMIN` role). API executes pruning logic on demand (synchronous with UI loader for MVP). API response indicates success/failure/count. Manual pruning also logs to `ActivityLog`.
-        * `[ ]` (Default Policy Application) Default `logRetentionDays: 180` ensures pruning if admin never configures.
+        * `[ ]` (`SystemSetting` Schema Enhancement) The `SystemSetting` Prisma model (used for branding in Story 2.4, or created here if it's the first system-wide setting) is defined/updated to include: `logRetentionDays` (Integer, with a `@@default(180)`). A value of `0` explicitly means logs should be kept indefinitely (no pruning based on age).
+        * `[ ]` If the `SystemSetting` model is being newly created in this story: It uses a mechanism to ensure only one record exists for these global settings (e.g., a fixed `id` like `"singleton"`). Includes `updatedAt DateTime @updatedAt`.
+        * `[ ]` A Prisma migration for these schema changes is generated and successfully applied. Prisma Client is regenerated.
+        * `[ ]` On application startup or first access to settings, if no `SystemSetting` record exists, one is created with the default `logRetentionDays: 180`.
+        * `[ ]` (Admin UI for Log Retention) A new section titled "Activity Log Retention Policy" is added to an appropriate admin page (e.g., the "Activity Log" page from Story 5.5, or a general "System Settings" page).
+        * `[ ]` The UI clearly displays the current `logRetentionDays` setting and allows the admin to modify it.
+        * `[ ]` An MUI `TextField` (type `number`, with `min="0"`) or an MUI `Select` component is used for setting `logRetentionDays`. Options for `Select` could include "30 days," "90 days," "180 days (Default)," "365 days," "Keep Indefinitely (Set to 0)".
+        * `[ ]` The input is clearly labeled (e.g., "Keep activity logs for (days, 0 = forever):").
+        * `[ ]` A "Save Retention Policy" MUI `Button` is present.
+        * `[ ]` Before saving the policy, a confirmation dialog (MUI `Dialog`) appears: "Are you sure you want to change the log retention policy to [selected value]? Logs older than this period (if applicable) will be deleted during the next scheduled cleanup."
+        * `[ ]` On user confirmation, an API call (e.g., part of `PUT /api/admin/settings` or a new `PUT /api/admin/log-settings`) saves the new `logRetentionDays` value to the `SystemSetting` record.
+        * `[ ]` Success or error messages (MUI `Snackbar`) are displayed to the admin upon attempting to save.
+        * `[ ]` (Backend API for Policy) The API endpoint used in AC 2.9 securely updates the `logRetentionDays` field in the `SystemSetting` model. It validates that the input value is a non-negative integer. Requires `ADMIN` role.
+        * `[ ]` (Automated Log Pruning - Scheduled Task) A scheduled task is implemented within the backend application (e.g., using `node-cron` for the local server environment).
+        * `[ ]` This task is configured to run periodically (e.g., once daily, at a configurable off-peak time like 3:00 AM server time).
+        * `[ ]` When the scheduled task runs:
+            * It reads the current `logRetentionDays` value from the `SystemSetting` model.
+            * If `logRetentionDays` is greater than `0`: It calculates the cutoff `timestamp` and deletes all `ActivityLog` records older than this cutoff date (using Prisma `deleteMany`).
+            * If `logRetentionDays` is `0`, no log records are deleted by this age-based pruning.
+        * `[ ]` The deletion process is efficient.
+        * `[ ]` The scheduled task logs its own execution details (e.g., start, end, number of logs pruned, any errors) to the main application's standard logging mechanism (console/file logs).
+        * `[ ]` After a successful pruning run (even if 0 entries were pruned), the task creates a summary entry in the `ActivityLog` table itself (e.g., `actionType: "SYSTEM_LOG_PRUNED"`, `actingUserName: "SYSTEM"`, `details: { entriesPruned: X, policyDays: Y }`).
+        * `[ ]` (Manual Log Pruning Trigger) In the "Activity Log Retention Policy" UI section, an MUI `Button` labeled "Prune Logs Now" is available.
+        * `[ ]` Clicking this button triggers a confirmation dialog: "Are you sure you want to manually prune activity logs now according to the current retention policy of [current policy: X days / Keep Indefinitely]? This action will run immediately and cannot be undone."
+        * `[ ]` Upon user confirmation, a new secure API endpoint (e.g., `POST /api/admin/system/logs/prune-now`) is called. This endpoint requires `ADMIN` role.
+        * `[ ]` This API endpoint synchronously (or as a short-lived async task with immediate feedback for MVP) executes the same log pruning logic as the scheduled task, based on the currently saved retention policy.
+        * `[ ]` The API response indicates the success/failure of the manual pruning operation and the number of entries pruned. This result is displayed to the admin in the UI (e.g., via `Snackbar`).
+        * `[ ]` This manual pruning action also logs its execution and result to the `ActivityLog` table.
+        * `[ ]` (Default Policy Application) The default value for `logRetentionDays` is `180` in the `SystemSetting` model. This ensures that if an admin never configures the policy, logs are pruned based on this default during scheduled cleanups.
+
+---
+*(The detailed User Stories for Epics 1 & 2 would precede Epic 3 in a truly complete single-file PRD. The previous output provided the full detail for Epics 3, 4, and this Story 5.6 concludes Epic 5. If you need Epics 1 & 2 fully detailed in this same format, please let me know.)*
 
 ---
 
@@ -838,7 +815,7 @@ This section contains the full definition of Epics 3, 4, and 5, and their consti
 
 **Original Prompt (for historical reference):**
 *Objective:** Elaborate on the UI/UX aspects of the product defined in this PRD for ControlCenter.
-*(Full prompt omitted for brevity, present in dialogue history)*
+*(Full prompt details available in prior dialogue history)*
 
 ---
 
@@ -848,4 +825,4 @@ This section contains the full definition of Epics 3, 4, and 5, and their consti
 
 **Original Prompt (for historical reference):**
 Based on the comprehensive requirements detailed in this Product Requirements Document for the **ControlCenter** project, the following technical guidance, decisions, and assumptions should inform your architecture analysis and design when operating in "Architecture Creation Mode":
-*(Full prompt omitted for brevity, present in dialogue history)*
+*(Full prompt details available in prior dialogue history)*
