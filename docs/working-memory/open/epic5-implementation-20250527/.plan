@@ -1,0 +1,127 @@
+# Epic 5: Admin Dashboard - System Operations & Monitoring
+
+## Problem Analysis
+
+- **Goal**: Equip administrators with critical system operation tools, including asynchronous backup and restore functionality, system statistics, user activity tracking, and configurable log retention.
+- **Key Requirements**:
+  - Implement backup functionality with manifest
+  - Create backup file management
+  - Build restore capability with migration handling
+  - Develop admin UI for backup and restore operations
+  - Add system statistics display
+  - Implement activity tracking log
+  - Create configurable log retention policy
+
+## Current Status
+
+### 2025-05-27 07:22
+
+**Status**: Planned
+
+- What's working: N/A - Planning phase
+- What's not: N/A - Not started implementation
+- Blocking issues: Epics 1-4 need to be completed first
+- Next actions: Complete preceding epics, then begin with Story 5.1
+- Documentation updates needed:
+  - [ ] Backup and restore documentation
+  - [ ] Activity log structure
+  - [ ] System operations guide
+
+## Implementation Steps
+
+- [ ] **Story 5.1: Implement Backend Logic and API for Application Backup**
+  - [ ] Create API endpoint for backup initiation
+  - [ ] Implement backup process as background task
+  - [ ] Define data to be included in backup
+  - [ ] Create backup manifest file
+  - [ ] Implement backup archive creation and storage
+  - [ ] Add API response and feedback mechanisms
+  - [ ] Ensure database integrity during backup
+  - Success criteria: Asynchronous backup process with manifest creation
+  - Dependencies: Epic 1, Epic 2 (Admin Routes)
+
+- [ ] **Story 5.1.5: Implement API Endpoints for Managing Backup Files**
+  - [ ] Create API endpoint for listing backup files
+  - [ ] Implement backup file download endpoint
+  - [ ] Add backup file deletion endpoint
+  - [ ] Ensure proper security for all endpoints
+  - Success criteria: Complete API for backup file management
+  - Dependencies: Story 5.1
+
+- [ ] **Story 5.2: Implement Backend Logic and API for Application Restore**
+  - [ ] Create API endpoint for restore initiation
+  - [ ] Implement backup validation in background task
+  - [ ] Add manifest reading functionality
+  - [ ] Create database restoration and migration process
+  - [ ] Implement asset file restoration
+  - [ ] Add API response and feedback mechanisms
+  - Success criteria: Reliable restore process with proper order and error handling
+  - Dependencies: Story 5.1
+
+- [ ] **Story 5.3: Develop Admin UI for Backup, Restore, and Backup File Management**
+  - [ ] Create system operations admin page
+  - [ ] Implement backup file listing and management UI
+  - [ ] Add UI for initiating new backups
+  - [ ] Create restore from backup UI with warnings
+  - [ ] Implement asynchronous feedback for operations
+  - Success criteria: Intuitive UI for backup and restore operations
+  - Dependencies: Stories 5.1, 5.1.5, 5.2
+
+- [ ] **Story 5.4: Implement Basic System Statistics Display**
+  - [ ] Create statistics section in admin dashboard
+  - [ ] Implement backend API for statistics
+  - [ ] Add UI for displaying user, group, and URL counts
+  - Success criteria: Admin dashboard displays key system statistics
+  - Dependencies: Epic 2 (Admin Dashboard)
+
+- [ ] **Story 5.5: Implement Basic User Activity Tracking Log**
+  - [ ] Create ActivityLog Prisma model
+  - [ ] Implement backend logging service
+  - [ ] Add logging for key system actions
+  - [ ] Create admin UI for viewing activity log
+  - [ ] Implement backend API for log retrieval
+  - Success criteria: Comprehensive activity tracking with admin UI
+  - Dependencies: Epic 1 (User Schema)
+
+- [ ] **Story 5.6: Implement Configurable Log Retention Policy**
+  - [ ] Update SystemSetting schema with logRetentionDays
+  - [ ] Create admin UI for log retention configuration
+  - [ ] Implement backend API for policy management
+  - [ ] Add automated log pruning scheduled task
+  - [ ] Create manual log pruning trigger
+  - Success criteria: Configurable log retention with automated and manual pruning
+  - Dependencies: Story 5.5
+
+## Affected Components
+
+- Database schema (ActivityLog, SystemSetting)
+- Admin API endpoints for system operations
+- Admin UI for backup, restore, and monitoring
+- Background processing for async operations
+- Scheduled tasks for maintenance
+
+## Dependencies
+
+- Epic 1 (Authentication, User Schema)
+- Epic 2 (Admin Dashboard)
+- node-cron for scheduled tasks
+- formidable/archiver/unzipper for file handling
+- Prisma ORM
+
+## Technical Considerations
+
+- Backup and restore operations must be asynchronous
+- Database migrations must be handled properly during restore
+- Log pruning must not impact system performance
+- Manifest format must be consistent and validated
+- Security for backup/restore operations is critical
+
+## Progress History
+
+### 2025-05-27 07:22 - Initial Planning
+
+- ✓ Completed: Created task plan for Epic 5 implementation
+- 🤔 Decisions: Organized implementation by story with dependencies on previous epics
+- ❌ Issues: None at this stage
+- 📚 Documentation: Will need comprehensive documentation for backup/restore operations and activity logging
+- ⏭️ Next: This plan enables system operations and monitoring capabilities

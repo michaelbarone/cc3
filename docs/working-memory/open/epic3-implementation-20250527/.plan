@@ -1,0 +1,157 @@
+# Epic 3: Core URL & Group Management with Basic Iframe Display
+
+## Problem Analysis
+
+- **Goal**: Enable administrators to create, manage, and organize URLs and URL Groups. Enable authenticated users to view their assigned groups/URLs. Implement basic iframe display functionality with appropriate visual indicators and navigation.
+- **Key Requirements**:
+  - Define core content and access database schemas
+  - Create admin APIs for URL and Group management
+  - Build admin UIs for managing URLs and Groups
+  - Implement user-facing API for personalized content
+  - Create global UI components (header, user menu)
+  - Build dashboard with iframe display capability
+
+## Current Status
+
+### 2025-05-27 07:19
+
+**Status**: Planned
+
+- What's working: N/A - Planning phase
+- What's not: N/A - Not started implementation
+- Blocking issues: Epics 1 and 2 need to be completed first
+- Next actions: Complete preceding epics, then begin with Story 3.1
+- Documentation updates needed:
+  - [ ] Database schema documentation for content entities
+  - [ ] URL and Group management flows
+  - [ ] Iframe handling documentation
+
+## Implementation Steps
+
+- [ ] **Story 3.1: Define Core Content & Access Prisma Schemas**
+  - [ ] Update schema.prisma with Url model
+  - [ ] Add Group model definition
+  - [ ] Create UrlInGroup relation model
+  - [ ] Define UserGroupAccess relation model
+  - [ ] Update User model with necessary relations
+  - [ ] Generate and apply migrations
+  - Success criteria: Complete database schema for content entities with appropriate relations
+  - Dependencies: Epic 1 (User Schema)
+
+- [ ] **Story 3.2: Implement Admin API Endpoints for CRUD Operations on URL Groups**
+  - [ ] Create API routes under /api/admin/urlGroups
+  - [ ] Implement group creation endpoint
+  - [ ] Add endpoints for listing, updating, and deleting groups
+  - [ ] Ensure proper sorting (displayOrder then name)
+  - [ ] Add comprehensive error handling
+  - Success criteria: Complete, secure API for group management
+  - Dependencies: Story 3.1
+
+- [ ] **Story 3.3: Implement Admin API Endpoints for Global URLs**
+  - [ ] Create API routes under /api/admin/urls
+  - [ ] Implement URL creation with icon auto-discovery
+  - [ ] Add endpoints for listing, updating, and deleting URLs
+  - [ ] Create URL update logic with icon re-check on URL change
+  - [ ] Add proper error handling for duplicates
+  - Success criteria: Complete API for global URL management with icon discovery
+  - Dependencies: Story 3.1
+
+- [ ] **Story 3.4: Implement Admin API Endpoints for Managing URLs within Groups**
+  - [ ] Create nested API routes for URL-in-Group operations
+  - [ ] Implement adding URLs to groups
+  - [ ] Add endpoints for listing, updating, and removing URLs from groups
+  - [ ] Ensure proper sorting by displayOrderInGroup
+  - [ ] Add comprehensive error handling
+  - Success criteria: Complete API for managing URL membership in groups
+  - Dependencies: Stories 3.2, 3.3
+
+- [ ] **Story 3.5: Develop Admin UI for URL Group Management**
+  - [ ] Create group management page
+  - [ ] Implement group listing with sorting
+  - [ ] Add UI for creating, editing, and deleting groups
+  - [ ] Include confirmation dialogs
+  - [ ] Connect to APIs from Story 3.2
+  - Success criteria: Functional UI for group management
+  - Dependencies: Stories 2.1, 3.2
+
+- [ ] **Story 3.6: Develop Admin UI for Managing URLs within Groups**
+  - [ ] Create URL-in-Group management UI
+  - [ ] Implement listing URLs in selected group
+  - [ ] Add UI for adding global URLs to group
+  - [ ] Create UI for reordering and editing group-specific properties
+  - [ ] Add UI for removing URLs from group
+  - [ ] Connect to APIs from Story 3.4
+  - Success criteria: Functional UI for managing URLs within groups
+  - Dependencies: Stories 3.4, 3.5
+
+- [ ] **Story 3.6.5: Develop Admin UI for Global URL Management**
+  - [ ] Create global URL management page
+  - [ ] Implement URL listing with sorting
+  - [ ] Add UI for creating, editing, and deleting global URLs
+  - [ ] Create favicon management UI with auto-discovery feedback
+  - [ ] Connect to APIs from Story 3.3
+  - Success criteria: Functional UI for global URL management
+  - Dependencies: Stories 2.1, 3.3
+
+- [ ] **Story 3.7: Implement API for Users to Fetch Their Accessible Groups and URLs**
+  - [ ] Create API endpoint for authenticated users
+  - [ ] Implement data fetching for user-accessible groups
+  - [ ] Add proper data structure with effective titles
+  - [ ] Ensure dates are formatted as ISO strings
+  - [ ] Optimize database queries
+  - Success criteria: API returns personalized content for users
+  - Dependencies: Story 3.1
+
+- [ ] **Story 3.8: Implement Global User Menu and Application Header**
+  - [ ] Create AppBar component with conditional display
+  - [ ] Implement User Menu dropdown
+  - [ ] Add theme toggle functionality
+  - [ ] Create mobile hamburger menu
+  - [ ] Ensure responsive design
+  - Success criteria: Consistent header with user menu across application
+  - Dependencies: Epic 1 (Authentication)
+
+- [ ] **Story 3.9: Implement User Dashboard UI with Multi-Iframe Handling**
+  - [ ] Create dashboard page with data fetching
+  - [ ] Implement mobile drawer navigation
+  - [ ] Add URL item visual states
+  - [ ] Create multi-iframe management
+  - [ ] Implement initial iframe loading
+  - [ ] Add group state persistence
+  - [ ] Handle broken favicons gracefully
+  - Success criteria: Functional dashboard displaying URLs in iframes with state indicators
+  - Dependencies: Stories 3.7, 3.8
+
+## Affected Components
+
+- Database schema (Prisma)
+- Admin API endpoints
+- Admin UI for URL and Group management
+- User-facing API for personalized content
+- Global header and navigation components
+- Dashboard with iframe display
+
+## Dependencies
+
+- Epic 1 (Authentication, User Schema)
+- Epic 2 (Admin Dashboard Layout)
+- Material UI v6
+- Prisma ORM
+
+## Technical Considerations
+
+- Iframe security requires proper sandbox attributes
+- State preservation between iframe switching needs careful implementation
+- Icon auto-discovery requires robust error handling
+- Proper error handling for unique constraints in database
+- Performance optimization for user content fetching
+
+## Progress History
+
+### 2025-05-27 07:19 - Initial Planning
+
+- ✓ Completed: Created task plan for Epic 3 implementation
+- 🤔 Decisions: Organized implementation by story with dependencies on previous epics
+- ❌ Issues: None at this stage
+- 📚 Documentation: Will need comprehensive documentation for URL/Group schemas and iframe handling
+- ⏭️ Next: This plan enables core content management and display functionality

@@ -1,0 +1,129 @@
+# Epic 4: Advanced Iframe Interaction & User Personalization
+
+## Problem Analysis
+
+- **Goal**: Implement a highly interactive and customizable user dashboard experience, including user-selectable menu positions, advanced iframe state management, clear visual indicators in menus, and specific interaction behaviors.
+- **Key Requirements**:
+  - Implement persistent user settings for layout and theme
+  - Create robust iframe state management system
+  - Build desktop "Top Menu" navigation experience
+  - Implement desktop "Side Menu" navigation experience
+  - Add click and long-press interactions for URLs
+  - Ensure mobile compatibility for all features
+
+## Current Status
+
+### 2025-05-27 07:21
+
+**Status**: Planned
+
+- What's working: N/A - Planning phase
+- What's not: N/A - Not started implementation
+- Blocking issues: Epics 1, 2, and 3 need to be completed first
+- Next actions: Complete preceding epics, then begin with Story 4.1
+- Documentation updates needed:
+  - [ ] User settings documentation
+  - [ ] Iframe state management documentation
+  - [ ] Navigation and interaction documentation
+
+## Implementation Steps
+
+- [ ] **Story 4.1: Implement Persistent User Settings for Layout**
+  - [ ] Define UserSetting Prisma model with theme and menuPosition
+  - [ ] Update User model with relation to UserSetting
+  - [ ] Create migration and apply to database
+  - [ ] Add logic to auto-create UserSetting records
+  - [ ] Implement backend API for user settings
+  - [ ] Enhance session data with user preferences
+  - [ ] Create UI controls in User Settings page
+  - [ ] Add dynamic header adaptation based on preferences
+  - [ ] Implement dynamic dashboard layout based on preferences
+  - [ ] Create theme application and toggle functionality
+  - Success criteria: Users can personalize layout and theme with persistence
+  - Dependencies: Epic 1 (User Schema), Epic 2 (User Profile)
+
+- [ ] **Story 4.2: Implement Core Iframe State Management**
+  - [ ] Create IframeProvider React Context
+  - [ ] Implement useIframeManager custom hook
+  - [ ] Add iframe rendering logic
+  - [ ] Implement CSS visibility control
+  - [ ] Add iframe sandbox attributes for security
+  - [ ] Create mechanisms for tracking loaded status
+  - [ ] Implement state preservation verification
+  - [ ] Add support for initial URL loading
+  - Success criteria: Robust iframe state management with visibility control
+  - Dependencies: Story 3.9
+
+- [ ] **Story 4.3: Implement Desktop "Top Menu" Navigation Experience**
+  - [ ] Create conditional rendering for AppBar central area
+  - [ ] Implement normal state display with opacity/underline indicators
+  - [ ] Add hover-to-expand interaction
+  - [ ] Create expanded view interaction handling
+  - [ ] Implement responsive adaptation for tablets
+  - [ ] Ensure proper layout and scrolling
+  - Success criteria: Rich, intuitive "Top Menu" experience with visual indicators
+  - Dependencies: Stories 3.8, 4.1, 4.2
+
+- [ ] **Story 4.4: Implement Desktop "Side Menu" Navigation Experience**
+  - [ ] Create conditional rendering based on preferences
+  - [ ] Implement side panel structure with full-height layout
+  - [ ] Add collapsible behavior for desktop/tablet
+  - [ ] Create URL/Group interaction with indicators
+  - [ ] Ensure proper integration with IframeManager
+  - [ ] Add smooth animations and transitions
+  - Success criteria: Rich, organized "Side Menu" experience with visual indicators
+  - Dependencies: Stories 4.1, 4.2
+
+- [ ] **Story 4.5: Implement Click and Long-Press for URLs**
+  - [ ] Create single-click behavior for all menus
+  - [ ] Implement long-press detection with visual feedback
+  - [ ] Add unload action for long-press
+  - [ ] Create UI for unloaded active URLs
+  - [ ] Implement cancellation of long-press
+  - [ ] Ensure proper integration with IframeManager
+  - Success criteria: Intuitive URL interactions with visual feedback
+  - Dependencies: Story 4.2
+
+- [ ] **Story 4.6: Ensure Advanced Features Work in Mobile Drawer**
+  - [ ] Implement visual states for mobile drawer URL items
+  - [ ] Add click interaction in mobile context
+  - [ ] Create long-press interaction with haptic feedback
+  - [ ] Ensure mobile usability and touch optimization
+  - [ ] Maintain consistency with desktop experiences
+  - Success criteria: Consistent, rich mobile experience for URL interactions
+  - Dependencies: Stories 4.2, 4.5
+
+## Affected Components
+
+- User settings schema and APIs
+- React contexts and custom hooks
+- Dashboard layout and navigation components
+- Iframe management system
+- Interaction handlers (click, long-press)
+- Mobile-specific components
+
+## Dependencies
+
+- Epic 1 (User Schema, Authentication)
+- Epic 2 (User Profile Management)
+- Epic 3 (Basic Iframe Display, Header)
+- Material UI v6
+- React Context API
+
+## Technical Considerations
+
+- Iframe state preservation requires careful implementation
+- Long-press detection needs debounce and animation synchronization
+- Visual indicators must update instantly on state changes
+- Theme application must support system preference detection
+- Mobile touch interactions need proper event handling
+
+## Progress History
+
+### 2025-05-27 07:21 - Initial Planning
+
+- ✓ Completed: Created task plan for Epic 4 implementation
+- 🤔 Decisions: Organized implementation by story with dependencies on previous epics
+- ❌ Issues: None at this stage
+- 📚 Documentation: Will need comprehensive documentation for iframe state management and interaction patterns
+- ⏭️ Next: This plan enables advanced user interaction and personalization

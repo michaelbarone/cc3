@@ -1,0 +1,107 @@
+# Epic 2: Admin Dashboard - Core Administration & Multi-User Setup
+
+## Problem Analysis
+
+- **Goal**: Provide administrators with tools to manage application settings (branding), control user registration, create and manage other user accounts, and enable all users to manage their profiles.
+- **Key Requirements**:
+  - Create admin dashboard layout and navigation
+  - Implement user profile management
+  - Build admin user management interface
+  - Create application branding management
+  - Implement user registration control setting
+
+## Current Status
+
+### 2025-05-27 07:18
+
+**Status**: Planned
+
+- What's working: N/A - Planning phase
+- What's not: N/A - Not started implementation
+- Blocking issues: Epic 1 needs to be completed first
+- Next actions: Complete Epic 1, then begin with Story 2.1
+- Documentation updates needed:
+  - [ ] Admin dashboard structure documentation
+  - [ ] User management flows
+  - [ ] Branding configuration guide
+
+## Implementation Steps
+
+- [ ] **Story 2.1: Create Basic Admin Dashboard Layout and Navigation**
+  - [ ] Create admin route protection logic
+  - [ ] Implement admin layout component
+  - [ ] Build persistent left sidebar navigation
+  - [ ] Add ordered navigation links for all admin functions
+  - [ ] Create admin landing page
+  - Success criteria: Admin dashboard with secure routes and consistent navigation
+  - Dependencies: Epic 1 (Authentication, Middleware)
+
+- [ ] **Story 2.2: Implement User Profile Management (Self-Service)**
+  - [ ] Create dedicated profile page
+  - [ ] Add read-only user name display
+  - [ ] Implement password change section
+  - [ ] Create avatar management section (upload, preview, remove)
+  - [ ] Build backend APIs for profile operations
+  - Success criteria: Users can manage their profiles (password, avatar)
+  - Dependencies: Epic 1 (Authentication, User Schema)
+
+- [ ] **Story 2.3: Implement Admin User Management**
+  - [ ] Create user management page
+  - [ ] Build user list display with all required columns
+  - [ ] Implement "Create New User" functionality
+  - [ ] Add "Edit User" capability
+  - [ ] Create backend APIs for user management
+  - Success criteria: Admins can list, create, and edit users (name, role, status)
+  - Dependencies: Story 2.1, Epic 1 (User Schema)
+
+- [ ] **Story 2.4: Implement Application Branding Management**
+  - [ ] Create branding management page
+  - [ ] Add application name customization
+  - [ ] Implement logo image upload
+  - [ ] Add favicon image upload
+  - [ ] Build backend APIs for branding management
+  - Success criteria: Admins can customize app name, logo, and favicon
+  - Dependencies: Story 2.1
+
+- [ ] **Story 2.5: Implement User Registration Control Setting**
+  - [ ] Add section to admin settings page
+  - [ ] Create UI for toggling user creation permission
+  - [ ] Implement persistence mechanism
+  - [ ] Update user creation UI based on setting
+  - [ ] Build backend API for settings management
+  - Success criteria: Admins can enable/disable user creation with confirmation
+  - Dependencies: Story 2.1, Story 2.3
+
+## Affected Components
+
+- Admin dashboard layout and navigation
+- User profile management UI
+- Admin user management UI
+- Application branding configuration
+- System settings management
+- Backend APIs for all admin functions
+
+## Dependencies
+
+- Epic 1 (Authentication, User Schema, Middleware)
+- Material UI v6
+- File upload handling (formidable)
+- Image processing
+
+## Technical Considerations
+
+- Admin routes require strict access control
+- File uploads need proper validation and security
+- Avatar and branding images require proper storage strategy
+- User management must include safeguards (can't remove last admin)
+- Settings must be properly persisted and retrieved
+
+## Progress History
+
+### 2025-05-27 07:18 - Initial Planning
+
+- ✓ Completed: Created task plan for Epic 2 implementation
+- 🤔 Decisions: Organized implementation by story with clear dependencies on Epic 1
+- ❌ Issues: None at this stage
+- 📚 Documentation: Will need to document admin interfaces, user management, and branding configuration
+- ⏭️ Next: This plan enables admin functionality and multi-user capabilities
