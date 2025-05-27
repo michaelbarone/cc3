@@ -13,7 +13,7 @@
 
 ## Current Status
 
-### 2025-05-27 07:21
+### 2025-05-27 07:43
 
 **Status**: Planned
 
@@ -29,67 +29,172 @@
 ## Implementation Steps
 
 - [ ] **Story 4.1: Implement Persistent User Settings for Layout**
-  - [ ] Define UserSetting Prisma model with theme and menuPosition
-  - [ ] Update User model with relation to UserSetting
+  - [ ] Define UserSetting Prisma model with theme (Enum: `LIGHT`, `DARK`, `SYSTEM` default) and menuPosition (Enum: `TOP` default, `SIDE`)
+  - [ ] Update User model with one-to-one relation to UserSetting
   - [ ] Create migration and apply to database
-  - [ ] Add logic to auto-create UserSetting records
-  - [ ] Implement backend API for user settings
-  - [ ] Enhance session data with user preferences
-  - [ ] Create UI controls in User Settings page
-  - [ ] Add dynamic header adaptation based on preferences
-  - [ ] Implement dynamic dashboard layout based on preferences
-  - [ ] Create theme application and toggle functionality
+  - [ ] Add logic to auto-create UserSetting records with defaults (`theme: SYSTEM`, `menuPosition: TOP`) whenever a new User is created
+  - [ ] Implement backend API endpoints:
+    - [ ] `GET /api/user/settings` to fetch the authenticated user's settings
+    - [ ] `PUT /api/user/settings` to update theme and/or menuPosition with validation
+  - [ ] Enhance NextAuth.js session data to include persisted theme and menuPosition preferences
+  - [ ] Create UI controls in User Settings page:
+    - [ ] "Layout & Appearance Preferences" section
+    - [ ] UI controls for menu position with static image previews
+    - [ ] UI controls for theme with themed preview boxes (selected has blue highlight)
+    - [ ] "Save Preferences" button that updates settings via API
+  - [ ] Add dynamic header adaptation based on preferences:
+    - [ ] Desktop: Three-section structure for "Top Menu" vs. hidden for "Side Menu"
+    - [ ] Mobile: Consistent header regardless of preference
+  - [ ] Implement dynamic dashboard layout based on preferences:
+    - [ ] "Top Menu" preference shows URL/Group navigation in AppBar's central area
+    - [ ] "Side Menu" preference shows persistent side panel for navigation
+  - [ ] Create theme application and toggle functionality:
+    - [ ] Use MUI ThemeProvider with persisted theme
+    - [ ] Support SYSTEM theme with OS preference detection (prefers-color-scheme)
+    - [ ] Fall back to DARK if OS preference undetectable
   - Success criteria: Users can personalize layout and theme with persistence
   - Dependencies: Epic 1 (User Schema), Epic 2 (User Profile)
 
 - [ ] **Story 4.2: Implement Core Iframe State Management**
-  - [ ] Create IframeProvider React Context
-  - [ ] Implement useIframeManager custom hook
-  - [ ] Add iframe rendering logic
-  - [ ] Implement CSS visibility control
-  - [ ] Add iframe sandbox attributes for security
-  - [ ] Create mechanisms for tracking loaded status
-  - [ ] Implement state preservation verification
-  - [ ] Add support for initial URL loading
+  - [ ] Create IframeProvider React Context:
+    - [ ] Store managedIframes Map<string, { originalSrc: string; currentSrc: string; isLoaded: boolean; }>
+    - [ ] Track activeUrlIdentifier
+  - [ ] Implement useIframeManager custom hook with optimized methods:
+    - [ ] getIframeData(id), isUrlLoaded(id)
+    - [ ] setActiveUrl(id, srcForDataSrc)
+    - [ ] markAsLoaded(id), markAsUnloaded(id)
+    - [ ] triggerReload(id)
+    - [ ] getAllManagedIframesForRender()
+  - [ ] Add iframe rendering logic:
+    - [ ] Iterate getAllManagedIframesForRender() to render iframes
+    - [ ] Set src and data-src attributes appropriately
+  - [ ] Implement CSS visibility control:
+    - [ ] Active iframe: visibility: visible
+    - [ ] Inactive iframes: visibility: hidden; position: absolute; left: -9999px;
+  - [ ] Add iframe sandbox attributes for security:
+    - [ ] sandbox="allow-scripts allow-same-origin allow-popups allow-forms allow-downloads allow-popups-to-escape-sandbox"
+  - [ ] Create mechanisms for tracking loaded status:
+    - [ ] Monitor onload (calls markAsLoaded)
+    - [ ] Monitor onerror (status remains loaded: false)
+    - [ ] Display UI error for active iframe load failures
+  - [ ] Implement state preservation verification:
+    - [ ] Test loading URL A, scrolling, loading URL B, then showing A again to verify state preservation
+  - [ ] Add support for initial URL loading:
+    - [ ] Integrate with Story 3.9's initial auto-load functionality
+  - [ ] Optimize for performance using memoized React Context and React.memo for consumers
   - Success criteria: Robust iframe state management with visibility control
   - Dependencies: Story 3.9
 
 - [ ] **Story 4.3: Implement Desktop "Top Menu" Navigation Experience**
-  - [ ] Create conditional rendering for AppBar central area
-  - [ ] Implement normal state display with opacity/underline indicators
-  - [ ] Add hover-to-expand interaction
-  - [ ] Create expanded view interaction handling
-  - [ ] Implement responsive adaptation for tablets
-  - [ ] Ensure proper layout and scrolling
+  - [ ] Create conditional rendering for AppBar central area:
+    - [ ] Render in AppBar central area if menuPosition === TOP and viewport ≥768px
+    - [ ] Replace simpler Epic 3 top menu navigation
+  - [ ] Implement normal state display with opacity/underline indicators:
+    - [ ] Display current selected group name
+    - [ ] Show horizontal row of URL items for current group only
+    - [ ] Display favicons (or fallback) and effective titles
+    - [ ] Visual states: opacity 0.5 (unloaded), 1.0 (loaded), blue underline (active)
+  - [ ] Add hover-to-expand interaction:
+    - [ ] Hovering triggers expanded view below AppBar central area (using MUI Popper/div)
+    - [ ] Expanded view shows current group + URLs and other groups + URLs with visual states
+    - [ ] Mouse-out collapses view smoothly with suitable delay
+  - [ ] Create expanded view interaction handling:
+    - [ ] Clicking URL calls setActiveUrl(), updates selected group state, collapses expansion
+  - [ ] Implement responsive adaptation for tablets (768px - 1199px):
+    - [ ] Horizontal URL rows have condensed spacing
+    - [ ] Overflowing URL rows become horizontally scrollable (touch-swipe)
+    - [ ] Add "More" (•••) icon that opens MUI Menu with overflowed URL items
+  - [ ] Ensure proper layout and scrolling:
+    - [ ] Fit within AppBar/popper
+    - [ ] No main page scroll
+    - [ ] Application maintains 100% viewport height
+  - [ ] Optimize for smooth animations (300ms) and efficient rendering (memoization)
   - Success criteria: Rich, intuitive "Top Menu" experience with visual indicators
   - Dependencies: Stories 3.8, 4.1, 4.2
 
 - [ ] **Story 4.4: Implement Desktop "Side Menu" Navigation Experience**
-  - [ ] Create conditional rendering based on preferences
-  - [ ] Implement side panel structure with full-height layout
-  - [ ] Add collapsible behavior for desktop/tablet
-  - [ ] Create URL/Group interaction with indicators
-  - [ ] Ensure proper integration with IframeManager
-  - [ ] Add smooth animations and transitions
+  - [ ] Create conditional rendering based on preferences:
+    - [ ] Render if menuPosition === SIDE and viewport ≥768px
+    - [ ] Hide main AppBar (Story 3.8) and Top Menu navigation (Story 4.3)
+  - [ ] Implement side panel structure with full-height layout:
+    - [ ] Full-height, persistent left panel (MUI Drawer variant="persistent" or custom div)
+    - [ ] Width ~20% or fixed (250-300px)
+    - [ ] Fixed position with scrollable internal content
+    - [ ] Top: App Logo/Name
+    - [ ] Middle: Vertical list of URL Groups (accordion style)
+    - [ ] Bottom: Reusable User Menu component rendered as accordion section or list
+  - [ ] Add collapsible behavior for desktop/tablet:
+    - [ ] Collapse/Expand toggle button in panel's top section
+    - [ ] Animate panel width changes
+    - [ ] Collapsed state: ~72px width with icons only
+    - [ ] Group headers show abbreviated initials in circle/avatar
+    - [ ] URLs show only favicons
+    - [ ] User Menu collapses to icon trigger
+    - [ ] Add MUI Tooltips on hover for all icons
+    - [ ] Persist collapsed/expanded state for session (localStorage)
+  - [ ] Create URL/Group interaction with indicators:
+    - [ ] Click group header to expand/collapse
+    - [ ] Click URL to set active URL
+    - [ ] Visual states: opacity 0.5 (unloaded), 1.0 (loaded), blue right side border (active)
+  - [ ] Ensure proper integration with IframeManager:
+    - [ ] Consume useIframeManager and group/URL data
+    - [ ] Update active URL and selected group state
+  - [ ] Add smooth animations and transitions:
+    - [ ] 300ms animations for panel/accordion transitions
+    - [ ] Efficient rendering with appropriate optimizations
   - Success criteria: Rich, organized "Side Menu" experience with visual indicators
   - Dependencies: Stories 4.1, 4.2
 
 - [ ] **Story 4.5: Implement Click and Long-Press for URLs**
-  - [ ] Create single-click behavior for all menus
-  - [ ] Implement long-press detection with visual feedback
-  - [ ] Add unload action for long-press
-  - [ ] Create UI for unloaded active URLs
-  - [ ] Implement cancellation of long-press
-  - [ ] Ensure proper integration with IframeManager
+  - [ ] Create single-click behavior for all menus:
+    - [ ] If URL not active OR unloaded: setActiveUrl() (loads via src from data-src)
+    - [ ] If URL active AND loaded: Reload active iframe content
+    - [ ] Update menu item to "active" state (opacity 1.0 + indicator)
+    - [ ] Clear "Content Unloaded" message if visible
+  - [ ] Implement long-press detection with visual feedback:
+    - [ ] Create hook/logic to detect 2s sustained press with 0.3s delay before animation
+    - [ ] Add visual progress bar (orange, 2-3px thick, bottom edge of item)
+    - [ ] Include optional tooltip ("Hold for 2s to unload")
+    - [ ] Manage event listeners properly
+  - [ ] Add unload action for long-press:
+    - [ ] On 2s press: markUrlAsUnloaded() (sets iframe src="", state "loaded: false")
+    - [ ] Update menu item to "unloaded" state (opacity 0.5, loses active indicator)
+    - [ ] Add haptic feedback on mobile devices
+  - [ ] Create UI for unloaded active URLs:
+    - [ ] Hide unloaded URL's iframe (visibility: hidden)
+    - [ ] Display centered "Content Unloaded" text
+    - [ ] Add "Reload Content" MUI Button (variant="outlined" with refresh icon)
+    - [ ] Set background to match current theme
+  - [ ] Implement cancellation of long-press:
+    - [ ] Release before 2s or move pointer away cancels long-press
+    - [ ] Reset progress indicator
+    - [ ] Ensure no single-click triggered on cancellation
+  - [ ] Ensure proper integration with IframeManager:
+    - [ ] Actions update useIframeManager states
+    - [ ] Menu indicators update instantly
   - Success criteria: Intuitive URL interactions with visual feedback
   - Dependencies: Story 4.2
 
 - [ ] **Story 4.6: Ensure Advanced Features Work in Mobile Drawer**
-  - [ ] Implement visual states for mobile drawer URL items
-  - [ ] Add click interaction in mobile context
-  - [ ] Create long-press interaction with haptic feedback
-  - [ ] Ensure mobile usability and touch optimization
-  - [ ] Maintain consistency with desktop experiences
+  - [ ] Implement visual states for mobile drawer URL items:
+    - [ ] Opacity 0.5 (unloaded), 1.0 (loaded)
+    - [ ] Active URL has blue right side border
+  - [ ] Add click interaction in mobile context:
+    - [ ] Single-click triggers "Activate/Ensure Loaded/Reload"
+    - [ ] Update iframe, close drawer, update indicators
+  - [ ] Create long-press interaction with haptic feedback:
+    - [ ] Long-press (2s) triggers "Unload URL Content"
+    - [ ] Show visual progress bar on item's bottom edge
+    - [ ] Add haptic feedback on successful long-press
+    - [ ] Update item to "unloaded" state (opacity 0.5)
+    - [ ] Show "Content Unloaded" UI in iframe area
+  - [ ] Ensure mobile usability and touch optimization:
+    - [ ] Provide adequate touch targets
+    - [ ] Ensure smooth animations on mobile devices
+    - [ ] Remember drawer state (expanded group) during session
+  - [ ] Maintain consistency with desktop experiences:
+    - [ ] State changes via useIframeManager consistent across platforms
+    - [ ] "Loaded"/"unloaded" status universal across all views
   - Success criteria: Consistent, rich mobile experience for URL interactions
   - Dependencies: Stories 4.2, 4.5
 
@@ -112,11 +217,13 @@
 
 ## Technical Considerations
 
-- Iframe state preservation requires careful implementation
-- Long-press detection needs debounce and animation synchronization
+- Iframe state preservation requires careful implementation using CSS visibility and positioning
+- Long-press detection needs debounce and animation synchronization (with 0.3s delay before animation)
 - Visual indicators must update instantly on state changes
-- Theme application must support system preference detection
-- Mobile touch interactions need proper event handling
+- Theme application must support system preference detection via `prefers-color-scheme` media query
+- Mobile touch interactions need proper event handling with haptic feedback
+- Performance optimization through memoization and efficient React Context usage
+- Responsive design considerations for different viewport sizes (desktop vs. tablet vs. mobile)
 
 ## Progress History
 
@@ -127,3 +234,25 @@
 - ❌ Issues: None at this stage
 - 📚 Documentation: Will need comprehensive documentation for iframe state management and interaction patterns
 - ⏭️ Next: This plan enables advanced user interaction and personalization
+
+### 2025-05-27 07:43 - Plan Enhancement
+
+- ✓ Completed: Updated plan with more detailed context from project documentation
+- 🤔 Decisions: Added specific implementation details for each story based on epic documentation
+- ❌ Issues: None at this stage
+- 📚 Documentation: Added clarification on technical requirements and interaction patterns
+- ⏭️ Next: Proceed with implementation after completing Epics 1, 2, and 3
+
+## Future Follow-up Items
+
+1. **Performance Monitoring** - Consider implementing performance tracking for iframe loading and state management to identify potential bottlenecks, especially for users with many URLs.
+
+2. **Accessibility Enhancements** - Ensure all navigation components are fully keyboard accessible and screen reader friendly, particularly for the complex hover-to-expand Top Menu and Side Menu components.
+
+3. **Progressive Enhancement** - Consider a fallback experience for browsers that might not fully support all features (older mobile browsers, etc.).
+
+4. **Advanced State Persistence** - Investigate potential for persisting URL active/loaded states between sessions (localStorage or server-side).
+
+5. **Touch Gesture Expansion** - Consider additional touch gestures beyond long-press for mobile users.
+
+6. **Network Status Integration** - Explore integration with browser's network status API to provide feedback about offline state or slow connections affecting iframe loading.
