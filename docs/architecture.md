@@ -1,34 +1,45 @@
 ## 11. Initial Architect Prompt
 
-Based on our discussions and requirements analysis for the **ControlCenter** project, I've compiled the following technical guidance from this PRD to inform your architecture analysis and decisions when you eventually operate in "Architecture Creation Mode":
+Based on the comprehensive requirements detailed in this Product Requirements Document for the **ControlCenter** project, the following technical guidance, decisions, and assumptions should inform your architecture analysis and design when operating in "Architecture Creation Mode":
 
 **Key Technical Pillars (from PRD Sections 5 & 6):**
 
-* **Repository & Service Architecture Decision:** Monorepo with Next.js application handling both frontend and backend (API) functionalities. Architecture is a Monolith, leveraging Next.js full-stack capabilities. Rationale: Simplicity for a personal application.
+* **Repository & Service Architecture Decision:** Monorepo. Next.js application handles both frontend and backend (API) functionalities. Architecture is a Monolith. Rationale: Simplicity for a personal application with limited users.
 * **Core Technology Stack:**
     * Frontend: Next.js 15.2.2 (App Router), React 19, TypeScript 5, Material UI v6, Emotion.
     * Backend: Next.js API Routes, Prisma ORM v6.5.0, NextAuth.js v4, JWT.
     * Database: SQLite.
-    * State Management (Client): React Context/Hooks.
+    * State Management (Client): React Context/Hooks (including for Iframe State and User Settings).
     * Testing: Vitest, React Testing Library, MSW, Happy DOM, Playwright (E2E).
     * Dev Tooling: ESLint, Prettier, Husky, Conventional Commits, Docker.
-* **Starter Project:** Built upon an existing bootstrapped repository.
 * **Deployment:** Local home server via Docker container.
 
-**Key Technical Constraints & Considerations (from PRD NFRs & Assumptions):**
-* High availability for 24/7 home use.
-* Data integrity is crucial (backup/restore is a core feature).
-* Performance: Fast initial load, snappy UI. Iframe performance handled gracefully.
-* Security: Standard input sanitization, secure session management. Password policies via NextAuth.js defaults are acceptable due to firewalled environment.
-* Detailed Application Directory Structure is provided in Section 6.
+**Key Functional & Non-Functional Drivers for Architecture:**
+* **User Authentication & Authorization:** Robust role-based (ADMIN/USER) access control is critical. Secure session management. First-run admin setup flow.
+* **Content Management (Admin-centric for MVP):** Admins manage a global library of URLs and URL Groups. URLs have titles, optional paths to uploaded favicons (with best-effort auto-discovery of icon links), notes, etc. Groups organize URLs with group-specific titles and display order. Users are assigned access to specific groups.
+* **User Dashboard Experience (Highly Interactive & Personalized - Epic 4):**
+    * User-selectable desktop menu positions (Top Menu vs. Side Menu), with distinct layouts and behaviors for each, including how the main application header adapts or is replaced.
+    * Mobile always uses a collapsible drawer for main navigation, triggered by a hamburger icon in a persistent top AppBar.
+    * Advanced iframe management: multiple iframes mounted in DOM, `visibility:hidden` for inactive ones to preserve state, `src`/`data-src` pattern for loading/unloading content.
+    * Client-side state management (e.g., `IframeProvider`, `useIframeManager`) to track active URL and loaded/unloaded status of all iframes.
+    * Specific URL item visual indicators (opacity for loaded/unloaded, underline/border for active).
+    * Click (activate/load/reload) and Long-press (2s, unload with progress bar, haptic feedback on mobile) interactions for URLs.
+    * Persisted user preferences for theme (Light/Dark/System) and menu position.
+* **System Operations (Admin):**
+    * Asynchronous Backup (DB + all assets + version manifest) and Restore (from uploaded archive, includes DB migration). APIs and Admin UI for these, including backup file management (list, download, delete).
+    * Activity Logging (structured JSON details, persistent, admin view with pagination).
+    * Configurable Log Retention (default 180 days, admin UI to change, automated pruning task, manual trigger).
+* **Performance:** Snappy UI, fast initial load, graceful handling of iframe loading. Efficient backend operations (DB queries, backup/restore, logging).
+* **Security:** Standard web security practices (XSS prevention, secure auth).
+* **Reliability:** Designed for continuous operation on a home server. Data integrity via backups.
 
-**Architectural Focus Areas (Implied by Epics):**
-* Robust and secure authentication/authorization (Epic 1 & 2).
-* Scalable (for features, not users) data models for URLs, Groups, User Access, Settings, Logs (Epic 3 & others).
-* Efficient client-side state management for complex UI interactions (Epic 4 - iframes, menu preferences).
-* Reliable backend APIs for all CRUD operations and system functions (Admin & User facing).
-* Secure and manageable backup/restore mechanisms (Epic 5).
-* Consideration for the "Very Technical" workflow chosen, meaning developers will implement directly from detailed stories; architectural patterns should support this clarity.
+**Architectural Focus Areas:**
+* Clear separation of concerns between frontend components, client-side state management, Next.js API routes, and backend services/database interactions.
+* Design for testability across all layers.
+* Robust error handling and user feedback mechanisms.
+* Efficient data fetching patterns, especially for personalized content on the dashboard.
+* Secure implementation of file uploads (avatars, branding images, URL favicons) and file system operations (backup/restore, asset storage).
+* Implementation of the scheduled task for log pruning.
+* Ensuring the "Very Technical" workflow chosen (developers implement from these detailed stories) is supported by a clear and understandable architecture.
 
-Please use this PRD as your primary input to design a comprehensive and implementable architecture if a dedicated architecture document is needed beyond the decisions already embedded herein.
-[triple-tick]
+Please use this PRD as your primary input. The detailed User Stories and Acceptance Criteria within each Epic provide granular requirements for all features.
