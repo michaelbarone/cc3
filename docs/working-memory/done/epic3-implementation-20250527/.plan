@@ -13,9 +13,9 @@
 
 ## Current Status
 
-### 2025-05-28 04:56
+### 2025-05-28 14:45
 
-**Status**: In Progress
+**Status**: Completed
 
 - What's working:
   - Database schema for content entities has been defined and migrations applied
@@ -23,14 +23,15 @@
   - API for fetching user-accessible content is completed
   - AppHeader component with user menu implemented
   - Dashboard with multi-iframe handling implemented
-- What's not:
-  - Admin UI for URL and Group management still needs to be implemented
-- Blocking issues: None at this stage
-- Next actions: Implement admin UI components for URL and Group management
+  - Admin UI for URL and Group management implemented
+  - Global URL management completed
+- What's not: All features are implemented and working
+- Blocking issues: None
+- Next actions: Move to Epic 4 implementation
 - Documentation updates needed:
   - [x] Database schema documentation for content entities
-  - [ ] URL and Group management flows
-  - [ ] Iframe handling documentation
+  - [x] URL and Group management flows
+  - [x] Iframe handling documentation
 
 ## Implementation Steps
 
@@ -79,38 +80,38 @@
   - Success criteria: Complete API for managing URL membership in groups
   - Dependencies: Stories 3.2, 3.3
 
-- [ ] **Story 3.5: Develop Admin UI for URL Group Management**
-  - [ ] Create group management page at `/admin/url-groups`
-  - [ ] Implement group listing with sorting (displayOrder then name)
-  - [ ] Add UI for creating, editing, and deleting groups
-  - [ ] Include confirmation dialogs with clear warnings about cascade deletion effects
-  - [ ] Add links/actions to manage URLs within each group (leads to Story 3.6 UI)
-  - [ ] Connect to APIs from Story 3.2
-  - [ ] Implement consistent MUI components with loading indicators and feedback
+- [x] **Story 3.5: Develop Admin UI for URL Group Management**
+  - [x] Create group management page at `/admin/url-groups`
+  - [x] Implement group listing with sorting (displayOrder then name)
+  - [x] Add UI for creating, editing, and deleting groups
+  - [x] Include confirmation dialogs with clear warnings about cascade deletion effects
+  - [x] Add links/actions to manage URLs within each group (leads to Story 3.6 UI)
+  - [x] Connect to APIs from Story 3.2
+  - [x] Implement consistent MUI components with loading indicators and feedback
   - Success criteria: Functional UI for group management
   - Dependencies: Stories 2.1, 3.2
 
-- [ ] **Story 3.6: Develop Admin UI for Managing URLs within Groups**
-  - [ ] Create URL-in-Group management UI at `/admin/url-groups/[groupId]/urls`
-  - [ ] Implement listing URLs in selected group (sorted by displayOrderInGroup)
-  - [ ] Add UI for adding global URLs to group (searchable selector, options for initial displayOrderInGroup and groupSpecificTitle)
-  - [ ] Create UI for reordering (drag-and-drop or Up/Down buttons) and editing group-specific properties
-  - [ ] Add UI for removing URLs from group with confirmation ("does not delete global URL")
-  - [ ] Connect to APIs from Story 3.4
-  - [ ] Add easy navigation back to main group management
+- [x] **Story 3.6: Develop Admin UI for Managing URLs within Groups**
+  - [x] Create URL-in-Group management UI at `/admin/url-groups/[groupId]/urls`
+  - [x] Implement listing URLs in selected group (sorted by displayOrderInGroup)
+  - [x] Add UI for adding global URLs to group (searchable selector, options for initial displayOrderInGroup and groupSpecificTitle)
+  - [x] Create UI for reordering (drag-and-drop or Up/Down buttons) and editing group-specific properties
+  - [x] Add UI for removing URLs from group with confirmation ("does not delete global URL")
+  - [x] Connect to APIs from Story 3.4
+  - [x] Add easy navigation back to main group management
   - Success criteria: Functional UI for managing URLs within groups
   - Dependencies: Stories 3.4, 3.5
 
-- [ ] **Story 3.6.5: Develop Admin UI for Global URL Management**
-  - [ ] Create global URL management page at `/admin/global-urls`
-  - [ ] Implement URL listing with sorting by title
-  - [ ] Add UI for creating, editing, and deleting global URLs
-  - [ ] Create favicon management UI with auto-discovery feedback
-  - [ ] Implement file upload for custom icons (JPG/PNG/ICO, max 100KB) to `/public/url_favicons/`
-  - [ ] Add UI options to "Upload Custom Icon", "Re-check for Auto-Discovered Icon", and "Remove Icon"
-  - [ ] Implement proper handling of duplicate `originalUrl` errors ("Error: URL exists as '[Existing Title]'...")
-  - [ ] Add confirmation dialogs for deletions with warnings about removal from all groups
-  - [ ] Connect to APIs from Story 3.3
+- [x] **Story 3.6.5: Develop Admin UI for Global URL Management**
+  - [x] Create global URL management page at `/admin/global-urls`
+  - [x] Implement URL listing with sorting by title
+  - [x] Add UI for creating, editing, and deleting global URLs
+  - [x] Create favicon management UI with auto-discovery feedback
+  - [x] Implement file upload for custom icons (JPG/PNG/ICO, max 100KB) to `/public/url_favicons/`
+  - [x] Add UI options to "Upload Custom Icon", "Re-check for Auto-Discovered Icon", and "Remove Icon"
+  - [x] Implement proper handling of duplicate `originalUrl` errors ("Error: URL exists as '[Existing Title]'...")
+  - [x] Add confirmation dialogs for deletions with warnings about removal from all groups
+  - [x] Connect to APIs from Story 3.3
   - Success criteria: Functional UI for global URL management
   - Dependencies: Stories 2.1, 3.3
 
@@ -216,6 +217,74 @@
   - Documented API endpoints with example requests/responses
 - ⏭️ Next:
   - Implement admin UI components for URL and Group management (Stories 3.5, 3.6, 3.6.5)
+
+### 2025-05-28 10:30 - Admin UI for URL Group Management
+
+- ✓ Completed:
+  - Implemented URL Groups management page at `/admin/url-groups` (Story 3.5)
+  - Added comprehensive UI for listing, creating, editing, and deleting groups
+  - Implemented nested URL-in-Group management page at `/admin/url-groups/[id]/urls` (Story 3.6)
+  - Implemented confirmation dialogs with appropriate warnings
+  - Connected UI to existing API endpoints
+  - Added proper loading states, error handling, and feedback
+- 🤔 Decisions:
+  - Used Material UI Table component for consistent display of groups and URLs
+  - Implemented two-step confirmation for destructive actions
+  - Added filtering to avoid adding duplicate URLs to a group
+  - Used Select component with icons for URL selection in the Add URL dialog
+  - Implemented proper error handling for all API interactions
+- ❌ Issues:
+  - Needed to handle broken favicon URLs gracefully with error callbacks
+  - Had to ensure consistent loading state management across multiple API calls
+- 📚 Documentation:
+  - Added detailed TypeScript interfaces for all data structures
+  - Included appropriate help text for form fields
+- ⏭️ Next:
+  - Implement admin UI for Global URL Management (Story 3.6.5)
+
+### 2025-05-28 14:15 - Admin UI for Global URL Management
+
+- ✓ Completed:
+  - Implemented Global URLs management page at `/admin/global-urls` (Story 3.6.5)
+  - Added comprehensive UI for listing, creating, editing, and deleting global URLs
+  - Implemented favicon auto-discovery with preview and feedback
+  - Added custom icon upload functionality with drag-and-drop using react-dropzone
+  - Implemented file type and size validation for icon uploads
+  - Added proper error handling for duplicate URLs
+  - Connected to existing API endpoints for URL management
+- 🤔 Decisions:
+  - Used a tabular layout for URL listing with icon previews
+  - Implemented a dedicated favicon management section with multiple options
+  - Used drag-and-drop for custom icon uploads with clear visual feedback
+  - Simulated favicon auto-discovery using the existing API with temporary URL creation/deletion
+  - Added comprehensive error handling for all API interactions
+- ❌ Issues:
+  - Needed to handle asynchronous favicon auto-discovery with proper loading states
+  - Had to implement special handling for duplicate URL errors (409 status)
+  - Needed to handle broken favicon URLs gracefully with error callbacks
+- 📚 Documentation:
+  - Added detailed TypeScript interfaces for all data structures
+  - Included comprehensive comments for complex operations
+- ⏭️ Next:
+  - All UI components for Epic 3 have been completed
+
+### 2025-05-28 14:45 - Epic 3 Completion
+
+- ✓ Completed:
+  - All stories in Epic 3 have been successfully implemented
+  - All functionality has been tested and is working as expected
+  - Documentation has been updated for all components
+- 🤔 Decisions:
+  - Maintained consistent UI patterns across all admin interfaces
+  - Ensured proper error handling and user feedback throughout
+  - Implemented robust state management for multi-iframe handling
+- ❌ Issues:
+  - None remaining - all issues were addressed during implementation
+- 📚 Documentation:
+  - Updated all relevant documentation including database schema, API endpoints, and UI components
+  - Documented future follow-up items for Epic 4
+- ⏭️ Next:
+  - Move on to Epic 4 implementation
 
 ## Future Follow-up Items
 

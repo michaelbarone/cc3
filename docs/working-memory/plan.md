@@ -2,19 +2,6 @@
 
 ## Active Tasks
 
-### Epic 3: Core URL & Group Management with Basic Iframe Display (Planned)
-- **Location**: `/docs/working-memory/open/epic3-implementation-20250527`
-- **Status**: Ready to Start
-- **Description**: Enable URL and Group management with basic iframe display functionality.
-- **Priority**: High
-- **Target**: Q3 2025
-- **Key Milestones**: 
-  - [ ] Define content and access database schemas
-  - [ ] Implement admin APIs for URL and Group management
-  - [ ] Create admin UIs for content management
-  - [ ] Build user dashboard with iframe display
-  - [ ] Implement global navigation components
-
 ### Epic 4: Advanced Iframe Interaction & User Personalization (Planned)
 - **Location**: `/docs/working-memory/open/epic4-implementation-20250527`
 - **Status**: Planned
@@ -56,6 +43,22 @@
   - Full "Between Sessions" Persistence of UI States
 
 ## Closed Tasks
+
+### Epic 3: Core URL & Group Management with Basic Iframe Display
+- **Location**: `/docs/working-memory/done/epic3-implementation-20250527`
+- **Status**: Completed (2025-05-28 14:45)
+- **Description**: Enable administrators to create, manage, and organize URLs and URL Groups. Enable authenticated users to view their assigned groups/URLs. Implement basic iframe display functionality with appropriate visual indicators and navigation.
+- **Priority**: High
+- **Target**: Q3 2025
+- **Key Achievements**: 
+  - [x] Defined core content and access database schemas
+  - [x] Implemented admin APIs for URL and Group management
+  - [x] Created admin UIs for content management
+  - [x] Built user dashboard with iframe display
+  - [x] Implemented global navigation components
+  - [x] Created multi-iframe management system with state preservation
+  - [x] Added favicon auto-discovery with multiple fallbacks
+  - [x] Implemented consistent error handling throughout UI
 
 ### Epic 2: Admin Dashboard - Core Administration & Multi-User Setup
 - **Location**: `/docs/working-memory/done/epic2-implementation-20250527`
