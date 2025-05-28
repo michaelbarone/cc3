@@ -51,7 +51,8 @@
     "prisma": "^6.5.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "sharp": "^0.33.5"
+    "sharp": "^0.33.5",
+    "zod": "^3.25.32"
   },
   "devDependencies": {
     "@commitlint/cli": "^19.8.0",

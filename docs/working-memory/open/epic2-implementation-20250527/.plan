@@ -32,71 +32,71 @@
 
 ## Implementation Steps
 
-- [ ] **Story 2.1: Create Basic Admin Dashboard Layout and Navigation**
-  - [ ] Create admin route protection logic (extending middleware from Story 1.6)
-  - [ ] Implement admin layout component (using MUI v6)
-  - [ ] Build persistent left sidebar navigation (fixed width, always expanded on desktop/tablet)
-  - [ ] Add ordered navigation links for all admin functions (following the specified order)
-  - [ ] Create admin landing page with welcome message
-  - [ ] Implement visual indication for currently active/selected admin section
-  - [ ] Ensure responsive design (note: admin sidebar doesn't need to be collapsible on mobile for MVP)
+- [x] **Story 2.1: Create Basic Admin Dashboard Layout and Navigation**
+  - [x] Create admin route protection logic (extending middleware from Story 1.6)
+  - [x] Implement admin layout component (using MUI v6)
+  - [x] Build persistent left sidebar navigation (fixed width, always expanded on desktop/tablet)
+  - [x] Add ordered navigation links for all admin functions (following the specified order)
+  - [x] Create admin landing page with welcome message
+  - [x] Implement visual indication for currently active/selected admin section
+  - [x] Ensure responsive design (note: admin sidebar doesn't need to be collapsible on mobile for MVP)
   - Success criteria: Admin dashboard with secure routes and consistent navigation
   - Dependencies: Epic 1 (Authentication, Middleware)
 
-- [ ] **Story 2.2: Implement User Profile Management (Self-Service)**
-  - [ ] Create dedicated profile page at `/settings/profile`
-  - [ ] Add read-only user name display (disabled MUI TextField)
-  - [ ] Implement password change section:
-    - [ ] Add fields for current password (if set), new password, confirm password
-    - [ ] Implement client-side validation (passwords match, validation based on admin app settings)
-    - [ ] Add inline error messages
-  - [ ] Create avatar management section:
-    - [ ] Implement current avatar display or initials fallback
-    - [ ] Add drag-and-drop upload and file select button (JPG/PNG/GIF, max 1MB)
-    - [ ] Implement optional preview
-    - [ ] Add "Remove Avatar" button with confirmation dialog
-  - [ ] Implement avatar fallback logic:
-    - [ ] Use 1st letter of username or 1st letter of first 2 words if space exists
-    - [ ] Generate background color based on hash of username
+- [x] **Story 2.2: Implement User Profile Management (Self-Service)**
+  - [x] Create dedicated profile page at `/settings/profile`
+  - [x] Add read-only user name display (disabled MUI TextField)
+  - [x] Implement password change section:
+    - [x] Add fields for current password (if set), new password, confirm password
+    - [x] Implement client-side validation (passwords match, validation based on admin app settings)
+    - [x] Add inline error messages
+  - [x] Create avatar management section:
+    - [x] Implement current avatar display or initials fallback
+    - [x] Add drag-and-drop upload and file select button (JPG/PNG/GIF, max 1MB)
+    - [x] Implement optional preview
+    - [x] Add "Remove Avatar" button with confirmation dialog
+  - [x] Implement avatar fallback logic:
+    - [x] Use 1st letter of username or 1st letter of first 2 words if space exists
+    - [x] Generate background color based on hash of username
   - [ ] Add Layout & Appearance Preferences section (from Story 4.1)
-  - [ ] Build backend APIs for profile operations:
-    - [ ] Password change endpoint with validation
-    - [ ] Avatar upload endpoint with file handling
-    - [ ] Avatar removal endpoint
-  - [ ] Implement UI state management for async operations (loading, success, error)
-  - [ ] Add success/error feedback via MUI Snackbar/Alert
+  - [x] Build backend APIs for profile operations:
+    - [x] Password change endpoint with validation
+    - [x] Avatar upload endpoint with file handling
+    - [x] Avatar removal endpoint
+  - [x] Implement UI state management for async operations (loading, success, error)
+  - [x] Add success/error feedback via MUI Snackbar/Alert
   - Success criteria: Users can manage their profiles (password, avatar)
   - Dependencies: Epic 1 (Authentication, User Schema)
 
-- [ ] **Story 2.3: Implement Admin User Management**
-  - [ ] Create user management page at `/admin/users`
-  - [ ] Build user list display with all required columns:
-    - [ ] Avatar (with fallback)
-    - [ ] Login Name
-    - [ ] Role
-    - [ ] Status (Active/Disabled as MUI Chip)
-    - [ ] Last Login (formatted)
-    - [ ] Created At (formatted)
-    - [ ] Actions column
-  - [ ] Implement "Create New User" functionality:
-    - [ ] Add prominent green MUI Button
-    - [ ] Create dialog with form fields (name, role)
-    - [ ] Implement client-side validation
-    - [ ] Add confirmation dialog before submission
-  - [ ] Add "Edit User" capability:
-    - [ ] Create dialog with pre-filled fields
-    - [ ] Add confirmation dialog before saving changes
-  - [ ] Implement disabled "Delete User" button with tooltip
-  - [ ] Add safeguards:
-    - [ ] Prevent admin from changing own role if sole active admin
-    - [ ] Prevent admin from disabling own account if sole active admin
-  - [ ] Create backend APIs for user management:
-    - [ ] GET endpoint to list all users
-    - [ ] POST endpoint to create new user (with automatic UserSetting creation)
-    - [ ] PUT endpoint to update user details
-  - [ ] Integrate with user registration control setting (Story 2.5)
-  - [ ] Implement UI refresh after operations
-  - [ ] Add success/error feedback via MUI Snackbar
+- [x] **Story 2.3: Implement Admin User Management**
+  - [x] Create user management page at `/admin/users`
+  - [x] Build user list display with all required columns:
+    - [x] Avatar (with fallback)
+    - [x] Login Name
+    - [x] Role
+    - [x] Status (Active/Disabled as MUI Chip)
+    - [x] Last Login (formatted)
+    - [x] Created At (formatted)
+    - [x] Actions column
+  - [x] Implement "Create New User" functionality:
+    - [x] Add prominent green MUI Button
+    - [x] Create dialog with form fields (name, role)
+    - [x] Implement client-side validation
+    - [x] Add confirmation dialog before submission
+  - [x] Add "Edit User" capability:
+    - [x] Create dialog with pre-filled fields
+    - [x] Add confirmation dialog before saving changes
+  - [x] Implement disabled "Delete User" button with tooltip
+  - [x] Add safeguards:
+    - [x] Prevent admin from changing own role if sole active admin
+    - [x] Prevent admin from disabling own account if sole active admin
+  - [x] Create backend APIs for user management:
+    - [x] GET endpoint to list all users
+    - [x] POST endpoint to create new user (with automatic UserSetting creation)
+    - [x] PUT endpoint to update user details
+  - [x] Integrate with user registration control setting (Story 2.5)
+  - [x] Implement UI refresh after operations
+  - [x] Add success/error feedback via MUI Snackbar
   - Success criteria: Admins can list, create, and edit users (name, role, status)
   - Dependencies: Story 2.1, Epic 1 (User Schema)
 
@@ -191,6 +191,97 @@
 - ❌ Issues: None at this stage
 - 📚 Documentation: Will need to document admin interfaces, user management, and branding configuration
 - ⏭️ Next: This plan enables admin functionality and multi-user capabilities
+
+### 2025-05-27 20:50 - Admin Dashboard Layout Implementation
+
+- ✓ Completed:
+  - Extended middleware.ts to add admin route protection logic (checking for ADMIN role)
+  - Created theme.ts and ThemeProvider.tsx for MUI theming support
+  - Updated root layout.tsx to include ThemeProvider
+  - Implemented admin/layout.tsx with persistent left sidebar navigation
+  - Created admin dashboard landing page with welcome message
+  - Added placeholder pages for all admin sections
+- 🤔 Decisions:
+  - Used MUI v6 Drawer with ListItemButton components for navigation
+  - Applied visual indicator (right border) for currently selected section
+  - Kept sidebar fixed width (260px) as specified in requirements
+- ❌ Issues: None encountered
+- 📚 Documentation: Need to document admin layout structure and navigation flow
+- ⏭️ Next: Move on to Story 2.2 (User Profile Management)
+
+### 2025-05-27 20:53 - Added Dashboard Navigation Option
+
+- ✓ Completed: Added "Back to Dashboard" button at the bottom of the admin sidebar
+- 🤔 Decisions:
+  - Used MUI Button with ArrowBackIcon for visual clarity
+  - Placed at bottom of sidebar with top border separator
+  - Used justifyContent "flex-start" alignment for consistency with navigation items
+- ❌ Issues: None encountered
+- 📚 Documentation: Updated navigation flow to include dashboard return path
+- ⏭️ Next: Move on to Story 2.2 (User Profile Management)
+
+### 2025-05-27 20:56 - User Profile Management Implementation
+
+- ✓ Completed:
+  - Created settings layout component for a consistent user settings area
+  - Implemented profile page with read-only username display
+  - Added password change section with validation and visibility toggles
+  - Implemented avatar management with drag-and-drop upload and preview
+  - Added avatar fallback logic using initials and color hash
+  - Created backend APIs for password change and avatar management
+  - Added notifications for operation success/failure
+- 🤔 Decisions:
+  - Used MUI components for consistent styling
+  - Implemented client-side validation for immediate feedback
+  - Created a standalone avatar service for file handling
+  - Stored avatars in public/avatars directory with userId as filename
+  - Used drag-and-drop with visual feedback for better UX
+- ❌ Issues:
+  - Had to adapt formidable to work with Next.js App Router
+  - Layout & Appearance Preferences section deferred (depends on Story 4.1)
+- 📚 Documentation: Need to document profile management flow and avatar service
+- ⏭️ Next: Move on to Story 2.3 (Admin User Management)
+
+### 2025-05-28 08:15 - Admin User Management Implementation
+
+- ✓ Completed:
+  - Implemented user management page at `/admin/users`
+  - Created user list display with all required columns (avatar, name, role, status, dates)
+  - Added "Create New User" functionality with form dialog and confirmation
+  - Implemented "Edit User" capability with role and status toggle
+  - Added disabled "Delete User" button with explanatory tooltip
+  - Integrated with existing backend APIs
+  - Added client-side validation for user creation
+  - Implemented table pagination for better usability
+  - Added integration with user registration control setting
+  - Implemented success/error notifications via Snackbar
+  - Created `/api/admin/settings` API endpoint for managing system settings
+- 🤔 Decisions:
+  - Used two-step dialog flow for both create and edit operations (form first, then confirmation)
+  - Made username field disabled in edit dialog to enforce creating a new user for name changes
+  - Added client-side pagination for better performance with large user lists
+  - Used MUI Chip for status display with color coding for better visual distinction
+  - Implemented settings API with support for various system settings (user creation, branding, log retention)
+- ❌ Issues:
+  - Need to implement settings API for user creation control (part of Story 2.5) - RESOLVED
+- 📚 Documentation: Need to document user management flows and safeguards
+- ⏭️ Next: Move on to Story 2.4 (Application Branding Management)
+
+### 2025-05-27 21:15 - Type Definitions and Utility Functions
+
+- ✓ Completed:
+  - Added `generateAvatarColor` utility function for avatar color generation
+  - Updated the NextAuth.js type definitions to include `passwordHash` and `avatarUrl` properties
+  - Added `ExtendedUser` type to profile page to fix TypeScript errors
+  - Fixed React imports to ensure proper type definitions
+- 🤔 Decisions:
+  - Used HSL color format for avatar colors with fixed saturation and lightness for better contrast
+  - Made passwordHash and avatarUrl optional properties to match actual usage
+  - Added type assertions for session.user to avoid TypeScript errors
+- ❌ Issues:
+  - None currently
+- 📚 Documentation: Need to document utility functions and session type extensions
+- ⏭️ Next: Proceed with Story 2.4 (Application Branding Management)
 
 ## Follow-up Considerations
 

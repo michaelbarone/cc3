@@ -13,6 +13,8 @@ interface IUser {
   isActive: boolean;
   theme: string;
   menuPosition: string;
+  passwordHash?: string;
+  avatarUrl?: string | null;
 }
 
 // Extend the built-in session types
@@ -29,6 +31,8 @@ declare module "next-auth" {
       isActive: boolean;
       theme: string;
       menuPosition: string;
+      passwordHash?: string;
+      avatarUrl?: string | null;
     };
   }
 
@@ -44,6 +48,8 @@ declare module "next-auth" {
     isActive: boolean;
     theme: string;
     menuPosition: string;
+    passwordHash?: string;
+    avatarUrl?: string | null;
   }
 }
 
@@ -59,5 +65,7 @@ declare module "next-auth/jwt" {
     isActive: boolean;
     theme: string;
     menuPosition: string;
+    passwordHash?: string;
+    avatarUrl?: string | null;
   }
 }

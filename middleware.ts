@@ -13,6 +13,7 @@ export async function middleware(request: NextRequest) {
   const isProtectedPath = protectedPaths.some((path) => pathname.startsWith(path));
   const isAuthRoute = authRoutes.some((path) => pathname.startsWith(path));
   const isPublicRoute = publicRoutes.some((path) => pathname === path);
+  const isAdminRoute = pathname.startsWith("/admin");
 
   // Allow access to auth routes and public routes without authentication
   if (isAuthRoute || isPublicRoute) {
@@ -32,6 +33,14 @@ export async function middleware(request: NextRequest) {
       // Add the current path as a redirect parameter
       loginUrl.searchParams.set("callbackUrl", pathname);
       return NextResponse.redirect(loginUrl);
+    }
+
+    // Additional check for admin routes
+    if (isAdminRoute && token.role !== "ADMIN") {
+      // Redirect non-admin users to dashboard with not authorized message
+      const dashboardUrl = new URL("/dashboard", request.url);
+      dashboardUrl.searchParams.set("error", "NotAuthorized");
+      return NextResponse.redirect(dashboardUrl);
     }
   }
 
