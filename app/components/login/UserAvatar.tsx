@@ -1,11 +1,13 @@
 "use client";
 
 import Image from "next/image";
+import { CSSProperties } from "react";
 
 interface UserAvatarProps {
   username: string;
   avatarUrl: string | null;
   size: number;
+  style?: CSSProperties;
 }
 
 // Function to generate a color based on username
@@ -32,13 +34,20 @@ const getAvatarText = (username: string): string => {
   return username[0].toUpperCase();
 };
 
-export default function UserAvatar({ username, avatarUrl, size }: UserAvatarProps) {
+export default function UserAvatar({ username, avatarUrl, size, style }: UserAvatarProps) {
   const backgroundColor = generateColor(username);
   const avatarText = getAvatarText(username);
 
   if (avatarUrl) {
     return (
-      <div style={{ position: "relative", width: `${size}px`, height: `${size}px` }}>
+      <div
+        style={{
+          position: "relative",
+          width: `${size}px`,
+          height: `${size}px`,
+          ...style,
+        }}
+      >
         <Image
           src={avatarUrl}
           alt={`${username}'s avatar`}
@@ -65,6 +74,7 @@ export default function UserAvatar({ username, avatarUrl, size }: UserAvatarProp
         fontSize: `${size / 2.5}px`,
         fontWeight: "bold",
         color: "#333",
+        ...style,
       }}
     >
       {avatarText}

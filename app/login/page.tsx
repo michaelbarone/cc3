@@ -3,7 +3,7 @@
 import UserTileComponent from "@/app/components/login/UserTile";
 import { FirstRunResponse, UserTile } from "@/app/types/auth";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 
 export default function LoginPage() {
   const [userTiles, setUserTiles] = useState<UserTile[]>([]);
@@ -68,17 +68,19 @@ export default function LoginPage() {
       }
       const userData = await userResponse.json();
 
-      // Sign in admin without password
+      // Sign in admin without password - using name from userData
       const result = await fetch("/api/auth/first-run/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ username: userData.name }),
+        body: JSON.stringify({ name: userData.name }),
       });
 
       if (!result.ok) {
-        throw new Error("Failed to sign in admin user");
+        const errorData = await result.json();
+        console.error("First run login failed:", errorData);
+        throw new Error(`Failed to sign in admin user: ${errorData.error || result.status}`);
       }
 
       // Redirect to set admin password page
@@ -90,8 +92,11 @@ export default function LoginPage() {
   };
 
   // Handle clicking outside any tile
-  const handleBackgroundClick = () => {
-    setSelectedTileId(null);
+  const handleBackgroundClick = (e: React.MouseEvent) => {
+    // Check if the click was directly on the background, not a child element
+    if (e.target === e.currentTarget) {
+      setSelectedTileId(null);
+    }
   };
 
   // Show loading state

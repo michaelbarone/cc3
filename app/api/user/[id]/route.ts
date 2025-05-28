@@ -2,8 +2,10 @@ import { prisma } from "@/lib/db/prisma";
 import { NextRequest, NextResponse } from "next/server";
 
 // Using the exact Next.js 15 route handler pattern
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, context: { params: { id: string } }) {
   try {
+    // Await the params object before accessing properties
+    const params = await context.params;
     const userId = params.id;
 
     if (!userId) {
@@ -26,6 +28,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     return NextResponse.json({
       id: user.id,
       name: user.name,
+      username: user.name,
       role: user.role,
       isActive: user.isActive,
       avatarUrl: user.avatarUrl,

@@ -19,6 +19,40 @@
 
 ## Current Status
 
+### 2025-05-28 14:35
+
+**Status**: Completed
+
+- What's working:
+  - Project directory structure set up
+  - Database schema defined with Prisma
+  - Database migration created and applied
+  - Prisma client generated
+  - Auth configuration with NextAuth.js created
+  - API routes for authentication and first-run check created
+  - Middleware for route protection implemented
+  - Set Admin Password page created
+  - Tile-based login UI implemented with UserTile, UserAvatar components
+  - First Run experience on login page implemented
+  - Client-side session validation implemented
+  - Comprehensive documentation created for authentication system
+  - Authentication flow fully tested and working
+  - First run experience verified and functioning correctly
+  - User tile animation improved for better UX
+- What's fixed:
+  - Type errors in auth.ts and related files
+  - Simplified type definitions by removing unnecessary mapping layers
+  - Now directly using Prisma types instead of custom interfaces
+  - Fixed user tile behavior to expand on single click
+  - Fixed animation to hide only avatar while keeping username visible
+  - Fixed field name mismatch in credentials provider (username vs name)
+  - Fixed `/api/user/[id]` route for proper Next.js 15 params handling
+  - Fixed event propagation issues in user tile component
+- Blocking issues: None
+- Next actions:
+  - Create pull request for Epic 1 implementation
+  - Begin preparation for Epic 2
+
 ### 2025-05-27 19:06
 
 **Status**: In Progress
@@ -252,6 +286,33 @@
 - 📚 Documentation: Updated .plan file with current status and progress
 - ⏭️ Next: Complete testing of the authentication flow and first run experience
 
+### 2025-05-28 - Authentication Flow Testing and Fixes
+
+- ✓ Completed:
+  - Tested and fixed first run experience
+  - Fixed user login with password
+  - Resolved issue with user tile expansion not working correctly
+  - Fixed event handling for user tile clicks
+  - Cleaned up debugging code
+- 🤔 Decisions:
+  - Improved state management in UserTile component using proper React patterns
+  - Fixed field name mismatch in credentials provider (username vs name)
+  - Used proper event propagation control to prevent click issues
+- ❌ Issues:
+  - Fixed `/api/user/[id]` route params handling for Next.js 15
+  - Resolved issue with user tiles not showing password input when clicked
+  - Fixed credential field name mismatch in authentication flow
+- 📚 Documentation: Updated plan with testing progress and fixes
+- ⏭️ Next: Prepare pull request for Epic 1 implementation
+
+### 2025-05-28 - Fixed First Run API Issue
+
+- ✓ Completed: Fixed error in `/api/user/[id]` route where params.id was not properly handled
+- 🤔 Decisions: Properly restructured the code to extract the ID parameter with destructuring
+- ❌ Issues: This was causing the first run experience to fail when trying to set the admin password
+- 📚 Documentation: Updated plan with this fix and testing progress
+- ⏭️ Next: Continue testing the authentication flow and first run experience with the fixed API
+
 ### 2025-05-27 19:06 - Documentation and Testing Preparation
 
 - ✓ Completed:
@@ -274,43 +335,6 @@
   - Troubleshooting
   - Testing plan
 - ⏭️ Next: Complete testing of authentication flow and first run experience
-
-### 2025-05-27 19:02 - Type Error Resolution and Codebase Simplification
-
-- ✓ Completed:
-  - Fixed type errors in auth.ts and related authentication files
-  - Simplified type system by removing unnecessary mapping layers
-  - Refactored code to directly use Prisma types where appropriate
-  - Removed prismaInterfaces.ts file that was causing type mismatches
-- 🤔 Decisions:
-  - Chose to simplify the codebase by removing redundant type mappings
-  - Directly used Prisma-generated types to ensure type consistency
-  - Improved type safety throughout the authentication system
-- ❌ Issues:
-  - Encountered persistent type errors due to mismatches between Prisma types and custom interfaces
-  - Resolved by using Prisma types directly and ensuring proper type imports
-- 📚 Documentation: Updated .plan file with current status and progress
-- ⏭️ Next: Complete testing of the authentication flow and first run experience
-
-### 2025-05-27 18:23 - Core Implementation Progress
-
-- ✓ Completed: Set up project structure, Prisma schema, auth configuration, API routes, and middleware
-- 🤔 Decisions:
-  - Made creator fields optional in the database schema to allow SetNull referential action
-  - Added comprehensive error handling in API routes
-  - Implemented basic placeholder pages for required routes
-- ❌ Issues:
-  - Encountered and fixed schema validation errors with Prisma referential actions
-- 📚 Documentation: Updated task plan with progress
-- ⏭️ Next: Implement the tile-based login UI, complete client-side session validation, implement First Run experience on login page
-
-### 2025-05-27 07:16 - Initial Planning
-
-- ✓ Completed: Created task plan for Epic 1 implementation
-- 🤔 Decisions: Organized implementation steps by story with clear dependencies
-- ❌ Issues: None at this stage
-- 📚 Documentation: Will need to document authentication flow, database schema, and project structure
-- ⏭️ Next: This plan enables systematic implementation of the foundational aspects of the application
 
 ## Follow-up Considerations
 

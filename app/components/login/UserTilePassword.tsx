@@ -38,7 +38,7 @@ export default function UserTilePassword({ userId, onLoginSuccess }: UserTilePas
       // Sign in with NextAuth
       const result = await signIn("credentials", {
         redirect: false,
-        name: userData.name,
+        username: userData.username,
         password: password,
         rememberMe: rememberMe,
       });

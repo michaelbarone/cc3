@@ -1,14 +1,17 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 #project
-**/app.db
-**/app.db*
+controlcenter.db
+**/*.db
+**/*.db*
 public/icons/*
 public/logos/*
 public/avatars/*
 public/favicon*
 data/*
 prisma/data/backups/*.zip
+prisma/data/*.db
+prisma/data/controlcenter.db
 
 # dependencies
 /node_modules
@@ -59,3 +62,4 @@ yarn-error.log*
 next-env.d.ts
 
 /.specstory/
+

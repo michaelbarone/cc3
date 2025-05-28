@@ -20,13 +20,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get the admin user and use 'as any' to bypass type checking
-    const adminUser = users[0] as any;
+    // Get the admin user
+    const adminUser = users[0];
 
     // Check if the user is admin and has never logged in
     if (
-      !adminUser.isAdmin ||
-      adminUser.username !== "admin" || // Using username instead of name based on schema
+      adminUser.role !== "ADMIN" ||
+      adminUser.name !== "admin" ||
       adminUser.lastLoginAt !== null
     ) {
       return NextResponse.json(
@@ -39,10 +39,10 @@ export async function POST(request: NextRequest) {
     const token = await encode({
       token: {
         id: adminUser.id,
-        name: adminUser.username, // Using username instead of name
-        isAdmin: adminUser.isAdmin,
-        role: adminUser.isAdmin ? "ADMIN" : "USER", // Adding role as NextAuth expects it
-        isActive: true, // Assuming active
+        name: adminUser.name,
+        role: adminUser.role,
+        isAdmin: adminUser.role === "ADMIN",
+        isActive: adminUser.isActive,
         theme: "SYSTEM", // Default values
         menuPosition: "SIDE",
       },
