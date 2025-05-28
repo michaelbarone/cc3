@@ -548,7 +548,7 @@ const apiMocks = {
 ### User Input Errors
 
 - Empty username or password
-- Password too short (< 8 characters)
+- Password too short (< 4 characters)
 - Password and confirmation mismatch
 - Inactive user attempting to log in
 

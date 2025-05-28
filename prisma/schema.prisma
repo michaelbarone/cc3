@@ -1,0 +1,100 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String            @id @default(cuid())
+  name          String            @unique
+  passwordHash  String?
+  avatarUrl     String?
+  role          String            @default("USER")
+  isActive      Boolean           @default(true)
+  lastLoginAt   DateTime?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  activityLogs  ActivityLog[]     @relation("UserActivityLogs")
+  createdGroups Group[]           @relation("CreatedGroups")
+  addedUrls     Url[]             @relation("AddedUrls")
+  groupAccesses UserGroupAccess[]
+  settings      UserSetting?
+}
+
+model UserSetting {
+  userId       String   @id
+  theme        String   @default("SYSTEM")
+  menuPosition String   @default("SIDE")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Url {
+  id          String       @id @default(cuid())
+  title       String
+  url         String
+  faviconPath String?
+  addedById   String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  addedBy     User?        @relation("AddedUrls", fields: [addedById], references: [id])
+  urlInGroups UrlInGroup[]
+}
+
+model Group {
+  id           String            @id @default(cuid())
+  name         String
+  createdById  String?
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  createdBy    User?             @relation("CreatedGroups", fields: [createdById], references: [id])
+  urlsInGroup  UrlInGroup[]
+  userAccesses UserGroupAccess[]
+}
+
+model UrlInGroup {
+  id           String   @id @default(cuid())
+  urlId        String
+  groupId      String
+  displayOrder Int
+  title        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  group        Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  url          Url      @relation(fields: [urlId], references: [id], onDelete: Cascade)
+
+  @@unique([urlId, groupId])
+}
+
+model UserGroupAccess {
+  id        String   @id @default(cuid())
+  userId    String
+  groupId   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  group     Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, groupId])
+}
+
+model ActivityLog {
+  id        String   @id @default(cuid())
+  userId    String
+  action    String
+  details   String
+  timestamp DateTime @default(now())
+  user      User     @relation("UserActivityLogs", fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model SystemSetting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

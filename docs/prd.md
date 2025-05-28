@@ -118,7 +118,7 @@ This section summarizes the core functionalities for the ControlCenter MVP, deri
 **IV. User Settings (Self-Service - `/settings/profile` page):**
     * Single, scrollable page with sections.
     * **Profile Info:** View read-only login `name` (styled as disabled MUI `TextField`).
-    * **Password Change:** "Current Password" (if set), "New Password," "Confirm New Password." Inline error messages. MVP password complexity: minimum 8 characters.
+    * **Password Change:** "Current Password" (if set), "New Password," "Confirm New Password." Inline error messages. MVP password complexity: minimum 4 characters.
     * **Avatar Management:** Display current avatar (or initials fallback: 1st letter of name, or 1st of first 2 words if space; background color hashed from name). "Upload/Change Avatar" (supports drag-and-drop & file select button; JPG/PNG/GIF, max 1MB). Optional preview. "Remove Avatar" option. Server-hosted in `/public/avatars/`. Old avatar file overwritten/deleted.
     * **Layout & Appearance Preferences (persisted via Story 4.1):** Menu position choice with static image previews. Theme choice with themed preview boxes (selected has blue highlight). Single "Save Layout & Appearance Preferences" button for this section. Changes apply immediately.
 

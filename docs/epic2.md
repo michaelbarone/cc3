@@ -33,7 +33,7 @@
 
 * **Story 2.2: Implement User Profile Management (Self-Service)**
     * **As an** Authenticated User (including Administrators viewing their own profile),
-    * **I want** to be able to view my profile information (including my read-only login `name` as a disabled field), update my password (with inline error messages, min 8 char MVP complexity), and upload (with drag-and-drop support and file select button; JPG/PNG/GIF, max 1MB; optional preview) or remove my avatar image.
+    * **I want** to be able to view my profile information (including my read-only login `name` as a disabled field), update my password (with inline error messages, min 4 char MVP complexity), and upload (with drag-and-drop support and file select button; JPG/PNG/GIF, max 1MB; optional preview) or remove my avatar image.
     * **So that** I can personalize my account and maintain its security.
     * **Acceptance Criteria:**
         * `[ ]` (Profile Page UI & Access) A dedicated "My Profile" page is created at `/settings/profile`, protected, accessible only by the currently authenticated user.
@@ -41,7 +41,7 @@
         * `[ ]` The user's current avatar (MUI `Avatar` from `User.avatarUrl`) or an initials fallback is displayed. Initials generation: 1st letter of name, or 1st of first 2 words if space; background color programmatically determined from name hash.
         * `[ ]` Page uses MUI v6, adheres to app themes, and is responsive. It is organized into clear sections (e.g., Profile Information, Change Password, Avatar Management, Layout & Appearance Preferences from Story 4.1).
         * `[ ]` (Password Change Section) Includes MUI `TextFields` for "Current Password" (visible/required only if `User.passwordHash` is set), "New Password," "Confirm New Password" (all masked, with visibility toggles).
-        * `[ ]` Client-side validation for password change: new passwords match, meet MVP complexity (min 8 characters). Error messages displayed inline next to relevant fields.
+        * `[ ]` Client-side validation for password change: new passwords match, meet MVP complexity (min 4 characters). Error messages displayed inline next to relevant fields.
         * `[ ]` Submitting password change calls `POST /api/user/profile/change-password`. Backend verifies current password (if applicable), hashes new password, updates `User.passwordHash`. Success/error feedback via MUI `Snackbar`/`Alert`.
         * `[ ]` (Avatar Management Section) Displays current avatar. "Upload/Change Avatar" MUI `Button` triggers file input. A designated area also supports drag-and-drop for image files.
         * `[ ]` Allowed avatar file types: JPG, PNG, GIF (client-side validation for `image/jpeg`, `image/png`, `image/gif`). Max file size: 1MB (client-side validation). Error messages for validation failures.

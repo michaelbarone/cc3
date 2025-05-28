@@ -77,7 +77,7 @@
 
 - Admin cannot reset passwords for other users in MVP
 - No public self-registration (admin-created users only)
-- Limited password complexity requirements (minimum 8 characters)
+- Limited password complexity requirements (minimum 4 characters)
 
 ## Quick Links
 
