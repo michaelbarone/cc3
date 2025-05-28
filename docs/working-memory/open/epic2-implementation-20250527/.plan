@@ -101,31 +101,31 @@
   - Dependencies: Story 2.1, Epic 1 (User Schema)
 
 - [ ] **Story 2.4: Implement Application Branding Management**
-  - [ ] Define SystemSetting model fields for branding:
-    - [ ] appName (String, default "ControlCenter")
-    - [ ] logoPath (String, optional)
-    - [ ] faviconPath (String, optional)
-  - [ ] Create branding management page at `/admin/branding`
-  - [ ] Add application name customization:
-    - [ ] MUI TextField for app name
-    - [ ] Save button with confirmation dialog
-  - [ ] Implement logo image upload:
-    - [ ] Create drag-and-drop zone and file select button
-    - [ ] Add client-side validation (JPG/PNG/SVG, max 1MB)
-    - [ ] Implement optional preview
-    - [ ] Add "Remove Custom Logo" option with confirmation
-  - [ ] Add favicon image upload:
-    - [ ] Create drag-and-drop zone and file select button
-    - [ ] Add client-side validation (ICO/PNG, defined dimensions)
-    - [ ] Add "Remove Custom Favicon" option with confirmation
-  - [ ] Build backend APIs for branding management:
-    - [ ] GET endpoint to retrieve current branding settings
-    - [ ] PUT endpoint to update branding settings
-    - [ ] POST endpoints for file uploads
-    - [ ] DELETE endpoints for removing custom files
-  - [ ] Implement dynamic application of branding settings in UI
-  - [ ] Create proper file storage strategy in `/public/branding/`
-  - [ ] Add success/error feedback via MUI Snackbar
+  - [x] Define SystemSetting model fields for branding:
+    - [x] appName (String, default "ControlCenter")
+    - [x] logoPath (String, optional)
+    - [x] faviconPath (String, optional)
+  - [x] Create branding management page at `/admin/branding`
+  - [x] Add application name customization:
+    - [x] MUI TextField for app name
+    - [x] Save button with confirmation dialog
+  - [x] Implement logo image upload:
+    - [x] Create drag-and-drop zone and file select button
+    - [x] Add client-side validation (JPG/PNG/SVG, max 1MB)
+    - [x] Implement optional preview
+    - [x] Add "Remove Custom Logo" option with confirmation
+  - [x] Add favicon image upload:
+    - [x] Create drag-and-drop zone and file select button
+    - [x] Add client-side validation (ICO/PNG, defined dimensions)
+    - [x] Add "Remove Custom Favicon" option with confirmation
+  - [x] Build backend APIs for branding management:
+    - [x] GET endpoint to retrieve current branding settings
+    - [x] PUT endpoint to update branding settings
+    - [x] POST endpoints for file uploads
+    - [x] DELETE endpoints for removing custom files
+  - [x] Implement dynamic application of branding settings in UI
+  - [x] Create proper file storage strategy in `/public/branding/`
+  - [x] Add success/error feedback via MUI Snackbar
   - Success criteria: Admins can customize app name, logo, and favicon
   - Dependencies: Story 2.1
 
@@ -282,6 +282,30 @@
   - None currently
 - 📚 Documentation: Need to document utility functions and session type extensions
 - ⏭️ Next: Proceed with Story 2.4 (Application Branding Management)
+
+### 2025-05-28 09:45 - Application Branding Management Implementation
+
+- ✓ Completed:
+  - Created brandingService for handling logo and favicon file operations
+  - Implemented backend APIs for uploading and deleting branding images
+  - Built branding management UI with application name, logo, and favicon sections
+  - Added drag-and-drop upload with client-side validation
+  - Implemented file preview before upload
+  - Added confirmation dialogs for all operations
+  - Created dynamic branding components (BrandingHead, BrandingProvider, BrandingLogo)
+  - Integrated branding into application layout
+  - Implemented proper error handling and success notifications
+- 🤔 Decisions:
+  - Used formidable for file handling to maintain consistency with avatar uploads
+  - Implemented separate services for logo and favicon management
+  - Created a context provider for sharing branding across the application
+  - Made favicon appear in both branding directory and root for browser compatibility
+  - Used React hooks for file preview and validation
+- ❌ Issues:
+  - Had to handle complex type casting for formidable.File interface
+  - Next.js metadata is static, so had to implement client-side head updates
+- 📚 Documentation: Need to document branding service and dynamic branding components
+- ⏭️ Next: Move on to Story 2.5 (User Registration Control Setting)
 
 ## Follow-up Considerations
 
