@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db/prisma";
+import { createUser, getAllUsers } from "@/lib/services/userService";
 import { getServerSession } from "next-auth";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
@@ -35,20 +36,20 @@ export async function GET(req: NextRequest) {
     }
 
     // Get all users
-    const users = await prisma.user.findMany({
-      orderBy: { createdAt: "desc" },
-      select: {
-        id: true,
-        name: true,
-        avatarUrl: true,
-        role: true,
-        isActive: true,
-        lastLoginAt: true,
-        createdAt: true,
-      },
-    });
+    const users = await getAllUsers();
 
-    return NextResponse.json({ users }, { status: 200 });
+    // Format users for response
+    const formattedUsers = users.map((user) => ({
+      id: user.id,
+      name: user.name,
+      avatarUrl: user.avatarUrl,
+      role: user.role,
+      isActive: user.isActive,
+      lastLoginAt: user.lastLoginAt,
+      createdAt: user.createdAt,
+    }));
+
+    return NextResponse.json({ users: formattedUsers }, { status: 200 });
   } catch (error) {
     console.error("Error fetching users:", error);
     return NextResponse.json(
@@ -112,25 +113,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: "Username already exists" }, { status: 400 });
     }
 
-    // Create new user with transaction to ensure UserSetting is also created
-    const newUser = await prisma.$transaction(async (prisma) => {
-      // Create user
-      const user = await prisma.user.create({
-        data: {
-          name,
-          role,
-        },
-      });
-
-      // Create user settings
-      await prisma.userSetting.create({
-        data: {
-          userId: user.id,
-        },
-      });
-
-      return user;
-    });
+    // Create new user with our service that handles UserSetting creation
+    const newUser = await createUser({ name, role });
 
     return NextResponse.json(
       {

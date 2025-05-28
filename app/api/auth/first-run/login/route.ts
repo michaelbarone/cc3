@@ -2,12 +2,6 @@ import { prisma } from "@/lib/db/prisma";
 import { encode } from "next-auth/jwt";
 import { NextRequest, NextResponse } from "next/server";
 
-// Enum definition copied directly into this file
-enum UserRole {
-  USER = "USER",
-  ADMIN = "ADMIN",
-}
-
 export async function POST(request: NextRequest) {
   try {
     // Check if we're in first run state

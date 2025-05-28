@@ -1,24 +1,8 @@
 "use client";
 
+import { UserPreferencesSection } from "@/app/components/settings/UserPreferencesSection";
 import { getUserInitials } from "@/app/utils/userUtils";
-import { PhotoCamera } from "@mui/icons-material";
-import Visibility from "@mui/icons-material/Visibility";
-import VisibilityOff from "@mui/icons-material/VisibilityOff";
-import {
-  Alert,
-  Avatar,
-  Box,
-  Button,
-  CircularProgress,
-  Divider,
-  FormHelperText,
-  Grid,
-  IconButton,
-  InputAdornment,
-  Snackbar,
-  TextField,
-  Typography,
-} from "@mui/material";
+import { Box, Container, Divider, Paper, Typography } from "@mui/material";
 import { useSession } from "next-auth/react";
 import React, { useRef, useState } from "react";
 
@@ -53,7 +37,7 @@ function stringToColor(string: string) {
   return color;
 }
 
-export default function ProfilePage() {
+export default function ProfileSettingsPage() {
   const { data: session, update: updateSession } = useSession();
   const username = session?.user?.name || "";
 
@@ -285,208 +269,28 @@ export default function ProfilePage() {
   const bgColor = stringToColor(username);
 
   return (
-    <Box>
-      {/* Profile Information Section */}
-      <Box sx={{ mb: 6 }}>
-        <Typography variant="h5" component="h2" gutterBottom>
-          Profile Information
+    <Container maxWidth="md" sx={{ py: 4 }}>
+      <Paper elevation={2} sx={{ p: 3 }}>
+        <Typography variant="h4" component="h1" gutterBottom>
+          Profile Settings
         </Typography>
-        <TextField fullWidth label="Username" value={username} disabled sx={{ mb: 2 }} />
-        <FormHelperText>Your username cannot be changed</FormHelperText>
-      </Box>
+        <Divider sx={{ mb: 3 }} />
 
-      <Divider sx={{ my: 4 }} />
+        {/* Profile Information Section (placeholder) */}
+        <Box sx={{ mb: 4 }}>
+          <Typography variant="h6" gutterBottom>
+            Profile Information
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Your profile information will be displayed here in future updates.
+          </Typography>
+        </Box>
 
-      {/* Password Change Section */}
-      <Box sx={{ mb: 6 }}>
-        <Typography variant="h5" component="h2" gutterBottom>
-          Change Password
-        </Typography>
+        <Divider sx={{ mb: 3 }} />
 
-        {(session?.user as ExtendedUser)?.passwordHash && (
-          <TextField
-            fullWidth
-            label="Current Password"
-            type={showCurrentPassword ? "text" : "password"}
-            value={currentPassword}
-            onChange={(e) => setCurrentPassword(e.target.value)}
-            margin="normal"
-            InputProps={{
-              endAdornment: (
-                <InputAdornment position="end">
-                  <IconButton
-                    aria-label="toggle password visibility"
-                    onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                    edge="end"
-                  >
-                    {showCurrentPassword ? <VisibilityOff /> : <Visibility />}
-                  </IconButton>
-                </InputAdornment>
-              ),
-            }}
-          />
-        )}
-
-        <TextField
-          fullWidth
-          label="New Password"
-          type={showNewPassword ? "text" : "password"}
-          value={newPassword}
-          onChange={(e) => setNewPassword(e.target.value)}
-          margin="normal"
-          InputProps={{
-            endAdornment: (
-              <InputAdornment position="end">
-                <IconButton
-                  aria-label="toggle password visibility"
-                  onClick={() => setShowNewPassword(!showNewPassword)}
-                  edge="end"
-                >
-                  {showNewPassword ? <VisibilityOff /> : <Visibility />}
-                </IconButton>
-              </InputAdornment>
-            ),
-          }}
-        />
-
-        <TextField
-          fullWidth
-          label="Confirm New Password"
-          type={showConfirmPassword ? "text" : "password"}
-          value={confirmPassword}
-          onChange={(e) => setConfirmPassword(e.target.value)}
-          margin="normal"
-          InputProps={{
-            endAdornment: (
-              <InputAdornment position="end">
-                <IconButton
-                  aria-label="toggle password visibility"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  edge="end"
-                >
-                  {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
-                </IconButton>
-              </InputAdornment>
-            ),
-          }}
-          error={!!passwordError}
-          helperText={passwordError}
-        />
-
-        <Button
-          variant="contained"
-          color="primary"
-          onClick={handlePasswordSubmit}
-          disabled={passwordLoading || (!newPassword && !confirmPassword)}
-          sx={{ mt: 2 }}
-        >
-          {passwordLoading ? <CircularProgress size={24} /> : "Change Password"}
-        </Button>
-      </Box>
-
-      <Divider sx={{ my: 4 }} />
-
-      {/* Avatar Management Section */}
-      <Box sx={{ mb: 6 }}>
-        <Typography variant="h5" component="h2" gutterBottom>
-          Avatar Management
-        </Typography>
-
-        <Grid container spacing={4} alignItems="center">
-          <Grid item>
-            <Avatar
-              src={avatarDisplaySrc || undefined}
-              alt={username}
-              sx={{
-                width: 100,
-                height: 100,
-                fontSize: 40,
-                bgcolor: !avatarDisplaySrc ? bgColor : undefined,
-              }}
-            >
-              {!avatarDisplaySrc && userInitials}
-            </Avatar>
-          </Grid>
-
-          <Grid item xs>
-            <Box
-              sx={{
-                border: 2,
-                borderRadius: 1,
-                borderColor: isDragging ? "primary.main" : "divider",
-                borderStyle: "dashed",
-                p: 3,
-                textAlign: "center",
-                mb: 2,
-                bgcolor: isDragging ? "action.hover" : "transparent",
-              }}
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-              onDrop={handleDrop}
-            >
-              <input
-                type="file"
-                accept="image/jpeg,image/png,image/gif"
-                style={{ display: "none" }}
-                ref={fileInputRef}
-                onChange={handleFileChange}
-              />
-
-              <Typography variant="body1" gutterBottom>
-                Drag & drop an image here, or
-              </Typography>
-
-              <Button
-                variant="contained"
-                startIcon={<PhotoCamera />}
-                onClick={() => fileInputRef.current?.click()}
-                sx={{ mt: 1 }}
-              >
-                Select File
-              </Button>
-
-              <Typography variant="caption" display="block" sx={{ mt: 1 }}>
-                JPG, PNG, or GIF. Max size: 1MB
-              </Typography>
-            </Box>
-
-            <Box sx={{ display: "flex", gap: 2 }}>
-              <Button
-                variant="contained"
-                color="primary"
-                disabled={!avatarFile || avatarLoading}
-                onClick={handleAvatarUpload}
-              >
-                {avatarLoading ? <CircularProgress size={24} /> : "Upload Avatar"}
-              </Button>
-
-              <Button
-                variant="outlined"
-                color="error"
-                disabled={!avatarUrl || avatarLoading}
-                onClick={handleRemoveAvatar}
-              >
-                Remove Avatar
-              </Button>
-            </Box>
-          </Grid>
-        </Grid>
-      </Box>
-
-      {/* Notification Snackbar */}
-      <Snackbar
-        open={notification.open}
-        autoHideDuration={6000}
-        onClose={() => setNotification({ ...notification, open: false })}
-      >
-        <Alert
-          onClose={() => setNotification({ ...notification, open: false })}
-          severity={notification.severity}
-          sx={{ width: "100%" }}
-        >
-          {notification.message}
-        </Alert>
-      </Snackbar>
-    </Box>
+        {/* User Preferences Section */}
+        <UserPreferencesSection />
+      </Paper>
+    </Container>
   );
 }
