@@ -50,6 +50,63 @@ declare module "@prisma/client" {
     createdAt: Date;
     updatedAt: Date;
   }
+
+  export interface Url {
+    id: string;
+    url: string;
+    title: string;
+    faviconUrl: string | null;
+    mobileSpecificUrl: string | null;
+    notes: string | null;
+    addedById: string | null;
+    createdAt: Date;
+    updatedAt: Date;
+  }
+
+  export interface UrlCreateInput {
+    id?: string;
+    url: string;
+    title: string;
+    faviconUrl?: string | null;
+    mobileSpecificUrl?: string | null;
+    notes?: string | null;
+    addedById?: string | null;
+    createdAt?: Date;
+    updatedAt?: Date;
+  }
+
+  export interface UrlInGroup {
+    id: string;
+    urlId: string;
+    groupId: string;
+    groupSpecificTitle: string | null;
+    displayOrderInGroup: number;
+    createdAt: Date;
+    updatedAt: Date;
+  }
+
+  export interface UrlInGroupUpdateInput {
+    id?: string;
+    urlId?: string;
+    groupId?: string;
+    groupSpecificTitle?: string | null;
+    displayOrderInGroup?: number;
+    createdAt?: Date;
+    updatedAt?: Date;
+  }
+
+  // Add more detailed type overrides for the Prisma client
+  export interface PrismaClient {
+    urlInGroup: {
+      update: (args: {
+        where: { id: string };
+        data: {
+          groupSpecificTitle?: string | null;
+          displayOrderInGroup?: number;
+        };
+      }) => Promise<UrlInGroup>;
+    };
+  }
 }
 
 export {};

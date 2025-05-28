@@ -27,22 +27,24 @@ model User {
 model UserSetting {
   userId       String   @id
   theme        String   @default("SYSTEM")
-  menuPosition String   @default("SIDE")
+  menuPosition String   @default("TOP")
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Url {
-  id          String       @id @default(cuid())
-  title       String
-  url         String
-  faviconPath String?
-  addedById   String?
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  addedBy     User?        @relation("AddedUrls", fields: [addedById], references: [id])
-  urlInGroups UrlInGroup[]
+  id                String       @id @default(cuid())
+  url               String       @unique
+  title             String
+  faviconUrl        String?
+  mobileSpecificUrl String?
+  notes             String?
+  addedById         String?
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+  addedBy           User?        @relation("AddedUrls", fields: [addedById], references: [id], onDelete: SetNull)
+  urlInGroups       UrlInGroup[]
 }
 
 model Group {
@@ -51,21 +53,23 @@ model Group {
   createdById  String?
   createdAt    DateTime          @default(now())
   updatedAt    DateTime          @updatedAt
+  description  String?
+  displayOrder Int?
   createdBy    User?             @relation("CreatedGroups", fields: [createdById], references: [id])
   urlsInGroup  UrlInGroup[]
   userAccesses UserGroupAccess[]
 }
 
 model UrlInGroup {
-  id           String   @id @default(cuid())
-  urlId        String
-  groupId      String
-  displayOrder Int
-  title        String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  group        Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  url          Url      @relation(fields: [urlId], references: [id], onDelete: Cascade)
+  id                  String   @id @default(cuid())
+  urlId               String
+  groupId             String
+  groupSpecificTitle  String?
+  displayOrderInGroup Int
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  url                 Url      @relation(fields: [urlId], references: [id], onDelete: Cascade)
+  group               Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
 
   @@unique([urlId, groupId])
 }
