@@ -21,33 +21,33 @@ The current iframe state management is overly complex and contains unnecessary c
 
 #### Tasks:
 1. **Identify & Map Current State Implementation**
-   - [ ] Locate all existing iframe state files in the codebase
-   - [ ] Document dependencies between components
-   - [ ] Create map of current state flow
-   - [ ] Determine what must be preserved vs. removed
+   - [x] Locate all existing iframe state files in the codebase
+   - [x] Document dependencies between components
+   - [x] Create map of current state flow
+   - [x] Determine what must be preserved vs. removed
 
 2. **Remove Redundant Code (that is not part of the admin or settings area)**
-   - [ ] Delete side-menu specific implementations (that are not part of the admin or settings area)
-   - [ ] Remove outdated state patterns
-   - [ ] Clean up unused hooks and utilities
-   - [ ] Preserve UI component structure
+   - [x] Delete side-menu specific implementations (that are not part of the admin or settings area)
+   - [x] Remove outdated state patterns
+   - [x] Clean up unused hooks and utilities
+   - [x] Preserve UI component structure
 
 3. **Establish Clean Foundation**
-   - [ ] Create minimal state structure
-   - [ ] Set up basic types and interfaces
-   - [ ] Maintain existing UI component props
-   - [ ] Establish clean testing environment
+   - [x] Create minimal state structure
+   - [x] Set up basic types and interfaces
+   - [x] Maintain existing UI component props
+   - [x] Establish clean testing environment
 
 #### Deliverables:
-- Clean codebase with only necessary files
-- Documented component relationships
-- Basic state structure setup
+- [x] Clean codebase with only necessary files
+- [x] Documented component relationships
+- [x] Basic state structure setup
 
 ### Phase 2: Implement Core State Management (Days 3-5)
 
 #### Tasks:
 1. **Create State Structure**
-   - [ ] Implement IframeState interface as per documentation
+   - [x] Implement IframeState interface as per documentation
    ```typescript
    interface IframeState {
      urls: Record<string, {
@@ -63,7 +63,7 @@ The current iframe state management is overly complex and contains unnecessary c
      initialUrlId: string | null;
    }
    ```
-   - [ ] Set up actions and reducer
+   - [x] Set up actions and reducer
    ```typescript
    type IframeAction =
      | { type: 'INIT_URLS'; payload: { urlGroups: UrlGroup[]; initialUrlId: string } }
@@ -72,36 +72,39 @@ The current iframe state management is overly complex and contains unnecessary c
      | { type: 'UNLOAD_URL'; payload: { urlId: string } }
      | { type: 'SET_ERROR'; payload: { urlId: string; error: string | null } };
    ```
-   - [ ] Create context provider with proper TypeScript types
+   - [x] Create context provider with proper TypeScript types
 
 2. **Develop Custom Hooks**
-   - [ ] Build useIframeState hook
-   - [ ] Implement useUrlManager
-   - [ ] Create useIframeLifecycle
-   - [ ] Ensure hooks match existing UI component needs
+   - [x] Build useIframeState hook
+   - [x] Implement useUrlManager
+   - [x] Create useIframeLifecycle
+   - [x] Ensure hooks match existing UI component needs
 
 3. **Establish Testing Framework**
-   - [ ] Set up test fixtures
-   - [ ] Create test utilities
-   - [ ] Implement core state tests
+   - [x] Set up test fixtures
+   - [x] Create test utilities
+   - [x] Implement core state tests
 
 #### Deliverables:
-- Functioning state management system
-- Custom hooks for component integration
-- Test suite for state management
+- [x] Functioning state management system
+- [x] Custom hooks for component integration
+- [x] Test suite for state management
 
 ### Phase 3: Connect State to Existing UI (Days 6-8)
 
 #### Tasks:
 1. **Connect TopMenuNavigation Component**
-   - [ ] Integrate state hooks with existing UI
-   - [ ] Ensure proper state propagation
-   - [ ] Maintain hover-to-expand functionality
-   - [ ] Preserve current visual design
+   - [x] Integrate state hooks with existing UI
+   - [x] Ensure proper state propagation
+   - [x] Maintain hover-to-expand functionality
+   - [x] Preserve current visual design
+   - [x] Create new TopMenuNavigation component with hover-to-expand pattern
+   - [x] Implement URL group selection logic
+   - [x] Integrate with state management hooks
 
 2. **Enhance UrlMenuItem Component**
-   - [ ] Connect active/loaded states to new state management
-   - [ ] Implement long-press unload functionality
+   - [x] Connect active/loaded states to new state management
+   - [x] Implement long-press unload functionality
    ```typescript
    // Long press hook for unload gesture
    const { handleMouseDown, handleMouseUp, handleMouseLeave, progress } = useLongPress({
@@ -110,13 +113,15 @@ The current iframe state management is overly complex and contains unnecessary c
      delayStart: 300
    });
    ```
-   - [ ] Add error state indicators
-   - [ ] Preserve existing styling
+   - [x] Add error state indicators
+   - [x] Preserve existing styling
+   - [x] Reuse existing UrlItem component
+   - [x] Implement visual state indicators (opacity for loaded, underline for active)
 
 3. **Update IFrame Container**
-   - [ ] Connect to new state management
-   - [ ] Implement loading/error handling
-   - [ ] Set up security attributes
+   - [x] Connect to new state management
+   - [x] Implement loading/error handling
+   - [x] Set up security attributes
    ```html
    <iframe 
      sandbox="allow-scripts allow-same-origin allow-popups allow-forms allow-downloads allow-popups-to-escape-sandbox"
@@ -124,13 +129,23 @@ The current iframe state management is overly complex and contains unnecessary c
      data-src={dataSrc}
    />
    ```
-   - [ ] Maintain existing container layout
+   - [x] Maintain existing container layout
+   - [x] Create UnloadedContent component for unloaded iframes
+   - [x] Update IframeContainer to show UnloadedContent when appropriate
+
+4. **New Tasks**
+   - [x] Create AppMenuContent component to handle menu position preferences
+   - [x] Create useUrlGroups hook for API data fetching
+   - [x] Update useUserPreferences hook for preference management
+   - [x] Update DashboardContent to use new components
+   - [x] Implement proper MUI styling
 
 #### Deliverables:
-- Fully integrated state with UI components
-- Working TOP menu with visual indicators
-- Functioning long-press behavior
-- Secure iframe implementation
+- [x] Fully integrated state with UI components
+- [x] Working TOP menu with visual indicators
+- [x] Functioning long-press behavior
+- [x] Secure iframe implementation
+- [x] Adaptive menu position based on user preferences
 
 ### Phase 4: Testing & Optimization (Days 9-10)
 
@@ -200,14 +215,17 @@ The current iframe state management is overly complex and contains unnecessary c
 - User preferences system
 
 ## Next Steps
-1. Begin Phase 1: Cleanup Existing Implementation
-2. Daily standups to track progress
-3. Review at the end of each phase
+1. ~~Begin Phase 1: Cleanup Existing Implementation~~
+2. ~~Begin Phase 2: Implement Core State Management~~
+3. ~~Begin Phase 3: Connect State to Existing UI~~
+4. Begin Phase 4: Testing & Optimization
+5. Daily standups to track progress
+6. Review at the end of each phase
 
 ## Timeline Summary
-- Phase 1 (Cleanup): Days 1-2
-- Phase 2 (Core State): Days 3-5
-- Phase 3 (UI Integration): Days 6-8
+- Phase 1 (Cleanup): Days 1-2 ✓
+- Phase 2 (Core State): Days 3-5 ✓
+- Phase 3 (UI Integration): Days 6-8 ✓
 - Phase 4 (Testing & Optimization): Days 9-10
 - Phase 5 (Verification): Days 11-12
 

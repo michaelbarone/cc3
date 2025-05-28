@@ -4,8 +4,12 @@ export interface UrlGroup {
   name: string;
   urls: Array<{
     id: string;
+    title?: string;
     url: string;
     urlMobile?: string | null;
+    iconPath?: string | null;
+    idleTimeoutMinutes?: number | null;
+    displayOrder?: number;
   }>;
 }
 

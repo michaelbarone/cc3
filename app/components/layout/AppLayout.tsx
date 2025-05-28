@@ -37,7 +37,7 @@ export default function AppLayout({
   forceMenuPosition = null,
 }: AppLayoutProps) {
   const { user } = useAuth();
-  const { preferences, loading: preferencesLoading } = useUserPreferences();
+  const { preferences, isLoading: preferencesLoading } = useUserPreferences();
   const router = useRouter();
   const theme = useTheme();
   const colorMode = useContext(ThemeContext);

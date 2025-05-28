@@ -1,4 +1,4 @@
-import { alpha, Box, LinearProgress, useTheme } from "@mui/material";
+import { Box, LinearProgress, useTheme } from "@mui/material";
 
 interface LongPressProgressProps {
   progress: number;
@@ -10,7 +10,8 @@ export function LongPressProgress({ progress, isActive }: LongPressProgressProps
 
   if (!isActive) return null;
 
-  const progressColor = alpha(theme.palette.warning.main, 0.7);
+  // Using orange color as specified in requirements
+  const progressColor = theme.palette.warning.main;
 
   return (
     <Box
@@ -19,14 +20,14 @@ export function LongPressProgress({ progress, isActive }: LongPressProgressProps
         left: 0,
         right: 0,
         bottom: 0,
-        height: 2,
+        height: 3, // 3px thick as per requirements (2-3px)
         overflow: "hidden",
         zIndex: 1,
       }}
     >
       <LinearProgress
         variant="determinate"
-        value={progress < 25 ? 0 : progress}
+        value={progress < 25 ? 0 : progress} // 0.3s delay implemented via threshold
         sx={{
           height: "100%",
           backgroundColor: "transparent",

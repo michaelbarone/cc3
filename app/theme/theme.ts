@@ -44,6 +44,20 @@ const commonThemeOptions: ThemeOptions = {
         } as const,
       },
     },
+    MuiAppBar: {
+      styleOverrides: {
+        root: {
+          backgroundImage: "none", // Remove the paper overlay gradient
+        },
+      },
+    },
+    MuiPaper: {
+      styleOverrides: {
+        root: {
+          backgroundImage: "none", // Remove the paper overlay gradient
+        },
+      },
+    },
   },
 };
 

@@ -2,7 +2,7 @@
 
 ## IframeContainer
 
-The main component responsible for rendering and managing iframes.
+The main component responsible for rendering and managing iframes based on the state management system.
 
 ### Props
 ```typescript
@@ -32,22 +32,65 @@ function Dashboard() {
 }
 ```
 
-### External Control
-The component exposes a ref for external control:
+### Implementation Details
+The IframeContainer uses the IframeProvider context to manage multiple iframes:
 
 ```typescript
-interface IframeContainerRef {
-  resetIframe: (urlId: string) => void;
-  unloadIframe: (urlId: string) => void;
-  reloadUnloadedIframe: (urlId: string) => void;
-  getLoadedUrlIds: () => string[];
+function IframeContainer({ urlGroups, initialUrlId }) {
+  const { 
+    getAllManagedIframesForRender,
+    markAsLoaded,
+    activeUrlIdentifier
+  } = useIframeManager();
+
+  // Get all iframes that need to be rendered
+  const iframesForRender = getAllManagedIframesForRender();
+  
+  return (
+    <div className="iframe-container">
+      {/* Loading indicator for active iframe if not loaded */}
+      {activeUrlIdentifier && !isUrlLoaded(activeUrlIdentifier) && (
+        <div className="loading-indicator">
+          <CircularProgress />
+        </div>
+      )}
+      
+      {/* "Content Unloaded" message for active iframe that's been unloaded */}
+      {activeUrlIdentifier && isActiveUrlUnloaded() && (
+        <div className="content-unloaded-message">
+          <Typography>Content Unloaded</Typography>
+          <Button 
+            variant="outlined" 
+            startIcon={<RefreshIcon />}
+            onClick={() => reloadUnloadedIframe(activeUrlIdentifier)}
+          >
+            Reload Content
+          </Button>
+        </div>
+      )}
+      
+      {/* Render all iframes */}
+      {iframesForRender.map(iframe => (
+        <iframe
+          key={iframe.identifier}
+          src={iframe.srcToRender}
+          data-src={iframe.dataSrc}
+          style={{
+            visibility: iframe.isActive ? 'visible' : 'hidden',
+            position: iframe.isActive ? 'relative' : 'absolute',
+            left: iframe.isActive ? 0 : '-9999px'
+          }}
+          sandbox="allow-scripts allow-same-origin allow-popups allow-forms allow-downloads allow-popups-to-escape-sandbox"
+          onLoad={() => {
+            if (iframe.srcToRender && iframe.srcToRender !== '') {
+              markAsLoaded(iframe.identifier);
+            }
+          }}
+        />
+      ))}
+    </div>
+  );
 }
-
-// Usage
-const iframeRef = useRef<IframeContainerRef>(null);
-
-// Reset an iframe
-iframeRef.current?.resetIframe('url-id');
 ```
 
 ## TopMenuNavigation
@@ -83,24 +126,26 @@ function AppBar() {
 ```
 
 ### Implementation
+This component implements the hover-to-expand design pattern detailed in the design document:
+
 ```typescript
 function TopMenuNavigation({ urlGroups, initialUrlId, onUrlSelect }: TopMenuNavigationProps) {
-  const { activeUrlId, urls, selectUrl } = useUrlManager(urlGroups, initialUrlId);
+  const { activeUrlIdentifier, isUrlLoaded, setActiveUrl } = useIframeManager();
   const [expanded, setExpanded] = useState(false);
   
   // Find current group based on active URL
   const currentGroup = useMemo(() => {
     return urlGroups.find(group => 
-      group.urls.some(url => url.id === activeUrlId)
+      group.urls.some(url => url.id === activeUrlIdentifier)
     ) || urlGroups[0];
-  }, [urlGroups, activeUrlId]);
+  }, [urlGroups, activeUrlIdentifier]);
 
   // Handle URL selection
-  const handleUrlClick = useCallback((urlId: string) => {
-    selectUrl(urlId);
+  const handleUrlClick = useCallback((urlId: string, originalUrl: string) => {
+    setActiveUrl(urlId, originalUrl);
     if (onUrlSelect) onUrlSelect(urlId);
     setExpanded(false);
-  }, [selectUrl, onUrlSelect]);
+  }, [setActiveUrl, onUrlSelect]);
   
   return (
     <div 
@@ -116,12 +161,10 @@ function TopMenuNavigation({ urlGroups, initialUrlId, onUrlSelect }: TopMenuNavi
             <UrlMenuItem
               key={url.id}
               url={url}
-              isActive={url.id === activeUrlId}
-              isLoaded={urls[url.id]?.isLoaded || false}
+              isActive={url.id === activeUrlIdentifier}
+              isLoaded={isUrlLoaded(url.id)}
               onSelect={handleUrlClick}
-              onUnload={(urlId) => {
-                // Long press handler
-              }}
+              onUnload={markUrlAsUnloaded}
             />
           ))}
         </div>
@@ -138,12 +181,10 @@ function TopMenuNavigation({ urlGroups, initialUrlId, onUrlSelect }: TopMenuNavi
                   <UrlMenuItem
                     key={url.id}
                     url={url}
-                    isActive={url.id === activeUrlId}
-                    isLoaded={urls[url.id]?.isLoaded || false}
+                    isActive={url.id === activeUrlIdentifier}
+                    isLoaded={isUrlLoaded(url.id)}
                     onSelect={handleUrlClick}
-                    onUnload={(urlId) => {
-                      // Long press handler
-                    }}
+                    onUnload={markUrlAsUnloaded}
                   />
                 ))}
               </div>
@@ -156,12 +197,58 @@ function TopMenuNavigation({ urlGroups, initialUrlId, onUrlSelect }: TopMenuNavi
 }
 ```
 
-### Features
-- Hover-to-expand interaction pattern
-- Shows current group + URLs in normal state
-- Shows all groups + URLs in expanded state
-- Visual indicators for URL states (active/loaded/unloaded)
-- Tablet responsive with overflow handling
+### Tablet Responsiveness
+For tablet viewport sizes (768px - 1199px):
+
+```typescript
+function TopMenuNavigationTablet({ urlGroups }) {
+  const [expanded, setExpanded] = useState(false);
+  
+  // Same implementation as above but with modifications:
+  return (
+    <div className="top-menu-navigation tablet">
+      {/* Normal State - Modified for tablet */}
+      <div className="normal-state">
+        <div className="group-name">{currentGroup.name}</div>
+        <div className="url-row-scrollable">
+          {currentGroup.urls.slice(0, visibleItemCount).map(/* render URLs */)}
+          {currentGroup.urls.length > visibleItemCount && (
+            <button 
+              className="more-button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setOverflowMenuOpen(true);
+              }}
+            >
+              •••
+            </button>
+          )}
+        </div>
+      </div>
+      
+      {/* Overflow menu for tablet */}
+      {overflowMenuOpen && (
+        <Menu
+          anchorEl={moreButtonRef.current}
+          open={overflowMenuOpen}
+          onClose={() => setOverflowMenuOpen(false)}
+        >
+          {currentGroup.urls.slice(visibleItemCount).map(url => (
+            <MenuItem 
+              key={url.id}
+              onClick={() => handleUrlClick(url.id, url.originalUrl)}
+            >
+              {/* URL item content */}
+            </MenuItem>
+          ))}
+        </Menu>
+      )}
+      
+      {/* Expanded View - Similar to desktop but optimized for touch */}
+    </div>
+  );
+}
+```
 
 ## UrlMenuItem
 
@@ -180,9 +267,8 @@ interface UrlMenuItemProps {
   isActive: boolean;
   isLoaded: boolean;
   hasError?: boolean;
-  onSelect: (urlId: string) => void;
+  onSelect: (urlId: string, originalUrl: string) => void;
   onUnload?: (urlId: string) => void;
-  style?: React.CSSProperties;
 }
 ```
 
@@ -191,7 +277,6 @@ interface UrlMenuItemProps {
 import { UrlMenuItem } from '@/app/components/url-menu/UrlMenuItem';
 
 function CustomUrlList() {
-  // In the context of Top Menu
   return (
     <UrlMenuItem
       url={urlData}
@@ -230,7 +315,7 @@ const UrlMenuItem = memo(({
         borderBottom: isActive ? '2px solid blue' : 'none',
         position: 'relative'
       }}
-      onClick={() => onSelect(url.id)}
+      onClick={() => onSelect(url.id, url.url)}
       onMouseDown={handleMouseDown}
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseLeave}
@@ -277,174 +362,125 @@ const UrlMenuItem = memo(({
 });
 ```
 
-## State Integration
+## useLongPress Hook
 
-### Provider Setup for TOP Menu Integration
+Custom hook to handle long-press interactions for URL unloading.
+
+### Usage
 ```typescript
-import { IframeProvider } from '@/app/lib/state/iframe-state';
+const { 
+  handleMouseDown, 
+  handleMouseUp, 
+  handleMouseLeave, 
+  progress 
+} = useLongPress({
+  onLongPress: () => unloadUrl(urlId),
+  duration: 2000,
+  delayStart: 300
+});
+```
 
-function App() {
+### Implementation
+```typescript
+function useLongPress({
+  onLongPress,
+  duration = 2000,
+  delayStart = 300
+}) {
+  const [progress, setProgress] = useState(0);
+  const timerRef = useRef(null);
+  const startTimeRef = useRef(null);
+  const animationFrameRef = useRef(null);
+  
+  const updateProgress = useCallback(() => {
+    if (!startTimeRef.current) return;
+    
+    const elapsed = Date.now() - startTimeRef.current;
+    const newProgress = Math.min(elapsed / duration, 1);
+    setProgress(newProgress);
+    
+    if (newProgress < 1) {
+      animationFrameRef.current = requestAnimationFrame(updateProgress);
+    } else {
+      // Complete - trigger callback
+      onLongPress();
+    }
+  }, [duration, onLongPress]);
+  
+  const handleMouseDown = useCallback(() => {
+    // Delay starting the timer
+    timerRef.current = setTimeout(() => {
+      startTimeRef.current = Date.now();
+      animationFrameRef.current = requestAnimationFrame(updateProgress);
+    }, delayStart);
+  }, [delayStart, updateProgress]);
+  
+  const handleCancel = useCallback(() => {
+    clearTimeout(timerRef.current);
+    cancelAnimationFrame(animationFrameRef.current);
+    startTimeRef.current = null;
+    setProgress(0);
+  }, []);
+  
+  const handleMouseUp = useCallback(() => {
+    handleCancel();
+  }, [handleCancel]);
+  
+  const handleMouseLeave = useCallback(() => {
+    handleCancel();
+  }, [handleCancel]);
+  
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      clearTimeout(timerRef.current);
+      cancelAnimationFrame(animationFrameRef.current);
+    };
+  }, []);
+  
+  return {
+    handleMouseDown,
+    handleMouseUp,
+    handleMouseLeave,
+    progress
+  };
+}
+```
+
+## Integration Example
+
+### Complete Dashboard with Top Menu and Iframe Container
+```typescript
+function Dashboard() {
+  const [urlGroups, setUrlGroups] = useState([]);
+  
+  // Fetch URL groups from API
+  useEffect(() => {
+    async function fetchData() {
+      const response = await fetch('/api/dashboard/urlGroups');
+      const data = await response.json();
+      setUrlGroups(data);
+    }
+    fetchData();
+  }, []);
+  
   return (
     <IframeProvider>
       <AppBar>
+        <div className="logo">ControlCenter</div>
         <TopMenuNavigation urlGroups={urlGroups} />
+        <UserMenu />
       </AppBar>
-      <IframeContainer urlGroups={urlGroups} />
+      <main className="dashboard-content">
+        <IframeContainer urlGroups={urlGroups} />
+      </main>
     </IframeProvider>
   );
 }
 ```
 
-### Hook Usage in Components
-```typescript
-function TopMenuWrapper({ urlGroups }) {
-  const { urls, activeUrlId, selectUrl, unloadUrl } = useUrlManager(urlGroups);
-  const { isLoaded, isVisible, error, handleLoad, handleError } = useIframeLifecycle(activeUrlId);
-
-  // Component logic for TOP menu
-}
-```
-
-## Error Handling
-
-### Error Boundary
-```typescript
-import { IframeErrorBoundary } from '@/app/components/iframe/IframeErrorBoundary';
-
-function SafeIframeContainer() {
-  return (
-    <IframeErrorBoundary fallback={<ErrorFallback />}>
-      <IframeContainer urlGroups={urlGroups} />
-    </IframeErrorBoundary>
-  );
-}
-```
-
-### Error States in TOP Menu
-The TOP menu URL items display different visual states for errors:
-- Error icon indicator
-- Tooltip showing error message
-- Visual styling (can be customized)
-
-## Performance Optimizations
-
-### Memo Usage for TOP Menu Items
-```typescript
-const MemoizedUrlMenuItem = memo(UrlMenuItem, (prev, next) => {
-  return (
-    prev.isActive === next.isActive &&
-    prev.isLoaded === next.isLoaded &&
-    prev.hasError === next.hasError
-  );
-});
-```
-
-### TOP Menu Specific Optimizations
-```typescript
-// Only re-calculate current group when activeUrlId changes
-const currentGroup = useMemo(() => {
-  return urlGroups.find(group => 
-    group.urls.some(url => url.id === activeUrlId)
-  );
-}, [urlGroups, activeUrlId]);
-
-// Optimize expanded view rendering
-const ExpandedView = memo(({ urlGroups, activeUrlId, onSelect }) => {
-  // Implementation
-});
-```
-
-## Testing Components
-
-### Unit Tests for TOP Menu Components
-```typescript
-describe('TopMenuNavigation', () => {
-  it('should display current group in normal state', () => {
-    const mockUrlGroups = [
-      {
-        id: 'group1',
-        name: 'Group 1',
-        urls: [{ id: 'url1', title: 'URL 1', url: 'https://example.com' }]
-      }
-    ];
-    
-    render(
-      <IframeProvider initialActiveUrlId="url1">
-        <TopMenuNavigation urlGroups={mockUrlGroups} />
-      </IframeProvider>
-    );
-    
-    expect(screen.getByText('Group 1')).toBeInTheDocument();
-    expect(screen.getByText('URL 1')).toBeInTheDocument();
-  });
-  
-  it('should expand on hover', async () => {
-    const mockUrlGroups = [
-      {
-        id: 'group1',
-        name: 'Group 1',
-        urls: [{ id: 'url1', title: 'URL 1', url: 'https://example.com' }]
-      },
-      {
-        id: 'group2',
-        name: 'Group 2',
-        urls: [{ id: 'url2', title: 'URL 2', url: 'https://example.org' }]
-      }
-    ];
-    
-    render(
-      <IframeProvider initialActiveUrlId="url1">
-        <TopMenuNavigation urlGroups={mockUrlGroups} />
-      </IframeProvider>
-    );
-    
-    // Initially only Group 1 is visible
-    expect(screen.getByText('Group 1')).toBeInTheDocument();
-    expect(screen.queryByText('Group 2')).not.toBeInTheDocument();
-    
-    // Hover to expand
-    fireEvent.mouseEnter(screen.getByText('Group 1').closest('.top-menu-navigation'));
-    
-    // Now both groups should be visible
-    expect(screen.getByText('Group 1')).toBeInTheDocument();
-    expect(screen.getByText('Group 2')).toBeInTheDocument();
-  });
-});
-```
-
-### Integration Tests with Iframe Container
-```typescript
-describe('TOP Menu and IframeContainer Integration', () => {
-  it('should activate URL when clicked in TOP menu', async () => {
-    const mockUrlGroups = [
-      {
-        id: 'group1',
-        name: 'Group 1',
-        urls: [
-          { id: 'url1', title: 'URL 1', url: 'https://example.com' },
-          { id: 'url2', title: 'URL 2', url: 'https://example.org' }
-        ]
-      }
-    ];
-    
-    render(
-      <IframeProvider>
-        <TopMenuNavigation urlGroups={mockUrlGroups} />
-        <IframeContainer urlGroups={mockUrlGroups} />
-      </IframeProvider>
-    );
-    
-    // Click on URL 2
-    fireEvent.click(screen.getByText('URL 2'));
-    
-    // URL 2 should be active
-    expect(screen.getByText('URL 2').closest('.url-menu-item')).toHaveClass('active');
-    
-    // The iframe for URL 2 should be visible
-    await waitFor(() => {
-      const iframe = screen.getByTestId('iframe-url2');
-      expect(iframe).toBeVisible();
-    });
-  });
-});
-``` 
+This architecture implements the user flow detailed in the design document, where users can:
+1. View their current group and URLs in the normal state
+2. Hover to expand and see all groups
+3. Select a URL to activate its iframe
+4. Long-press to unload content when needed 

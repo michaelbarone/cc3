@@ -3,7 +3,8 @@
 import { useIframeLifecycle, useUrlManager } from "@/app/lib/hooks/useIframe";
 import type { IframeContainerProps, IframeContainerRef, IframeUrl } from "@/app/types/iframe";
 import { Box, useMediaQuery } from "@mui/material";
-import React, { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
+import React, { forwardRef, useEffect, useImperativeHandle, useMemo, useRef } from "react";
+import { UnloadedContent } from "./UnloadedContent";
 
 // Create a singleton container for iframes outside of React
 let globalIframeContainer: HTMLDivElement | null = null;
@@ -53,10 +54,13 @@ function IframeElement({
   containerRef: React.RefObject<HTMLDivElement | null>;
 }) {
   const { handleLoad, handleError } = useIframeLifecycle(urlData.id);
-  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const iframeRef = useRef<HTMLIFrameElement | null>(null);
   const wrapperRef = useRef<HTMLDivElement | null>(null);
 
-  // Create iframe only once
+  // Store URL data in a ref to avoid recreating the iframe on URL data changes
+  const urlDataRef = useRef(urlData);
+
+  // Only create the iframe once on mount
   useEffect(() => {
     const container = getGlobalIframeContainer();
     if (!container || !containerRef.current) return;
@@ -122,6 +126,12 @@ function IframeElement({
       if (urlData.isVisible) {
         iframe.src = effectiveUrl;
       }
+
+      // Return cleanup function that removes event listeners
+      return () => {
+        iframe.removeEventListener("load", loadHandler);
+        iframe.removeEventListener("error", errorHandler);
+      };
     }
 
     // Update position when container moves
@@ -142,21 +152,30 @@ function IframeElement({
     return () => {
       observer.disconnect();
     };
-  }, [containerRef]); // Only depend on containerRef
+  }, []); // Empty dependency array to ensure it only runs once on mount
 
   // Handle visibility changes separately
   useEffect(() => {
-    if (wrapperRef.current) {
-      wrapperRef.current.style.visibility = urlData.isVisible ? "visible" : "hidden";
-      wrapperRef.current.style.display = urlData.isVisible ? "block" : "none";
-      wrapperRef.current.style.zIndex = urlData.isVisible ? "1" : "0";
+    if (!wrapperRef.current || !iframeRef.current) return;
 
-      // Load URL only if not already loaded
-      if (urlData.isVisible && iframeRef.current && !iframeRef.current.src) {
-        const effectiveUrl = isMobile && urlData.urlMobile ? urlData.urlMobile : urlData.url;
+    // Update visibility
+    wrapperRef.current.style.visibility = urlData.isVisible ? "visible" : "hidden";
+    wrapperRef.current.style.display = urlData.isVisible ? "block" : "none";
+    wrapperRef.current.style.zIndex = urlData.isVisible ? "1" : "0";
+
+    // Load URL only when visible and not already loaded
+    if (urlData.isVisible) {
+      const effectiveUrl = isMobile && urlData.urlMobile ? urlData.urlMobile : urlData.url;
+      const currentSrc = iframeRef.current.getAttribute("src") || "";
+
+      // Only set src if it's empty or about:blank
+      if (!currentSrc || currentSrc === "about:blank") {
         iframeRef.current.src = effectiveUrl;
       }
     }
+
+    // Update the ref
+    urlDataRef.current = urlData;
   }, [urlData.isVisible, urlData.url, urlData.urlMobile, isMobile]);
 
   return null; // This component only manages the imperative iframe
@@ -178,47 +197,65 @@ const IframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
       }
     }, [initializeUrls, initialUrlId]);
 
+    // Create a memoized mapping of url IDs to avoid re-rendering IframeElements
+    const urlIds = useMemo(() => Object.keys(urls), [urls]);
+
     // Expose methods via ref
-    useImperativeHandle(ref, () => ({
-      resetIframe: (urlId: string) => {
-        const url = urls[urlId];
-        if (url) {
-          const effectiveUrl = isMobile && url.urlMobile ? url.urlMobile : url.url;
+    useImperativeHandle(
+      ref,
+      () => ({
+        resetIframe: (urlId: string) => {
+          const url = urls[urlId];
+          if (url) {
+            const effectiveUrl = isMobile && url.urlMobile ? url.urlMobile : url.url;
+            const iframe = document.querySelector(
+              `[data-iframe-id="${urlId}"]`,
+            ) as HTMLIFrameElement;
+            if (iframe) {
+              iframe.src = "about:blank";
+              setTimeout(() => {
+                iframe.src = effectiveUrl;
+              }, 100);
+            }
+          }
+        },
+        unloadIframe: (urlId: string) => {
+          unloadUrl(urlId);
           const iframe = document.querySelector(`[data-iframe-id="${urlId}"]`) as HTMLIFrameElement;
           if (iframe) {
             iframe.src = "about:blank";
-            setTimeout(() => {
-              iframe.src = effectiveUrl;
-            }, 100);
+            onUnload?.(urlId);
           }
-        }
-      },
-      unloadIframe: (urlId: string) => {
-        unloadUrl(urlId);
-        const iframe = document.querySelector(`[data-iframe-id="${urlId}"]`) as HTMLIFrameElement;
-        if (iframe) {
-          iframe.src = "about:blank";
-          onUnload?.(urlId);
-        }
-      },
-      reloadUnloadedIframe: (urlId: string) => {
-        selectUrl(urlId);
-      },
-      getLoadedUrlIds: () => Object.keys(urls).filter((id) => urls[id].isLoaded),
-    }));
+        },
+        reloadUnloadedIframe: (urlId: string) => {
+          selectUrl(urlId);
+        },
+        getLoadedUrlIds: () => Object.keys(urls).filter((id) => urls[id].isLoaded),
+      }),
+      [urls, unloadUrl, selectUrl, isMobile, onUnload],
+    );
 
     return (
       <Box ref={containerRef} sx={{ width: "100%", height: "100%", position: "relative" }}>
-        {Object.values(urls).map((urlData) => (
+        {urlIds.map((urlId) => (
           <IframeElement
-            key={urlData.id}
-            urlData={urlData}
+            key={urlId}
+            urlData={urls[urlId]}
             isMobile={isMobile}
             onLoad={onLoad}
             onError={onError}
             containerRef={containerRef}
           />
         ))}
+        {activeUrlId && urls[activeUrlId] && !urls[activeUrlId].isLoaded && (
+          <UnloadedContent
+            urlId={activeUrlId}
+            onReload={(id) => {
+              selectUrl(id);
+              onLoad?.(id);
+            }}
+          />
+        )}
       </Box>
     );
   },

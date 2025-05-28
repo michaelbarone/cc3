@@ -4,6 +4,8 @@
 
 This document outlines best practices for managing test data across different types of tests in the Control Center application. It covers data generation, storage, and cleanup strategies.
 
+> **IMPORTANT UPDATE**: We now use a separate test database for integration tests. See [Test Database Standards](./test-database-standards.md) for detailed documentation on the new approach.
+
 ## Fixtures vs Prisma Mocks
 
 ### When to Use Fixtures
@@ -46,11 +48,50 @@ This document outlines best practices for managing test data across different ty
     });
     ```
 
+### When to Use Test Database
+- **Integration Tests**: Use the test database for tests that require actual database operations
+  - Database transaction validation
+  - Complex query testing
+  - Multi-table operations
+  - Example:
+    ```typescript
+    // Good: Using test database for integration test
+    describe('User integration tests', () => {
+      beforeAll(async () => {
+        await setupTestDatabase();
+      });
+      
+      afterAll(async () => {
+        await teardownTestDatabase();
+      });
+      
+      it('should create a user with settings', async () => {
+        const user = await testPrisma.user.create({
+          data: {
+            username: 'test-user',
+            passwordHash: 'password-hash',
+            settings: {
+              create: [
+                { key: 'theme', value: 'dark' }
+              ]
+            }
+          },
+          include: {
+            settings: true
+          }
+        });
+        
+        expect(user.settings).toHaveLength(1);
+      });
+    });
+    ```
+
 ### Best Practices
 1. Keep transformations in fixtures
-2. Use prisma mocks for database-specific features
-3. Maintain clear separation between API and service tests
-4. Document transformation logic in fixture factories
+2. Use prisma mocks for unit tests and service tests
+3. Use test database for integration tests
+4. Maintain clear separation between test types
+5. Document transformation logic in fixture factories
 
 ## Test Data Categories
 
@@ -175,74 +216,97 @@ const createComment = (
 
 ## Data Management Strategies
 
-### 1. Database Seeding
+### 1. Mock-Based Testing (Unit Tests)
 
 ```typescript
-// Seed data interface
-interface SeedData {
-  users: User[];
-  posts: Post[];
-  comments: Comment[];
-}
+// In unit tests, use mocks
+import { prismaMock } from '../mocks/services/prisma/prisma.mock';
 
-// Seed database
-const seedDatabase = async (data: SeedData) => {
-  await prisma.$transaction([
-    prisma.user.createMany({ data: data.users }),
-    prisma.post.createMany({ data: data.posts }),
-    prisma.comment.createMany({ data: data.comments })
-  ]);
-};
+vi.mock('@/lib/db/prisma', () => ({
+  prisma: prismaMock
+}));
 
-// Clear database
-const clearDatabase = async () => {
-  await prisma.$transaction([
-    prisma.comment.deleteMany(),
-    prisma.post.deleteMany(),
-    prisma.user.deleteMany()
-  ]);
-};
-
-// Usage in tests
-beforeAll(async () => {
-  await clearDatabase();
-  await seedDatabase(createMockData());
-});
-
-afterAll(async () => {
-  await clearDatabase();
+// Example test with mocked database
+it('creates a user', async () => {
+  const userData = createMockUser();
+  prismaMock.user.create.mockResolvedValue(userData);
+  
+  const result = await createUser(userData);
+  expect(result).toEqual(userData);
 });
 ```
 
-### 2. Test Isolation
+### 2. Test Database (Integration Tests)
+
+```typescript
+// In integration tests, use the test database
+import { testPrisma } from '../mocks/services/prisma/test-db-client';
+import { setupTestDatabase, teardownTestDatabase } from '../setup/test-database';
+
+describe('User integration', () => {
+  beforeAll(async () => {
+    await setupTestDatabase();
+  });
+  
+  afterAll(async () => {
+    await teardownTestDatabase();
+  });
+  
+  it('creates a user with settings', async () => {
+    // Create real data in test database
+    const user = await testPrisma.user.create({
+      data: {
+        username: `test-user-${Date.now()}`,
+        passwordHash: 'test-hash',
+        settings: {
+          create: [
+            { key: 'theme', value: 'dark' }
+          ]
+        }
+      },
+      include: {
+        settings: true
+      }
+    });
+    
+    expect(user.settings).toHaveLength(1);
+    expect(user.settings[0].key).toBe('theme');
+  });
+});
+```
+
+### 3. Transaction Isolation
 
 ```typescript
 // Transaction wrapper for test isolation
-const withTestTransaction = async <T>(
-  callback: () => Promise<T>
-): Promise<T> => {
-  const result = await prisma.$transaction(async (tx) => {
-    const result = await callback();
-    return result;
-  });
-  return result;
-};
+import { withTestTransaction } from '../setup/test-database';
 
-// Usage in tests
-it("creates a post", () => {
-  return withTestTransaction(async () => {
-    const user = await prisma.user.create({
-      data: createUser()
+it('maintains transaction isolation', async () => {
+  await withTestTransaction(async (tx) => {
+    // Create data within transaction
+    const user = await tx.user.create({
+      data: {
+        username: 'transaction-user',
+        passwordHash: 'test-hash'
+      }
     });
-    const post = await prisma.post.create({
-      data: createPost(user)
-    });
-    expect(post).toBeDefined();
+    
+    expect(user.username).toBe('transaction-user');
+    
+    // This data won't persist after the test
+    // because the transaction is rolled back
   });
+  
+  // Data doesn't exist outside the transaction
+  const user = await testPrisma.user.findUnique({
+    where: { username: 'transaction-user' }
+  });
+  
+  expect(user).toBeNull();
 });
 ```
 
-### 3. File Fixtures
+### 4. File Fixtures
 
 ```typescript
 // File fixture management
@@ -438,7 +502,7 @@ const getLargeDataset = lazyLoadFixture<LargeDataset>("large-dataset");
 // Environment configuration
 const getTestConfig = () => ({
   isCI: process.env.CI === "true",
-  databaseUrl: process.env.TEST_DATABASE_URL,
+  testDatabaseUrl: process.env.TEST_DATABASE_URL || `file:${path.join(process.cwd(), '.test-db', 'test-database.sqlite')}`,
   useTestContainer: process.env.USE_TEST_CONTAINER === "true"
 });
 
@@ -452,7 +516,7 @@ const setupTestDatabase = async () => {
   }
   
   // Use existing database
-  return setupExistingDatabase(config.databaseUrl);
+  return setupExistingDatabase(config.testDatabaseUrl);
 };
 ```
 
@@ -493,12 +557,35 @@ const restoreSnapshot = async (
 };
 ```
 
+## Test Selection Guide
+
+When writing tests, use this guide to determine which approach to use:
+
+| Test Type | Database Approach | When to Use |
+|-----------|-------------------|------------|
+| Unit Tests | Prisma Mocks | Testing service functions in isolation |
+| Service Tests | Prisma Mocks | Testing coordinated service operations |
+| API Tests | Prisma Mocks | Testing API endpoints with mocked database |
+| Integration Tests | Test Database | Testing multi-table operations and transactions |
+| E2E Tests | Test Database | Testing full user journeys |
+
+## Command Reference
+
+| Command | Description |
+|---------|-------------|
+| `npm run test` | Run unit tests with mocked database |
+| `npm run test:integration` | Run integration tests with test database |
+| `npm run test:db:clear` | Clear the test database |
+| `npm run test:e2e` | Run E2E tests (uses test database) |
+
 ## Next Steps
 
 1. Implement automated data generation for new test cases
 2. Create data validation schemas for all test fixtures
 3. Add performance monitoring for data operations
 4. Document data dependencies between test suites 
+5. Implement database factories for all entity types
+6. Add test data generators with realistic data
 
 ## Factory Function Examples from API Tests
 

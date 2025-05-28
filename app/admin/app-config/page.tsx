@@ -317,8 +317,8 @@ export default function AppConfigPage() {
                       sx={{
                         flex: 1,
                         p: 2,
-                        bgcolor: "#ffffff",
-                        color: "#000000",
+                        bgcolor: THEME_PALETTE.LIGHT.PAPER,
+                        color: THEME_PALETTE.LIGHT.DARK,
                         borderRadius: 1,
                         border: 1,
                         borderColor: "divider",
@@ -365,8 +365,8 @@ export default function AppConfigPage() {
                       sx={{
                         flex: 1,
                         p: 2,
-                        bgcolor: "#121212",
-                        color: "#ffffff",
+                        bgcolor: THEME_PALETTE.DARK.BACKGROUND,
+                        color: THEME_PALETTE.DARK.PRIMARY,
                         borderRadius: 1,
                         border: 1,
                         borderColor: "divider",
@@ -505,7 +505,7 @@ export default function AppConfigPage() {
                         borderColor: "divider",
                         borderRadius: 1,
                         bgcolor: THEME_PALETTE.LIGHT.PAPER,
-                        color: "#000000",
+                        color: THEME_PALETTE.LIGHT.DARK,
                         width: "100%",
                         cursor: "pointer",
                       }}
@@ -536,7 +536,7 @@ export default function AppConfigPage() {
                         borderColor: "divider",
                         borderRadius: 1,
                         bgcolor: THEME_PALETTE.DARK.BACKGROUND,
-                        color: "#ffffff",
+                        color: THEME_PALETTE.DARK.PRIMARY,
                         width: "100%",
                         cursor: "pointer",
                       }}

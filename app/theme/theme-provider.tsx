@@ -25,7 +25,7 @@ export interface ThemeProviderProps {
 
 export function ThemeProvider({ children }: ThemeProviderProps) {
   const { user } = useAuth();
-  const { preferences, loading, updateThemeMode } = useUserPreferences();
+  const { preferences, isLoading: loading, updatePreferences } = useUserPreferences();
   const initializedRef = useRef(false);
   const [mode, setMode] = useState<ThemeMode>(THEME_OPTIONS.DARK); // Start with dark as fallback
 
@@ -34,11 +34,11 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     if (initializedRef.current) return;
 
     // Priority order: user preferences > user data > default dark
-    if (!loading && preferences.themeMode) {
-      setMode(preferences.themeMode as ThemeMode);
+    if (!loading && preferences.theme) {
+      setMode(preferences.theme as ThemeMode);
       initializedRef.current = true;
     }
-  }, [preferences.themeMode, loading]);
+  }, [preferences.theme, loading]);
 
   const colorMode = useMemo(
     () => ({
@@ -47,12 +47,12 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
         setMode(newMode);
         // Update database immediately on toggle
         if (user) {
-          updateThemeMode(newMode).catch(console.error);
+          updatePreferences({ theme: newMode }).catch(console.error);
         }
       },
       mode,
     }),
-    [mode, user, updateThemeMode],
+    [mode, user, updatePreferences],
   );
 
   const theme = useMemo(() => (mode === THEME_OPTIONS.LIGHT ? lightTheme : darkTheme), [mode]);

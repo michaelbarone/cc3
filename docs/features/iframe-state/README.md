@@ -4,13 +4,13 @@
 The IFrame state management system provides a centralized way to manage the lifecycle, visibility, and error states of iframes in the application. It uses React's Context API and custom hooks to provide a simple and type-safe interface for managing iframe states with a focus on the TOP menu navigation experience.
 
 ## Key Features
-- Centralized state management
-- Type-safe interfaces
+- Centralized state management for iframe content
+- Type-safe interfaces with React Context API
 - Error handling and retry logic
-- Visibility control
-- Lifecycle management
-- Performance optimizations
-- Visual state indicators for TOP menu navigation
+- Visibility control via CSS for state preservation
+- Lifecycle management (load, unload, reload)
+- Performance optimizations with React.memo
+- Visual state indicators for URL items in the Top Menu navigation
 - Long-press handling for resource management
 
 ## Core Components
@@ -18,68 +18,55 @@ The IFrame state management system provides a centralized way to manage the life
 ### State Structure
 ```typescript
 interface IframeState {
-  urls: Record<string, {
-    id: string;
-    url: string;
-    urlMobile: string | null;
-    isLoaded: boolean;    // Tracks if iframe has been loaded
-    isVisible: boolean;   // Controls visibility
-    error: string | null;
-    retryCount: number;   // Tracks retry attempts
+  managedIframes: Map<string, {
+    originalSrc: string;
+    currentSrc: string;
+    isLoaded: boolean;
   }>;
-  activeUrlId: string | null;
-  initialUrlId: string | null;  // Tracks first URL for initial load
+  activeUrlIdentifier: string | null;
 }
 ```
 
 ### Actions
 ```typescript
 type IframeAction =
-  | { type: 'INIT_URLS'; payload: { urlGroups: UrlGroup[]; initialUrlId: string } }
-  | { type: 'SELECT_URL'; payload: { urlId: string } }
-  | { type: 'LOAD_URL'; payload: { urlId: string } }
-  | { type: 'UNLOAD_URL'; payload: { urlId: string } }
-  | { type: 'SET_ERROR'; payload: { urlId: string; error: string | null } };
+  | { type: 'SET_ACTIVE_URL'; payload: { id: string, srcForDataSrc: string } }
+  | { type: 'MARK_AS_LOADED'; payload: { id: string } }
+  | { type: 'MARK_AS_UNLOADED'; payload: { id: string } }
+  | { type: 'TRIGGER_RELOAD'; payload: { id: string } };
 ```
 
 ## Usage
 
 ### Basic Usage
 ```typescript
-import { useIframeState } from '@/app/lib/state/iframe-state';
+import { useIframeManager } from '@/app/lib/hooks/useIframeManager';
 
 function MyComponent() {
-  const { state, dispatch } = useIframeState();
+  const { 
+    activeUrlIdentifier, 
+    getIframeData, 
+    isUrlLoaded, 
+    setActiveUrl, 
+    markAsLoaded, 
+    markAsUnloaded, 
+    triggerReload,
+    getAllManagedIframesForRender
+  } = useIframeManager();
   
-  // Initialize URLs
-  useEffect(() => {
-    dispatch({
-      type: 'INIT_URLS',
-      payload: { urlGroups, initialUrlId: 'first-url' }
-    });
-  }, []);
-
   // Select a URL
-  const handleSelect = (urlId: string) => {
-    dispatch({ type: 'SELECT_URL', payload: { urlId } });
+  const handleSelect = (urlId: string, srcUrl: string) => {
+    setActiveUrl(urlId, srcUrl);
+  };
+  
+  // Unload a URL
+  const handleUnload = (urlId: string) => {
+    markAsUnloaded(urlId);
   };
 }
 ```
 
-### Custom Hooks
-The system provides several custom hooks for common use cases:
-
-#### useUrlManager
-```typescript
-const { activeUrlId, urls, selectUrl, unloadUrl } = useUrlManager(urlGroups);
-```
-
-#### useIframeLifecycle
-```typescript
-const { isLoaded, isVisible, error, handleLoad, handleError } = useIframeLifecycle(urlId);
-```
-
-## TOP Menu Integration
+## Top Menu Integration
 
 ### Visual State Indicators
 The iframe state management system provides essential state data for TOP menu URL items:
@@ -91,24 +78,24 @@ The iframe state management system provides essential state data for TOP menu UR
 These visual indicators are consistent in both normal and expanded states of the TOP menu.
 
 ### Hover-to-Expand Menu Integration
-The state system works seamlessly with the hover-to-expand menu pattern:
+The state system works seamlessly with the hover-to-expand menu pattern as specified in the design document:
 
 ```typescript
 function TopMenuNavigation({ urlGroups }) {
-  const { activeUrlId, urls, selectUrl } = useUrlManager(urlGroups);
+  const { activeUrlIdentifier, isUrlLoaded, setActiveUrl } = useIframeManager();
   const [expanded, setExpanded] = useState(false);
   
   // In normal state, show only the current group
   const currentGroup = useMemo(() => {
     return urlGroups.find(group => 
-      group.urls.some(url => url.id === activeUrlId)
-    );
-  }, [urlGroups, activeUrlId]);
+      group.urls.some(url => url.id === activeUrlIdentifier)
+    ) || urlGroups[0];
+  }, [urlGroups, activeUrlIdentifier]);
   
   // Render URL with appropriate visual state
   const renderUrl = (url) => {
-    const isLoaded = urls[url.id]?.isLoaded || false;
-    const isActive = url.id === activeUrlId;
+    const isLoaded = isUrlLoaded(url.id);
+    const isActive = url.id === activeUrlIdentifier;
     
     return (
       <UrlItem
@@ -118,7 +105,7 @@ function TopMenuNavigation({ urlGroups }) {
           opacity: isLoaded ? 1.0 : 0.5,
           borderBottom: isActive ? '2px solid blue' : 'none'
         }}
-        onClick={() => selectUrl(url.id)}
+        onClick={() => setActiveUrl(url.id, url.originalUrl)}
       />
     );
   };
@@ -189,27 +176,31 @@ Long-pressing (2 seconds) on a URL item:
    - Progress indicator resets
    - No action triggered
 
-## Iframe Security
+## Iframe Display and State Preservation
 
-All iframes are rendered with the following sandbox attributes for security:
+The system maintains multiple mounted iframes with the following characteristics:
 
-```html
-<iframe 
-  sandbox="allow-scripts allow-same-origin allow-popups allow-forms allow-downloads allow-popups-to-escape-sandbox"
-  src={srcToRender}
-  data-src={dataSrc}
-/>
-```
+1. **State Preservation:**
+   - All iframes remain mounted in the DOM once loaded
+   - Inactive iframes use CSS `visibility: hidden` and `position: absolute; left: -9999px`
+   - Active iframe uses `visibility: visible`
+   - This approach preserves iframe state (scroll position, form inputs, etc.)
 
-These permissions allow for:
-- Script execution within the iframe (`allow-scripts`)
-- Same-origin requests (`allow-same-origin`)
-- Opening popups (`allow-popups`)
-- Form submission (`allow-forms`)
-- File downloads (`allow-downloads`)
-- Popups to escape sandbox restrictions (`allow-popups-to-escape-sandbox`)
+2. **Resource Management:**
+   - `src`/`data-src` pattern: Initially `data-src` holds the URL, `src` is empty
+   - When activated, `src` is set from `data-src` to load content
+   - Manual unload (long-press) sets `src=""` but keeps the iframe mounted
 
-While still blocking top navigation - this ensures any navigation attempts open in a new tab instead.
+3. **Security:**
+   - All iframes have appropriate sandbox attributes:
+   ```html
+   <iframe 
+     sandbox="allow-scripts allow-same-origin allow-popups allow-forms allow-downloads allow-popups-to-escape-sandbox"
+     src={srcToRender}
+     data-src={dataSrc}
+   />
+   ```
+   - These permissions allow necessary functionality while blocking top navigation
 
 ## Error Handling
 The system includes built-in error handling:
@@ -222,28 +213,7 @@ The system includes built-in error handling:
 - Iframes remain mounted once loaded
 - Visibility controlled via CSS
 - State updates are batched
-- Selective re-rendering optimization
-
-## Testing
-Comprehensive test suite available in `app/lib/state/__tests__/iframe-state.test.tsx`
-
-### Example Test
-```typescript
-test('should handle URL selection', () => {
-  const { result } = renderHook(() => useIframeState(), {
-    wrapper: TestWrapper,
-  });
-
-  act(() => {
-    result.current.dispatch({
-      type: 'SELECT_URL',
-      payload: { urlId: 'test-url' }
-    });
-  });
-
-  expect(result.current.state.activeUrlId).toBe('test-url');
-});
-```
+- Selective re-rendering optimization with React.memo
 
 ## Best Practices
 1. Always use provided hooks instead of direct context access
@@ -253,13 +223,22 @@ test('should handle URL selection', () => {
 5. Use proper TypeScript types for type safety
 6. Ensure visual state indicators are consistent between normal and expanded TOP menu views
 
-## Related Components
-- IframeContainer
-- UrlMenu
-- TopMenuNavigation
-- UrlMenuItem
+## User Flow & Interaction
+
+The Top Menu URL selection flow follows this sequence:
+
+1. **Normal State**: Shows current group name and its URLs with appropriate visual indicators
+2. **Hover**: Expands to show all groups and their URLs
+3. **URL Selection**: 
+   - Updates active URL
+   - Loads content if needed
+   - Makes corresponding iframe visible
+   - Updates visual indicators
+   - Collapses expanded view
+4. **Mouse Away**: Collapses expanded view without changing state
 
 ## Dependencies
 - React 18+
 - Next.js App Router
 - TypeScript 5+
+- Material UI v6
