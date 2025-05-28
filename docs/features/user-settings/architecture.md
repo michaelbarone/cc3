@@ -82,13 +82,236 @@ interface ThemePreferenceSetting extends Setting<'light' | 'dark' | 'system'> {
 ### Database Schema
 
 ```prisma
-model User {
-  id           String    @id @default(uuid())
-  menuPosition String?   @default("side")
-  themeMode    String?   @default("light")
-  // ... other user fields
+model UserPreference {
+  id           String   @id @default(uuid())
+  userId       String   @unique
+  menuPosition String?  @default("top") // Default is top menu
+  themeMode    String?  @default("light")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 ```
+
+## Service Layer
+
+### Settings Service
+
+The settings service provides a consistent interface for managing user preferences:
+
+```typescript
+interface SettingsService {
+  getSetting<T>(userId: string, key: string): Promise<T | null>;
+  setSetting<T>(userId: string, key: string, value: T): Promise<void>;
+  deleteSetting(userId: string, key: string): Promise<void>;
+  getAllSettings(userId: string): Promise<Record<string, unknown>>;
+}
+```
+
+Implementation:
+
+```typescript
+class PrismaSettingsService implements SettingsService {
+  async getSetting<T>(userId: string, key: string): Promise<T | null> {
+    const setting = await prisma.userSetting.findUnique({
+      where: {
+        userId_key: {
+          userId,
+          key,
+        },
+      },
+    });
+    return setting ? JSON.parse(setting.value) : null;
+  }
+  
+  // Implementation for other methods...
+}
+```
+
+## Hook Layer
+
+### useUserPreferences Hook
+
+This hook provides a simple interface for reading and updating user preferences:
+
+```typescript
+function useUserPreferences() {
+  const [preferences, setPreferences] = useState<UserPreferences>({
+    menuPosition: "top", // Default to top menu
+    theme: "light",
+  });
+  
+  // Fetch preferences from API
+  useEffect(() => {
+    fetch("/api/user/preferences")
+      .then(res => res.json())
+      .then(data => {
+        setPreferences({
+          menuPosition: data.preferences?.menuPosition || "top",
+          theme: data.preferences?.themeMode || "light",
+        });
+      });
+  }, []);
+  
+  // Update preferences
+  const updatePreferences = async (newPrefs: Partial<UserPreferences>) => {
+    const response = await fetch("/api/user/preferences", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(newPrefs),
+    });
+    
+    if (response.ok) {
+      const data = await response.json();
+      setPreferences({
+        menuPosition: data.preferences?.menuPosition || "top",
+        theme: data.preferences?.themeMode || "light",
+      });
+    }
+  };
+  
+  return { preferences, updatePreferences };
+}
+```
+
+## API Layer
+
+### Preferences Endpoints
+
+```typescript
+// GET /api/user/preferences
+export async function GET(req: Request) {
+  const session = await getSession();
+  
+  if (!session?.user) {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+  
+  const preferences = await prisma.userPreference.findUnique({
+    where: { userId: session.user.id },
+  });
+  
+  return new Response(
+    JSON.stringify({
+      preferences: {
+        menuPosition: preferences?.menuPosition || "top", // Default to top menu
+        themeMode: preferences?.themeMode || "light",
+      },
+    }),
+    { headers: { "Content-Type": "application/json" } },
+  );
+}
+
+// POST /api/user/preferences
+export async function POST(req: Request) {
+  const session = await getSession();
+  
+  if (!session?.user) {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+  
+  const body = await req.json();
+  
+  const preferences = await prisma.userPreference.upsert({
+    where: { userId: session.user.id },
+    update: {
+      menuPosition: body.menuPosition,
+      themeMode: body.themeMode,
+    },
+    create: {
+      userId: session.user.id,
+      menuPosition: body.menuPosition || "top", // Default to top menu
+      themeMode: body.themeMode || "light",
+    },
+  });
+  
+  return new Response(
+    JSON.stringify({
+      preferences: {
+        menuPosition: preferences.menuPosition,
+        themeMode: preferences.themeMode,
+      },
+      success: true,
+    }),
+    { headers: { "Content-Type": "application/json" } },
+  );
+}
+```
+
+## UI Implementation
+
+### AppearanceSettingsPage
+
+```tsx
+export default function AppearanceSettingsPage() {
+  const { preferences, updatePreferences } = useUserPreferences();
+
+  const handleMenuPositionChange = (position: "side" | "top") => {
+    updatePreferences({ menuPosition: position });
+  };
+
+  return (
+    <Box>
+      <Typography variant="h6">Menu Position</Typography>
+      <RadioGroup
+        value={preferences.menuPosition || "top"} // Default to top menu
+        onChange={(e) => handleMenuPositionChange(e.target.value as "side" | "top")}
+      >
+        <FormControlLabel value="top" control={<Radio />} label="Top Menu" />
+        <FormControlLabel value="side" control={<Radio />} label="Side Menu" />
+      </RadioGroup>
+      
+      {/* Other settings... */}
+    </Box>
+  );
+}
+```
+
+### AppLayout
+
+```tsx
+export default function AppLayout({ children, menuContent, forceMenuPosition }) {
+  const { preferences } = useUserPreferences();
+  
+  // Use forced position, or preference, with top as the default
+  const menuPosition = forceMenuPosition || preferences.menuPosition || "top";
+  
+  return (
+    <Box sx={{ display: "flex", flexDirection: "column", height: "100vh" }}>
+      <AppBar position="static">
+        {/* Header content... */}
+      </AppBar>
+      
+      {menuPosition === "top" ? (
+        <>
+          <Box sx={{ height: 64 }}>{menuContent}</Box>
+          <Box sx={{ flexGrow: 1 }}>{children}</Box>
+        </>
+      ) : (
+        <Box sx={{ display: "flex", flexGrow: 1 }}>
+          <Box sx={{ width: 240 }}>{menuContent}</Box>
+          <Box sx={{ flexGrow: 1 }}>{children}</Box>
+        </Box>
+      )}
+    </Box>
+  );
+}
+```
+
+## Migration and Defaults
+
+When a user hasn't set preferences yet:
+
+1. Default menu position is "top"
+2. Default theme is "light"
+3. Preferences are created on first access
+4. Changes persist immediately across sessions
 
 ## Technical Decisions
 

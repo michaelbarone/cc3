@@ -3,6 +3,35 @@
 ## Overview
 This directory contains comprehensive documentation for the Control Center testing framework, including standards, patterns, and best practices for test implementation and maintenance.
 
+## Test Directory Structure
+
+We follow a clean, organized structure for all tests:
+
+```
+test/
+├── e2e/                      # End-to-end tests with Playwright
+│   ├── helpers/              # E2E test helpers
+│   ├── journeys/             # User journey tests
+│   └── test-assets/          # Test assets for E2E tests
+├── fixtures/                 # Test fixtures and factories
+│   └── data/                 # Static test data
+├── helpers/                  # Common test helpers
+│   ├── file/                 # File system helpers
+│   └── validators/           # Validation utilities
+├── integration/              # Integration tests
+├── mocks/                    # Mock implementations
+│   ├── factories/            # Factory functions
+│   └── services/             # Service mocks
+└── setup/                    # Test setup and configuration
+```
+
+This structure enables:
+- Clear separation between test types
+- Easy discovery of helpers and utilities
+- Consistent patterns across test implementations
+- Proper isolation between test concerns
+- Simple maintenance and extension
+
 ## API Test Review Improvements (April 2025)
 
 We've completed a thorough review and improvement of our API test suite with the following key enhancements:

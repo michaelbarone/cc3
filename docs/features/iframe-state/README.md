@@ -18,50 +18,81 @@ The IFrame state management system provides a centralized way to manage the life
 ### State Structure
 ```typescript
 interface IframeState {
-  managedIframes: Map<string, {
-    originalSrc: string;
-    currentSrc: string;
-    isLoaded: boolean;
-  }>;
-  activeUrlIdentifier: string | null;
+  urls: Record<string, IframeUrl>;
+  activeUrlId: string | null;
+  initialUrlId: string | null;
+}
+
+// Core iframe state types
+interface IframeUrl {
+  id: string;
+  url: string;
+  urlMobile: string | null;
+  isLoaded: boolean;
+  isVisible: boolean;
+  error: string | null;
+  retryCount: number;
 }
 ```
 
 ### Actions
 ```typescript
 type IframeAction =
-  | { type: 'SET_ACTIVE_URL'; payload: { id: string, srcForDataSrc: string } }
-  | { type: 'MARK_AS_LOADED'; payload: { id: string } }
-  | { type: 'MARK_AS_UNLOADED'; payload: { id: string } }
-  | { type: 'TRIGGER_RELOAD'; payload: { id: string } };
+  | { type: "INIT_URLS"; payload: { urlGroups: UrlGroup[]; initialUrlId?: string } }
+  | { type: "SELECT_URL"; payload: { urlId: string } }
+  | { type: "LOAD_URL"; payload: { urlId: string } }
+  | { type: "UNLOAD_URL"; payload: { urlId: string } }
+  | { type: "SET_ERROR"; payload: { urlId: string; error: string | null } };
 ```
 
 ## Usage
 
 ### Basic Usage
 ```typescript
-import { useIframeManager } from '@/app/lib/hooks/useIframeManager';
+import { useUrlManager, useIframeLifecycle } from "@/app/lib/hooks/useIframe";
 
-function MyComponent() {
+function MyComponent({ urlGroups }) {
   const { 
-    activeUrlIdentifier, 
-    getIframeData, 
-    isUrlLoaded, 
-    setActiveUrl, 
-    markAsLoaded, 
-    markAsUnloaded, 
-    triggerReload,
-    getAllManagedIframesForRender
-  } = useIframeManager();
+    activeUrlId, 
+    urls, 
+    selectUrl, 
+    unloadUrl,
+    initializeUrls,
+    loadedUrlIds,
+    currentGroup
+  } = useUrlManager(urlGroups);
   
   // Select a URL
-  const handleSelect = (urlId: string, srcUrl: string) => {
-    setActiveUrl(urlId, srcUrl);
+  const handleSelect = (urlId: string) => {
+    selectUrl(urlId);
   };
   
   // Unload a URL
   const handleUnload = (urlId: string) => {
-    markAsUnloaded(urlId);
+    unloadUrl(urlId);
+  };
+}
+
+// For a specific iframe
+function IframeComponent({ urlId }) {
+  const { 
+    isLoaded, 
+    isVisible, 
+    isActive, 
+    error, 
+    retryCount,
+    handleLoad,
+    handleError,
+    clearError
+  } = useIframeLifecycle(urlId);
+  
+  // Handle iframe events
+  const onLoad = () => {
+    handleLoad();
+  };
+  
+  const onError = () => {
+    handleError("Failed to load iframe");
   };
 }
 ```
@@ -82,20 +113,20 @@ The state system works seamlessly with the hover-to-expand menu pattern as speci
 
 ```typescript
 function TopMenuNavigation({ urlGroups }) {
-  const { activeUrlIdentifier, isUrlLoaded, setActiveUrl } = useIframeManager();
+  const { activeUrlId, urls, selectUrl } = useUrlManager(urlGroups);
   const [expanded, setExpanded] = useState(false);
   
   // In normal state, show only the current group
   const currentGroup = useMemo(() => {
     return urlGroups.find(group => 
-      group.urls.some(url => url.id === activeUrlIdentifier)
+      group.urls.some(url => url.id === activeUrlId)
     ) || urlGroups[0];
-  }, [urlGroups, activeUrlIdentifier]);
+  }, [urlGroups, activeUrlId]);
   
   // Render URL with appropriate visual state
   const renderUrl = (url) => {
-    const isLoaded = isUrlLoaded(url.id);
-    const isActive = url.id === activeUrlIdentifier;
+    const isLoaded = urls[url.id]?.isLoaded;
+    const isActive = url.id === activeUrlId;
     
     return (
       <UrlItem
@@ -105,7 +136,7 @@ function TopMenuNavigation({ urlGroups }) {
           opacity: isLoaded ? 1.0 : 0.5,
           borderBottom: isActive ? '2px solid blue' : 'none'
         }}
-        onClick={() => setActiveUrl(url.id, url.originalUrl)}
+        onClick={() => selectUrl(url.id)}
       />
     );
   };

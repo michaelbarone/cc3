@@ -73,6 +73,29 @@ This document serves as the main project plan and tracks the status of all tasks
 - **Priority**: Low
 - **Estimated Effort**: 4 weeks
 
+### Backup Manifest Implementation
+- **Description**: Enhance backup functionality to include a manifest file with metadata
+- **Key Milestones**:
+  - Create manifest JSON structure with timestamp, schema version, and app version
+  - Update backup creation process to include manifest
+  - Update restore process to validate manifest
+  - Add manifest validation in the UI
+  - Update backup/restore documentation
+- **Priority**: Medium
+- **Estimated Effort**: 1 week
+
+### User Activity Logging System
+- **Description**: Implement comprehensive user activity logging system
+- **Key Milestones**:
+  - Create ActivityLog database model
+  - Implement logging service
+  - Add activity tracking for key actions (login, admin changes, system operations)
+  - Create admin UI for viewing activity logs
+  - Implement log retention policy and pruning
+  - Add manual log pruning capability
+- **Priority**: Medium
+- **Estimated Effort**: 2 weeks
+
 ## Closed Tasks
 
 ### Library and Test Directory Refactoring
