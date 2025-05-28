@@ -129,22 +129,22 @@
   - Success criteria: Admins can customize app name, logo, and favicon
   - Dependencies: Story 2.1
 
-- [ ] **Story 2.5: Implement User Registration Control Setting**
-  - [ ] Define SystemSetting model field:
-    - [ ] allowAdminUserCreation (Boolean, default true)
-  - [ ] Add section to admin settings page at `/admin/settings`
-  - [ ] Create UI for toggling user creation permission:
-    - [ ] MUI Switch for "Allow New User Creation by Admins"
-    - [ ] Display current state
-    - [ ] Add confirmation dialog before applying changes
-  - [ ] Implement persistence mechanism using SystemSetting model
-  - [ ] Update user creation UI based on setting:
-    - [ ] Hide/disable "Create New User" button when disabled
-    - [ ] Add backend validation to reject creation when disabled
-  - [ ] Build backend API for settings management:
-    - [ ] GET endpoint to retrieve current settings
-    - [ ] PUT endpoint to update settings
-  - [ ] Add success/error feedback via MUI Snackbar
+- [x] **Story 2.5: Implement User Registration Control Setting**
+  - [x] Define SystemSetting model field:
+    - [x] allowAdminUserCreation (Boolean, default true)
+  - [x] Add section to admin settings page at `/admin/settings`
+  - [x] Create UI for toggling user creation permission:
+    - [x] MUI Switch for "Allow New User Creation by Admins"
+    - [x] Display current state
+    - [x] Add confirmation dialog before applying changes
+  - [x] Implement persistence mechanism using SystemSetting model
+  - [x] Update user creation UI based on setting:
+    - [x] Hide/disable "Create New User" button when disabled
+    - [x] Add backend validation to reject creation when disabled
+  - [x] Build backend API for settings management:
+    - [x] GET endpoint to retrieve current settings
+    - [x] PUT endpoint to update settings
+  - [x] Add success/error feedback via MUI Snackbar
   - Success criteria: Admins can enable/disable user creation with confirmation
   - Dependencies: Story 2.1, Story 2.3
 
@@ -306,6 +306,24 @@
   - Next.js metadata is static, so had to implement client-side head updates
 - 📚 Documentation: Need to document branding service and dynamic branding components
 - ⏭️ Next: Move on to Story 2.5 (User Registration Control Setting)
+
+### 2025-05-28 10:35 - User Registration Control Setting Implementation
+
+- ✓ Completed:
+  - Implemented admin settings page with UI for toggling user creation permission
+  - Added MUI Switch with confirmation dialog for changing the setting
+  - Integrated with existing backend API for settings management
+  - Verified that "Create New User" button is hidden when the setting is disabled
+  - Added error handling and success notifications
+  - Reused existing SystemSetting model and API endpoints
+- 🤔 Decisions:
+  - Used a Card layout for settings to allow for future setting categories
+  - Implemented two-step process (toggle first, then confirmation) for better UX
+  - Used different button colors in confirmation dialog based on action (primary for enable, warning for disable)
+  - Added explanatory text to clarify the effect of the setting
+- ❌ Issues: None encountered
+- 📚 Documentation: Need to document admin settings interface and user creation control mechanism
+- ⏭️ Next: This completes Epic 2 implementation
 
 ## Follow-up Considerations
 
