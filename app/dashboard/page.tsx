@@ -1,6 +1,11 @@
 "use client";
 
 import AppHeader from "@/app/components/AppHeader";
+import IframeContainer from "@/app/components/iframe/IframeContainer";
+import SideMenuNavigation from "@/app/components/SideMenuNavigation";
+import UrlItem from "@/app/components/UrlItem";
+import { IframeProvider, useIframeManager } from "@/app/contexts/IframeProvider";
+import { Url, UrlGroup } from "@/app/types/url";
 import ExpandLess from "@mui/icons-material/ExpandLess";
 import ExpandMore from "@mui/icons-material/ExpandMore";
 import {
@@ -15,43 +20,23 @@ import {
   useMediaQuery,
   useTheme,
 } from "@mui/material";
-import Image from "next/image";
-import React, { useEffect, useRef, useState } from "react";
+import { useSession } from "next-auth/react";
+import React, { useCallback, useEffect, useState } from "react";
 
-interface Url {
-  id: string;
-  urlId: string;
-  title: string;
-  url: string;
-  faviconUrl: string | null;
-  mobileSpecificUrl: string | null;
-  displayOrderInGroup: number;
-  createdAt: string;
-  updatedAt: string;
-}
-
-interface UrlGroup {
-  id: string;
-  name: string;
-  description: string | null;
-  displayOrder: number | null;
-  createdAt: string;
-  updatedAt: string;
-  urls: Url[];
-}
-
-export default function Dashboard() {
+// Wrapper component that provides the iframe context
+function DashboardContent() {
   const [groups, setGroups] = useState<UrlGroup[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeUrl, setActiveUrl] = useState<Url | null>(null);
-  const [loadedUrls, setLoadedUrls] = useState<Set<string>>(new Set());
   const [expandedGroupId, setExpandedGroupId] = useState<string | null>(null);
+  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
 
-  const iframeRefs = useRef<Record<string, HTMLIFrameElement | null>>({});
+  const { setActiveUrl, isUrlLoaded } = useIframeManager();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
+  const { data: session } = useSession();
+  const menuPosition = session?.user?.menuPosition || "TOP";
 
   // Fetch user's accessible URL groups
   useEffect(() => {
@@ -67,9 +52,10 @@ export default function Dashboard() {
 
         // Set first URL of first group as active by default
         if (data.length > 0 && data[0].urls.length > 0) {
-          setActiveUrl(data[0].urls[0]);
-          setLoadedUrls(new Set([data[0].urls[0].urlId]));
+          const firstUrl = data[0].urls[0];
+          setActiveUrl(firstUrl.urlId, firstUrl.url);
           setExpandedGroupId(data[0].id);
+          setSelectedGroupId(data[0].id);
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : "An error occurred");
@@ -80,24 +66,32 @@ export default function Dashboard() {
     };
 
     fetchUserGroups();
-  }, []);
+  }, [setActiveUrl]);
 
   // Handle URL selection
-  const handleUrlClick = (url: Url) => {
-    setActiveUrl(url);
+  const handleUrlClick = useCallback(
+    (url: Url) => {
+      setActiveUrl(url.urlId, url.url);
 
-    // Add to loaded URLs set
-    setLoadedUrls((prev) => {
-      const newSet = new Set(prev);
-      newSet.add(url.urlId);
-      return newSet;
-    });
+      // Find the group that contains the URL and update selected group
+      const group = groups.find((g) => g.urls.some((u) => u.urlId === url.urlId));
+      if (group) {
+        setSelectedGroupId(group.id);
+      }
 
-    // Close mobile drawer when URL is selected
-    if (isMobile) {
-      setMobileDrawerOpen(false);
-    }
-  };
+      // Close mobile drawer when URL is selected
+      if (isMobile) {
+        setMobileDrawerOpen(false);
+      }
+    },
+    [setActiveUrl, groups, isMobile],
+  );
+
+  // Handle group change
+  const handleGroupChange = useCallback((groupId: string) => {
+    setSelectedGroupId(groupId);
+    setExpandedGroupId(groupId);
+  }, []);
 
   // Toggle group expansion in the drawer
   const handleToggleGroup = (groupId: string) => {
@@ -136,7 +130,13 @@ export default function Dashboard() {
   if (groups.length === 0 || groups.every((group) => group.urls.length === 0)) {
     return (
       <Box sx={{ p: 3 }}>
-        <AppHeader />
+        <AppHeader
+          onDrawerToggle={handleDrawerToggle}
+          menuPosition={menuPosition as "TOP" | "SIDE"}
+          urlGroups={groups}
+          selectedGroupId={selectedGroupId}
+          onGroupChange={handleGroupChange}
+        />
         <Box sx={{ mt: 4, textAlign: "center" }}>
           <Typography variant="h5">No content available</Typography>
           <Typography variant="body1" color="text.secondary" sx={{ mt: 1 }}>
@@ -147,89 +147,17 @@ export default function Dashboard() {
     );
   }
 
-  // Prepare URL content
-  const renderIframes = () => {
-    const allUrls: Url[] = groups.flatMap((group) => group.urls);
-
-    return allUrls.map((url) => {
-      const isActive = activeUrl?.id === url.id;
-      const isLoaded = loadedUrls.has(url.urlId);
-
-      return (
-        <Box
-          key={url.id}
-          ref={(el: HTMLDivElement | null) => {
-            if (el) {
-              const iframe = el.querySelector<HTMLIFrameElement>("iframe");
-              if (iframe) {
-                iframeRefs.current[url.id] = iframe;
-              }
-            }
-          }}
-          sx={{
-            width: "100%",
-            height: "100%",
-            position: "absolute",
-            top: 0,
-            left: 0,
-            visibility: isActive ? "visible" : "hidden",
-          }}
-        >
-          {isLoaded && (
-            <iframe
-              src={url.url}
-              title={url.title}
-              style={{
-                width: "100%",
-                height: "100%",
-                border: "none",
-              }}
-              sandbox="allow-scripts allow-same-origin allow-popups allow-forms allow-downloads allow-popups-to-escape-sandbox"
-            />
-          )}
-        </Box>
-      );
-    });
-  };
-
   // Render URL items for the drawer/navigation
   const renderUrlItems = (urls: Url[], groupId: string) => {
-    return urls.map((url) => {
-      const isActive = activeUrl?.id === url.id;
-      const isLoaded = loadedUrls.has(url.urlId);
-
-      return (
-        <ListItemButton
-          key={url.id}
-          selected={isActive}
-          onClick={() => handleUrlClick(url)}
-          sx={{
-            pl: 4,
-            opacity: isLoaded ? 1 : 0.5,
-            borderRight: isActive ? `4px solid ${theme.palette.primary.main}` : "none",
-          }}
-        >
-          <Box sx={{ display: "flex", alignItems: "center", width: "100%" }}>
-            {url.faviconUrl ? (
-              <Box sx={{ mr: 1, width: 16, height: 16, position: "relative" }}>
-                <Image
-                  src={url.faviconUrl}
-                  alt=""
-                  width={16}
-                  height={16}
-                  style={{ objectFit: "contain" }}
-                  onError={(e) => {
-                    // Hide broken images
-                    (e.target as HTMLImageElement).style.display = "none";
-                  }}
-                />
-              </Box>
-            ) : null}
-            <ListItemText primary={url.title} />
-          </Box>
-        </ListItemButton>
-      );
-    });
+    return urls.map((url) => (
+      <UrlItem
+        key={url.id}
+        url={url}
+        groupId={groupId}
+        onGroupChange={handleGroupChange}
+        onClick={() => setMobileDrawerOpen(false)}
+      />
+    ));
   };
 
   // Drawer content for mobile
@@ -255,10 +183,38 @@ export default function Dashboard() {
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", height: "100vh" }}>
-      <AppHeader />
+      {/* Render AppHeader only if menuPosition is TOP or on mobile */}
+      {(menuPosition === "TOP" || isMobile) && (
+        <AppHeader
+          onDrawerToggle={handleDrawerToggle}
+          menuPosition={menuPosition as "TOP" | "SIDE"}
+          urlGroups={groups}
+          selectedGroupId={selectedGroupId}
+          onGroupChange={handleGroupChange}
+        />
+      )}
 
-      <Box sx={{ display: "flex", flexGrow: 1, overflow: "hidden" }}>
-        {/* Mobile Drawer */}
+      {/* Render side menu when menuPosition is SIDE and not mobile */}
+      {menuPosition === "SIDE" && !isMobile && (
+        <SideMenuNavigation
+          groups={groups}
+          selectedGroupId={selectedGroupId}
+          onGroupChange={handleGroupChange}
+        />
+      )}
+
+      <Box
+        component="main"
+        sx={{
+          flexGrow: 1,
+          p: 0,
+          overflow: "hidden",
+          display: "flex",
+          flexDirection: "column",
+          height: menuPosition === "TOP" ? "calc(100vh - 64px)" : "100vh", // Adjust height based on menu position
+        }}
+      >
+        {/* Mobile drawer */}
         <Drawer
           variant="temporary"
           open={mobileDrawerOpen}
@@ -274,9 +230,18 @@ export default function Dashboard() {
           {drawerContent}
         </Drawer>
 
-        {/* Main content area with iframes */}
-        <Box sx={{ flexGrow: 1, position: "relative" }}>{renderIframes()}</Box>
+        {/* Iframe container */}
+        <IframeContainer height="100%" />
       </Box>
     </Box>
+  );
+}
+
+// Export the Dashboard with IframeProvider
+export default function Dashboard() {
+  return (
+    <IframeProvider>
+      <DashboardContent />
+    </IframeProvider>
   );
 }

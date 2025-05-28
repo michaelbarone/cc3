@@ -1,3 +1,4 @@
+import TopMenuNavigation from "@/app/components/TopMenuNavigation";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
 import DarkModeIcon from "@mui/icons-material/DarkMode";
@@ -33,9 +34,19 @@ import React, { useState } from "react";
 
 interface AppHeaderProps {
   menuPosition?: "TOP" | "SIDE";
+  onDrawerToggle?: () => void;
+  urlGroups?: any[];
+  selectedGroupId?: string | null;
+  onGroupChange?: (groupId: string) => void;
 }
 
-export default function AppHeader({ menuPosition = "TOP" }: AppHeaderProps) {
+export default function AppHeader({
+  menuPosition = "TOP",
+  onDrawerToggle,
+  urlGroups = [],
+  selectedGroupId = null,
+  onGroupChange = () => {},
+}: AppHeaderProps) {
   const { data: session } = useSession();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [userMenuAnchor, setUserMenuAnchor] = useState<null | HTMLElement>(null);
@@ -50,7 +61,11 @@ export default function AppHeader({ menuPosition = "TOP" }: AppHeaderProps) {
   const isAdmin = session?.user?.role === "ADMIN";
 
   const handleDrawerToggle = () => {
-    setMobileOpen(!mobileOpen);
+    if (onDrawerToggle) {
+      onDrawerToggle();
+    } else {
+      setMobileOpen(!mobileOpen);
+    }
   };
 
   const handleUserMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
@@ -159,40 +174,61 @@ export default function AppHeader({ menuPosition = "TOP" }: AppHeaderProps) {
           <Box sx={{ flexGrow: 1, display: "flex", justifyContent: "center" }}>
             {!isMobile && menuPosition === "TOP" && (
               <>
-                <Button
-                  color="inherit"
-                  component={Link}
-                  href="/dashboard"
-                  sx={{
-                    textTransform: "none",
-                    borderBottom: pathname === "/dashboard" ? "2px solid" : "none",
-                  }}
-                >
-                  Dashboard
-                </Button>
-                <Button
-                  color="inherit"
-                  component={Link}
-                  href="/settings/profile"
-                  sx={{
-                    textTransform: "none",
-                    borderBottom: pathname.startsWith("/settings") ? "2px solid" : "none",
-                  }}
-                >
-                  Settings
-                </Button>
-                {isAdmin && (
+                {/* Main app navigation buttons */}
+                <Box sx={{ display: "flex", mr: 2 }}>
                   <Button
                     color="inherit"
                     component={Link}
-                    href="/admin"
+                    href="/dashboard"
                     sx={{
                       textTransform: "none",
-                      borderBottom: pathname.startsWith("/admin") ? "2px solid" : "none",
+                      borderBottom: pathname === "/dashboard" ? "2px solid" : "none",
                     }}
                   >
-                    Admin
+                    Dashboard
                   </Button>
+                  <Button
+                    color="inherit"
+                    component={Link}
+                    href="/settings/profile"
+                    sx={{
+                      textTransform: "none",
+                      borderBottom: pathname.startsWith("/settings") ? "2px solid" : "none",
+                    }}
+                  >
+                    Settings
+                  </Button>
+                  {isAdmin && (
+                    <Button
+                      color="inherit"
+                      component={Link}
+                      href="/admin"
+                      sx={{
+                        textTransform: "none",
+                        borderBottom: pathname.startsWith("/admin") ? "2px solid" : "none",
+                      }}
+                    >
+                      Admin
+                    </Button>
+                  )}
+                </Box>
+
+                {/* Top Menu URL Navigation */}
+                {pathname === "/dashboard" && urlGroups.length > 0 && (
+                  <Box
+                    sx={{
+                      display: "flex",
+                      flexGrow: 1,
+                      justifyContent: "center",
+                      height: "100%",
+                    }}
+                  >
+                    <TopMenuNavigation
+                      groups={urlGroups}
+                      selectedGroupId={selectedGroupId}
+                      onGroupChange={onGroupChange}
+                    />
+                  </Box>
                 )}
               </>
             )}

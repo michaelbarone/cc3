@@ -4,15 +4,19 @@
  * If the username contains a space, returns the first letter of the first two words.
  * Otherwise, returns the first letter of the username.
  */
-export function getUserInitials(username: string): string {
-  if (!username) return "";
+export function getUserInitials(name: string | null | undefined): string {
+  if (!name) return "?";
 
-  const parts = username.split(" ");
-  if (parts.length > 1) {
-    return (parts[0][0] + parts[1][0]).toUpperCase();
+  const nameParts = name.trim().split(/\s+/);
+
+  if (nameParts.length === 1) {
+    return nameParts[0].charAt(0).toUpperCase();
   }
 
-  return username[0].toUpperCase();
+  const firstInitial = nameParts[0].charAt(0);
+  const lastInitial = nameParts[nameParts.length - 1].charAt(0);
+
+  return (firstInitial + lastInitial).toUpperCase();
 }
 
 /**
