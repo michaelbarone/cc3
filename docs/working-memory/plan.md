@@ -2,19 +2,6 @@
 
 ## Active Tasks
 
-### Epic 1: Foundational Setup & Core User Authentication (Planned)
-- **Location**: `/docs/working-memory/open/epic1-implementation-20250527`
-- **Status**: Planned
-- **Description**: Establish the initial project structure, database schema for users, implement user authentication, and secure application access.
-- **Priority**: High
-- **Target**: Q2 2025
-- **Key Milestones**: 
-  - [ ] Initialize Next.js project with required tooling
-  - [ ] Implement Prisma with User schema
-  - [ ] Create NextAuth.js authentication
-  - [ ] Develop login page and "First Run" experience
-  - [ ] Implement route protection with middleware
-
 ### Epic 2: Admin Dashboard - Core Administration & Multi-User Setup (Planned)
 - **Location**: `/docs/working-memory/open/epic2-implementation-20250527`
 - **Status**: Planned
@@ -82,6 +69,22 @@
   - Full "Between Sessions" Persistence of UI States
 
 ## Closed Tasks
+
+### Epic 1: Foundational Setup & Core User Authentication
+- **Location**: `/docs/working-memory/done/epic1-implementation-20250527`
+- **Status**: Completed (2025-05-27 20:42)
+- **Description**: Establish the initial project structure, database schema for users, implement user authentication, and secure application access.
+- **Priority**: High
+- **Target**: Q2 2025
+- **Key Achievements**: 
+  - [x] Initialized Next.js project with required tooling
+  - [x] Implemented Prisma with User schema
+  - [x] Created NextAuth.js authentication
+  - [x] Developed login page with animated user tiles
+  - [x] Implemented "First Run" experience for admin setup
+  - [x] Secured routes with middleware
+  - [x] Added comprehensive authentication documentation
+  - [x] Fixed user tile interaction and animation behavior
 
 ## Task Categories
 - Initial Setup & Authentication
