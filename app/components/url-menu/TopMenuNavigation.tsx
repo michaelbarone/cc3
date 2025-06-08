@@ -59,12 +59,15 @@ export const TopMenuNavigation = memo(function TopMenuNavigation({
 
   // Handle hover to expand/collapse with delay
   const handleMouseEnter = useCallback(() => {
+    // Only expand if there are multiple URL groups
+    if (urlGroups.length <= 1) return;
+
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
       timeoutRef.current = null;
     }
     setExpanded(true);
-  }, []);
+  }, [urlGroups.length]);
 
   const handleMouseLeave = useCallback(() => {
     if (timeoutRef.current) {
@@ -187,53 +190,53 @@ export const TopMenuNavigation = memo(function TopMenuNavigation({
         <GroupUrlRow group={currentGroup} />
       </Box>
 
-      {/* Expanded view - non-current groups */}
-      <Popper
-        open={expanded}
-        anchorEl={anchorRef.current}
-        placement="bottom-start"
-        disablePortal
-        modifiers={[
-          {
-            name: "offset",
-            options: {
-              offset: [0, 0], // Remove the gap between header and dropdown
+      {/* Expanded view - non-current groups - Only show if there are multiple groups */}
+      {urlGroups.length > 1 && (
+        <Popper
+          open={expanded}
+          anchorEl={anchorRef.current}
+          placement="bottom-start"
+          disablePortal
+          modifiers={[
+            {
+              name: "offset",
+              options: {
+                offset: [0, 0], // Remove the gap between header and dropdown
+              },
             },
-          },
-          {
-            name: "preventOverflow",
-            options: {
-              padding: 8, // Add padding to prevent overflow
+            {
+              name: "preventOverflow",
+              options: {
+                padding: 8, // Add padding to prevent overflow
+              },
             },
-          },
-        ]}
-        sx={{
-          zIndex: theme.zIndex.appBar + 1,
-          // Width based on content rather than matching header width
-          minWidth: "fit-content",
-          maxWidth: "100%",
-          backgroundColor: headerBgColor, // Match exact header color
-          boxShadow: theme.shadows[3],
-          borderRadius: "0 0 4px 4px", // Only round the bottom corners
-          overflow: "hidden",
-        }}
-      >
-        <Paper
-          elevation={0}
+          ]}
           sx={{
+            zIndex: theme.zIndex.appBar + 1,
+            // Width based on content rather than matching header width
+            minWidth: "fit-content",
+            maxWidth: "100%",
             backgroundColor: headerBgColor, // Match exact header color
-            backgroundImage: "none", // Remove any gradient or image
-            maxHeight: "calc(100vh - 200px)",
-            overflow: "auto",
-            p: 1,
-            borderRadius: 0, // Remove any border radius from paper
+            boxShadow: theme.shadows[3],
+            borderRadius: "0 0 4px 4px", // Only round the bottom corners
+            overflow: "hidden",
           }}
-          onMouseEnter={handleMouseEnter}
-          onMouseLeave={handleMouseLeave}
         >
-          {/* Only show non-current groups in the expanded view */}
-          {nonCurrentGroups.length > 0 ? (
-            nonCurrentGroups.map((group) => (
+          <Paper
+            elevation={0}
+            sx={{
+              backgroundColor: headerBgColor, // Match exact header color
+              backgroundImage: "none", // Remove any gradient or image
+              maxHeight: "calc(100vh - 200px)",
+              overflow: "auto",
+              p: 1,
+              borderRadius: 0, // Remove any border radius from paper
+            }}
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
+          >
+            {/* Only show non-current groups in the expanded view */}
+            {nonCurrentGroups.map((group) => (
               <Box
                 key={group.id}
                 sx={{
@@ -264,14 +267,10 @@ export const TopMenuNavigation = memo(function TopMenuNavigation({
                   <GroupUrlRow group={group} />
                 </Box>
               </Box>
-            ))
-          ) : (
-            <Box sx={{ p: 2, textAlign: "center", color: "text.secondary" }}>
-              No additional URL groups available
-            </Box>
-          )}
-        </Paper>
-      </Popper>
+            ))}
+          </Paper>
+        </Popper>
+      )}
     </Box>
   );
 });
