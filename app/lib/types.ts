@@ -9,6 +9,11 @@ export interface Url {
   iconPath: string | null;
   displayOrder: number;
   idleTimeoutMinutes?: number;
+  isLocalhost?: boolean;
+  port?: string | null;
+  path?: string | null;
+  localhostMobilePath?: string | null;
+  localhostMobilePort?: string | null;
   createdAt?: string;
   updatedAt?: string;
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import IconUpload from "@/app/components/ui/IconUpload";
+import { getEffectiveUrl } from "@/app/lib/utils/iframe-utils";
 import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
@@ -8,12 +9,15 @@ import {
   Alert,
   Box,
   Button,
+  Checkbox,
+  Chip,
   CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
   DialogContentText,
   DialogTitle,
+  FormControlLabel,
   Grid,
   IconButton,
   Paper,
@@ -36,6 +40,11 @@ interface Url {
   urlMobile: string | null;
   iconPath: string | null;
   idleTimeoutMinutes: number | null;
+  isLocalhost: boolean;
+  port?: string | null;
+  path?: string | null;
+  localhostMobilePath?: string | null;
+  localhostMobilePort?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -57,6 +66,12 @@ export default function UrlManagement() {
     urlMobile: "",
     iconPath: "",
     idleTimeoutMinutes: 10,
+    isLocalhost: false,
+    port: "",
+    path: "",
+    enableMobileOverride: false,
+    localhostMobilePort: "",
+    localhostMobilePath: "",
   });
 
   // Snackbar state
@@ -93,12 +108,19 @@ export default function UrlManagement() {
 
     if (url) {
       setSelectedUrl(url);
+      const hasMobileOverride = !!(url.localhostMobilePort || url.localhostMobilePath);
       setFormValues({
         title: url.title,
         url: url.url,
         urlMobile: url.urlMobile || "",
         iconPath: url.iconPath || "",
         idleTimeoutMinutes: url.idleTimeoutMinutes || 10,
+        isLocalhost: url.isLocalhost || false,
+        port: url.port || "",
+        path: url.path || "",
+        enableMobileOverride: hasMobileOverride,
+        localhostMobilePort: url.localhostMobilePort || "",
+        localhostMobilePath: url.localhostMobilePath || "",
       });
     } else {
       setSelectedUrl(null);
@@ -108,6 +130,12 @@ export default function UrlManagement() {
         urlMobile: "",
         iconPath: "",
         idleTimeoutMinutes: 10,
+        isLocalhost: false,
+        port: "",
+        path: "",
+        enableMobileOverride: false,
+        localhostMobilePort: "",
+        localhostMobilePath: "",
       });
     }
 
@@ -126,6 +154,35 @@ export default function UrlManagement() {
     }));
   };
 
+  const handleCheckboxChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, checked } = event.target;
+    setFormValues((prev) => ({
+      ...prev,
+      [name]: checked,
+    }));
+  };
+
+  const isFormValid = () => {
+    if (formValues.title.trim() === "") return false;
+
+    if (formValues.isLocalhost) {
+      // For localhost, require at least port or path
+      const hasPortOrPath = !!formValues.port || !!formValues.path;
+      // If path is provided, it must start with /
+      const pathValid = !formValues.path || formValues.path.startsWith("/");
+      // Check mobile override if enabled
+      const mobileValid =
+        !formValues.enableMobileOverride ||
+        !formValues.localhostMobilePath ||
+        formValues.localhostMobilePath.startsWith("/");
+
+      return hasPortOrPath && pathValid && mobileValid;
+    } else {
+      // For regular URLs, require the url field
+      return formValues.url.trim() !== "";
+    }
+  };
+
   const handleSubmit = async () => {
     try {
       let response;
@@ -134,6 +191,13 @@ export default function UrlManagement() {
       const submitData = {
         ...formValues,
         idleTimeoutMinutes: Number(formValues.idleTimeoutMinutes) || 10,
+        // Set to null any mobile override fields if not enabled
+        localhostMobilePort: formValues.enableMobileOverride
+          ? formValues.localhostMobilePort
+          : null,
+        localhostMobilePath: formValues.enableMobileOverride
+          ? formValues.localhostMobilePath
+          : null,
       };
 
       if (dialogType === "create") {
@@ -223,6 +287,7 @@ export default function UrlManagement() {
                 <TableCell>Title</TableCell>
                 <TableCell>URL</TableCell>
                 <TableCell>Mobile URL</TableCell>
+                <TableCell>Localhost</TableCell>
                 <TableCell>Idle Timeout</TableCell>
                 <TableCell>Actions</TableCell>
               </TableRow>
@@ -344,8 +409,39 @@ export default function UrlManagement() {
                     </Box>
                   </TableCell>
                   <TableCell>{url.title}</TableCell>
-                  <TableCell>{url.url}</TableCell>
-                  <TableCell>{url.urlMobile || "-"}</TableCell>
+                  <TableCell>
+                    {url.isLocalhost ? (
+                      <Box>
+                        <Typography variant="body2">{getEffectiveUrl(url, false)}</Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          Uses browser hostname
+                        </Typography>
+                      </Box>
+                    ) : (
+                      url.url
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {url.isLocalhost && (url.localhostMobilePort || url.localhostMobilePath) ? (
+                      <Box>
+                        <Typography variant="body2">{getEffectiveUrl(url, true)}</Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          Mobile override
+                        </Typography>
+                      </Box>
+                    ) : url.isLocalhost ? (
+                      <Typography variant="body2">Same as desktop</Typography>
+                    ) : (
+                      url.urlMobile || "-"
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {url.isLocalhost ? (
+                      <Chip size="small" color="primary" label="Enabled" variant="outlined" />
+                    ) : (
+                      <Chip size="small" color="default" label="Disabled" variant="outlined" />
+                    )}
+                  </TableCell>
                   <TableCell>{url.idleTimeoutMinutes || "-"}</TableCell>
                   <TableCell>
                     <IconButton size="small" onClick={() => handleOpenDialog("edit", url)}>
@@ -387,27 +483,181 @@ export default function UrlManagement() {
               />
             </Grid>
             <Grid item xs={12}>
-              <TextField
-                margin="dense"
-                name="url"
-                label="URL"
-                fullWidth
-                variant="outlined"
-                value={formValues.url}
-                onChange={handleFormChange}
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    name="isLocalhost"
+                    checked={formValues.isLocalhost}
+                    onChange={handleCheckboxChange}
+                  />
+                }
+                label="Localhost Connection"
               />
             </Grid>
-            <Grid item xs={12}>
-              <TextField
-                margin="dense"
-                name="urlMobile"
-                label="Mobile URL (optional)"
-                fullWidth
-                variant="outlined"
-                value={formValues.urlMobile}
-                onChange={handleFormChange}
-              />
-            </Grid>
+
+            {formValues.isLocalhost ? (
+              <>
+                <Grid item xs={12}>
+                  <Typography variant="caption" color="text.secondary">
+                    Will use current browser hostname:{" "}
+                    {typeof window !== "undefined" ? window.location.hostname : "localhost"}
+                  </Typography>
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    margin="dense"
+                    name="port"
+                    label="Port (optional if Path provided)"
+                    placeholder="8080"
+                    fullWidth
+                    variant="outlined"
+                    value={formValues.port}
+                    onChange={handleFormChange}
+                    error={!formValues.port && !formValues.path ? true : false}
+                  />
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    margin="dense"
+                    name="path"
+                    label="Path (optional if Port provided)"
+                    placeholder="/api/data?param=value"
+                    fullWidth
+                    variant="outlined"
+                    value={formValues.path}
+                    onChange={handleFormChange}
+                    error={
+                      (!formValues.port && !formValues.path) ||
+                      (formValues.path && !formValues.path.startsWith("/"))
+                        ? true
+                        : false
+                    }
+                    helperText={
+                      formValues.path && !formValues.path.startsWith("/")
+                        ? "Path must start with /"
+                        : !formValues.port && !formValues.path
+                          ? "At least one of Port or Path must be provided"
+                          : ""
+                    }
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <Box sx={{ mt: 2, p: 1, bgcolor: "background.paper", borderRadius: 1 }}>
+                    <Typography variant="subtitle2">Preview:</Typography>
+                    <Typography variant="body2" sx={{ wordBreak: "break-all" }}>
+                      {getEffectiveUrl(
+                        {
+                          id: selectedUrl?.id || "preview",
+                          url: "",
+                          isLocalhost: formValues.isLocalhost,
+                          port: formValues.port || null,
+                          path: formValues.path || null,
+                        },
+                        false,
+                      )}
+                    </Typography>
+                  </Box>
+                </Grid>
+                <Grid item xs={12}>
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        name="enableMobileOverride"
+                        checked={formValues.enableMobileOverride}
+                        onChange={handleCheckboxChange}
+                      />
+                    }
+                    label="Enable mobile-specific settings"
+                  />
+                </Grid>
+
+                {formValues.enableMobileOverride && (
+                  <>
+                    <Grid item xs={12} md={6}>
+                      <TextField
+                        margin="dense"
+                        name="localhostMobilePort"
+                        label="Mobile Port (optional)"
+                        placeholder="9090"
+                        fullWidth
+                        variant="outlined"
+                        value={formValues.localhostMobilePort}
+                        onChange={handleFormChange}
+                      />
+                    </Grid>
+                    <Grid item xs={12} md={6}>
+                      <TextField
+                        margin="dense"
+                        name="localhostMobilePath"
+                        label="Mobile Path (optional)"
+                        placeholder="/mobile/api"
+                        fullWidth
+                        variant="outlined"
+                        value={formValues.localhostMobilePath}
+                        onChange={handleFormChange}
+                        error={
+                          formValues.localhostMobilePath &&
+                          !formValues.localhostMobilePath.startsWith("/")
+                            ? true
+                            : false
+                        }
+                        helperText={
+                          formValues.localhostMobilePath &&
+                          !formValues.localhostMobilePath.startsWith("/")
+                            ? "Path must start with /"
+                            : ""
+                        }
+                      />
+                    </Grid>
+                    <Grid item xs={12}>
+                      <Box sx={{ mt: 2, p: 1, bgcolor: "background.paper", borderRadius: 1 }}>
+                        <Typography variant="subtitle2">Mobile Preview:</Typography>
+                        <Typography variant="body2" sx={{ wordBreak: "break-all" }}>
+                          {getEffectiveUrl(
+                            {
+                              id: selectedUrl?.id || "preview",
+                              url: "",
+                              isLocalhost: formValues.isLocalhost,
+                              port: formValues.port || null,
+                              path: formValues.path || null,
+                              localhostMobilePort: formValues.localhostMobilePort || null,
+                              localhostMobilePath: formValues.localhostMobilePath || null,
+                            },
+                            true,
+                          )}
+                        </Typography>
+                      </Box>
+                    </Grid>
+                  </>
+                )}
+              </>
+            ) : (
+              <>
+                <Grid item xs={12}>
+                  <TextField
+                    margin="dense"
+                    name="url"
+                    label="URL"
+                    fullWidth
+                    variant="outlined"
+                    value={formValues.url}
+                    onChange={handleFormChange}
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <TextField
+                    margin="dense"
+                    name="urlMobile"
+                    label="Mobile URL (optional)"
+                    fullWidth
+                    variant="outlined"
+                    value={formValues.urlMobile}
+                    onChange={handleFormChange}
+                  />
+                </Grid>
+              </>
+            )}
+
             <Grid item xs={12}>
               <TextField
                 margin="dense"
@@ -426,7 +676,7 @@ export default function UrlManagement() {
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseDialog}>Cancel</Button>
-          <Button onClick={handleSubmit} variant="contained">
+          <Button onClick={handleSubmit} variant="contained" disabled={!isFormValid()}>
             {dialogType === "create" ? "Create" : "Save"}
           </Button>
         </DialogActions>

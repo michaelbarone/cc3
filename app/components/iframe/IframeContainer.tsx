@@ -1,6 +1,7 @@
 "use client";
 
 import { useIframeLifecycle, useUrlManager } from "@/app/lib/hooks/useIframe";
+import { getEffectiveUrl } from "@/app/lib/utils/iframe-utils";
 import type { IframeContainerProps, IframeContainerRef, IframeUrl } from "@/app/types/iframe";
 import { Box, useMediaQuery } from "@mui/material";
 import React, { forwardRef, useEffect, useImperativeHandle, useMemo, useRef } from "react";
@@ -83,7 +84,7 @@ function IframeElement({
       // Create iframe if it doesn't exist
       const iframe = document.createElement("iframe");
       iframe.setAttribute("data-iframe-id", urlData.id);
-      const effectiveUrl = isMobile && urlData.urlMobile ? urlData.urlMobile : urlData.url;
+      const effectiveUrl = getEffectiveUrl(urlData, isMobile);
       iframe.setAttribute("data-src", effectiveUrl);
       iframe.title = `iframe-${urlData.id}`;
       iframe.style.width = "100%";
@@ -165,8 +166,8 @@ function IframeElement({
 
     // Load URL only when visible and not already loaded
     if (urlData.isVisible) {
-      const effectiveUrl = isMobile && urlData.urlMobile ? urlData.urlMobile : urlData.url;
-      const currentSrc = iframeRef.current.getAttribute("src") || "";
+      const effectiveUrl = getEffectiveUrl(urlData, isMobile);
+      const currentSrc = iframeRef.current?.getAttribute("src") || undefined;
 
       // Only set src if it's empty or about:blank
       if (!currentSrc || currentSrc === "about:blank") {
@@ -176,7 +177,17 @@ function IframeElement({
 
     // Update the ref
     urlDataRef.current = urlData;
-  }, [urlData.isVisible, urlData.url, urlData.urlMobile, isMobile]);
+  }, [
+    urlData.isVisible,
+    urlData.url,
+    urlData.urlMobile,
+    urlData.isLocalhost,
+    urlData.port,
+    urlData.path,
+    urlData.localhostMobilePort,
+    urlData.localhostMobilePath,
+    isMobile,
+  ]);
 
   return null; // This component only manages the imperative iframe
 }
@@ -207,7 +218,8 @@ const IframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
         resetIframe: (urlId: string) => {
           const url = urls[urlId];
           if (url) {
-            const effectiveUrl = isMobile && url.urlMobile ? url.urlMobile : url.url;
+            let effectiveUrl = getEffectiveUrl(url, isMobile);
+
             const iframe = document.querySelector(
               `[data-iframe-id="${urlId}"]`,
             ) as HTMLIFrameElement;

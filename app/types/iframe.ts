@@ -10,6 +10,11 @@ export interface UrlGroup {
     iconPath?: string | null;
     idleTimeoutMinutes?: number | null;
     displayOrder?: number;
+    isLocalhost?: boolean;
+    port?: string | null;
+    path?: string | null;
+    localhostMobilePath?: string | null;
+    localhostMobilePort?: string | null;
   }>;
 }
 
@@ -18,6 +23,11 @@ export interface IframeUrl {
   id: string;
   url: string;
   urlMobile: string | null;
+  isLocalhost: boolean;
+  port?: string | null;
+  path?: string | null;
+  localhostMobilePath?: string | null;
+  localhostMobilePort?: string | null;
   isLoaded: boolean;
   isVisible: boolean;
   error: string | null;

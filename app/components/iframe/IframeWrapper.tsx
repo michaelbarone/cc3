@@ -1,5 +1,6 @@
 "use client";
 
+import { getEffectiveUrl } from "@/app/lib/utils/iframe-utils";
 import { Box, useMediaQuery } from "@mui/material";
 import { forwardRef, useEffect, useState } from "react";
 import { ErrorOverlay, LoadingOverlay, UnloadedOverlay } from "./overlays";
@@ -15,6 +16,11 @@ interface IframeWrapperProps {
   isActive: boolean;
   sandbox?: string;
   title?: string;
+  isLocalhost?: boolean;
+  port?: string | null;
+  path?: string | null;
+  localhostMobilePort?: string | null;
+  localhostMobilePath?: string | null;
   onLoad?: () => void;
   onError?: (error: string) => void;
   onReload?: () => void;
@@ -26,6 +32,7 @@ interface IframeWrapperProps {
  * - Loading, error, and unloaded states
  * - Appropriate overlay rendering
  * - Ref forwarding
+ * - Localhost URL generation
  */
 export const IframeWrapper = forwardRef<HTMLIFrameElement, IframeWrapperProps>(
   function IframeWrapper(
@@ -38,6 +45,11 @@ export const IframeWrapper = forwardRef<HTMLIFrameElement, IframeWrapperProps>(
       isActive,
       sandbox = "allow-same-origin allow-scripts allow-forms allow-popups",
       title = `iframe-${id}`,
+      isLocalhost = false,
+      port = null,
+      path = null,
+      localhostMobilePort = null,
+      localhostMobilePath = null,
       onLoad,
       onError,
       onReload,
@@ -46,9 +58,6 @@ export const IframeWrapper = forwardRef<HTMLIFrameElement, IframeWrapperProps>(
   ) {
     const isMobile = useMediaQuery("(max-width:600px)");
     const [showIframe, setShowIframe] = useState(isActive);
-
-    // Select the appropriate URL based on device
-    const selectedUrl = isMobile && urlMobile ? urlMobile : url;
 
     // Handle visibility changes
     useEffect(() => {
@@ -64,6 +73,21 @@ export const IframeWrapper = forwardRef<HTMLIFrameElement, IframeWrapperProps>(
     }, [isActive]);
 
     const isUnloaded = status === "active-unloaded" || status === "inactive-unloaded";
+
+    // Create an object that matches the UrlWithLocalhost interface
+    const urlWithLocalhost = {
+      id,
+      url,
+      urlMobile,
+      isLocalhost,
+      port,
+      path,
+      localhostMobilePath,
+      localhostMobilePort,
+    };
+
+    // Get the effective URL using the shared function
+    const effectiveUrl = getEffectiveUrl(urlWithLocalhost, isMobile);
 
     const handleReload = () => {
       if (onReload) onReload();
@@ -89,9 +113,11 @@ export const IframeWrapper = forwardRef<HTMLIFrameElement, IframeWrapperProps>(
           ref={ref}
           title={title}
           sandbox={sandbox}
-          src={isUnloaded ? "" : selectedUrl}
+          src={isUnloaded ? "" : effectiveUrl}
           data-url-id={id}
-          data-url={selectedUrl}
+          data-src={effectiveUrl}
+          data-url={effectiveUrl}
+          data-is-localhost={isLocalhost ? "true" : "false"}
           onLoad={onLoad}
           onError={() => onError?.("Failed to load iframe content")}
           style={{

@@ -1,5 +1,6 @@
 "use client";
 
+import { getEffectiveUrl, UrlWithLocalhost } from "@/app/lib/utils/iframe-utils";
 import AddIcon from "@mui/icons-material/Add";
 import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
 import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
@@ -43,11 +44,8 @@ import {
 import Image from "next/image";
 import React, { useEffect, useRef, useState } from "react";
 
-interface Url {
-  id: string;
+interface Url extends UrlWithLocalhost {
   title: string;
-  url: string;
-  urlMobile: string | null;
   iconPath: string | null;
   idleTimeoutMinutes: number;
 }
@@ -308,6 +306,9 @@ export default function UrlGroupManagement() {
       return;
     }
 
+    // Check if we're on a mobile device
+    const isMobile = window.matchMedia("(max-width:600px)").matches;
+
     // Track existing and needed iframe IDs
     const existingIframeIds = new Set(Object.keys(iframeRefs));
     const neededIframeIds = new Set<string>();
@@ -330,15 +331,17 @@ export default function UrlGroupManagement() {
         if (existingIframeIds.has(urlId)) {
           const existingIframe = iframeRefs[urlId];
           const currentDataSrc = existingIframe.getAttribute("data-src");
-          if (currentDataSrc !== url.url) {
-            existingIframe.setAttribute("data-src", url.url);
+          const effectiveUrl = getEffectiveUrl(url, isMobile);
+
+          if (currentDataSrc !== effectiveUrl) {
+            existingIframe.setAttribute("data-src", effectiveUrl);
             // Only update src if this is the active iframe and it's currently loaded
             if (
               urlId === activeUrlId &&
               existingIframe.src &&
               existingIframe.src !== "about:blank"
             ) {
-              existingIframe.src = url.url;
+              existingIframe.src = effectiveUrl;
             }
           }
           return;
@@ -361,7 +364,8 @@ export default function UrlGroupManagement() {
         // Create new iframe
         const iframe = document.createElement("iframe");
         iframe.setAttribute("data-iframe-id", urlId);
-        iframe.setAttribute("data-src", url.url);
+        const effectiveUrl = getEffectiveUrl(url, isMobile);
+        iframe.setAttribute("data-src", effectiveUrl);
         iframe.title = `iframe-${urlId}`;
         iframe.style.width = "100%";
         iframe.style.height = "100%";
@@ -381,7 +385,7 @@ export default function UrlGroupManagement() {
 
         // Load active iframe
         if (urlId === activeUrlId) {
-          iframe.src = url.url;
+          iframe.src = effectiveUrl;
         }
       });
     });
@@ -421,6 +425,7 @@ export default function UrlGroupManagement() {
       observer.observe(containerRef.current);
     }
 
+    // Return cleanup function
     return () => {
       observer.disconnect();
 
@@ -438,7 +443,7 @@ export default function UrlGroupManagement() {
         globalIframeContainer = null;
       }
     };
-  }, [urlGroups, activeUrlId]);
+  }, [urlGroups, activeUrlId, iframeRefs]);
 
   // Handle active URL changes
   useEffect(() => {
@@ -461,14 +466,26 @@ export default function UrlGroupManagement() {
 
         // Load the iframe content if it's active and not already loaded
         if (isActive && (!iframe.src || iframe.src === "about:blank")) {
-          const effectiveUrl = iframe.getAttribute("data-src");
-          if (effectiveUrl) {
+          const dataSrc = iframe.getAttribute("data-src");
+
+          // Find the URL object matching this iframe
+          const urlGroup = urlGroups.find((group) => group.urls.some((u) => u.url.id === urlId));
+
+          const urlData = urlGroup?.urls.find((u) => u.url.id === urlId)?.url;
+
+          if (urlData) {
+            // Get the effective URL based on current device
+            const isMobile = window.matchMedia("(max-width:600px)").matches;
+            const effectiveUrl = getEffectiveUrl(urlData, isMobile);
             iframe.src = effectiveUrl;
+          } else if (dataSrc) {
+            // Fallback to data-src if URL object not found
+            iframe.src = dataSrc;
           }
         }
       }
     });
-  }, [activeUrlId, iframeRefs]);
+  }, [activeUrlId, iframeRefs, urlGroups]);
 
   const fetchUrlGroups = async () => {
     try {
