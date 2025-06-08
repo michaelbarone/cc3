@@ -175,16 +175,18 @@ export const TopMenuNavigation = memo(function TopMenuNavigation({
           backgroundColor: headerBgColor, // Ensure this Box also has the same background
         }}
       >
-        {/* Group name */}
-        <Box
-          sx={{
-            mr: 2,
-            fontWeight: "bold",
-            whiteSpace: "nowrap",
-          }}
-        >
-          {currentGroup.name}
-        </Box>
+        {/* Group name - only show if there's more than one group */}
+        {urlGroups.length > 1 && (
+          <Box
+            sx={{
+              mr: 2,
+              fontWeight: "bold",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {currentGroup.name}
+          </Box>
+        )}
 
         {/* Horizontal URL row for current group */}
         <GroupUrlRow group={currentGroup} />
