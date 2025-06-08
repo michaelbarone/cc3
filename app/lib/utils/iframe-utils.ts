@@ -65,6 +65,8 @@ export function getEffectiveUrl(url: UrlWithLocalhost, isMobile: boolean): strin
       : `${protocol}//${hostname}${effectivePath}`;
   } else {
     // Use standard URL selection logic for non-localhost URLs
-    return isMobile && url.urlMobile ? url.urlMobile : url.url;
+    const selectedUrl = isMobile && url.urlMobile ? url.urlMobile : url.url;
+    // Return empty string if the URL is null or empty
+    return selectedUrl || "";
   }
 }

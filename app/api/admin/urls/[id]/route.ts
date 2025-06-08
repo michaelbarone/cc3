@@ -139,7 +139,7 @@ export async function PUT(request: NextRequest, { params }: RouteContext): Promi
       where: { id },
       data: {
         title,
-        url: isLocalhost ? "localhost" : url,
+        url: url || "", // Always store the actual URL, even for localhost
         urlMobile: urlMobile || null,
         iconPath: iconPath || null,
         idleTimeoutMinutes: timeoutMinutes,

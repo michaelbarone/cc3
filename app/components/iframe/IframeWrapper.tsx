@@ -87,7 +87,21 @@ export const IframeWrapper = forwardRef<HTMLIFrameElement, IframeWrapperProps>(
     };
 
     // Get the effective URL using the shared function
-    const effectiveUrl = getEffectiveUrl(urlWithLocalhost, isMobile);
+    let effectiveUrl = getEffectiveUrl(urlWithLocalhost, isMobile);
+
+    // Make sure we have a non-empty effectiveUrl, particularly important for localhost URLs
+    if (!effectiveUrl && isLocalhost) {
+      // Force regeneration of localhost URL even when URL is empty
+      const protocol = typeof window !== "undefined" ? window.location.protocol : "http:";
+      const hostname = typeof window !== "undefined" ? window.location.hostname : "localhost";
+      const effectivePort = isMobile && localhostMobilePort ? localhostMobilePort : port || "";
+      const effectivePath = isMobile && localhostMobilePath ? localhostMobilePath : path || "/";
+
+      // Build a fallback URL
+      effectiveUrl = effectivePort
+        ? `${protocol}//${hostname}:${effectivePort}${effectivePath}`
+        : `${protocol}//${hostname}${effectivePath}`;
+    }
 
     const handleReload = () => {
       if (onReload) onReload();

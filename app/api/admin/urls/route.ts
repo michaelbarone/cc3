@@ -107,7 +107,7 @@ export async function POST(request: Request) {
     const newUrl = await prisma.url.create({
       data: {
         title,
-        url: isLocalhost ? "localhost" : url,
+        url: url || "", // Always store the actual URL, even for localhost
         urlMobile: urlMobile || null,
         iconPath: iconPath || null,
         idleTimeoutMinutes: idleTimeoutMinutes ? Number(idleTimeoutMinutes) : 10,

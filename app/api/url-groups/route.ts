@@ -11,6 +11,11 @@ interface Url {
   iconPath: string | null;
   idleTimeoutMinutes: number | null;
   displayOrder: number;
+  isLocalhost: boolean;
+  port: string | null;
+  path: string | null;
+  localhostMobilePath: string | null;
+  localhostMobilePort: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -40,6 +45,11 @@ interface UserUrlGroupItem {
         urlMobile: string | null;
         iconPath: string | null;
         idleTimeoutMinutes: number | null;
+        isLocalhost: boolean;
+        port: string | null;
+        path: string | null;
+        localhostMobilePath: string | null;
+        localhostMobilePort: string | null;
         createdAt: Date;
         updatedAt: Date;
       };
@@ -84,7 +94,7 @@ export async function GET() {
     }
 
     // Transform the data to match the expected format
-    const urlGroups = userUrlGroups.userUrlGroups.map((item: UserUrlGroupItem) => {
+    const urlGroups = userUrlGroups.userUrlGroups.map((item: any) => {
       const { urlGroup } = item;
       return {
         id: urlGroup.id,
@@ -92,7 +102,7 @@ export async function GET() {
         description: urlGroup.description,
         createdAt: urlGroup.createdAt,
         updatedAt: urlGroup.updatedAt,
-        urls: urlGroup.urls.map((urlInGroup) => ({
+        urls: urlGroup.urls.map((urlInGroup: any) => ({
           id: urlInGroup.url.id,
           title: urlInGroup.url.title,
           url: urlInGroup.url.url,
@@ -100,6 +110,11 @@ export async function GET() {
           iconPath: urlInGroup.url.iconPath,
           idleTimeoutMinutes: urlInGroup.url.idleTimeoutMinutes,
           displayOrder: urlInGroup.displayOrder,
+          isLocalhost: urlInGroup.url.isLocalhost || false,
+          port: urlInGroup.url.port || null,
+          path: urlInGroup.url.path || null,
+          localhostMobilePath: urlInGroup.url.localhostMobilePath || null,
+          localhostMobilePort: urlInGroup.url.localhostMobilePort || null,
           createdAt: urlInGroup.url.createdAt,
           updatedAt: urlInGroup.url.updatedAt,
         })),

@@ -26,15 +26,22 @@ export function useUrlGroups() {
         ? data.urlGroups.map((group: any) => ({
             id: group.id,
             name: group.name,
-            urls: group.urls.map((url: any) => ({
-              id: url.id,
-              title: url.title,
-              url: url.url,
-              urlMobile: url.urlMobile || null,
-              iconPath: url.iconPath || null,
-              idleTimeoutMinutes: url.idleTimeoutMinutes || null,
-              displayOrder: url.displayOrder || 0,
-            })),
+            urls: group.urls.map((url: any) => {
+              return {
+                id: url.id,
+                title: url.title,
+                url: url.url,
+                urlMobile: url.urlMobile || null,
+                iconPath: url.iconPath || null,
+                idleTimeoutMinutes: url.idleTimeoutMinutes || null,
+                displayOrder: url.displayOrder || 0,
+                isLocalhost: url.isLocalhost || false,
+                port: url.port || null,
+                path: url.path || null,
+                localhostMobilePath: url.localhostMobilePath || null,
+                localhostMobilePort: url.localhostMobilePort || null,
+              };
+            }),
           }))
         : [];
 

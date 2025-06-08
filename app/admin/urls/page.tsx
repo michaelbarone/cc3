@@ -503,6 +503,18 @@ export default function UrlManagement() {
                     {typeof window !== "undefined" ? window.location.hostname : "localhost"}
                   </Typography>
                 </Grid>
+                <Grid item xs={12}>
+                  <TextField
+                    margin="dense"
+                    name="url"
+                    label="Original URL (for reference)"
+                    fullWidth
+                    variant="outlined"
+                    value={formValues.url}
+                    onChange={handleFormChange}
+                    helperText="This URL will be used for reference only. The actual localhost URL will be generated based on port and path."
+                  />
+                </Grid>
                 <Grid item xs={12} md={6}>
                   <TextField
                     margin="dense"
@@ -548,7 +560,7 @@ export default function UrlManagement() {
                       {getEffectiveUrl(
                         {
                           id: selectedUrl?.id || "preview",
-                          url: "",
+                          url: formValues.url || "",
                           isLocalhost: formValues.isLocalhost,
                           port: formValues.port || null,
                           path: formValues.path || null,
@@ -616,7 +628,7 @@ export default function UrlManagement() {
                           {getEffectiveUrl(
                             {
                               id: selectedUrl?.id || "preview",
-                              url: "",
+                              url: formValues.url || "",
                               isLocalhost: formValues.isLocalhost,
                               port: formValues.port || null,
                               path: formValues.path || null,
