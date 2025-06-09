@@ -72,7 +72,7 @@ export function AdminLayoutClient({ children }: AdminLayoutClientProps) {
             >
               <ListItemButton selected={pathname === item.href}>
                 <ListItemIcon>{item.icon}</ListItemIcon>
-                <ListItemText primary={item.text} />
+                <ListItemText primary={item.text} primaryTypographyProps={{ component: "div" }} />
               </ListItemButton>
             </Box>
           </ListItem>
@@ -82,7 +82,7 @@ export function AdminLayoutClient({ children }: AdminLayoutClientProps) {
   );
 
   return (
-    <Box sx={{ display: "flex" }}>
+    <Box sx={{ display: "flex" }} suppressHydrationWarning>
       <CssBaseline />
       <AppBar
         position="fixed"
@@ -107,7 +107,11 @@ export function AdminLayoutClient({ children }: AdminLayoutClientProps) {
           <UserMenu showAdminOption />
         </Toolbar>
       </AppBar>
-      <Box component="nav" sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 } }}>
+      <Box
+        component="nav"
+        sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 } }}
+        suppressHydrationWarning
+      >
         <Drawer
           variant="temporary"
           open={mobileOpen}
@@ -144,6 +148,7 @@ export function AdminLayoutClient({ children }: AdminLayoutClientProps) {
           overflow: "hidden",
           position: "relative",
         }}
+        suppressHydrationWarning
       >
         <Box
           sx={{
@@ -155,6 +160,7 @@ export function AdminLayoutClient({ children }: AdminLayoutClientProps) {
             bgcolor: "background.default",
             zIndex: (theme) => theme.zIndex.drawer + 2,
           }}
+          suppressHydrationWarning
         />
         <Box
           sx={{
@@ -164,6 +170,7 @@ export function AdminLayoutClient({ children }: AdminLayoutClientProps) {
             zIndex: (theme) => theme.zIndex.drawer + 3,
             p: 3,
           }}
+          suppressHydrationWarning
         >
           {children}
         </Box>
