@@ -3,7 +3,7 @@ set -e
 
 # Create data directory if it doesn't exist
 mkdir -p /app/data
-mkdir -p /app/backup
+mkdir -p /app/data/backups
 
 # Function to check database health
 check_database() {
@@ -25,9 +25,9 @@ check_database() {
 backup_database() {
     if [ -f "/app/data/app.db" ]; then
         echo "Creating database backup..."
-        cp /app/data/app.db "/app/backup/app_$(date +%Y%m%d_%H%M%S).db"
+        cp /app/data/app.db "/app/data/backups/app_$(date +%Y%m%d_%H%M%S).db"
         # Keep only last 5 backups
-        ls -t /app/backup/app_*.db | tail -n +6 | xargs -r rm
+        ls -t /app/data/backups/app_*.db | tail -n +6 | xargs -r rm
     fi
 }
 

@@ -1,61 +1,79 @@
-FROM node:20-alpine AS base
+FROM node:20-alpine AS builder
 
-# Install dependencies only when needed
-FROM base AS deps
-RUN apk add --no-cache libc6-compat curl
+# Set working directory
 WORKDIR /app
 
-# Copy package.json and package-lock.json
+# Copy package files for dependency installation
 COPY package.json package-lock.json* ./
-# Enable production optimizations and clean install
-RUN npm ci --only=production --no-audit
 
-# Rebuild the source code only when needed
-FROM base AS builder
-WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
-# Copy source files, excluding test files and test config
+# Remove prepare script to avoid issues with Docker build
+RUN npm pkg delete scripts.prepare
+
+# Install dependencies including dev dependencies for build
+RUN npm ci --omit=dev --no-audit
+
+# Copy source files
 COPY . .
+
+# Clean test files to reduce build size
 RUN find . -name "*.test.*" -type f -delete && \
-    find . -name "__tests__" -type d -exec rm -rf {} + && \
-    find . -name "test" -type d -exec rm -rf {} + && \
-    rm -f vitest.config.ts
+    find . -name "__tests__" -type d -exec rm -rf {} + 2>/dev/null || true && \
+    find . -name "test" -type d -exec rm -rf {} + 2>/dev/null || true && \
+    rm -f vitest.config.ts && \
+    rm -f vitest.setup.ts && \
+    rm -f playwright.config.ts
 
 # Generate Prisma client
 RUN npx prisma generate
 
 # Build application with production optimizations
 ENV NODE_ENV=production
-RUN npm run build
+RUN npx next build
 
-# Production image, copy all the files and run next
-FROM base AS runner
+# Production image
+FROM node:20-alpine AS runner
 WORKDIR /app
+
+# Install curl for healthcheck
+RUN apk add --no-cache curl
 
 ENV NODE_ENV=production
 # Enable Node.js production optimizations
-ENV NODE_OPTIONS='--max-old-space-size=256 --optimize-for-size'
+ENV NODE_OPTIONS='--max-old-space-size=256'
 
 # Create non-root user
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nextjs && \
     chown -R nextjs:nodejs /app
 
+# Copy package file
+COPY package.json package-lock.json* ./
+
+# Remove prepare script to avoid issues with Docker build
+RUN npm pkg delete scripts.prepare
+
+# Install production dependencies
+RUN npm ci --omit=dev --no-audit
+
 # Copy public assets
-COPY --from=builder --chown=nextjs:nodejs /app/public ./public
+COPY --from=builder /app/public ./public
 
 # Set up .next directory with proper permissions
-RUN mkdir .next && chown nextjs:nodejs .next
+RUN mkdir -p .next && chown nextjs:nodejs .next
 
 # Copy built application
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=builder /app/.next/standalone ./
+COPY --from=builder /app/.next/static ./.next/static
+COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 
 # Copy and set up health check script
-COPY --from=builder --chown=nextjs:nodejs /app/docker-entrypoint.sh ./docker-entrypoint.sh
+COPY --from=builder /app/docker-entrypoint.sh ./docker-entrypoint.sh
 RUN chmod +x ./docker-entrypoint.sh
+
+# Create data directories
+RUN mkdir -p /app/data /app/data/backups && \
+    chown -R nextjs:nodejs /app/data
 
 # Add healthcheck
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
@@ -64,7 +82,7 @@ HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
 USER nextjs
 
 EXPOSE 3000
-ENV PORT 3000
+ENV PORT=3000
 
 # Run script for database creation and server startup
 ENTRYPOINT ["./docker-entrypoint.sh"]
