@@ -68,7 +68,10 @@ export function UserPreferencesSection() {
       setSnackbarSeverity("success");
       setSnackbarOpen(true);
     } catch (error) {
-      setSnackbarMessage("Failed to save preferences");
+      console.error("Failed to save preferences:", error);
+      const errorMessage = error instanceof Error ? error.message : "Failed to save preferences";
+
+      setSnackbarMessage(errorMessage);
       setSnackbarSeverity("error");
       setSnackbarOpen(true);
     }

@@ -83,6 +83,7 @@ export default function TopMenuNavigation({
       popperTimeoutRef.current = null;
     }
     setAnchorEl(event.currentTarget);
+    // Open popper immediately for better responsiveness
     setPopperOpen(true);
   };
 
@@ -91,6 +92,7 @@ export default function TopMenuNavigation({
     if (popperTimeoutRef.current) {
       clearTimeout(popperTimeoutRef.current);
     }
+    // Set a delay before closing to prevent accidental closures
     popperTimeoutRef.current = setTimeout(() => {
       setPopperOpen(false);
     }, 300); // 300ms delay before closing
@@ -254,15 +256,7 @@ export default function TopMenuNavigation({
         </Box>
       </Box>
     );
-  }, [
-    selectedGroup,
-    theme.palette,
-    renderUrlItems,
-    isUrlLoaded,
-    handleUrlClick,
-    checkOverflow,
-    moreMenuAnchorEl,
-  ]);
+  }, [selectedGroup, theme.palette, renderUrlItems, handleMouseEnter, handleMouseLeave]);
 
   // Expanded view in the popper
   const popperContent = useMemo(() => {

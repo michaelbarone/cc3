@@ -5,7 +5,9 @@ import IframeContainer from "@/app/components/iframe/IframeContainer";
 import SideMenuNavigation from "@/app/components/SideMenuNavigation";
 import UrlItem from "@/app/components/UrlItem";
 import { IframeProvider, useIframeManager } from "@/app/contexts/IframeProvider";
+import { useUserPreferences } from "@/app/contexts/UserPreferencesProvider";
 import { Url, UrlGroup } from "@/app/types/url";
+import { MenuPosition } from "@/app/types/user-settings";
 import ExpandLess from "@mui/icons-material/ExpandLess";
 import ExpandMore from "@mui/icons-material/ExpandMore";
 import {
@@ -36,7 +38,22 @@ function DashboardContent() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const { data: session } = useSession();
-  const menuPosition = session?.user?.menuPosition || "TOP";
+  const { menuPosition } = useUserPreferences();
+
+  // Load expanded group from localStorage on component mount
+  useEffect(() => {
+    const savedExpandedGroupId = localStorage.getItem("mobileExpandedGroupId");
+    if (savedExpandedGroupId) {
+      setExpandedGroupId(savedExpandedGroupId);
+    }
+  }, []);
+
+  // Save expanded group to localStorage when it changes
+  useEffect(() => {
+    if (expandedGroupId) {
+      localStorage.setItem("mobileExpandedGroupId", expandedGroupId);
+    }
+  }, [expandedGroupId]);
 
   // Fetch user's accessible URL groups
   useEffect(() => {
@@ -51,11 +68,16 @@ function DashboardContent() {
         setGroups(data);
 
         // Set first URL of first group as active by default
-        if (data.length > 0 && data[0].urls.length > 0) {
-          const firstUrl = data[0].urls[0];
-          setActiveUrl(firstUrl.urlId, firstUrl.url);
-          setExpandedGroupId(data[0].id);
+        if (data.length > 0) {
+          // Set the group ID first
           setSelectedGroupId(data[0].id);
+          setExpandedGroupId(data[0].id);
+
+          // Then activate the first URL if it exists
+          if (data[0].urls.length > 0) {
+            const firstUrl = data[0].urls[0];
+            setActiveUrl(firstUrl.urlId, firstUrl.url);
+          }
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : "An error occurred");
@@ -95,7 +117,15 @@ function DashboardContent() {
 
   // Toggle group expansion in the drawer
   const handleToggleGroup = (groupId: string) => {
-    setExpandedGroupId(expandedGroupId === groupId ? null : groupId);
+    const newExpandedGroupId = expandedGroupId === groupId ? null : groupId;
+    setExpandedGroupId(newExpandedGroupId);
+
+    // Save to localStorage
+    if (newExpandedGroupId) {
+      localStorage.setItem("mobileExpandedGroupId", newExpandedGroupId);
+    } else {
+      localStorage.removeItem("mobileExpandedGroupId");
+    }
   };
 
   // Toggle mobile drawer
@@ -132,7 +162,7 @@ function DashboardContent() {
       <Box sx={{ p: 3 }}>
         <AppHeader
           onDrawerToggle={handleDrawerToggle}
-          menuPosition={menuPosition as "TOP" | "SIDE"}
+          menuPosition={menuPosition}
           urlGroups={groups}
           selectedGroupId={selectedGroupId}
           onGroupChange={handleGroupChange}
@@ -166,11 +196,22 @@ function DashboardContent() {
       <List>
         {groups.map((group) => (
           <React.Fragment key={group.id}>
-            <ListItemButton onClick={() => handleToggleGroup(group.id)}>
-              <ListItemText primary={group.name} />
+            <ListItemButton
+              onClick={() => handleToggleGroup(group.id)}
+              sx={{
+                borderRadius: 0,
+                my: 0,
+              }}
+            >
+              <ListItemText
+                primary={group.name}
+                primaryTypographyProps={{
+                  fontWeight: selectedGroupId === group.id ? "bold" : "normal",
+                }}
+              />
               {expandedGroupId === group.id ? <ExpandLess /> : <ExpandMore />}
             </ListItemButton>
-            <Collapse in={expandedGroupId === group.id} timeout="auto" unmountOnExit>
+            <Collapse in={expandedGroupId === group.id} timeout={300} unmountOnExit>
               <List component="div" disablePadding>
                 {renderUrlItems(group.urls, group.id)}
               </List>
@@ -184,10 +225,10 @@ function DashboardContent() {
   return (
     <Box sx={{ display: "flex", flexDirection: "column", height: "100vh" }}>
       {/* Render AppHeader only if menuPosition is TOP or on mobile */}
-      {(menuPosition === "TOP" || isMobile) && (
+      {(menuPosition === MenuPosition.TOP || isMobile) && (
         <AppHeader
           onDrawerToggle={handleDrawerToggle}
-          menuPosition={menuPosition as "TOP" | "SIDE"}
+          menuPosition={menuPosition}
           urlGroups={groups}
           selectedGroupId={selectedGroupId}
           onGroupChange={handleGroupChange}
@@ -195,7 +236,7 @@ function DashboardContent() {
       )}
 
       {/* Render side menu when menuPosition is SIDE and not mobile */}
-      {menuPosition === "SIDE" && !isMobile && (
+      {menuPosition === MenuPosition.SIDE && !isMobile && (
         <SideMenuNavigation
           groups={groups}
           selectedGroupId={selectedGroupId}
@@ -211,7 +252,7 @@ function DashboardContent() {
           overflow: "hidden",
           display: "flex",
           flexDirection: "column",
-          height: menuPosition === "TOP" ? "calc(100vh - 64px)" : "100vh", // Adjust height based on menu position
+          height: menuPosition === MenuPosition.TOP ? "calc(100vh - 64px)" : "100vh", // Adjust height based on menu position
         }}
       >
         {/* Mobile drawer */}
@@ -224,7 +265,11 @@ function DashboardContent() {
           }}
           sx={{
             display: { xs: "block", md: "none" },
-            "& .MuiDrawer-paper": { boxSizing: "border-box", width: 250 },
+            "& .MuiDrawer-paper": {
+              boxSizing: "border-box",
+              width: 250,
+              transition: "all 0.3s ease",
+            },
           }}
         >
           {drawerContent}

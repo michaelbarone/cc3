@@ -1,4 +1,6 @@
 import TopMenuNavigation from "@/app/components/TopMenuNavigation";
+import { useUserPreferences } from "@/app/contexts/UserPreferencesProvider";
+import { MenuPosition, Theme } from "@/app/types/user-settings";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
 import DarkModeIcon from "@mui/icons-material/DarkMode";
@@ -33,7 +35,7 @@ import { usePathname } from "next/navigation";
 import React, { useState } from "react";
 
 interface AppHeaderProps {
-  menuPosition?: "TOP" | "SIDE";
+  menuPosition?: string;
   onDrawerToggle?: () => void;
   urlGroups?: any[];
   selectedGroupId?: string | null;
@@ -41,21 +43,26 @@ interface AppHeaderProps {
 }
 
 export default function AppHeader({
-  menuPosition = "TOP",
+  menuPosition: propMenuPosition,
   onDrawerToggle,
   urlGroups = [],
   selectedGroupId = null,
   onGroupChange = () => {},
 }: AppHeaderProps) {
   const { data: session } = useSession();
+  const { theme, menuPosition: contextMenuPosition, updatePreferences } = useUserPreferences();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [userMenuAnchor, setUserMenuAnchor] = useState<null | HTMLElement>(null);
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
+  const materialTheme = useTheme();
+  const isMobile = useMediaQuery(materialTheme.breakpoints.down("md"));
   const pathname = usePathname();
 
+  // Use menuPosition from props, falling back to context, finally defaulting to TOP
+  const menuPosition = propMenuPosition || contextMenuPosition || MenuPosition.TOP;
+
   // Decide whether to show the header based on menuPosition and screen size
-  const showHeader = isMobile || menuPosition === "TOP";
+  // Always show on mobile or when menuPosition is TOP
+  const showHeader = isMobile || menuPosition === MenuPosition.TOP;
 
   // Check if user has admin access
   const isAdmin = session?.user?.role === "ADMIN";
@@ -81,9 +88,9 @@ export default function AppHeader({
     await signOut({ callbackUrl: "/login" });
   };
 
-  const toggleTheme = () => {
-    // This will be implemented with proper theme context in Story 4.1
-    // For now, just close the menu
+  const toggleTheme = async () => {
+    const newTheme = materialTheme.palette.mode === "dark" ? Theme.LIGHT : Theme.DARK;
+    await updatePreferences({ theme: newTheme });
     handleUserMenuClose();
   };
 
@@ -144,6 +151,7 @@ export default function AppHeader({
     </Box>
   );
 
+  // If header shouldn't be shown (SIDE menu on desktop), return null
   if (!showHeader) return null;
 
   return (
@@ -172,7 +180,7 @@ export default function AppHeader({
 
           {/* Central navigation area */}
           <Box sx={{ flexGrow: 1, display: "flex", justifyContent: "center" }}>
-            {!isMobile && menuPosition === "TOP" && (
+            {!isMobile && menuPosition === MenuPosition.TOP && (
               <>
                 {/* Main app navigation buttons */}
                 <Box sx={{ display: "flex", mr: 2 }}>
@@ -286,13 +294,13 @@ export default function AppHeader({
               <Divider />
               <MenuItem onClick={toggleTheme}>
                 <ListItemIcon>
-                  {theme.palette.mode === "dark" ? (
+                  {materialTheme.palette.mode === "dark" ? (
                     <LightModeIcon fontSize="small" />
                   ) : (
                     <DarkModeIcon fontSize="small" />
                   )}
                 </ListItemIcon>
-                {theme.palette.mode === "dark" ? "Light Mode" : "Dark Mode"}
+                {materialTheme.palette.mode === "dark" ? "Light Mode" : "Dark Mode"}
               </MenuItem>
               <MenuItem onClick={handleLogout}>
                 <ListItemIcon>

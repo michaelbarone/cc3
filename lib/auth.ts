@@ -103,7 +103,7 @@ export const authOptions: NextAuthOptions = {
             isAdmin: user.role === "ADMIN",
             isActive: user.isActive,
             theme: user.theme || "SYSTEM",
-            menuPosition: user.menuPosition || "SIDE",
+            menuPosition: user.menuPosition || "TOP",
           };
         } catch (error) {
           console.error("Error in authorize:", error);

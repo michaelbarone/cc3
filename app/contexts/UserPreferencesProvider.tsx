@@ -27,71 +27,81 @@ interface UserPreferencesProviderProps {
 }
 
 export function UserPreferencesProvider({ children }: UserPreferencesProviderProps) {
-  const { data: session, status } = useSession();
-  const [theme, setTheme] = useState<Theme>(Theme.SYSTEM);
-  const [menuPosition, setMenuPosition] = useState<MenuPosition>(MenuPosition.TOP);
-  const [isLoading, setIsLoading] = useState(true);
+  const { data: session, update: updateSession } = useSession();
+  const [preferences, setPreferences] = useState<UserPreferencesContextType>({
+    ...defaultContextValue,
+  });
 
-  // Initialize from session data
+  // Load user preferences from session when available
   useEffect(() => {
-    if (status === "authenticated" && session?.user) {
-      // Get theme and menu position from session if available
-      if (session.user.theme) {
-        setTheme(session.user.theme as Theme);
-      }
-      if (session.user.menuPosition) {
-        setMenuPosition(session.user.menuPosition as MenuPosition);
-      }
-      setIsLoading(false);
-    } else if (status === "unauthenticated") {
-      // Set defaults for unauthenticated users
-      setTheme(Theme.SYSTEM);
-      setMenuPosition(MenuPosition.TOP);
-      setIsLoading(false);
-    }
-  }, [session, status]);
+    // If session is not yet loaded, keep using defaults
+    if (!session) return;
 
-  // Function to update user preferences
-  const updatePreferences = async (preferences: UserSettingsUpdateRequest) => {
+    // Extract preferences from session with fallbacks to defaults
+    const theme = session.user?.theme ? (session.user.theme as Theme) : Theme.SYSTEM;
+    const menuPosition = session.user?.menuPosition
+      ? (session.user.menuPosition as MenuPosition)
+      : MenuPosition.TOP;
+
+    setPreferences((prev) => ({
+      ...prev,
+      theme,
+      menuPosition,
+      isLoading: false,
+    }));
+  }, [session]);
+
+  // Update user preferences
+  const updatePreferences = async (newPreferences: UserSettingsUpdateRequest) => {
     try {
-      setIsLoading(true);
+      // Update the state immediately for a responsive UI
+      if (newPreferences.theme) {
+        setPreferences((prev) => ({ ...prev, theme: newPreferences.theme as Theme }));
+      }
+      if (newPreferences.menuPosition) {
+        setPreferences((prev) => ({
+          ...prev,
+          menuPosition: newPreferences.menuPosition as MenuPosition,
+        }));
+      }
 
+      // Send the update to the server
       const response = await fetch("/api/user/settings", {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(preferences),
+        body: JSON.stringify(newPreferences),
       });
 
       if (!response.ok) {
-        throw new Error("Failed to update preferences");
+        throw new Error(`Failed to update preferences: ${response.status}`);
       }
 
-      const data = await response.json();
+      // Also update the session with the new preferences
+      // This ensures preferences are consistent across the app
+      await updateSession({
+        ...newPreferences,
+      });
 
-      // Update local state
-      if (preferences.theme) {
-        setTheme(preferences.theme);
-      }
-      if (preferences.menuPosition) {
-        setMenuPosition(preferences.menuPosition);
-      }
-
-      setIsLoading(false);
+      // No need to fetch updated preferences since we already updated locally
     } catch (error) {
       console.error("Error updating preferences:", error);
-      setIsLoading(false);
-      throw error;
+      // Revert to session values on error
+      if (session?.user) {
+        setPreferences((prev) => ({
+          ...prev,
+          theme: (session.user?.theme as Theme) || Theme.SYSTEM,
+          menuPosition: (session.user?.menuPosition as MenuPosition) || MenuPosition.TOP,
+        }));
+      }
     }
   };
 
   return (
     <UserPreferencesContext.Provider
       value={{
-        theme,
-        menuPosition,
-        isLoading,
+        ...preferences,
         updatePreferences,
       }}
     >

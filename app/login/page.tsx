@@ -2,6 +2,7 @@
 
 import UserTileComponent from "@/app/components/login/UserTile";
 import { FirstRunResponse, UserTile } from "@/app/types/auth";
+import { Box, Button, CircularProgress, Container, Paper, Typography } from "@mui/material";
 import { useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
 
@@ -102,117 +103,119 @@ export default function LoginPage() {
   // Show loading state
   if (loading) {
     return (
-      <div
-        style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh" }}
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "100vh",
+        }}
       >
-        <div>Loading...</div>
-      </div>
+        <CircularProgress />
+      </Box>
     );
   }
 
   // Show error state
   if (error) {
     return (
-      <div
-        style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh" }}
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "100vh",
+        }}
       >
-        <div>
-          <h2>Error</h2>
-          <p>{error}</p>
-          <button
-            onClick={() => window.location.reload()}
-            style={{
-              padding: "8px 16px",
-              background: "#4285F4",
-              color: "white",
-              border: "none",
-              borderRadius: "4px",
-              cursor: "pointer",
-            }}
-          >
+        <Paper elevation={3} sx={{ p: 3, maxWidth: 400 }}>
+          <Typography variant="h5" component="h2" gutterBottom>
+            Error
+          </Typography>
+          <Typography paragraph>{error}</Typography>
+          <Button variant="contained" color="primary" onClick={() => window.location.reload()}>
             Retry
-          </button>
-        </div>
-      </div>
+          </Button>
+        </Paper>
+      </Box>
     );
   }
 
   // First run experience
   if (isFirstRun) {
     return (
-      <div
-        style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh" }}
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "100vh",
+        }}
       >
-        <div style={{ maxWidth: "500px", textAlign: "center", padding: "20px" }}>
-          <h1>Welcome to ControlCenter</h1>
-          <p>
+        <Paper elevation={3} sx={{ p: 4, maxWidth: 500, textAlign: "center" }}>
+          <Typography variant="h4" component="h1" gutterBottom>
+            Welcome to ControlCenter
+          </Typography>
+          <Typography paragraph>
             This appears to be your first time running the application. Let's set up your admin
             account.
-          </p>
+          </Typography>
 
-          <div style={{ marginTop: "24px", display: "flex", flexDirection: "column", gap: "16px" }}>
-            <button
-              onClick={handleFirstRunLogin}
-              style={{
-                padding: "12px 24px",
-                background: "#4285F4",
-                color: "white",
-                border: "none",
-                borderRadius: "4px",
-                cursor: "pointer",
-                fontSize: "16px",
-              }}
-            >
+          <Box
+            sx={{
+              mt: 3,
+              display: "flex",
+              flexDirection: "column",
+              gap: 2,
+            }}
+          >
+            <Button variant="contained" color="primary" size="large" onClick={handleFirstRunLogin}>
               Set Up Admin Account
-            </button>
+            </Button>
 
-            <button
+            <Button
+              variant="outlined"
+              color="inherit"
+              size="large"
               disabled
               title="This feature will be available in a future update"
-              style={{
-                padding: "12px 24px",
-                background: "#f0f0f0",
-                color: "#888",
-                border: "none",
-                borderRadius: "4px",
-                cursor: "not-allowed",
-                fontSize: "16px",
-              }}
             >
               Restore System from Backup
-            </button>
-          </div>
-        </div>
-      </div>
+            </Button>
+          </Box>
+        </Paper>
+      </Box>
     );
   }
 
   // Regular login with user tiles
   return (
-    <div
-      style={{
+    <Container
+      maxWidth={false}
+      disableGutters
+      sx={{
         display: "flex",
         flexDirection: "column",
         justifyContent: "center",
         alignItems: "center",
         minHeight: "100vh",
-        padding: "20px",
-        backgroundColor: "#f9f9f9",
+        p: 2,
       }}
       onClick={handleBackgroundClick}
     >
-      <h1 style={{ marginBottom: "32px" }}>Select User</h1>
+      <Typography variant="h4" component="h1" sx={{ mb: 4 }}>
+        Select User
+      </Typography>
 
       {userTiles.length === 0 ? (
-        <p>No users found. Please contact an administrator.</p>
+        <Typography>No users found. Please contact an administrator.</Typography>
       ) : (
-        <div
-          style={{
+        <Box
+          sx={{
             display: "flex",
             flexWrap: "wrap",
             justifyContent: "center",
-            gap: "16px",
-            maxWidth: "800px",
+            gap: 2,
+            maxWidth: 800,
           }}
         >
           {userTiles.map((tile) => (
@@ -224,8 +227,8 @@ export default function LoginPage() {
               onSelect={() => setSelectedTileId(tile.id)}
             />
           ))}
-        </div>
+        </Box>
       )}
-    </div>
+    </Container>
   );
 }

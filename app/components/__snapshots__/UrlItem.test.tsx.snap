@@ -1,0 +1,97 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`UrlItem > applies correct styles for active URL 1`] = `
+<div
+  class="MuiButtonBase-root MuiListItemButton-root MuiListItemButton-gutters MuiListItemButton-root MuiListItemButton-gutters css-fde16k-MuiButtonBase-root-MuiListItemButton-root"
+  role="button"
+  tabindex="0"
+>
+  <div
+    class="MuiBox-root css-7pf6at"
+  >
+    <div
+      class="MuiBox-root css-1sk96ao"
+    >
+      <div
+        data-alt=""
+        data-src="/favicon.ico"
+        data-testid="mock-image"
+        style="width: 16px; height: 16px;"
+      />
+    </div>
+    <div
+      class="MuiListItemText-root css-cfq8qh-MuiListItemText-root"
+    >
+      <p
+        class="MuiTypography-root MuiTypography-body2 MuiTypography-noWrap MuiListItemText-primary css-3grywy-MuiTypography-root"
+      >
+        Test URL
+      </p>
+    </div>
+  </div>
+</div>
+`;
+
+exports[`UrlItem > applies correct styles for unloaded URL 1`] = `
+<div
+  class="MuiButtonBase-root MuiListItemButton-root MuiListItemButton-gutters MuiListItemButton-root MuiListItemButton-gutters css-1kj5gqa-MuiButtonBase-root-MuiListItemButton-root"
+  role="button"
+  tabindex="0"
+>
+  <div
+    class="MuiBox-root css-7pf6at"
+  >
+    <div
+      class="MuiBox-root css-1sk96ao"
+    >
+      <div
+        data-alt=""
+        data-src="/favicon.ico"
+        data-testid="mock-image"
+        style="width: 16px; height: 16px;"
+      />
+    </div>
+    <div
+      class="MuiListItemText-root css-cfq8qh-MuiListItemText-root"
+    >
+      <p
+        class="MuiTypography-root MuiTypography-body2 MuiTypography-noWrap MuiListItemText-primary css-3grywy-MuiTypography-root"
+      >
+        Test URL
+      </p>
+    </div>
+  </div>
+</div>
+`;
+
+exports[`UrlItem > applies mobile-specific styles on mobile devices 1`] = `
+<div
+  class="MuiButtonBase-root MuiListItemButton-root MuiListItemButton-gutters MuiListItemButton-root MuiListItemButton-gutters css-12hyk95-MuiButtonBase-root-MuiListItemButton-root"
+  role="button"
+  tabindex="0"
+>
+  <div
+    class="MuiBox-root css-7pf6at"
+  >
+    <div
+      class="MuiBox-root css-1sk96ao"
+    >
+      <div
+        data-alt=""
+        data-src="/favicon.ico"
+        data-testid="mock-image"
+        style="width: 16px; height: 16px;"
+      />
+    </div>
+    <div
+      class="MuiListItemText-root css-cfq8qh-MuiListItemText-root"
+    >
+      <p
+        class="MuiTypography-root MuiTypography-body2 MuiTypography-noWrap MuiListItemText-primary css-3grywy-MuiTypography-root"
+      >
+        Test URL
+      </p>
+    </div>
+  </div>
+</div>
+`;

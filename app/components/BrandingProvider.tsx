@@ -42,10 +42,16 @@ export default function BrandingProvider({
     const fetchSettings = async () => {
       try {
         const response = await fetch("/api/admin/settings");
-        if (!response.ok) {
-          console.error("Failed to fetch branding settings");
+
+        // Handle authentication/authorization issues quietly
+        if (response.status === 401 || response.status === 403) {
+          // Just use defaults for unauthenticated/unauthorized users
           setBranding((prev) => ({ ...prev, isLoading: false }));
           return;
+        }
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch branding settings: ${response.status}`);
         }
 
         const data = await response.json();
