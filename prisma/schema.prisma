@@ -15,12 +15,12 @@ model User {
   lastActiveUrl String?
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
-  lastLoginAt   DateTime?
   avatarUrl     String?
   menuPosition  String?        @default("top")
   themeMode     String?        @default("dark")
-  userUrlGroups UserUrlGroup[]
+  lastLoginAt   DateTime?
   settings      UserSetting[]
+  userUrlGroups UserUrlGroup[]
 }
 
 model UrlGroup {
@@ -29,35 +29,35 @@ model UrlGroup {
   description   String?
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
-  urls          UrlsInGroups[]
   userUrlGroups UserUrlGroup[]
+  urls          UrlsInGroups[]
 }
 
 model Url {
-  id                 String        @id @default(uuid())
-  title              String
-  url                String
-  urlMobile          String?
-  iconPath           String?
-  idleTimeoutMinutes Int           @default(10)
-  isLocalhost        Boolean       @default(false)
-  port               String?
-  path               String?
+  id                  String         @id @default(uuid())
+  title               String
+  url                 String
+  urlMobile           String?
+  iconPath            String?
+  idleTimeoutMinutes  Int            @default(10)
+  isLocalhost         Boolean        @default(false)
+  port                String?
+  path                String?
   localhostMobilePath String?
   localhostMobilePort String?
-  createdAt          DateTime      @default(now())
-  updatedAt          DateTime      @updatedAt
-  urlGroups          UrlsInGroups[]
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+  urlGroups           UrlsInGroups[]
 }
 
 model UrlsInGroups {
-  url         Url      @relation(fields: [urlId], references: [id], onDelete: Cascade)
-  urlId       String
-  group       UrlGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  groupId     String
-  displayOrder Int     @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  urlId        String
+  groupId      String
+  displayOrder Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  group        UrlGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  url          Url      @relation(fields: [urlId], references: [id], onDelete: Cascade)
 
   @@id([urlId, groupId])
   @@index([groupId, displayOrder])
@@ -75,14 +75,14 @@ model UserUrlGroup {
 }
 
 model AppConfig {
-  id                 String   @id @default("app-config")
-  appName            String   @default("Control Center")
-  appLogo            String?
-  favicon            String?
-  loginTheme         String   @default("dark")
+  id                  String   @id @default("app-config")
+  appName             String   @default("Control Center")
+  appLogo             String?
+  favicon             String?
+  loginTheme          String   @default("dark")
   registrationEnabled Boolean  @default(false)
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
 }
 
 model UserSetting {

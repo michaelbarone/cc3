@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
 import { verifyToken } from "@/app/lib/auth/jwt";
 import { prisma } from "@/app/lib/db/prisma";
+import { NextRequest, NextResponse } from "next/server";
 
 // PATCH /api/admin/app-config/theme - Update login theme
 export async function PATCH(request: NextRequest) {

@@ -29,6 +29,7 @@ export default [
       "**/.cursor/**",
       "**/*.config.js",
       "**/*.config.mjs",
+      "**/*.d.ts",
     ],
   },
   eslint.configs.recommended,

@@ -1,16 +1,17 @@
 version: '3.8'
 
 services:
-  app:
+  cc3:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: next-sqlite-app
+    container_name: cc3
     ports:
       - "3000:3000"
     environment:
       - NODE_ENV=production
       - DATABASE_URL=file:/app/data/app.db
+      - DATABASE_BACKUP_DIR=/app/data/backups
     volumes:
       - ./data:/app/data
     healthcheck:
