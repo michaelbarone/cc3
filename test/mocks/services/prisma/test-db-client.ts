@@ -2,13 +2,19 @@
  * Test-specific Prisma client for integration tests
  * Uses a separate test database to avoid impacting development data
  */
+import { DB_CONFIG } from '@/app/lib/db/database-config';
 import { PrismaClient } from '@prisma/client';
 import fs from 'fs/promises';
 import path from 'path';
+import { vi } from 'vitest';
 
-// Set default test database location if not specified in environment
-const TEST_DB_PATH = process.env.TEST_DATABASE_PATH || path.join(process.cwd(), 'test-database.sqlite');
-const TEST_DATABASE_URL = `file:${TEST_DB_PATH}`;
+// Set environment for test database configuration
+// Using vi.stubEnv in test environment, otherwise just use 'test' as a value
+if (typeof vi !== 'undefined') {
+  vi.stubEnv('NODE_ENV', 'test');
+} else if (process.env.NODE_ENV !== 'test') {
+  console.warn('Running test database client outside of test environment');
+}
 
 // Global reference to prevent multiple instances
 const globalForPrisma = globalThis as unknown as {
@@ -21,13 +27,13 @@ export const testPrisma =
   new PrismaClient({
     datasources: {
       db: {
-        url: TEST_DATABASE_URL,
+        url: DB_CONFIG.runtimeUrl,
       },
     },
     log: ['error'],
   });
 
-// Manage reference in non-production environments
+// Manage reference in development environments
 if (process.env.NODE_ENV !== 'production') {
   globalForPrisma.testPrisma = testPrisma;
 }
@@ -39,7 +45,7 @@ if (process.env.NODE_ENV !== 'production') {
 export const initializeTestDatabase = async (): Promise<void> => {
   try {
     // Create test database directory if it doesn't exist
-    const dbDir = path.dirname(TEST_DB_PATH);
+    const dbDir = path.dirname(DB_CONFIG.directUrl);
     await fs.mkdir(dbDir, { recursive: true });
 
     // Run prisma migrations on test database
@@ -47,7 +53,7 @@ export const initializeTestDatabase = async (): Promise<void> => {
     execSync(`npx prisma migrate deploy`, {
       env: {
         ...process.env,
-        DATABASE_URL: TEST_DATABASE_URL,
+        DATABASE_URL: DB_CONFIG.runtimeUrl,
       },
     });
 

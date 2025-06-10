@@ -1,7 +1,8 @@
+import { DB_CONFIG } from "@/app/lib/db/database-config";
 import archiver from "archiver";
 import extract from "extract-zip";
-import fs from "fs/promises";
 import fsSync from "fs";
+import fs from "fs/promises";
 import path from "path";
 
 // Types for archive operations
@@ -22,53 +23,28 @@ export interface ExtractOptions {
  * Gets the database path from environment variable or default
  */
 function getDatabasePath(): string {
-  const dbUrl = process.env.DATABASE_URL || "file:./data/app.db";
-  const isDevelopment = process.env.NODE_ENV === "development";
+  // Use the filePath from our database configuration
+  const dbPath = DB_CONFIG.filePath || "./data/app.db";
+  const absolutePath = path.isAbsolute(dbPath) ? dbPath : path.join(process.cwd(), dbPath);
 
-  // Remove 'file:' prefix
-  const dbPath = dbUrl.replace("file:", "");
-
-  // In development mode, check Prisma's data directory first
-  if (isDevelopment) {
-    const paths = [
-      path.join(process.cwd(), "prisma", "data", "app.db"), // Prisma dev location
-      path.join(process.cwd(), "prisma", "app.db"), // Alternative Prisma location
-      path.join(process.cwd(), dbPath), // Configured location
-      dbPath, // Raw path
-    ];
-
-    for (const p of paths) {
-      if (fsSync.existsSync(p)) {
-        console.log("Found database at:", p); // Debug log
-        return p;
-      }
-    }
-
-    // If no database is found in development, default to Prisma dev location
-    const defaultPath = paths[0];
-    console.log("No existing database found, using default path:", defaultPath);
-    return defaultPath;
-  }
-
-  // In production, use the configured path
-  const prodPath = path.join(process.cwd(), dbPath);
-  console.log("Using production database path:", prodPath);
-  return prodPath;
+  console.log("Using database path:", absolutePath);
+  return absolutePath;
 }
 
 /**
  * Gets the backup directory from environment variable or default
  */
 function getBackupDir(): string {
-  const isDevelopment = process.env.NODE_ENV === "development";
-  const defaultBackupDir = isDevelopment ? "./prisma/data/backups" : "./data/backups";
-  const backupDir = process.env.DATABASE_BACKUP_DIR || defaultBackupDir;
-  const absoluteBackupDir = path.join(process.cwd(), backupDir);
+  // Use the backupDir from our database configuration
+  const backupDir = DB_CONFIG.backupDir || "./data/backups";
+  const absoluteBackupDir = path.isAbsolute(backupDir)
+    ? backupDir
+    : path.join(process.cwd(), backupDir);
 
   // Create the backup directory if it doesn't exist
   if (!fsSync.existsSync(absoluteBackupDir)) {
     fsSync.mkdirSync(absoluteBackupDir, { recursive: true });
-    console.log("Created backup directory at:", absoluteBackupDir); // Debug log
+    console.log("Created backup directory at:", absoluteBackupDir);
   }
 
   return absoluteBackupDir;

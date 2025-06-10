@@ -1,3 +1,4 @@
+import { DB_CONFIG } from '@/app/lib/db/database-config';
 import { PrismaClient } from '@prisma/client';
 import { beforeEach, vi } from 'vitest';
 import { DeepMockProxy, mockDeep } from 'vitest-mock-extended';
@@ -31,6 +32,12 @@ export class PrismaMock {
   static getInstance(): DeepMockProxy<PrismaClient> {
     if (!PrismaMock.instance) {
       PrismaMock.instance = mockDeep<PrismaClient>();
+      // Set datasource URL after creating the mock
+      (PrismaMock.instance as any).$dmmf = {
+        datamodel: {
+          datasources: [{ url: DB_CONFIG.runtimeUrl }]
+        }
+      };
     }
     return PrismaMock.instance;
   }
@@ -47,7 +54,7 @@ export class PrismaMock {
 }
 
 export const setupPrismaMocks = (): void => {
-  vi.mock('@/lib/db/prisma', () => ({
+  vi.mock('@/app/lib/db/prisma', () => ({
     prisma: PrismaMock.getInstance()
   }));
 };

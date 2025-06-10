@@ -1,5 +1,5 @@
+import { DB_CONFIG } from "@/app/lib/db/database-config";
 import { prisma } from "@/app/lib/db/prisma";
-import { main as seedDatabase } from "@/prisma/seed";
 import { Prisma } from "@prisma/client";
 import { execSync } from "child_process";
 import fs from "fs";
@@ -11,9 +11,18 @@ let isInitialized = false;
 
 // Create required directories if they don't exist
 function createRequiredDirectories() {
+  console.log("Creating required directories...");
+
+  // Debug database paths
+  console.log("Database runtime URL:", DB_CONFIG.runtimeUrl);
+  console.log("Database CLI URL:", DB_CONFIG.cliUrl);
+  console.log("Database file path:", DB_CONFIG.filePath);
+  console.log("Database directory:", DB_CONFIG.directory);
+
   const directories = [
-    "data",
-    "data/backups",
+    "./data", // Ensure root data directory exists
+    DB_CONFIG.directory || "./data", // Database directory
+    DB_CONFIG.backupDir || "./data/backups", // Backup directory
     "public/uploads",
     "public/icons",
     "public/avatars",
@@ -22,10 +31,26 @@ function createRequiredDirectories() {
   ];
 
   directories.forEach((dir) => {
-    const dirPath = path.join(process.cwd(), dir);
-    if (!fs.existsSync(dirPath)) {
-      fs.mkdirSync(dirPath, { recursive: true });
-      console.log(`Created directory: ${dirPath}`);
+    try {
+      // Normalize the directory path to handle any format issues
+      const normalizedDir = dir ? dir.replace(/^(file:|prisma:)(\/\/)?/, "") : "./data";
+
+      // Create absolute path
+      const dirPath = path.isAbsolute(normalizedDir)
+        ? normalizedDir
+        : path.join(process.cwd(), normalizedDir);
+
+      console.log(`Ensuring directory exists: ${dirPath}`);
+
+      if (!fs.existsSync(dirPath)) {
+        fs.mkdirSync(dirPath, { recursive: true });
+        console.log(`Created directory: ${dirPath}`);
+      } else {
+        console.log(`Directory already exists: ${dirPath}`);
+      }
+    } catch (error) {
+      console.error(`Error creating directory ${dir}:`, error);
+      // Continue with other directories even if one fails
     }
   });
 }
@@ -59,6 +84,8 @@ export async function initializeDatabase() {
   isInitializing = true;
 
   try {
+    console.log("Starting database initialization...");
+
     // Create all required directories
     createRequiredDirectories();
 
@@ -67,16 +94,35 @@ export async function initializeDatabase() {
 
     if (!dbExists) {
       console.log("Database not accessible, running migrations...");
-      // Run migrations
-      execSync("npx prisma migrate deploy", { stdio: "inherit" });
+      // Run migrations with CLI-compatible database URL
+      execSync(`npx prisma migrate deploy`, {
+        stdio: "inherit",
+        env: {
+          ...process.env,
+          DATABASE_URL: DB_CONFIG.cliUrl,
+        },
+      });
     }
 
     // Check if we need to seed
-    const userCount = await prisma.user.count();
+    try {
+      const userCount = await prisma.user.count();
 
-    if (userCount === 0) {
-      console.log("Database is empty. Running initial seed...");
-      await seedDatabase();
+      if (userCount === 0) {
+        console.log("Database is empty. Running initial seed...");
+        // Run the seed script directly instead of importing it
+        execSync(`npx tsx prisma/seed.ts`, {
+          stdio: "inherit",
+          env: {
+            ...process.env,
+            DATABASE_URL: DB_CONFIG.cliUrl,
+            DIRECT_DATABASE_URL: DB_CONFIG.directUrl,
+          },
+        });
+      }
+    } catch (error) {
+      console.error("Error checking or seeding database:", error);
+      throw error;
     }
 
     console.log("Database initialization completed successfully");

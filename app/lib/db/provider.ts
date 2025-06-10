@@ -1,3 +1,4 @@
+import { DB_CONFIG } from "./database-config";
 import { initializeDatabase } from "./init";
 import { prisma } from "./prisma";
 
@@ -20,6 +21,9 @@ async function getInitializedPrisma() {
 export async function getPrismaClient() {
   return getInitializedPrisma();
 }
+
+// Export database configuration for direct access
+export const getDatabaseConfig = () => DB_CONFIG;
 
 // For backwards compatibility and direct access when we know initialization has occurred
 export default prisma;

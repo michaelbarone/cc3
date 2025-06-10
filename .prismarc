@@ -1,0 +1,8 @@
+{
+  "accelerate": {
+    "disabled": true
+  },
+  "telemetry": {
+    "enabled": false
+  }
+}

@@ -4,16 +4,17 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "setup": "npx tsx ./scripts/setup-env.ts",
     "dev:reset": "npm run cleanup:dev && npm run db:migrate && npm run dev",
     "dev": "next dev --turbopack",
-    "build": "prisma generate && prisma migrate deploy && next build",
-    "start": "next start",
+    "build": "npm run setup && npx prisma generate && npx next build --experimental-build-mode compile",
+    "start": "npm run setup && next start",
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx --config eslint.config.mjs",
     "lint:fix": "eslint . --ext .js,.jsx,.ts,.tsx --fix --config eslint.config.mjs",
     "db:studio": "prisma studio",
     "db:migrate": "prisma migrate dev",
     "db:generate": "prisma generate",
-    "db:seed": "npx tsx prisma/seed.ts",
+    "db:seed": "npm run setup && npx tsx prisma/seed.ts",
     "db:seed-test": "npx tsx scripts/seed-test-data.ts",
     "db:update-admin-defaults": "npx tsx scripts/update-admin-defaults.ts",
     "cleanup:dev": "npx tsx scripts/cleanup-dev.ts",
@@ -32,7 +33,7 @@
     "prepare": "husky"
   },
   "prisma": {
-    "seed": "npx tsx prisma/seed.ts"
+    "seed": "npx tsx ./scripts/setup-env.ts && npx tsx prisma/seed.ts"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",

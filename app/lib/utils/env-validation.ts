@@ -30,8 +30,8 @@ interface EnvValidationConfig {
  * Default validation configuration
  */
 const defaultConfig: EnvValidationConfig = {
-  required: ["DATABASE_URL", "JWT_SECRET", "NODE_ENV"],
-  recommended: ["NEXTAUTH_URL", "NEXTAUTH_SECRET"],
+  required: ["JWT_SECRET", "NODE_ENV"],
+  recommended: ["DATABASE_URL", "NEXTAUTH_URL", "NEXTAUTH_SECRET", "DIRECT_DATABASE_URL"],
   throwOnMissing: true, // process.env.NODE_ENV === "production",
 };
 

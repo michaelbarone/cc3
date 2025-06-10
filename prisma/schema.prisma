@@ -1,10 +1,13 @@
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = []
+  engineType      = "binary"
 }
 
 datasource db {
   provider = "sqlite"
-  url      = env("DATABASE_URL")
+  // Hardcode the file: protocol URL directly to avoid any issues with env variables
+  url      = "file:./data/app.db"
 }
 
 model User {

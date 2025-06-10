@@ -5,6 +5,8 @@
 **/app.db*
 *.db
 *.db-journal
+*.sqlite
+*.sqlite-journal
 public/icons/*
 public/logos/*
 public/avatars/*

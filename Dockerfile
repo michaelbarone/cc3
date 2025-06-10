@@ -17,6 +17,14 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
+# Set consistent database configuration - simplified approach
+ENV NODE_ENV=development
+ENV DATABASE_URL=file:./data/app.db
+ENV DIRECT_DATABASE_URL=file:./data/app.db
+ENV DATABASE_BACKUP_DIR=./data/backups
+ENV PRISMA_ACCELERATE_DISABLED=true
+ENV PRISMA_TELEMETRY_DISABLED=1
+
 # Uncomment this if you're using prisma, generates prisma files for linting
 RUN npx prisma generate
 
@@ -31,6 +39,15 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /root/.npm /root/.npm
 COPY . .
 
+# Set consistent database configuration - simplified approach
+ENV NODE_ENV=production
+ENV DATABASE_URL=file:./data/app.db
+ENV DIRECT_DATABASE_URL=file:./data/app.db
+ENV DATABASE_BACKUP_DIR=./data/backups
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV PRISMA_ACCELERATE_DISABLED=true
+ENV PRISMA_TELEMETRY_DISABLED=1
+
 # Clean test files to reduce build size
 RUN find . -name "*.test.*" -type f -delete && \
     find . -name "__tests__" -type d -exec rm -rf {} + 2>/dev/null || true && \
@@ -41,19 +58,33 @@ RUN rm playwright.config.ts
 RUN rm vitest.config.ts
 RUN rm vitest.setup.ts
 
-ENV NEXT_TELEMETRY_DISABLED=1
+# Create global Prisma configuration to disable Accelerate
+RUN mkdir -p /root/.prisma && \
+    echo '{"accelerate":{"disabled":true},"telemetry":{"enabled":false}}' > /root/.prisma/config.json && \
+    echo '{"accelerate":{"disabled":true},"telemetry":{"enabled":false}}' > /root/.prismarc
+
+# Directly update the schema.prisma file to use file: protocol without env variables
+RUN sed -i 's/url *= *env(".*")/url      = "file:\/\/\/app\/data\/app.db"/' ./prisma/schema.prisma && \
+    cat ./prisma/schema.prisma
 
 # Generate Prisma client without running migrations
 RUN npx prisma generate
 
 # Run next build without Prisma migrations
-RUN npx next build
+RUN npx next build --experimental-build-mode compile
 
 # Production image, copy all the files and run next
 FROM base AS runner
 WORKDIR /app
 
+# Set consistent database configuration - simplified approach
+ENV NODE_ENV=production
+ENV DATABASE_URL=file:./data/app.db
+ENV DIRECT_DATABASE_URL=file:./data/app.db
+ENV DATABASE_BACKUP_DIR=./data/backups
 ENV NEXT_TELEMETRY_DISABLED=1
+ENV PRISMA_ACCELERATE_DISABLED=true
+ENV PRISMA_TELEMETRY_DISABLED=1
 
 # RUN addgroup --system --gid 1001 nodejs
 # RUN adduser --system --uid 1001 nextjs
@@ -69,8 +100,33 @@ RUN mkdir .next
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 
-# Uncomment this if you're using prisma, copies prisma files for linting
+# Copy app directory for proper imports
+COPY --from=builder /app/app ./app
+
+# Copy prisma and scripts
 COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/scripts ./scripts
+
+# Ensure node_modules are properly copied
+COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
+
+# Create global Prisma configuration to disable Accelerate
+RUN mkdir -p /root/.prisma && \
+    echo '{"accelerate":{"disabled":true},"telemetry":{"enabled":false}}' > /root/.prisma/config.json && \
+    echo '{"accelerate":{"disabled":true},"telemetry":{"enabled":false}}' > /root/.prismarc
+
+# Create data directories
+RUN mkdir -p ./data/backups
+RUN mkdir -p ./public/uploads
+RUN mkdir -p ./public/icons
+RUN mkdir -p ./public/avatars
+RUN mkdir -p ./public/logos
+RUN mkdir -p ./public/favicons
+
+# Directly update the schema.prisma file again to ensure consistency
+RUN sed -i 's/url *= *env(".*")/url      = "file:\.\/data\/app.db"/' ./prisma/schema.prisma && \
+    cat ./prisma/schema.prisma
 
 # Copy the entrypoint script
 COPY docker-entrypoint.sh ./docker-entrypoint.sh

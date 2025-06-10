@@ -1,77 +1,52 @@
 import { PrismaClient } from "@prisma/client";
+import { DB_CONFIG } from "./database-config";
 
-// Define a custom interface for the Prisma Client with all models that we use
-declare global {
-  namespace PrismaJson {
-    // Custom scalar JSON types go here
-  }
+// Configure environment variables for Prisma
+process.env.PRISMA_ACCELERATE_DISABLED = "true";
+
+// Log database URLs in non-production environments
+if (process.env.NODE_ENV !== "production") {
+  console.log("Initializing Prisma with:");
+  console.log(`- Direct URL: ${DB_CONFIG.directUrl}`);
 }
 
-const globalForPrisma = globalThis as unknown as {
-  prisma: PrismaClient | undefined;
+// Initialize PrismaClient with explicit configuration using the direct URL
+const prismaClientSingleton = () => {
+  // Always use the file: protocol directly
+  const dbUrl = process.env.DIRECT_DATABASE_URL || "file:./data/app.db";
+  const finalUrl = dbUrl.startsWith("prisma:") ? dbUrl.replace(/^prisma:/, "file:") : dbUrl;
+
+  return new PrismaClient({
+    datasources: {
+      db: {
+        url: finalUrl, // Always use the file: URL
+      },
+    },
+    // Logging configuration based on environment
+    log: process.env.NODE_ENV === "development" ? ["query", "error", "warn"] : ["error"],
+  });
 };
 
-// Create a robust PrismaClient factory with error handling
-function createPrismaClient(): PrismaClient {
-  try {
-    const client = new PrismaClient({
-      log: process.env.NODE_ENV === "development" ? ["query", "error", "warn"] : ["error"],
-    });
+// Create a global instance for the Prisma client
+type PrismaClientSingleton = ReturnType<typeof prismaClientSingleton>;
 
-    // Test connection and handle errors gracefully
-    client.$connect().catch((e) => console.error("Prisma connection error:", e));
-
-    // Add error handling for common operations
-    const originalClient = client;
-    return new Proxy(originalClient, {
-      get(target, prop) {
-        const value = Reflect.get(target, prop);
-
-        // Handle model access like prisma.appConfig
-        if (
-          typeof value === "object" &&
-          value !== null &&
-          !Array.isArray(value) &&
-          prop !== "$connect" &&
-          prop !== "$disconnect"
-        ) {
-          return new Proxy(value, {
-            get(modelTarget, modelProp) {
-              const modelMethod = Reflect.get(modelTarget, modelProp);
-
-              // Add error handling for model methods
-              if (typeof modelMethod === "function") {
-                return async (...args: any[]) => {
-                  try {
-                    return await modelMethod.apply(modelTarget, args);
-                  } catch (error) {
-                    console.error(`Error in prisma.${String(prop)}.${String(modelProp)}:`, error);
-                    // Rethrow to allow caller to handle specific errors
-                    throw error;
-                  }
-                };
-              }
-
-              return modelMethod;
-            },
-          });
-        }
-
-        return value;
-      },
-    });
-  } catch (e) {
-    console.error("Error creating Prisma client:", e);
-    // Fallback to basic client if initialization fails
-    return new PrismaClient();
-  }
-}
+// Setup global store for the client
+const globalForPrisma = globalThis as unknown as {
+  prisma: PrismaClientSingleton | undefined;
+};
 
 // Use existing client or create a new one
-export const prisma = globalForPrisma.prisma ?? createPrismaClient();
+export const prisma = globalForPrisma.prisma ?? prismaClientSingleton();
 
-// Store the client in development for hot reloading
+// In development, reset the client on each reload
 if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
+
+export default prisma;
+
+// Test that the database is accessible
+prisma.$queryRaw`SELECT 1`
+  .then(() => console.log("Database connection successful"))
+  .catch((err) => console.error("Database connection error:", err));
 
 // Ensure the exported PrismaClient has all the models
 export type { PrismaClient } from "@prisma/client";
