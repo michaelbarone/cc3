@@ -10,21 +10,26 @@ const rootDir = path.join(__dirname, "..");
 
 async function main() {
   // Import constants in a way that works with ESM
-  const { MIGRATION_DATABASE_URL } = await import("../app/lib/db/constants.js").catch(() => {
+  const { getMigrationDatabaseUrl } = await import("../app/lib/db/constants").catch(() => {
     // Fallback if direct import fails
+    console.log("Fallback to hardcoded database URL");
     return {
-      MIGRATION_DATABASE_URL: `file:${path.join(rootDir, "data", "app.db")}`,
+      getMigrationDatabaseUrl: () => `file:${path.join(rootDir, "data", "app.db")}`,
     };
   });
 
   const ENV_FILE = path.join(rootDir, ".env.local");
 
-  // Create .env.local file with the hardcoded database URL
+  // Get the environment-aware database URL
+  const databaseUrl = getMigrationDatabaseUrl();
+
+  // Create .env.local file with the environment-aware database URL
   const envContent = `# Auto-generated environment file - do not edit manually
 # Created at ${new Date().toISOString()}
 
 # Database configuration
-DATABASE_URL="${MIGRATION_DATABASE_URL}"
+DATABASE_URL="${databaseUrl}"
+${process.env.DOCKER_CONTAINER ? "DOCKER_CONTAINER=true" : ""}
 
 # Other environment variables can be added here
 `;

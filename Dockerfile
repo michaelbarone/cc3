@@ -32,7 +32,8 @@ FROM base AS runner
 
 ENV NODE_ENV=production
 ENV DOCKER_CONTAINER=true
-ENV DATABASE_URL=file:/app/data/app.db
+# Hardcoded standardized database path
+ENV DATABASE_URL=file:/data/app.db
 
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next/standalone ./
@@ -41,12 +42,10 @@ COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/docker-entrypoint.sh ./docker-entrypoint.sh
 
-
 # Create data directories
-RUN mkdir -p /app/data /app/data/backups
+RUN mkdir -p /data /data/backups
 
-# Create data directories
-RUN mkdir -p ./data/backups
+# Create other directories
 RUN mkdir -p ./public/uploads
 RUN mkdir -p ./public/icons
 RUN mkdir -p ./public/avatars

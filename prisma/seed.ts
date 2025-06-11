@@ -1,4 +1,4 @@
-import { BACKUP_DIRECTORY, DB_DIRECTORY } from "@/app/lib/db/constants";
+import { BACKUP_DIRECTORY, DB_DIRECTORY, MIGRATION_DATABASE_URL } from "@/app/lib/db/constants";
 import { prisma } from "@/app/lib/db/prisma";
 import { DEFAULT_APP_CONFIG } from "@/app/lib/utils/constants";
 import fs from "fs";
@@ -10,11 +10,12 @@ const __dirname = path.dirname(__filename);
 
 // Helper to detect if we're in a build context
 function isBuildProcess() {
+  return false;
   // When Next.js is building, these conditions are typically true
-  return (
-    process.env.NODE_ENV === "production" &&
-    process.argv.some((arg) => arg.includes("next") && arg.includes("build"))
-  );
+  // return (
+  //   process.env.NODE_ENV === "production" &&
+  //   process.argv.some((arg) => arg.includes("next") && arg.includes("build"))
+  // );
 }
 
 // Create required directories if they don't exist
@@ -24,20 +25,29 @@ function createRequiredDirectories() {
     return;
   }
 
+  // Ensure we're using the standardized paths
   const directories = [
-    DB_DIRECTORY,
-    BACKUP_DIRECTORY,
-    "public/uploads",
-    "public/icons",
-    "public/avatars",
-    "public/logos",
-    "public/favicons",
+    DB_DIRECTORY, // Now standardized to /data
+    BACKUP_DIRECTORY, // Now standardized to /data/backups
+    path.join(process.cwd(), "public/uploads"),
+    path.join(process.cwd(), "public/icons"),
+    path.join(process.cwd(), "public/avatars"),
+    path.join(process.cwd(), "public/logos"),
+    path.join(process.cwd(), "public/favicons"),
   ];
 
+  console.log("Creating directories:", directories);
+
   directories.forEach((dir) => {
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
-      console.log(`Created directory: ${dir}`);
+    try {
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+        console.log(`Created directory: ${dir}`);
+      } else {
+        console.log(`Directory already exists: ${dir}`);
+      }
+    } catch (error) {
+      console.error(`Error creating directory ${dir}:`, error);
     }
   });
 }
@@ -49,7 +59,28 @@ export async function main() {
     return;
   }
 
+  // TODO check for database file and if it does not exist we need to exit with a console log
+  const databaseFile = path.join(DB_DIRECTORY, "app.db");
+  if (!fs.existsSync(databaseFile)) {
+    console.error("Database file does not exist. Please check your database configuration.");
+    return;
+  }
+
   console.log("Starting database seeding...");
+
+  // Verify database URL matches our standardized path
+  const envDbUrl = process.env.DATABASE_URL || "not-set";
+  console.log("Environment DATABASE_URL:", envDbUrl);
+  console.log("Expected standardized URL:", MIGRATION_DATABASE_URL);
+  console.log("DB_DIRECTORY from constants:", DB_DIRECTORY);
+  console.log("BACKUP_DIRECTORY from constants:", BACKUP_DIRECTORY);
+
+  if (envDbUrl !== MIGRATION_DATABASE_URL) {
+    console.warn(
+      `WARNING: Environment DATABASE_URL (${envDbUrl}) doesn't match standardized path (${MIGRATION_DATABASE_URL})`,
+    );
+    console.warn("This may cause database access issues.");
+  }
 
   try {
     // Create required directories first
@@ -251,12 +282,23 @@ export async function main() {
     //   );
     // }
 
-    console.log("Seeding completed successfully!");
+    console.log("Seed completed successfully.");
   } catch (error) {
-    console.error("Error seeding database:", error);
-    process.exit(1);
+    console.error("Database seeding failed:", error);
+    throw error;
   }
 }
+
+main()
+  .then(async () => {
+    console.log("Database seeding completed.");
+    await prisma.$disconnect();
+  })
+  .catch(async (e) => {
+    console.error("Error during database seeding:", e);
+    await prisma.$disconnect();
+    process.exit(1);
+  });
 
 // Only run the seed function when this file is executed directly (not imported)
 // Check if we're in ESM or CommonJS

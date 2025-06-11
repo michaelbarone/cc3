@@ -1,7 +1,8 @@
+import { BACKUP_DIRECTORY, DATABASE_PATH } from "@/app/lib/db/constants";
 import archiver from "archiver";
 import extract from "extract-zip";
-import fs from "fs/promises";
 import fsSync from "fs";
+import fs from "fs/promises";
 import path from "path";
 
 // Types for archive operations
@@ -19,59 +20,35 @@ export interface ExtractOptions {
 }
 
 /**
- * Gets the database path from environment variable or default
+ * Gets the database path using the standardized location from constants
  */
 function getDatabasePath(): string {
-  const dbUrl = process.env.DATABASE_URL || "file:./data/app.db";
-  const isDevelopment = process.env.NODE_ENV === "development";
+  // Use the standardized path from constants
+  console.log("Using standardized database path:", DATABASE_PATH);
 
-  // Remove 'file:' prefix
-  const dbPath = dbUrl.replace("file:", "");
-
-  // In development mode, check Prisma's data directory first
-  if (isDevelopment) {
-    const paths = [
-      path.join(process.cwd(), "prisma", "data", "app.db"), // Prisma dev location
-      path.join(process.cwd(), "prisma", "app.db"), // Alternative Prisma location
-      path.join(process.cwd(), dbPath), // Configured location
-      dbPath, // Raw path
-    ];
-
-    for (const p of paths) {
-      if (fsSync.existsSync(p)) {
-        console.log("Found database at:", p); // Debug log
-        return p;
-      }
-    }
-
-    // If no database is found in development, default to Prisma dev location
-    const defaultPath = paths[0];
-    console.log("No existing database found, using default path:", defaultPath);
-    return defaultPath;
+  // Ensure the database directory exists
+  const dbDir = path.dirname(DATABASE_PATH);
+  if (!fsSync.existsSync(dbDir)) {
+    fsSync.mkdirSync(dbDir, { recursive: true });
+    console.log("Created database directory at:", dbDir);
   }
 
-  // In production, use the configured path
-  const prodPath = path.join(process.cwd(), dbPath);
-  console.log("Using production database path:", prodPath);
-  return prodPath;
+  return DATABASE_PATH;
 }
 
 /**
- * Gets the backup directory from environment variable or default
+ * Gets the backup directory from constants
  */
 function getBackupDir(): string {
-  const isDevelopment = process.env.NODE_ENV === "development";
-  const defaultBackupDir = isDevelopment ? "./prisma/data/backups" : "./data/backups";
-  const backupDir = process.env.DATABASE_BACKUP_DIR || defaultBackupDir;
-  const absoluteBackupDir = path.join(process.cwd(), backupDir);
+  // Use the standardized backup directory from constants
 
-  // Create the backup directory if it doesn't exist
-  if (!fsSync.existsSync(absoluteBackupDir)) {
-    fsSync.mkdirSync(absoluteBackupDir, { recursive: true });
-    console.log("Created backup directory at:", absoluteBackupDir); // Debug log
+  // Ensure the backup directory exists
+  if (!fsSync.existsSync(BACKUP_DIRECTORY)) {
+    fsSync.mkdirSync(BACKUP_DIRECTORY, { recursive: true });
+    console.log("Created backup directory at:", BACKUP_DIRECTORY);
   }
 
-  return absoluteBackupDir;
+  return BACKUP_DIRECTORY;
 }
 
 /**
@@ -226,7 +203,7 @@ export async function createBackup(): Promise<string> {
 
   try {
     // Copy database to temp directory with consistent path
-    const tempDbPath = path.join(tempDir, "data", "app.db");
+    const tempDbPath = path.join(tempDir, path.relative("/", DATABASE_PATH));
     await fs.mkdir(path.dirname(tempDbPath), { recursive: true });
     await fs.copyFile(dbPath, tempDbPath);
 
@@ -235,7 +212,7 @@ export async function createBackup(): Promise<string> {
       sourceDir: tempDir,
       targetFile: backupFile,
       include: [
-        "data/app.db",
+        path.relative("/", DATABASE_PATH),
         "public/icons/**",
         "public/avatars/**",
         "public/logos/**",
@@ -298,7 +275,7 @@ export async function restoreBackup(
     });
 
     // Handle database file first
-    const dbSrc = path.join(tempDir, "data", "app.db");
+    const dbSrc = path.join(tempDir, path.relative("/", DATABASE_PATH));
     const dbDest = getDatabasePath();
 
     if (fsSync.existsSync(dbSrc)) {

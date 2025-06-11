@@ -11,10 +11,10 @@ services:
     environment:
       - NODE_ENV=production
       - DOCKER_CONTAINER=true
-      # DATABASE_URL will be used by Prisma migrations
-      - DATABASE_URL=file:/app/data/app.db
+      # Hardcoded standardized database path
+      - DATABASE_URL=file:/data/app.db
     volumes:
-      - ./data:/app/data
+      - ./data:/data
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
       interval: 30s
