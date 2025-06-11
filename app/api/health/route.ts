@@ -1,9 +1,10 @@
 import { prisma } from "@/app/lib/db/prisma";
-import { version } from "@/package.json";
+import pkg from "@/package.json";
 import fs from "fs";
 import { NextResponse } from "next/server";
 
 const MEMORY_THRESHOLD = 1024 * 1024 * 1024; // 1GB
+const version = pkg.version;
 
 export async function GET() {
   const startTime = process.hrtime();

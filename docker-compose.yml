@@ -10,6 +10,8 @@ services:
       - "3000:3000"
     environment:
       - NODE_ENV=production
+      - DOCKER_CONTAINER=true
+      # DATABASE_URL will be used by Prisma migrations
       - DATABASE_URL=file:/app/data/app.db
     volumes:
       - ./data:/app/data

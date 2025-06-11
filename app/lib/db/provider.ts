@@ -1,10 +1,15 @@
-import { initializeDatabase } from "./init";
+import { initializeDatabase, isBuildProcess } from "./init";
 import { prisma } from "./prisma";
 
 // Initialize database and export client
 let initialized = false;
 
 async function getInitializedPrisma() {
+  // Skip initialization during build
+  if (isBuildProcess()) {
+    return prisma;
+  }
+
   if (!initialized) {
     try {
       await initializeDatabase();

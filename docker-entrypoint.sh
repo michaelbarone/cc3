@@ -5,6 +5,9 @@ set -e
 mkdir -p /app/data
 mkdir -p /app/data/backups
 
+# Set Docker container flag for constants.ts to detect
+export DOCKER_CONTAINER=true
+
 # Function to check database health
 check_database() {
     if [ ! -f "/app/data/app.db" ]; then
@@ -13,7 +16,7 @@ check_database() {
     fi
 
     # Try to run a simple query to check database integrity
-    if ! npx prisma db execute --stdin <<< "PRAGMA integrity_check;" > /dev/null 2>&1; then
+    if ! echo "PRAGMA integrity_check;" | npx prisma db execute --stdin > /dev/null 2>&1; then
         echo "Database integrity check failed. Creating new database..."
         return 1
     fi
@@ -41,11 +44,13 @@ fi
 
 # Run Prisma database migrations
 echo "Running database migrations..."
-npx prisma migrate deploy
+# Explicitly set the Database URL with file: protocol for migrations
+DATABASE_URL="file:/app/data/app.db" npx prisma migrate deploy
 
 # Run the database seed script if needed
 echo "Running database seed..."
-npx prisma db seed
+# Use the same database URL for seeding
+DATABASE_URL="file:/app/data/app.db" npx prisma db seed
 
 # Start the Next.js server
 echo "Starting Next.js server..."

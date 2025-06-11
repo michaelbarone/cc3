@@ -1,3 +1,4 @@
+import { BACKUP_DIRECTORY, DB_DIRECTORY } from "@/app/lib/db/constants";
 import { prisma } from "@/app/lib/db/prisma";
 import { DEFAULT_APP_CONFIG } from "@/app/lib/utils/constants";
 import fs from "fs";
@@ -7,11 +8,25 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Helper to detect if we're in a build context
+function isBuildProcess() {
+  // When Next.js is building, these conditions are typically true
+  return (
+    process.env.NODE_ENV === "production" &&
+    process.argv.some((arg) => arg.includes("next") && arg.includes("build"))
+  );
+}
+
 // Create required directories if they don't exist
 function createRequiredDirectories() {
+  // Skip during build
+  if (isBuildProcess()) {
+    return;
+  }
+
   const directories = [
-    "data",
-    "data/backups",
+    DB_DIRECTORY,
+    BACKUP_DIRECTORY,
     "public/uploads",
     "public/icons",
     "public/avatars",
@@ -20,15 +35,20 @@ function createRequiredDirectories() {
   ];
 
   directories.forEach((dir) => {
-    const dirPath = path.join(process.cwd(), dir);
-    if (!fs.existsSync(dirPath)) {
-      fs.mkdirSync(dirPath, { recursive: true });
-      console.log(`Created directory: ${dirPath}`);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+      console.log(`Created directory: ${dir}`);
     }
   });
 }
 
 export async function main() {
+  // Skip during build
+  if (isBuildProcess()) {
+    console.log("Build process detected, skipping database seeding");
+    return;
+  }
+
   console.log("Starting database seeding...");
 
   try {
@@ -86,149 +106,150 @@ export async function main() {
       console.log("Created default app configuration");
     }
 
-    // Check if any URL groups exist
-    const groupCount = await prisma.urlGroup.count();
+    // we dont need to seed url groups here
+    // // Check if any URL groups exist
+    // const groupCount = await prisma.urlGroup.count();
 
-    if (groupCount === 0) {
-      console.log("No URL groups found. Creating example groups...");
+    // if (groupCount === 0) {
+    //   console.log("No URL groups found. Creating example groups...");
 
-      try {
-        // Create the Development Resources group
-        const devGroup = await prisma.urlGroup.create({
-          data: {
-            name: "Development Resources",
-            description: "Useful development and documentation resources",
-          },
-        });
+    //   try {
+    //     // Create the Development Resources group
+    //     const devGroup = await prisma.urlGroup.create({
+    //       data: {
+    //         name: "Development Resources",
+    //         description: "Useful development and documentation resources",
+    //       },
+    //     });
 
-        console.log("Created Development Resources group:", devGroup);
+    //     console.log("Created Development Resources group:", devGroup);
 
-        // Create the Media & Maps group
-        const mediaGroup = await prisma.urlGroup.create({
-          data: {
-            name: "Media & Maps",
-            description: "Embedded media examples and interactive maps",
-          },
-        });
+    //     // Create the Media & Maps group
+    //     const mediaGroup = await prisma.urlGroup.create({
+    //       data: {
+    //         name: "Media & Maps",
+    //         description: "Embedded media examples and interactive maps",
+    //       },
+    //     });
 
-        console.log("Created Media & Maps group:", mediaGroup);
+    //     console.log("Created Media & Maps group:", mediaGroup);
 
-        // Create URLs for Development Resources group
-        const devUrls = [
-          {
-            title: "MDN Web Docs",
-            url: "https://developer.mozilla.org/",
-            idleTimeoutMinutes: 30,
-          },
-          {
-            title: "Next.js Documentation",
-            url: "https://nextjs.org/docs",
-            idleTimeoutMinutes: 30,
-          },
-          {
-            title: "TypeScript Playground",
-            url: "https://www.typescriptlang.org/play",
-            idleTimeoutMinutes: 20,
-          },
-        ];
+    //     // Create URLs for Development Resources group
+    //     const devUrls = [
+    //       {
+    //         title: "MDN Web Docs",
+    //         url: "https://developer.mozilla.org/",
+    //         idleTimeoutMinutes: 30,
+    //       },
+    //       {
+    //         title: "Next.js Documentation",
+    //         url: "https://nextjs.org/docs",
+    //         idleTimeoutMinutes: 30,
+    //       },
+    //       {
+    //         title: "TypeScript Playground",
+    //         url: "https://www.typescriptlang.org/play",
+    //         idleTimeoutMinutes: 20,
+    //       },
+    //     ];
 
-        // Create URLs for Media & Maps group
-        const mediaUrls = [
-          {
-            title: "YouTube Embed Example",
-            url: "https://www.youtube.com/embed/dQw4w9WgXcQ",
-            idleTimeoutMinutes: 15,
-          },
-          {
-            title: "Google Maps - Times Square",
-            url: "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3022.1015167256684!2d-73.98784892439321!3d40.75779613541194!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x89c25855c6480299%3A0x55194ec5a1ae072e!2sTimes+Square!5e0!3m2!1sen!2sus!4v1565726584388",
-            idleTimeoutMinutes: 20,
-          },
-          {
-            title: "Vimeo Example",
-            url: "https://player.vimeo.com/video/148751763",
-            idleTimeoutMinutes: 15,
-          },
-        ];
+    //     // Create URLs for Media & Maps group
+    //     const mediaUrls = [
+    //       {
+    //         title: "YouTube Embed Example",
+    //         url: "https://www.youtube.com/embed/dQw4w9WgXcQ",
+    //         idleTimeoutMinutes: 15,
+    //       },
+    //       {
+    //         title: "Google Maps - Times Square",
+    //         url: "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3022.1015167256684!2d-73.98784892439321!3d40.75779613541194!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x89c25855c6480299%3A0x55194ec5a1ae072e!2sTimes+Square!5e0!3m2!1sen!2sus!4v1565726584388",
+    //         idleTimeoutMinutes: 20,
+    //       },
+    //       {
+    //         title: "Vimeo Example",
+    //         url: "https://player.vimeo.com/video/148751763",
+    //         idleTimeoutMinutes: 15,
+    //       },
+    //     ];
 
-        // Create and associate Development Resources URLs
-        for (let i = 0; i < devUrls.length; i++) {
-          const url = await prisma.url.create({
-            data: devUrls[i],
-          });
+    //     // Create and associate Development Resources URLs
+    //     for (let i = 0; i < devUrls.length; i++) {
+    //       const url = await prisma.url.create({
+    //         data: devUrls[i],
+    //       });
 
-          await prisma.urlsInGroups.create({
-            data: {
-              urlId: url.id,
-              groupId: devGroup.id,
-              displayOrder: i,
-            },
-          });
+    //       await prisma.urlsInGroups.create({
+    //         data: {
+    //           urlId: url.id,
+    //           groupId: devGroup.id,
+    //           displayOrder: i,
+    //         },
+    //       });
 
-          console.log(`Created and associated URL: ${url.title}`);
-        }
+    //       console.log(`Created and associated URL: ${url.title}`);
+    //     }
 
-        // Create and associate Media & Maps URLs
-        for (let i = 0; i < mediaUrls.length; i++) {
-          const url = await prisma.url.create({
-            data: mediaUrls[i],
-          });
+    //     // Create and associate Media & Maps URLs
+    //     for (let i = 0; i < mediaUrls.length; i++) {
+    //       const url = await prisma.url.create({
+    //         data: mediaUrls[i],
+    //       });
 
-          await prisma.urlsInGroups.create({
-            data: {
-              urlId: url.id,
-              groupId: mediaGroup.id,
-              displayOrder: i,
-            },
-          });
+    //       await prisma.urlsInGroups.create({
+    //         data: {
+    //           urlId: url.id,
+    //           groupId: mediaGroup.id,
+    //           displayOrder: i,
+    //         },
+    //       });
 
-          console.log(`Created and associated URL: ${url.title}`);
-        }
+    //       console.log(`Created and associated URL: ${url.title}`);
+    //     }
 
-        // Assign both groups to the admin user
-        if (adminUser) {
-          await prisma.userUrlGroup.createMany({
-            data: [
-              {
-                userId: adminUser.id,
-                urlGroupId: devGroup.id,
-              },
-              {
-                userId: adminUser.id,
-                urlGroupId: mediaGroup.id,
-              },
-            ],
-          });
+    //     // Assign both groups to the admin user
+    //     if (adminUser) {
+    //       await prisma.userUrlGroup.createMany({
+    //         data: [
+    //           {
+    //             userId: adminUser.id,
+    //             urlGroupId: devGroup.id,
+    //           },
+    //           {
+    //             userId: adminUser.id,
+    //             urlGroupId: mediaGroup.id,
+    //           },
+    //         ],
+    //       });
 
-          console.log("Assigned example groups to admin user");
-        }
+    //       console.log("Assigned example groups to admin user");
+    //     }
 
-        // Verify the setup
-        const verifySetup = await prisma.urlGroup.findMany({
-          include: {
-            urls: {
-              include: {
-                url: true,
-              },
-            },
-            userUrlGroups: {
-              include: {
-                user: true,
-              },
-            },
-          },
-        });
+    //     // Verify the setup
+    //     const verifySetup = await prisma.urlGroup.findMany({
+    //       include: {
+    //         urls: {
+    //           include: {
+    //             url: true,
+    //           },
+    //         },
+    //         userUrlGroups: {
+    //           include: {
+    //             user: true,
+    //           },
+    //         },
+    //       },
+    //     });
 
-        console.log("Final setup verification:", JSON.stringify(verifySetup, null, 2));
-      } catch (error) {
-        console.error("Error during example groups and URLs setup:", error);
-        throw error;
-      }
-    } else {
-      console.log(
-        `Database already has ${groupCount} URL groups. Skipping example groups creation.`,
-      );
-    }
+    //     console.log("Final setup verification:", JSON.stringify(verifySetup, null, 2));
+    //   } catch (error) {
+    //     console.error("Error during example groups and URLs setup:", error);
+    //     throw error;
+    //   }
+    // } else {
+    //   console.log(
+    //     `Database already has ${groupCount} URL groups. Skipping example groups creation.`,
+    //   );
+    // }
 
     console.log("Seeding completed successfully!");
   } catch (error) {
@@ -237,8 +258,14 @@ export async function main() {
   }
 }
 
-// Run the seed function
-main().catch((e) => {
-  console.error(e);
-  process.exit(1);
-});
+// Only run the seed function when this file is executed directly (not imported)
+// Check if we're in ESM or CommonJS
+const isDirectlyExecuted = process.argv[1] === fileURLToPath(import.meta.url);
+
+// Only auto-execute when run directly and not during build
+if (isDirectlyExecuted && !isBuildProcess()) {
+  main().catch((e) => {
+    console.error(e);
+    process.exit(1);
+  });
+}

@@ -3,17 +3,31 @@ import { main as seedDatabase } from "@/prisma/seed";
 import { Prisma } from "@prisma/client";
 import { execSync } from "child_process";
 import fs from "fs";
-import path from "path";
+import { BACKUP_DIRECTORY, DB_DIRECTORY, getMigrationDatabaseUrl } from "./constants";
 
 // Flag to ensure we only try to initialize once per process
 let isInitializing = false;
 let isInitialized = false;
 
+// Helper to detect if we're in a build context
+export function isBuildProcess() {
+  // When Next.js is building, these conditions are typically true
+  return (
+    process.env.NODE_ENV === "production" &&
+    process.argv.some((arg) => arg.includes("next") && arg.includes("build"))
+  );
+}
+
 // Create required directories if they don't exist
 function createRequiredDirectories() {
+  // Skip during build
+  if (isBuildProcess()) {
+    return;
+  }
+
   const directories = [
-    "data",
-    "data/backups",
+    DB_DIRECTORY,
+    BACKUP_DIRECTORY,
     "public/uploads",
     "public/icons",
     "public/avatars",
@@ -22,10 +36,9 @@ function createRequiredDirectories() {
   ];
 
   directories.forEach((dir) => {
-    const dirPath = path.join(process.cwd(), dir);
-    if (!fs.existsSync(dirPath)) {
-      fs.mkdirSync(dirPath, { recursive: true });
-      console.log(`Created directory: ${dirPath}`);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+      console.log(`Created directory: ${dir}`);
     }
   });
 }
@@ -42,6 +55,12 @@ async function checkDatabase(): Promise<boolean> {
 }
 
 export async function initializeDatabase() {
+  // Skip during build
+  if (isBuildProcess()) {
+    console.log("Build process detected, skipping database initialization");
+    return;
+  }
+
   // Return if already initialized
   if (isInitialized) {
     return;
@@ -67,8 +86,14 @@ export async function initializeDatabase() {
 
     if (!dbExists) {
       console.log("Database not accessible, running migrations...");
-      // Run migrations
-      execSync("npx prisma migrate deploy", { stdio: "inherit" });
+      // Run migrations with the proper database URL
+      execSync("npx prisma migrate deploy", {
+        stdio: "inherit",
+        env: {
+          ...process.env,
+          DATABASE_URL: getMigrationDatabaseUrl(),
+        },
+      });
     }
 
     // Check if we need to seed
@@ -89,11 +114,17 @@ export async function initializeDatabase() {
   }
 }
 
-// Initialize database on module import
-initializeDatabase().catch(console.error);
+// NOTE: Auto-initialization on module import has been removed
+// to prevent database operations during build time
 
 // Function to seed test data - can be called manually when needed
 export async function seedTestData() {
+  // Skip during build
+  if (isBuildProcess()) {
+    console.log("Build process detected, skipping test data seeding");
+    return;
+  }
+
   try {
     console.log("Starting test data seeding...");
 
