@@ -1,19 +1,18 @@
 version: '3.8'
 
 services:
-  app:
+  c3:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: next-sqlite-app
+    container_name: c3
     ports:
       - "3000:3000"
     environment:
       - NODE_ENV=production
-      - DATABASE_URL=file:/app/data/app.db
+      - DATABASE_URL=file:/data/app.db
     volumes:
-      - sqlite-data:/app/data
-      - sqlite-backup:/app/backup
+      - ./data:/data
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
       interval: 30s
@@ -40,17 +39,3 @@ services:
 networks:
   app-network:
     driver: bridge
-
-volumes:
-  sqlite-data:
-    driver: local
-    driver_opts:
-      type: none
-      device: ${PWD}/data
-      o: bind
-  sqlite-backup:
-    driver: local
-    driver_opts:
-      type: none
-      device: ${PWD}/backup
-      o: bind

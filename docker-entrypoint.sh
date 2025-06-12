@@ -2,18 +2,25 @@
 set -e
 
 # Create data directory if it doesn't exist
-mkdir -p /app/data
-mkdir -p /app/backup
+mkdir -p /data
+mkdir -p /data/backups
+
+# Set Docker container flag for constants.ts to detect
+export DOCKER_CONTAINER=true
+
+# Define the standardized database path
+DB_PATH="/data/app.db"
+DB_URL="file:${DB_PATH}"
 
 # Function to check database health
 check_database() {
-    if [ ! -f "/app/data/app.db" ]; then
+    if [ ! -f "${DB_PATH}" ]; then
         echo "Database file not found. Creating new database..."
         return 1
     fi
 
     # Try to run a simple query to check database integrity
-    if ! npx prisma db execute --stdin <<< "PRAGMA integrity_check;" > /dev/null 2>&1; then
+    if ! echo "PRAGMA integrity_check;" | npx prisma db execute --stdin > /dev/null 2>&1; then
         echo "Database integrity check failed. Creating new database..."
         return 1
     fi
@@ -23,11 +30,11 @@ check_database() {
 
 # Function to backup database
 backup_database() {
-    if [ -f "/app/data/app.db" ]; then
+    if [ -f "${DB_PATH}" ]; then
         echo "Creating database backup..."
-        cp /app/data/app.db "/app/backup/app_$(date +%Y%m%d_%H%M%S).db"
+        cp "${DB_PATH}" "/data/backups/app_$(date +%Y%m%d_%H%M%S).db"
         # Keep only last 5 backups
-        ls -t /app/backup/app_*.db | tail -n +6 | xargs -r rm
+        ls -t /data/backups/app_*.db | tail -n +6 | xargs -r rm
     fi
 }
 
@@ -41,11 +48,19 @@ fi
 
 # Run Prisma database migrations
 echo "Running database migrations..."
-npx prisma migrate deploy
+# Use the hardcoded database path
+DATABASE_URL="${DB_URL}" npx prisma migrate deploy
 
 # Run the database seed script if needed
 echo "Running database seed..."
-npx prisma db seed
+# Use the hardcoded database path with more verbose output
+if DATABASE_URL="${DB_URL}" NODE_ENV=production npx tsx prisma/seed.ts; then
+    echo "Database seed completed successfully."
+else
+    echo "Warning: Database seed script failed with exit code $?"
+    echo "This might be normal if the database was already seeded."
+    echo "Check logs above for specific errors if this is unexpected."
+fi
 
 # Start the Next.js server
 echo "Starting Next.js server..."

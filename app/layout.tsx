@@ -18,11 +18,41 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-async function getAppConfig() {
-  const prisma = await getPrismaClient();
-  return await prisma.appConfig.findUnique({
-    where: { id: "app-config" },
-  });
+// Define the AppConfig type based on the Prisma schema
+type AppConfig = {
+  id: string;
+  appName: string;
+  appLogo: string | null;
+  favicon: string | null;
+  loginTheme: string;
+  registrationEnabled: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+// Default configuration for build-time or when database is unavailable
+const defaultAppConfig: AppConfig = {
+  id: "app-config",
+  appName: "Control Center",
+  appLogo: null,
+  favicon: null,
+  loginTheme: "dark",
+  registrationEnabled: false,
+  createdAt: new Date(),
+  updatedAt: new Date(),
+};
+
+async function getAppConfig(): Promise<AppConfig> {
+  try {
+    const prisma = await getPrismaClient();
+    const config = await prisma.appConfig.findUnique({
+      where: { id: "app-config" },
+    });
+    return config || defaultAppConfig;
+  } catch (error) {
+    console.error("Failed to fetch app config:", error);
+    return defaultAppConfig;
+  }
 }
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -30,11 +60,11 @@ export async function generateMetadata(): Promise<Metadata> {
 
   return {
     title: {
-      template: `%s | ${appConfig?.appName || "Control Center"}`,
-      default: appConfig?.appName || "Control Center",
+      template: `%s | ${appConfig.appName}`,
+      default: appConfig.appName,
     },
     description: "A dashboard for managing and displaying URLs in iframes",
-    icons: appConfig?.favicon ? [{ rel: "icon", url: appConfig.favicon }] : [],
+    icons: appConfig.favicon ? [{ rel: "icon", url: appConfig.favicon }] : [],
   };
 }
 

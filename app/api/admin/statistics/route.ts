@@ -122,7 +122,7 @@ interface StatisticsResponse {
       id: string;
       title: string;
       url: string;
-      accessCount: number;
+      count: number;
     }>;
   };
   urlGroups: {
@@ -350,7 +350,7 @@ export async function GET(
           id: url.url,
           title: url.title,
           url: url.url,
-          accessCount: Number(url.count),
+          count: Number(url.count),
         })),
       },
       urlGroups: {

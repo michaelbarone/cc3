@@ -10,6 +10,7 @@ import SettingsIcon from "@mui/icons-material/Settings";
 import {
   AppBar,
   Box,
+  Button,
   CssBaseline,
   Divider,
   Drawer,
@@ -104,6 +105,17 @@ export function AdminLayoutClient({ children }: AdminLayoutClientProps) {
           <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
             {menuItems.find((item) => item.href === pathname)?.text || "Admin"}
           </Typography>
+
+          {/* Dashboard button to return to main dashboard */}
+          <Button
+            color="inherit"
+            startIcon={<DashboardIcon />}
+            onClick={() => router.replace("/dashboard")}
+            sx={{ mr: 1 }}
+          >
+            Dashboard
+          </Button>
+
           <UserMenu showAdminOption />
         </Toolbar>
       </AppBar>

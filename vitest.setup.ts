@@ -12,7 +12,7 @@ process.env = {
   ...process.env,
   NODE_ENV: "test",
   // Set a specific test database path to avoid conflicts
-  TEST_DATABASE_PATH: path.join(process.cwd(), ".test-db", "test-database.sqlite"),
+  DATABASE_URL: path.join(process.cwd(), ".test-db", "test-database.db"),
 };
 
 // Mock Next.js dynamic imports

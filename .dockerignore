@@ -1,0 +1,26 @@
+.git
+.github
+.vscode
+.cursor
+node_modules
+npm-debug.log
+.next
+out
+.DS_Store
+**/.DS_Store
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.example
+**/*.test.*
+**/__tests__
+**/test
+.husky
+
+vitest.config.ts
+vitest.setup.ts
+playwright.config.ts
+# DO NOT ignore docker-entrypoint.sh
+# !docker-entrypoint.sh

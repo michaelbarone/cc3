@@ -3,6 +3,8 @@
 #project
 **/app.db
 **/app.db*
+*.db
+*.db-journal
 public/icons/*
 public/logos/*
 public/avatars/*
