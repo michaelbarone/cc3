@@ -16,7 +16,6 @@ function createRequiredDirectories() {
     "public/icons",
     "public/avatars",
     "public/logos",
-    "public/favicons",
   ];
 
   directories.forEach((dir) => {

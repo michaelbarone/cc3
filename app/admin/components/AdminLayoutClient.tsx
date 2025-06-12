@@ -1,6 +1,7 @@
 "use client";
 
 import UserMenu from "@/app/components/ui/UserMenu";
+import { AppConfig, DEFAULT_APP_CONFIG } from "@/app/lib/utils/constants";
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import FolderIcon from "@mui/icons-material/Folder";
 import LinkIcon from "@mui/icons-material/Link";
@@ -24,7 +25,7 @@ import {
   Typography,
 } from "@mui/material";
 import { usePathname, useRouter } from "next/navigation";
-import { ReactNode, useState } from "react";
+import { ReactNode, useEffect, useState } from "react";
 
 const drawerWidth = 240;
 
@@ -34,8 +35,29 @@ interface AdminLayoutClientProps {
 
 export function AdminLayoutClient({ children }: AdminLayoutClientProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [appConfig, setAppConfig] = useState<AppConfig>(DEFAULT_APP_CONFIG);
+  const [loading, setLoading] = useState(true);
   const pathname = usePathname();
   const router = useRouter();
+
+  // Fetch app configuration
+  useEffect(() => {
+    const fetchAppConfig = async () => {
+      try {
+        const response = await fetch("/api/admin/app-config");
+        if (response.ok) {
+          const data = await response.json();
+          setAppConfig(data);
+        }
+      } catch (error) {
+        console.error("Error fetching app config:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAppConfig();
+  }, []);
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
@@ -52,9 +74,44 @@ export function AdminLayoutClient({ children }: AdminLayoutClientProps) {
   const drawer = (
     <div>
       <Toolbar>
-        <Typography variant="h6" noWrap component="div">
-          Admin Panel
-        </Typography>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          {appConfig.appLogo && (
+            <Box
+              sx={{
+                width: 32,
+                height: 32,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                marginRight: 1,
+                borderRadius: "4px",
+                overflow: "hidden",
+                backgroundColor: (theme) =>
+                  theme.palette.mode === "dark" ? "background.paper" : "transparent",
+              }}
+            >
+              <Box
+                component="img"
+                src={appConfig.appLogo}
+                alt="Logo"
+                sx={{
+                  maxWidth: "100%",
+                  maxHeight: "100%",
+                  objectFit: "contain",
+                  display: "block",
+                }}
+                onError={(e) => {
+                  // Hide the image if it fails to load
+                  const target = e.target as HTMLImageElement;
+                  target.style.display = "none";
+                }}
+              />
+            </Box>
+          )}
+          <Typography variant="h6" noWrap component="div">
+            Admin Panel
+          </Typography>
+        </Box>
       </Toolbar>
       <Divider />
       <List>
@@ -102,9 +159,9 @@ export function AdminLayoutClient({ children }: AdminLayoutClientProps) {
           >
             <MenuIcon />
           </IconButton>
-          <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
-            {menuItems.find((item) => item.href === pathname)?.text || "Admin"}
-          </Typography>
+
+          {/* Spacer to push elements to the right */}
+          <Box sx={{ flexGrow: 1 }} />
 
           {/* Dashboard button to return to main dashboard */}
           <Button

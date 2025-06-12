@@ -34,8 +34,7 @@ This document serves as the main project plan and tracks the status of all tasks
   - ⏳ Test stability monitoring
 - **Priority**: High
 - **Target**: 2025-05-31
-- **Progress**: 85% complete
-- **Last Update**: Added comprehensive API test review improvements, standardized error handling and performance monitoring patterns
+- **Progress**: 85% complete - Added comprehensive API test review improvements, standardized error handling and performance monitoring patterns
 
 ### 3. IFrame State Management Refactor
 - **Location**: `/docs/working-memory/open/iframe-state-refactor-20240401`
@@ -72,6 +71,18 @@ This document serves as the main project plan and tracks the status of all tasks
 - **Description**: Add new user-requested features
 - **Priority**: Low
 - **Estimated Effort**: 4 weeks
+
+### Application Logo Enhancement
+- **Description**: Enhance application logo upload process to generate Apple-format images for app loading screens
+- **Key Milestones**:
+  - Update logo upload functionality to process original image
+  - Implement image processing for Apple app loading screen formats
+  - Generate various sizes required for different Apple devices
+  - Add validation for minimum image quality/resolution
+  - Update admin UI to show preview of generated images
+  - Update documentation for logo requirements
+- **Priority**: Medium
+- **Estimated Effort**: 1 week
 
 ### Backup Manifest Implementation
 - **Description**: Enhance backup functionality to include a manifest file with metadata

@@ -12,6 +12,10 @@ public/favicon*
 data/*
 prisma/data/backups/*.zip
 
+!*-default.webp
+!*-default.png
+!favicon.ico
+
 # dependencies
 /node_modules
 /.pnp

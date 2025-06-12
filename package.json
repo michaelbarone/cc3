@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev:reset": "npm run cleanup:dev && npm run db:migrate && npm run dev",
-    "dev": "next dev --turbopack",
+    "dev": "prisma generate && next dev --turbopack",
     "build": "prisma generate && next build",
     "start": "next start",
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx --config eslint.config.mjs",

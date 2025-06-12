@@ -20,6 +20,8 @@ export default function FaviconUpload({
   onDelete,
 }: FaviconUploadProps) {
   const [uploading, setUploading] = useState(false);
+  // Default favicon URL
+  const defaultFaviconUrl = "/favicon-default.png";
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -39,6 +41,7 @@ export default function FaviconUpload({
 
     try {
       setUploading(true);
+      console.log("Uploading file:", file.name, "Type:", file.type, "Size:", file.size);
 
       const formData = new FormData();
       formData.append("favicon", file);
@@ -50,12 +53,14 @@ export default function FaviconUpload({
 
       if (!response.ok) {
         const data = await response.json();
+        console.error("Upload error response:", data);
         throw new Error(data.error || "Failed to upload favicon");
       }
 
       const data = await response.json();
       onUploadSuccess(data.favicon);
     } catch (error) {
+      console.error("Upload error:", error);
       onUploadError(error instanceof Error ? error.message : "Failed to upload favicon");
     } finally {
       setUploading(false);
@@ -83,27 +88,33 @@ export default function FaviconUpload({
     }
   };
 
+  // Check if we have a custom favicon or should use the default
+  const displayFaviconUrl = faviconUrl || defaultFaviconUrl;
+  const isUsingDefault = !faviconUrl && displayFaviconUrl === defaultFaviconUrl;
+
   return (
     <Box sx={{ textAlign: "center" }}>
-      {faviconUrl ? (
-        <Box sx={{ mb: 2 }}>
-          <Box
-            sx={{
-              position: "relative",
-              width: 32,
-              height: 32,
-              margin: "0 auto",
-              mb: 1,
-            }}
-          >
-            <Image
-              src={faviconUrl}
-              alt="Favicon"
-              width={32}
-              height={32}
-              style={{ objectFit: "contain" }}
-            />
-          </Box>
+      <Box sx={{ mb: 2 }}>
+        <Box
+          sx={{
+            position: "relative",
+            width: 32,
+            height: 32,
+            margin: "0 auto",
+            mb: 1,
+          }}
+        >
+          <Image
+            src={displayFaviconUrl}
+            alt="Favicon"
+            width={32}
+            height={32}
+            style={{ objectFit: "contain" }}
+          />
+        </Box>
+
+        {faviconUrl ? (
+          // Custom favicon is set, show delete button
           <Button
             variant="outlined"
             color="error"
@@ -113,31 +124,36 @@ export default function FaviconUpload({
           >
             Remove Favicon
           </Button>
-        </Box>
-      ) : (
-        <Box>
-          <input
-            accept="image/*"
-            style={{ display: "none" }}
-            id="favicon-upload"
-            type="file"
-            onChange={handleFileChange}
-            disabled={uploading}
-          />
-          <label htmlFor="favicon-upload">
-            <Button
-              variant="outlined"
-              component="span"
-              startIcon={uploading ? <CircularProgress size={20} /> : <UploadIcon />}
+        ) : (
+          // No custom favicon, show upload button
+          <>
+            <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 2 }}>
+              {isUsingDefault ? "Using default favicon" : "No favicon set"}
+            </Typography>
+            <input
+              accept="image/png,image/jpeg,image/gif,image/webp,image/svg+xml"
+              style={{ display: "none" }}
+              id="favicon-upload"
+              type="file"
+              onChange={handleFileChange}
               disabled={uploading}
-            >
-              Upload Favicon
-            </Button>
-          </label>
-        </Box>
-      )}
+            />
+            <label htmlFor="favicon-upload">
+              <Button
+                variant="outlined"
+                component="span"
+                startIcon={uploading ? <CircularProgress size={20} /> : <UploadIcon />}
+                disabled={uploading}
+              >
+                Upload Favicon
+              </Button>
+            </label>
+          </>
+        )}
+      </Box>
       <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 1 }}>
-        Upload a 32x32 pixel image for the browser favicon
+        Upload a 32x32 pixel image for the browser favicon. Supported formats: PNG, JPEG, GIF, WebP,
+        SVG
       </Typography>
     </Box>
   );

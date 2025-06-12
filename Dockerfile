@@ -56,7 +56,6 @@ RUN mkdir -p ./public/uploads
 RUN mkdir -p ./public/icons
 RUN mkdir -p ./public/avatars
 RUN mkdir -p ./public/logos
-RUN mkdir -p ./public/favicons
 
 # Add healthcheck
 # HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \

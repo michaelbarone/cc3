@@ -64,7 +64,6 @@ export async function generateMetadata(): Promise<Metadata> {
       default: appConfig.appName,
     },
     description: "A dashboard for managing and displaying URLs in iframes",
-    icons: appConfig.favicon ? [{ rel: "icon", url: appConfig.favicon }] : [],
   };
 }
 
