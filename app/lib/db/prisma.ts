@@ -1,28 +1,50 @@
-import { PrismaClient } from "@prisma/client";
-import { DB_CONFIG } from "./database-config";
+/**
+ * Prisma Client Instance
+ *
+ * This module provides a singleton instance of PrismaClient for the application.
+ * It ensures that we use the correct database URL with the file: protocol.
+ */
 
-// Configure environment variables for Prisma
+import { PrismaClient } from "@prisma/client";
+
+// Force disable Prisma Accelerate
 process.env.PRISMA_ACCELERATE_DISABLED = "true";
 
-// Log database URLs in non-production environments
-if (process.env.NODE_ENV !== "production") {
-  console.log("Initializing Prisma with:");
-  console.log(`- Direct URL: ${DB_CONFIG.directUrl}`);
-}
+// Set environment variable for Prisma client engine type
+process.env.PRISMA_CLIENT_ENGINE_TYPE = "binary";
 
-// Initialize PrismaClient with explicit configuration using the direct URL
+// Define a consistent database URL that always uses file: protocol
+const getDbUrl = (): string => {
+  // Get URL from environment or use default
+  const dbUrl = process.env.DATABASE_URL || process.env.DIRECT_DATABASE_URL || "file:./data/app.db";
+
+  // Handle any protocol conversion
+  if (dbUrl.startsWith("prisma:")) {
+    console.log(`Converting database URL from prisma:// to file: protocol`);
+    return dbUrl.replace(/^prisma:/, "file:");
+  }
+
+  // Ensure URL has file: prefix
+  if (!dbUrl.startsWith("file:")) {
+    console.log(`Adding file: protocol to database URL`);
+    return `file:${dbUrl}`;
+  }
+
+  return dbUrl;
+};
+
+// Create PrismaClient with explicit configuration
 const prismaClientSingleton = () => {
-  // Always use the file: protocol directly
-  const dbUrl = process.env.DIRECT_DATABASE_URL || "file:./data/app.db";
-  const finalUrl = dbUrl.startsWith("prisma:") ? dbUrl.replace(/^prisma:/, "file:") : dbUrl;
+  const dbUrl = getDbUrl();
+  console.log(`Using database URL: ${dbUrl}`);
 
   return new PrismaClient({
     datasources: {
       db: {
-        url: finalUrl, // Always use the file: URL
+        url: dbUrl,
       },
     },
-    // Logging configuration based on environment
+    // Configure logging based on environment
     log: process.env.NODE_ENV === "development" ? ["query", "error", "warn"] : ["error"],
   });
 };
@@ -41,12 +63,13 @@ export const prisma = globalForPrisma.prisma ?? prismaClientSingleton();
 // In development, reset the client on each reload
 if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
 
-export default prisma;
-
-// Test that the database is accessible
+// Test that the database is accessible (but don't block initialization if it fails)
 prisma.$queryRaw`SELECT 1`
   .then(() => console.log("Database connection successful"))
   .catch((err) => console.error("Database connection error:", err));
+
+// Export the client as default
+export default prisma;
 
 // Ensure the exported PrismaClient has all the models
 export type { PrismaClient } from "@prisma/client";

@@ -54,24 +54,52 @@ RUN find . -name "*.test.*" -type f -delete && \
     find . -name "test" -type d -exec rm -rf {} + 2>/dev/null || true && \
     rm -rf test
 
-RUN rm playwright.config.ts
-RUN rm vitest.config.ts
-RUN rm vitest.setup.ts
-
 # Create global Prisma configuration to disable Accelerate
 RUN mkdir -p /root/.prisma && \
     echo '{"accelerate":{"disabled":true},"telemetry":{"enabled":false}}' > /root/.prisma/config.json && \
     echo '{"accelerate":{"disabled":true},"telemetry":{"enabled":false}}' > /root/.prismarc
 
-# Directly update the schema.prisma file to use file: protocol without env variables
-RUN sed -i 's/url *= *env(".*")/url      = "file:\/\/\/app\/data\/app.db"/' ./prisma/schema.prisma && \
+# Create .npmrc file with Prisma settings
+RUN echo "prisma-accelerate-disabled=true" > .npmrc && \
+    echo "prisma-telemetry-disabled=1" >> .npmrc
+
+# Create temporary schema.prisma for building
+RUN cp ./prisma/schema.prisma ./prisma/schema.prisma.original && \
+    sed -i 's/url *= *env(".*")/url      = "file:\.\/data\/app\.db"/' ./prisma/schema.prisma && \
+    sed -i 's/previewFeatures = \[.*\]/previewFeatures = []/' ./prisma/schema.prisma && \
+    grep -v "accelerate" ./prisma/schema.prisma > ./prisma/schema.prisma.temp && \
+    mv ./prisma/schema.prisma.temp ./prisma/schema.prisma && \
     cat ./prisma/schema.prisma
 
-# Generate Prisma client without running migrations
-RUN npx prisma generate
+# Generate Prisma client with explicit configuration
+RUN PRISMA_SCHEMA_ENGINE_TYPE=binary PRISMA_CLIENT_ENGINE_TYPE=binary PRISMA_ACCELERATE_DISABLED=true \
+    npx prisma generate --schema=./prisma/schema.prisma --no-engine
 
-# Run next build without Prisma migrations
-RUN npx next build --experimental-build-mode compile
+# Set environment variables for build
+ENV DATABASE_URL="file:./data/app.db" \
+    DIRECT_DATABASE_URL="file:./data/app.db" \
+    PRISMA_ACCELERATE_DISABLED=true \
+    PRISMA_CLIENT_ENGINE_TYPE=binary \
+    PRISMA_SCHEMA_ENGINE_TYPE=binary
+
+# Create proper .env file for build
+RUN echo "DATABASE_URL=file:./data/app.db" > .env && \
+    echo "DIRECT_DATABASE_URL=file:./data/app.db" >> .env && \
+    echo "PRISMA_ACCELERATE_DISABLED=true" >> .env && \
+    echo "PRISMA_CLIENT_ENGINE_TYPE=binary" >> .env
+
+# Patch the database-config.ts file to always return file: protocol
+COPY scripts/fix-compiled.js ./scripts/
+RUN sed -i 's/toRuntimeUrl\(.*\)/toRuntimeUrl(url) { return url.startsWith("prisma:") ? url.replace("prisma:", "file:") : url; }/' ./app/lib/db/database-config.ts
+
+# Run next build
+RUN npx next build
+
+# Patch compiled next.js files to replace prisma:// with file:
+RUN node ./scripts/fix-compiled.js
+
+# Restore original schema.prisma for migrations
+RUN cp ./prisma/schema.prisma.original ./prisma/schema.prisma
 
 # Production image, copy all the files and run next
 FROM base AS runner
@@ -130,7 +158,8 @@ RUN sed -i 's/url *= *env(".*")/url      = "file:\.\/data\/app.db"/' ./prisma/sc
 
 # Copy the entrypoint script
 COPY docker-entrypoint.sh ./docker-entrypoint.sh
-RUN chmod +x ./docker-entrypoint.sh
+# Ensure the script has executable permissions and correct line endings
+RUN chmod +x ./docker-entrypoint.sh && sed -i 's/\r$//' ./docker-entrypoint.sh
 # RUN chown nextjs:nodejs ./docker-entrypoint.sh
 
 # USER nextjs

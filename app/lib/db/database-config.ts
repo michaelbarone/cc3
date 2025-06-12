@@ -22,57 +22,56 @@ interface DatabaseConfig {
   toFilePath?: (url: string) => string;
 }
 
+// Force using file: protocol
+const enforceFileProtocol = (url: string): string => {
+  if (!url) return DEFAULT_DB_URL;
+  // Always convert to file: protocol regardless of input
+  return url.replace(/^(prisma:|postgres:|mysql:|mongodb:|sqlserver:)(\/\/)?/, "file:");
+};
+
+// Get the initial URLs from environment or defaults
+const rawRuntimeUrl = process.env.DATABASE_URL || DEFAULT_DB_URL;
+const rawDirectUrl = process.env.DIRECT_DATABASE_URL || DEFAULT_DB_URL;
+
+// Force file: protocol for all URLs
+const runtimeUrl = enforceFileProtocol(rawRuntimeUrl);
+const directUrl = enforceFileProtocol(rawDirectUrl);
+
+// Update environment variables to match
+process.env.DATABASE_URL = runtimeUrl;
+process.env.DIRECT_DATABASE_URL = directUrl;
+process.env.PRISMA_ACCELERATE_DISABLED = "true";
+process.env.PRISMA_CLIENT_ENGINE_TYPE = "binary";
+
 // Ensure the appropriate protocol is used for database URLs
 export const DB_CONFIG: DatabaseConfig = {
   // For all database operations, we now use the file: protocol
-  runtimeUrl: process.env.DATABASE_URL || DEFAULT_DB_URL,
-  directUrl: process.env.DIRECT_DATABASE_URL || DEFAULT_DB_URL,
+  runtimeUrl,
+  directUrl,
   backupDir: process.env.DATABASE_BACKUP_DIR || DEFAULT_BACKUP_DIR,
 
-  // Add the toRuntimeUrl method, but have it return file: URLs instead of prisma: URLs
-  // This maintains compatibility with existing code that expects this method
+  // Force file: protocol for all URLs
   toRuntimeUrl: (url: string): string => {
-    // Always ensure it's using file: protocol
-    if (url.startsWith("prisma:")) {
-      return url.replace(/^prisma:/, "file:");
-    }
-    return url.startsWith("file:") ? url : `file:${url}`;
+    return enforceFileProtocol(url);
   },
 
-  // Add toCliUrl for backward compatibility
+  // Force file: protocol for CLI URLs
   toCliUrl: (url: string): string => {
-    if (url.startsWith("prisma:")) {
-      return url.replace(/^prisma:/, "file:");
-    }
-    return url.startsWith("file:") ? url : `file:${url}`;
+    return enforceFileProtocol(url);
   },
 
-  // Add toFilePath for backward compatibility
+  // Extract file path by removing protocol
   toFilePath: (url: string): string => {
     return url.replace(/^(file:|prisma:)(\/\/)?/, "");
   },
 };
 
-// Make sure both URLs use file: protocol for SQLite
-// This helps prevent issues with Prisma Accelerate
-if (DB_CONFIG.runtimeUrl.startsWith("prisma:")) {
-  console.log(`Converting runtime URL from prisma:// to file: protocol`);
-  DB_CONFIG.runtimeUrl = DB_CONFIG.runtimeUrl.replace(/^prisma:/, "file:");
+// Logging only in non-production environments
+if (process.env.NODE_ENV !== "production") {
+  console.log("Database URLs configured:");
+  console.log(`- Runtime URL: ${DB_CONFIG.runtimeUrl}`);
+  console.log(`- Direct URL: ${DB_CONFIG.directUrl}`);
 }
-
-if (DB_CONFIG.directUrl.startsWith("prisma:")) {
-  console.log(`Converting direct URL from prisma:// to file: protocol`);
-  DB_CONFIG.directUrl = DB_CONFIG.directUrl.replace(/^prisma:/, "file:");
-}
-
-// Make sure both URLs are the same, preferring the direct URL
-if (DB_CONFIG.directUrl !== DB_CONFIG.runtimeUrl) {
-  console.log(`Making runtime URL match direct URL: ${DB_CONFIG.directUrl}`);
-  DB_CONFIG.runtimeUrl = DB_CONFIG.directUrl;
-}
-
-// Ensure environment variable is set to disable Prisma Accelerate
-process.env.PRISMA_ACCELERATE_DISABLED = "true";
 
 // Add additional derived properties needed by init.ts
 // CLI URL is the same as the direct URL for command-line operations

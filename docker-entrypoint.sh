@@ -183,10 +183,38 @@ if [ -f "./scripts/fix-accelerate.ts" ]; then
     DATABASE_URL="file:./data/app.db" DIRECT_DATABASE_URL="file:./data/app.db" PRISMA_ACCELERATE_DISABLED=true npx tsx ./scripts/fix-accelerate.ts
 fi
 
+# Run our custom Prisma protocol fix script as a final measure
+if [ -f "./scripts/fix-prisma-protocol.sh" ]; then
+    echo "Running comprehensive Prisma protocol fix script..."
+    chmod +x ./scripts/fix-prisma-protocol.sh
+    ./scripts/fix-prisma-protocol.sh
+fi
+
+# Run our fix for Next.js compiled code
+if [ -f "./scripts/fix-nextjs-prisma.sh" ]; then
+    echo "Running Next.js compiled code fix..."
+    chmod +x ./scripts/fix-nextjs-prisma.sh
+    ./scripts/fix-nextjs-prisma.sh
+else
+    # Fallback direct replacement
+    echo "Running direct replacement of prisma:// with file: in compiled code..."
+    find ./.next -type f -name "*.js" -exec sed -i 's/prisma:\/\//file:/g' {} \; 2>/dev/null || true
+    find ./node_modules/.prisma -type f -name "*.js" -exec sed -i 's/prisma:\/\//file:/g' {} \; 2>/dev/null || true
+    # Also fix PrismaClient instantiations
+    find ./.next -type f -name "*.js" -exec sed -i 's/new PrismaClient(/new PrismaClient({datasources:{db:{url:"file:\.\/data\/app\.db"}}})/' {} \; 2>/dev/null || true
+fi
+
+# Run the database URL fix script if it exists
+if [ -f "./scripts/fix-database-urls.js" ]; then
+    echo "Running database URL fix script..."
+    node ./scripts/fix-database-urls.js
+fi
+
 # Set environment variables explicitly before starting
 export DATABASE_URL="file:./data/app.db"
 export DIRECT_DATABASE_URL="file:./data/app.db"
 export PRISMA_ACCELERATE_DISABLED="true"
+export PRISMA_CLIENT_ENGINE_TYPE="binary"
 
 # Start the Next.js server
 echo "Starting Next.js server..."
