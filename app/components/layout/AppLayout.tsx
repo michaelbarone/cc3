@@ -52,6 +52,7 @@ export default function AppLayout({
     appName: "Control Center",
     appLogo: null,
   });
+  const [appConfigLoading, setAppConfigLoading] = useState(true);
 
   // Check if menu should be shown
   const showMenu = useMemo(() => {
@@ -94,6 +95,7 @@ export default function AppLayout({
   // Fetch app configuration
   useEffect(() => {
     const fetchAppConfig = async () => {
+      setAppConfigLoading(true);
       try {
         const response = await fetch("/api/admin/app-config");
         if (response.ok) {
@@ -102,11 +104,50 @@ export default function AppLayout({
         }
       } catch (error) {
         console.error("Error fetching app configuration:", error);
+      } finally {
+        setAppConfigLoading(false);
       }
     };
 
     fetchAppConfig();
   }, []);
+
+  // Render app logo or name based on config
+  const renderAppLogoOrName = () => {
+    if (appConfigLoading) {
+      return <></>;
+    }
+
+    if (appConfig.appLogo) {
+      return (
+        <Box
+          component="img"
+          src={appConfig.appLogo}
+          alt={appConfig.appName}
+          sx={{
+            height: 40,
+            maxWidth: { xs: 120, sm: 160 },
+            objectFit: "contain",
+            ...(effectiveMenuPosition === "top" ? { mr: { xs: 1, md: 4 } } : {}),
+          }}
+        />
+      );
+    }
+
+    return (
+      <Typography
+        variant="h6"
+        noWrap
+        component="div"
+        sx={{
+          ...(effectiveMenuPosition === "top" ? { mr: { xs: 1, md: 4 } } : {}),
+          fontSize: { xs: "1rem", sm: "1.25rem" },
+        }}
+      >
+        {appConfig.appName}
+      </Typography>
+    );
+  };
 
   // If not mounted yet, render a minimal layout to match SSR
   if (!mounted || !effectiveMenuPosition) {
@@ -120,11 +161,7 @@ export default function AppLayout({
             color: theme.palette.text.primary,
           }}
         >
-          <Toolbar>
-            <Typography variant="h6" noWrap component="div">
-              {appConfig.appName}
-            </Typography>
-          </Toolbar>
+          <Toolbar>{renderAppLogoOrName()}</Toolbar>
         </AppBar>
         <Box
           component="main"
@@ -174,31 +211,7 @@ export default function AppLayout({
               )}
 
               {/* App Logo/Title */}
-              {appConfig.appLogo ? (
-                <Box
-                  component="img"
-                  src={appConfig.appLogo}
-                  alt={appConfig.appName}
-                  sx={{
-                    height: 40,
-                    maxWidth: { xs: 120, sm: 160 },
-                    objectFit: "contain",
-                    mr: { xs: 1, md: 4 },
-                  }}
-                />
-              ) : (
-                <Typography
-                  variant="h6"
-                  noWrap
-                  component="div"
-                  sx={{
-                    mr: { xs: 1, md: 4 },
-                    fontSize: { xs: "1rem", sm: "1.25rem" },
-                  }}
-                >
-                  {appConfig.appName}
-                </Typography>
-              )}
+              {renderAppLogoOrName()}
             </Box>
 
             {/* Center section - Menu content */}
@@ -309,29 +322,7 @@ export default function AppLayout({
               )}
 
               {/* App Logo/Title */}
-              {appConfig.appLogo ? (
-                <Box
-                  component="img"
-                  src={appConfig.appLogo}
-                  alt={appConfig.appName}
-                  sx={{
-                    height: 40,
-                    maxWidth: { xs: 120, sm: 160 },
-                    objectFit: "contain",
-                  }}
-                />
-              ) : (
-                <Typography
-                  variant="h6"
-                  noWrap
-                  component="div"
-                  sx={{
-                    fontSize: { xs: "1rem", sm: "1.25rem" },
-                  }}
-                >
-                  {appConfig.appName}
-                </Typography>
-              )}
+              {renderAppLogoOrName()}
             </Box>
 
             {/* Spacer to push elements to the right */}

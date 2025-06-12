@@ -1,11 +1,27 @@
-import { NextRequest, NextResponse } from "next/server";
 import { verifyToken } from "@/app/lib/auth/jwt";
 import { prisma } from "@/app/lib/db/prisma";
-import path from "path";
 import fs from "fs/promises";
+import { NextRequest, NextResponse } from "next/server";
+import path from "path";
 import sharp from "sharp";
 
-// POST /api/admin/app-config/favicon - Upload favicon
+// Define favicon paths
+const PUBLIC_DIR = path.join(process.cwd(), "public");
+const DEFAULT_FAVICON_PATH = path.join(PUBLIC_DIR, "favicon-default.png");
+const CUSTOM_FAVICON_PATH = path.join(PUBLIC_DIR, "favicon-custom.png");
+const ACTIVE_FAVICON_PATH = path.join(PUBLIC_DIR, "favicon.ico");
+
+// Helper to check if custom favicon exists
+async function doesCustomFaviconExist(): Promise<boolean> {
+  try {
+    await fs.access(CUSTOM_FAVICON_PATH);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// POST /api/admin/app-config/favicon - Upload custom favicon
 export async function POST(request: NextRequest) {
   try {
     // Verify the user is authenticated and is an admin
@@ -37,49 +53,34 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "File must be an image" }, { status: 400 });
     }
 
-    // Generate a unique filename
-    const filename = `favicon-${Date.now()}.ico`;
-    const filepath = path.join(process.cwd(), "public", filename);
-
-    // Process and save the image
+    // Process the image
     const buffer = Buffer.from(await faviconFile.arrayBuffer());
-    await sharp(buffer)
-      .resize(32, 32) // Standard favicon size
-      .toFile(filepath);
 
-    // Public URL for the favicon
-    const favicon = `/${filename}`;
+    try {
+      // Save the custom favicon (for backup/history)
+      await sharp(buffer).resize(32, 32).png().toFile(CUSTOM_FAVICON_PATH);
 
-    // Get current app config
-    const currentConfig = await prisma.appConfig.findUnique({
-      where: { id: "app-config" },
-    });
-
-    // Delete old favicon if it exists
-    if (currentConfig?.favicon) {
-      try {
-        const oldFaviconPath = path.join(
-          process.cwd(),
-          "public",
-          currentConfig.favicon.startsWith("/")
-            ? currentConfig.favicon.substring(1)
-            : currentConfig.favicon,
-        );
-        await fs.access(oldFaviconPath);
-        await fs.unlink(oldFaviconPath);
-      } catch (error) {
-        // Ignore errors if the file doesn't exist or can't be deleted
-        console.warn("Could not delete old favicon:", error);
-      }
+      // For favicon.ico, we'll use the PNG since modern browsers support it
+      // and just copy it to the standard location
+      await fs.copyFile(CUSTOM_FAVICON_PATH, ACTIVE_FAVICON_PATH);
+    } catch (error) {
+      console.error("Sharp processing error:", error);
+      return NextResponse.json(
+        {
+          error: `Image processing error: ${error instanceof Error ? error.message : "Unknown error"}`,
+        },
+        { status: 500 },
+      );
     }
 
-    // Update app config with new favicon URL
+    // For backward compatibility with the existing frontend, we'll update the database as well
+    // This helps during the transition to the file-based approach
     const appConfig = await prisma.appConfig.upsert({
       where: { id: "app-config" },
-      update: { favicon },
+      update: { favicon: "/favicon-custom.png" },
       create: {
         appName: "Control Center",
-        favicon,
+        favicon: "/favicon-custom.png",
         loginTheme: "dark",
         registrationEnabled: false,
       },
@@ -92,7 +93,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// DELETE /api/admin/app-config/favicon - Delete favicon
+// DELETE /api/admin/app-config/favicon - Restore default favicon
 export async function DELETE() {
   try {
     // Verify the user is authenticated and is an admin
@@ -106,39 +107,32 @@ export async function DELETE() {
       return NextResponse.json({ error: "Admin privileges required" }, { status: 403 });
     }
 
-    // Get current app config
-    const appConfig = await prisma.appConfig.findUnique({
-      where: { id: "app-config" },
-    });
-
-    // Check if app has a favicon
-    if (!appConfig?.favicon) {
-      return NextResponse.json({ error: "App does not have a favicon" }, { status: 400 });
-    }
-
-    // Delete the favicon file
     try {
-      const faviconPath = path.join(
-        process.cwd(),
-        "public",
-        appConfig.favicon.startsWith("/") ? appConfig.favicon.substring(1) : appConfig.favicon,
-      );
-      await fs.access(faviconPath);
-      await fs.unlink(faviconPath);
+      // Check if custom favicon exists and delete it
+      const customFaviconExists = await doesCustomFaviconExist();
+      if (customFaviconExists) {
+        await fs.unlink(CUSTOM_FAVICON_PATH);
+        console.log("Deleted custom favicon");
+      } else {
+        console.log("No custom favicon to delete");
+      }
+
+      // Copy default favicon to active location
+      await fs.copyFile(DEFAULT_FAVICON_PATH, ACTIVE_FAVICON_PATH);
+
+      // For backward compatibility with the existing frontend, we'll update the database as well
+      const appConfig = await prisma.appConfig.update({
+        where: { id: "app-config" },
+        data: { favicon: null }, // Setting to null makes UI use the default
+      });
+
+      return NextResponse.json(appConfig);
     } catch (error) {
-      // Ignore errors if the file doesn't exist or can't be deleted
-      console.warn("Could not delete favicon file:", error);
+      console.error("Error restoring default favicon:", error);
+      return NextResponse.json({ error: "Error restoring default favicon" }, { status: 500 });
     }
-
-    // Update app config to remove the favicon URL
-    const updatedConfig = await prisma.appConfig.update({
-      where: { id: "app-config" },
-      data: { favicon: null },
-    });
-
-    return NextResponse.json(updatedConfig);
   } catch (error) {
-    console.error("Error deleting favicon:", error);
-    return NextResponse.json({ error: "Error deleting favicon" }, { status: 500 });
+    console.error("Error resetting to default favicon:", error);
+    return NextResponse.json({ error: "Error resetting to default favicon" }, { status: 500 });
   }
 }
