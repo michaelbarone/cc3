@@ -17,6 +17,9 @@ WORKDIR /app
 
 COPY --from=deps /app/node_modules ./node_modules
 
+# Set environment variable to skip seeding during build
+ENV SKIP_SEED=true
+
 # Copy source files
 COPY . .
 
@@ -30,10 +33,13 @@ RUN npx next build
 # Production image
 FROM base AS runner
 
+# WORKDIR /app
+
 ENV NODE_ENV=production
-ENV DOCKER_CONTAINER=true
 # Hardcoded standardized database path
 ENV DATABASE_URL=file:/data/app.db
+# Set to false in runner to enable seeding when container starts
+ENV SKIP_SEED=false
 
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next/standalone ./
@@ -43,7 +49,7 @@ COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/docker-entrypoint.sh ./docker-entrypoint.sh
 
 # Create data directories
-RUN mkdir -p /data /data/backups
+RUN mkdir -p ./data ./data/backups
 
 # Create other directories
 RUN mkdir -p ./public/uploads

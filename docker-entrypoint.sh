@@ -5,9 +5,6 @@ set -e
 mkdir -p /data
 mkdir -p /data/backups
 
-# Set Docker container flag for constants.ts to detect
-export DOCKER_CONTAINER=true
-
 # Define the standardized database path
 DB_PATH="/data/app.db"
 DB_URL="file:${DB_PATH}"
@@ -53,13 +50,18 @@ DATABASE_URL="${DB_URL}" npx prisma migrate deploy
 
 # Run the database seed script if needed
 echo "Running database seed..."
-# Use the hardcoded database path with more verbose output
-if DATABASE_URL="${DB_URL}" NODE_ENV=production npx tsx prisma/seed.ts; then
-    echo "Database seed completed successfully."
+# Check if seeding should be skipped
+if [ "$SKIP_SEED" = "true" ]; then
+    echo "SKIP_SEED environment variable set to true. Skipping database seed."
 else
-    echo "Warning: Database seed script failed with exit code $?"
-    echo "This might be normal if the database was already seeded."
-    echo "Check logs above for specific errors if this is unexpected."
+    # Use the hardcoded database path with more verbose output
+    if DATABASE_URL="${DB_URL}" NODE_ENV=production npx tsx prisma/seed.ts; then
+        echo "Database seed completed successfully."
+    else
+        echo "Warning: Database seed script failed with exit code $?"
+        echo "This might be normal if the database was already seeded."
+        echo "Check logs above for specific errors if this is unexpected."
+    fi
 fi
 
 # Start the Next.js server

@@ -1,8 +1,8 @@
-import { prisma } from "@/app/lib/db/prisma";
-import { DEFAULT_APP_CONFIG } from "@/app/lib/utils/constants";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+import { prisma } from "../app/lib/db/prisma";
+import { DEFAULT_APP_CONFIG } from "../app/lib/utils/constants";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -30,6 +30,12 @@ function createRequiredDirectories() {
 
 export async function main() {
   console.log("Starting database seeding...");
+
+  // Check if we should skip seeding (during Docker build)
+  if (process.env.SKIP_SEED === "true") {
+    console.log("SKIP_SEED environment variable set to true. Skipping database seed.");
+    return;
+  }
 
   try {
     // Create required directories first
