@@ -30,12 +30,14 @@ interface AppLayoutProps {
   children: ReactNode;
   menuContent: ReactNode;
   forceMenuPosition?: "side" | "top" | null;
+  headerContent?: ReactNode;
 }
 
 export default function AppLayout({
   children,
   menuContent,
   forceMenuPosition = null,
+  headerContent = null,
 }: AppLayoutProps) {
   const { user } = useAuth();
   const { preferences, isLoading: preferencesLoading } = useUserPreferences();
@@ -211,6 +213,9 @@ export default function AppLayout({
               {menuContent}
             </Box>
 
+            {/* Header content (Dashboard button, etc.) */}
+            {headerContent && <Box>{headerContent}</Box>}
+
             {/* Right section - User menu and theme toggle */}
             <Box
               sx={{
@@ -329,8 +334,11 @@ export default function AppLayout({
               )}
             </Box>
 
-            {/* Spacer to push user menu to the right */}
+            {/* Spacer to push elements to the right */}
             <Box sx={{ flexGrow: 1 }} />
+
+            {/* Header content (Dashboard button, etc.) */}
+            {headerContent && <Box>{headerContent}</Box>}
 
             {/* Right section - User menu and theme toggle */}
             <Box sx={{ display: "flex", alignItems: "center" }}>

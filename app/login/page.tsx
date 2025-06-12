@@ -538,7 +538,8 @@ function LoginContent() {
               flexDirection: "column",
               alignItems: "center",
               minHeight: "100vh",
-              py: UI.SPACING.XLARGE,
+              py: UI.SPACING.MEDIUM,
+              pt: UI.SPACING.SMALL,
             }}
           >
             {/* App Branding */}

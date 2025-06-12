@@ -21,6 +21,15 @@ interface JWTPayload {
   [key: string]: boolean | string | number | undefined; // Standard JWT claim types
 }
 
+// Add a function to check for static asset paths
+const isStaticAssetPath = (pathname: string) => {
+  return (
+    pathname.startsWith("/logos/") ||
+    pathname.startsWith("/avatars/") ||
+    pathname.startsWith("/public/")
+  );
+};
+
 export function middleware(request: NextRequest): Promise<NextResponse> | NextResponse {
   const { pathname } = request.nextUrl;
   const method = request.method;
@@ -29,7 +38,8 @@ export function middleware(request: NextRequest): Promise<NextResponse> | NextRe
   // Also, allow GET requests to /api/admin/app-config without auth for the login page
   if (
     publicPaths.some((path) => pathname === path || pathname.startsWith("/api/auth/")) ||
-    (pathname === "/api/admin/app-config" && method === "GET")
+    (pathname === "/api/admin/app-config" && method === "GET") ||
+    isStaticAssetPath(pathname)
   ) {
     return NextResponse.next();
   }
