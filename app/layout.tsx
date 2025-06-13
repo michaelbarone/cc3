@@ -1,6 +1,6 @@
 import { getPrismaClient } from "@/app/lib/db/provider";
 import { SelectedGroupProvider } from "@/app/lib/state/selected-group-context";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import React from "react";
 import "./globals.css";
@@ -55,6 +55,13 @@ async function getAppConfig(): Promise<AppConfig> {
   }
 }
 
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+};
+
 export async function generateMetadata(): Promise<Metadata> {
   const appConfig = await getAppConfig();
 
@@ -77,12 +84,6 @@ export async function generateMetadata(): Promise<Metadata> {
       ],
     },
     manifest: "/site.webmanifest",
-    viewport: {
-      width: "device-width",
-      initialScale: 1,
-      maximumScale: 1,
-      userScalable: false,
-    },
     other: {
       "mobile-web-app-capable": "yes",
       "apple-mobile-web-app-capable": "yes",
