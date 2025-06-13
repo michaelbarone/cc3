@@ -8,7 +8,6 @@
 public/icons/*
 public/logos/*
 public/avatars/*
-public/favicon*
 data/*
 prisma/data/backups/*.zip
 
