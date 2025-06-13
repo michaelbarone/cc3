@@ -11,6 +11,11 @@ interface Url {
   iconPath: string | null;
   idleTimeoutMinutes: number | null;
   displayOrder: number;
+  isLocalhost: boolean;
+  port: string | null;
+  path: string | null;
+  localhostMobilePath: string | null;
+  localhostMobilePort: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -25,6 +30,7 @@ interface UrlGroup {
   urls: Url[];
 }
 
+// Define the actual shape of data coming from Prisma
 interface UserUrlGroupItem {
   urlGroup: {
     id: string;
@@ -40,10 +46,19 @@ interface UserUrlGroupItem {
         urlMobile: string | null;
         iconPath: string | null;
         idleTimeoutMinutes: number | null;
+        // These fields might be missing in the Prisma output but we handle them in the map function
+        isLocalhost?: boolean;
+        port?: string | null;
+        path?: string | null;
+        localhostMobilePath?: string | null;
+        localhostMobilePort?: string | null;
         createdAt: Date;
         updatedAt: Date;
       };
       displayOrder: number;
+      // Additional fields from the join table that might be present
+      urlId?: string;
+      groupId?: string;
     }[];
   };
 }
@@ -92,7 +107,7 @@ export async function GET() {
         description: urlGroup.description,
         createdAt: urlGroup.createdAt,
         updatedAt: urlGroup.updatedAt,
-        urls: urlGroup.urls.map((urlInGroup) => ({
+        urls: urlGroup.urls.map((urlInGroup: UserUrlGroupItem["urlGroup"]["urls"][number]) => ({
           id: urlInGroup.url.id,
           title: urlInGroup.url.title,
           url: urlInGroup.url.url,
@@ -100,6 +115,11 @@ export async function GET() {
           iconPath: urlInGroup.url.iconPath,
           idleTimeoutMinutes: urlInGroup.url.idleTimeoutMinutes,
           displayOrder: urlInGroup.displayOrder,
+          isLocalhost: urlInGroup.url.isLocalhost || false,
+          port: urlInGroup.url.port || null,
+          path: urlInGroup.url.path || null,
+          localhostMobilePath: urlInGroup.url.localhostMobilePath || null,
+          localhostMobilePort: urlInGroup.url.localhostMobilePort || null,
           createdAt: urlInGroup.url.createdAt,
           updatedAt: urlInGroup.url.updatedAt,
         })),

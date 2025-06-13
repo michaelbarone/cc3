@@ -2,6 +2,7 @@
 
 import UserMenu from "@/app/components/ui/UserMenu";
 import { useAuth } from "@/app/lib/auth/auth-context";
+import { useUrlGroups } from "@/app/lib/hooks/useUrlGroups";
 import { useUserPreferences } from "@/app/lib/hooks/useUserPreferences";
 import { ThemeContext } from "@/app/theme/theme-provider";
 import CloseIcon from "@mui/icons-material/Close";
@@ -29,15 +30,18 @@ interface AppLayoutProps {
   children: ReactNode;
   menuContent: ReactNode;
   forceMenuPosition?: "side" | "top" | null;
+  headerContent?: ReactNode;
 }
 
 export default function AppLayout({
   children,
   menuContent,
   forceMenuPosition = null,
+  headerContent = null,
 }: AppLayoutProps) {
   const { user } = useAuth();
-  const { preferences, loading: preferencesLoading } = useUserPreferences();
+  const { preferences, isLoading: preferencesLoading } = useUserPreferences();
+  const { urlGroups, isLoading: urlGroupsLoading } = useUrlGroups();
   const router = useRouter();
   const theme = useTheme();
   const colorMode = useContext(ThemeContext);
@@ -48,6 +52,12 @@ export default function AppLayout({
     appName: "Control Center",
     appLogo: null,
   });
+  const [appConfigLoading, setAppConfigLoading] = useState(true);
+
+  // Check if menu should be shown
+  const showMenu = useMemo(() => {
+    return menuContent !== null && (!urlGroups || urlGroups.length > 0);
+  }, [menuContent, urlGroups]);
 
   // Handle initial mount
   useEffect(() => {
@@ -85,6 +95,7 @@ export default function AppLayout({
   // Fetch app configuration
   useEffect(() => {
     const fetchAppConfig = async () => {
+      setAppConfigLoading(true);
       try {
         const response = await fetch("/api/admin/app-config");
         if (response.ok) {
@@ -93,11 +104,50 @@ export default function AppLayout({
         }
       } catch (error) {
         console.error("Error fetching app configuration:", error);
+      } finally {
+        setAppConfigLoading(false);
       }
     };
 
     fetchAppConfig();
   }, []);
+
+  // Render app logo or name based on config
+  const renderAppLogoOrName = () => {
+    if (appConfigLoading) {
+      return <></>;
+    }
+
+    if (appConfig.appLogo) {
+      return (
+        <Box
+          component="img"
+          src={appConfig.appLogo}
+          alt={appConfig.appName}
+          sx={{
+            height: 32,
+            maxWidth: { xs: 120, sm: 160 },
+            objectFit: "contain",
+            ...(effectiveMenuPosition === "top" ? { mr: { xs: 1, md: 4 } } : {}),
+          }}
+        />
+      );
+    }
+
+    return (
+      <Typography
+        variant="h6"
+        noWrap
+        component="div"
+        sx={{
+          ...(effectiveMenuPosition === "top" ? { mr: { xs: 1, md: 4 } } : {}),
+          fontSize: { xs: "1rem", sm: "1.25rem" },
+        }}
+      >
+        {appConfig.appName}
+      </Typography>
+    );
+  };
 
   // If not mounted yet, render a minimal layout to match SSR
   if (!mounted || !effectiveMenuPosition) {
@@ -111,11 +161,7 @@ export default function AppLayout({
             color: theme.palette.text.primary,
           }}
         >
-          <Toolbar>
-            <Typography variant="h6" noWrap component="div">
-              {appConfig.appName}
-            </Typography>
-          </Toolbar>
+          <Toolbar>{renderAppLogoOrName()}</Toolbar>
         </AppBar>
         <Box
           component="main"
@@ -149,45 +195,23 @@ export default function AppLayout({
             {/* Left section - Mobile menu toggle and app logo */}
             <Box sx={{ display: "flex", alignItems: "center" }}>
               {/* Mobile menu toggle */}
-              <IconButton
-                color="inherit"
-                aria-label="open drawer"
-                edge="start"
-                onClick={handleDrawerToggle}
-                sx={{
-                  mr: 2,
-                  display: { md: "none" },
-                }}
-              >
-                <MenuIcon />
-              </IconButton>
-
-              {/* App Logo/Title */}
-              {appConfig.appLogo ? (
-                <Box
-                  component="img"
-                  src={appConfig.appLogo}
-                  alt={appConfig.appName}
+              {showMenu && (
+                <IconButton
+                  color="inherit"
+                  aria-label="open drawer"
+                  edge="start"
+                  onClick={handleDrawerToggle}
                   sx={{
-                    height: 40,
-                    maxWidth: { xs: 120, sm: 160 },
-                    objectFit: "contain",
-                    mr: { xs: 1, md: 4 },
-                  }}
-                />
-              ) : (
-                <Typography
-                  variant="h6"
-                  noWrap
-                  component="div"
-                  sx={{
-                    mr: { xs: 1, md: 4 },
-                    fontSize: { xs: "1rem", sm: "1.25rem" },
+                    mr: 2,
+                    display: { md: "none" },
                   }}
                 >
-                  {appConfig.appName}
-                </Typography>
+                  <MenuIcon />
+                </IconButton>
               )}
+
+              {/* App Logo/Title */}
+              {renderAppLogoOrName()}
             </Box>
 
             {/* Center section - Menu content */}
@@ -210,35 +234,40 @@ export default function AppLayout({
                 ml: "auto",
               }}
             >
+              {/* Header content (Dashboard button, etc.) */}
+              {headerContent && <Box>{headerContent}</Box>}
+
               {user && <UserMenu showAdminOption />}
             </Box>
           </Toolbar>
         </AppBar>
 
         {/* Mobile drawer - always use side layout regardless of preference */}
-        <Drawer
-          variant="temporary"
-          open={mobileOpen}
-          onClose={handleDrawerToggle}
-          ModalProps={{
-            keepMounted: true, // Better open performance on mobile
-          }}
-          sx={{
-            display: { xs: "block", md: "none" },
-            "& .MuiDrawer-paper": {
-              boxSizing: "border-box",
-              width: DRAWER_WIDTH,
-              backgroundColor: theme.palette.background.default,
-            },
-          }}
-        >
-          <Toolbar sx={{ display: "flex", justifyContent: "flex-end" }}>
-            <IconButton onClick={handleDrawerToggle}>
-              <CloseIcon />
-            </IconButton>
-          </Toolbar>
-          {menuContent}
-        </Drawer>
+        {showMenu && (
+          <Drawer
+            variant="temporary"
+            open={mobileOpen}
+            onClose={handleDrawerToggle}
+            ModalProps={{
+              keepMounted: true, // Better open performance on mobile
+            }}
+            sx={{
+              display: { xs: "block", md: "none" },
+              "& .MuiDrawer-paper": {
+                boxSizing: "border-box",
+                width: DRAWER_WIDTH,
+                backgroundColor: theme.palette.background.default,
+              },
+            }}
+          >
+            <Toolbar sx={{ display: "flex", justifyContent: "flex-end" }}>
+              <IconButton onClick={handleDrawerToggle}>
+                <CloseIcon />
+              </IconButton>
+            </Toolbar>
+            {menuContent}
+          </Drawer>
+        )}
 
         {/* Main content area */}
         <Box
@@ -277,47 +306,30 @@ export default function AppLayout({
             {/* Left section - Mobile menu toggle and app logo */}
             <Box sx={{ display: "flex", alignItems: "center" }}>
               {/* Mobile menu toggle */}
-              <IconButton
-                color="inherit"
-                aria-label="open drawer"
-                edge="start"
-                onClick={handleDrawerToggle}
-                sx={{
-                  mr: 2,
-                  display: { xs: "block", md: "none" },
-                }}
-              >
-                <MenuIcon />
-              </IconButton>
-
-              {/* App Logo/Title */}
-              {appConfig.appLogo ? (
-                <Box
-                  component="img"
-                  src={appConfig.appLogo}
-                  alt={appConfig.appName}
+              {showMenu && (
+                <IconButton
+                  color="inherit"
+                  aria-label="open drawer"
+                  edge="start"
+                  onClick={handleDrawerToggle}
                   sx={{
-                    height: 40,
-                    maxWidth: { xs: 120, sm: 160 },
-                    objectFit: "contain",
-                  }}
-                />
-              ) : (
-                <Typography
-                  variant="h6"
-                  noWrap
-                  component="div"
-                  sx={{
-                    fontSize: { xs: "1rem", sm: "1.25rem" },
+                    mr: 2,
+                    display: { xs: "block", md: "none" },
                   }}
                 >
-                  {appConfig.appName}
-                </Typography>
+                  <MenuIcon />
+                </IconButton>
               )}
+
+              {/* App Logo/Title */}
+              {renderAppLogoOrName()}
             </Box>
 
-            {/* Spacer to push user menu to the right */}
+            {/* Spacer to push elements to the right */}
             <Box sx={{ flexGrow: 1 }} />
+
+            {/* Header content (Dashboard button, etc.) */}
+            {headerContent && <Box>{headerContent}</Box>}
 
             {/* Right section - User menu and theme toggle */}
             <Box sx={{ display: "flex", alignItems: "center" }}>
@@ -329,51 +341,53 @@ export default function AppLayout({
         {/* Main content with side menu and content area */}
         <Box sx={{ display: "flex", flexGrow: 1, pt: "64px", height: "calc(100vh - 64px)" }}>
           {/* Side Navigation */}
-          <Box component="nav" sx={{ width: { md: DRAWER_WIDTH }, flexShrink: { md: 0 } }}>
-            {/* Mobile drawer */}
-            <Drawer
-              variant="temporary"
-              open={mobileOpen}
-              onClose={handleDrawerToggle}
-              ModalProps={{
-                keepMounted: true, // Better open performance on mobile
-              }}
-              sx={{
-                display: { xs: "block", md: "none" },
-                "& .MuiDrawer-paper": {
-                  boxSizing: "border-box",
-                  width: DRAWER_WIDTH,
-                  backgroundColor: theme.palette.background.default,
-                },
-              }}
-            >
-              <Toolbar sx={{ display: "flex", justifyContent: "flex-end" }}>
-                <IconButton onClick={handleDrawerToggle}>
-                  <CloseIcon />
-                </IconButton>
-              </Toolbar>
-              {menuContent}
-            </Drawer>
+          {showMenu && (
+            <Box component="nav" sx={{ width: { md: DRAWER_WIDTH }, flexShrink: { md: 0 } }}>
+              {/* Mobile drawer */}
+              <Drawer
+                variant="temporary"
+                open={mobileOpen}
+                onClose={handleDrawerToggle}
+                ModalProps={{
+                  keepMounted: true, // Better open performance on mobile
+                }}
+                sx={{
+                  display: { xs: "block", md: "none" },
+                  "& .MuiDrawer-paper": {
+                    boxSizing: "border-box",
+                    width: DRAWER_WIDTH,
+                    backgroundColor: theme.palette.background.default,
+                  },
+                }}
+              >
+                <Toolbar sx={{ display: "flex", justifyContent: "flex-end" }}>
+                  <IconButton onClick={handleDrawerToggle}>
+                    <CloseIcon />
+                  </IconButton>
+                </Toolbar>
+                {menuContent}
+              </Drawer>
 
-            {/* Desktop drawer - always visible */}
-            <Drawer
-              variant="permanent"
-              sx={{
-                display: { xs: "none", md: "block" },
-                "& .MuiDrawer-paper": {
-                  boxSizing: "border-box",
-                  width: DRAWER_WIDTH,
-                  height: "calc(100vh - 64px)",
-                  top: "64px",
-                  backgroundColor: theme.palette.background.default,
-                  borderRight: `1px solid ${theme.palette.divider}`,
-                },
-              }}
-              open
-            >
-              {menuContent}
-            </Drawer>
-          </Box>
+              {/* Desktop drawer - always visible */}
+              <Drawer
+                variant="permanent"
+                sx={{
+                  display: { xs: "none", md: "block" },
+                  "& .MuiDrawer-paper": {
+                    boxSizing: "border-box",
+                    width: DRAWER_WIDTH,
+                    height: "calc(100vh - 64px)",
+                    top: "64px",
+                    backgroundColor: theme.palette.background.default,
+                    borderRight: `1px solid ${theme.palette.divider}`,
+                  },
+                }}
+                open
+              >
+                {menuContent}
+              </Drawer>
+            </Box>
+          )}
 
           {/* Main content area */}
           <Box

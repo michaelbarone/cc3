@@ -1,5 +1,6 @@
 import { verifyToken } from "@/app/lib/auth/jwt";
 import { db } from "@/app/lib/db";
+import { Prisma } from "@prisma/client";
 import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -55,7 +56,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext): Pro
     }
 
     // Update URL position in a transaction
-    await db.$transaction(async (tx) => {
+    await db.$transaction(async (tx: Prisma.TransactionClient) => {
       // Get all URLs in the group
       const urls = await tx.urlsInGroups.findMany({
         where: { groupId },
@@ -147,7 +148,7 @@ export async function DELETE(
     }
 
     // Delete URL and reorder remaining URLs in a transaction
-    await db.$transaction(async (tx) => {
+    await db.$transaction(async (tx: Prisma.TransactionClient) => {
       // Delete the URL from the group
       await tx.urlsInGroups.delete({
         where: {
@@ -229,7 +230,7 @@ export async function PUT(request: NextRequest, { params }: RouteContext): Promi
     }
 
     // Update URL properties in a transaction
-    const updatedUrl = await db.$transaction(async (tx) => {
+    const updatedUrl = await db.$transaction(async (tx: Prisma.TransactionClient) => {
       // Update the URL properties
       const result = await tx.url.update({
         where: { id: urlId },

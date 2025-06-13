@@ -1,7 +1,14 @@
 "use client";
 
 import type { IframeAction, IframeState, IframeUrl } from "@/app/types/iframe";
-import React, { createContext, ReactNode, useContext, useReducer } from "react";
+import React, {
+  createContext,
+  ReactNode,
+  useCallback,
+  useContext,
+  useMemo,
+  useReducer,
+} from "react";
 
 // Initial state
 const initialState: IframeState = {
@@ -16,7 +23,7 @@ const IframeContext = createContext<{
   dispatch: React.Dispatch<IframeAction>;
 } | null>(null);
 
-// Reducer
+// Optimized reducer that prevents unnecessary state updates
 function iframeReducer(state: IframeState, action: IframeAction): IframeState {
   switch (action.type) {
     case "INIT_URLS": {
@@ -27,6 +34,11 @@ function iframeReducer(state: IframeState, action: IframeAction): IframeState {
             id: url.id,
             url: url.url,
             urlMobile: url.urlMobile ?? null,
+            isLocalhost: url.isLocalhost ?? false,
+            port: url.port ?? null,
+            path: url.path ?? null,
+            localhostMobilePath: url.localhostMobilePath ?? null,
+            localhostMobilePort: url.localhostMobilePort ?? null,
             isLoaded: false,
             isVisible: false,
             error: null,
@@ -53,6 +65,12 @@ function iframeReducer(state: IframeState, action: IframeAction): IframeState {
 
     case "SELECT_URL": {
       const { urlId } = action.payload;
+
+      // Check if already selected to prevent unnecessary updates
+      if (state.activeUrlId === urlId && state.urls[urlId]?.isVisible) {
+        return state;
+      }
+
       const urls = { ...state.urls };
 
       // Hide previous active URL if it exists
@@ -80,6 +98,12 @@ function iframeReducer(state: IframeState, action: IframeAction): IframeState {
 
     case "LOAD_URL": {
       const { urlId } = action.payload;
+
+      // Check if already loaded to prevent unnecessary updates
+      if (state.urls[urlId]?.isLoaded) {
+        return state;
+      }
+
       return {
         ...state,
         urls: {
@@ -95,6 +119,12 @@ function iframeReducer(state: IframeState, action: IframeAction): IframeState {
 
     case "UNLOAD_URL": {
       const { urlId } = action.payload;
+
+      // Check if already unloaded to prevent unnecessary updates
+      if (!state.urls[urlId]?.isLoaded) {
+        return state;
+      }
+
       return {
         ...state,
         urls: {
@@ -102,7 +132,6 @@ function iframeReducer(state: IframeState, action: IframeAction): IframeState {
           [urlId]: {
             ...state.urls[urlId],
             isLoaded: false,
-            isVisible: false,
             error: null,
             retryCount: 0,
           },
@@ -113,6 +142,12 @@ function iframeReducer(state: IframeState, action: IframeAction): IframeState {
     case "SET_ERROR": {
       const { urlId, error } = action.payload;
       const url = state.urls[urlId];
+
+      // Check if error state is the same to prevent unnecessary updates
+      if (url.error === error) {
+        return state;
+      }
+
       return {
         ...state,
         urls: {
@@ -138,13 +173,19 @@ interface IframeProviderProps {
 }
 
 export function IframeProvider({ children, initialActiveUrlId }: IframeProviderProps) {
-  const [state, dispatch] = useReducer(iframeReducer, {
+  const [state, baseDispatch] = useReducer(iframeReducer, {
     ...initialState,
     activeUrlId: initialActiveUrlId ?? null,
     initialUrlId: initialActiveUrlId ?? null,
   });
 
-  return <IframeContext.Provider value={{ state, dispatch }}>{children}</IframeContext.Provider>;
+  // Wrap dispatch in useCallback to prevent unnecessary re-renders
+  const dispatch = useCallback(baseDispatch, []);
+
+  // Memoize context value to prevent unnecessary rerenders
+  const contextValue = useMemo(() => ({ state, dispatch }), [state, dispatch]);
+
+  return <IframeContext.Provider value={contextValue}>{children}</IframeContext.Provider>;
 }
 
 // Hook to use the iframe state

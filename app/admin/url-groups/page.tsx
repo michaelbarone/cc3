@@ -1,5 +1,7 @@
 "use client";
 
+import UrlDialog from "@/app/components/ui/UrlDialog";
+import { getEffectiveUrl, UrlWithLocalhost } from "@/app/lib/utils/iframe-utils";
 import AddIcon from "@mui/icons-material/Add";
 import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
 import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
@@ -41,13 +43,10 @@ import {
   Typography,
 } from "@mui/material";
 import Image from "next/image";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-interface Url {
-  id: string;
+interface Url extends UrlWithLocalhost {
   title: string;
-  url: string;
-  urlMobile: string | null;
   iconPath: string | null;
   idleTimeoutMinutes: number;
 }
@@ -126,7 +125,7 @@ const MemoizedUrlItem = React.memo(function UrlItem({
           </Box>
         }
         secondary={
-          <Box>
+          <Box component="div">
             <Typography variant="body2" component="div">
               {url.url.url}
             </Typography>
@@ -137,6 +136,8 @@ const MemoizedUrlItem = React.memo(function UrlItem({
             )}
           </Box>
         }
+        primaryTypographyProps={{ component: "div" }}
+        secondaryTypographyProps={{ component: "div" }}
       />
       <ListItemSecondaryAction>
         <Tooltip title="Move Up">
@@ -172,30 +173,36 @@ const MemoizedUrlItem = React.memo(function UrlItem({
           </span>
         </Tooltip>
         <Tooltip title="Preview URL">
-          <IconButton
-            edge="end"
-            aria-label="preview"
-            onClick={() => window.open(url.url.url, "_blank")}
-            size="small"
-          >
-            <VisibilityIcon fontSize="small" />
-          </IconButton>
+          <span>
+            <IconButton
+              edge="end"
+              aria-label="preview"
+              onClick={() => window.open(url.url.url, "_blank")}
+              size="small"
+            >
+              <VisibilityIcon fontSize="small" />
+            </IconButton>
+          </span>
         </Tooltip>
         <Tooltip title="Edit URL">
-          <IconButton edge="end" aria-label="edit" onClick={() => onEdit(url.url)} size="small">
-            <EditIcon fontSize="small" />
-          </IconButton>
+          <span>
+            <IconButton edge="end" aria-label="edit" onClick={() => onEdit(url.url)} size="small">
+              <EditIcon fontSize="small" />
+            </IconButton>
+          </span>
         </Tooltip>
         <Tooltip title="Delete URL">
-          <IconButton
-            edge="end"
-            aria-label="delete"
-            onClick={() => onDelete(url.url)}
-            color="error"
-            size="small"
-          >
-            <DeleteIcon fontSize="small" />
-          </IconButton>
+          <span>
+            <IconButton
+              edge="end"
+              aria-label="delete"
+              onClick={() => onDelete(url.url)}
+              color="error"
+              size="small"
+            >
+              <DeleteIcon fontSize="small" />
+            </IconButton>
+          </span>
         </Tooltip>
       </ListItemSecondaryAction>
     </ListItem>
@@ -273,6 +280,25 @@ export default function UrlGroupManagement() {
   // Create a singleton container for iframes outside of React
   let globalIframeContainer: HTMLDivElement | null = null;
 
+  // Memoize the setIframeRefs function to avoid unnecessary re-renders
+  const updateIframeRefs = useCallback(
+    (updater: (prev: Record<string, HTMLIFrameElement>) => Record<string, HTMLIFrameElement>) => {
+      setIframeRefs(updater);
+    },
+    [],
+  );
+
+  // Memoize urlGroups to avoid re-renders when reference changes but content is the same
+  const memoizedUrlGroups = useMemo(
+    () => urlGroups,
+    [
+      // Using a more stable dependency method than JSON.stringify which can cause problems with large datasets
+      urlGroups.length,
+      urlGroups.map((g) => g.id).join(","),
+      urlGroups.map((g) => g.urls.length).join(","),
+    ],
+  );
+
   // Function to get or create the global iframe container
   function getGlobalIframeContainer() {
     if (!globalIframeContainer) {
@@ -294,6 +320,62 @@ export default function UrlGroupManagement() {
     return globalIframeContainer;
   }
 
+  // Helper function to validate and normalize URL data
+  const isValidUrlData = (urlData: any): urlData is UrlInGroup => {
+    // Basic validation
+    if (!urlData || typeof urlData !== "object") {
+      return false;
+    }
+
+    // Check URL object exists
+    if (!urlData.url || typeof urlData.url !== "object") {
+      return false;
+    }
+
+    // Required URL properties
+    if (!urlData.url.id || typeof urlData.url.id !== "string") {
+      return false;
+    }
+
+    if (!urlData.url.url && typeof urlData.url.url !== "string") {
+      return false;
+    }
+
+    // Add isLocalhost if missing (API doesn't return it)
+    if (typeof urlData.url.isLocalhost !== "boolean") {
+      urlData.url.isLocalhost = false;
+    }
+
+    // Other required fields with defaults
+    if (typeof urlData.url.title !== "string") {
+      urlData.url.title = urlData.url.id;
+    }
+
+    if (urlData.url.iconPath !== null && typeof urlData.url.iconPath !== "string") {
+      urlData.url.iconPath = null;
+    }
+
+    if (typeof urlData.url.idleTimeoutMinutes !== "number") {
+      urlData.url.idleTimeoutMinutes = 10;
+    }
+
+    // Check displayOrder (required for sorting)
+    if (typeof urlData.displayOrder !== "number") {
+      urlData.displayOrder = 0;
+    }
+
+    // Fill in missing UrlInGroup fields
+    if (!urlData.urlId) {
+      urlData.urlId = urlData.url.id;
+    }
+
+    if (!urlData.groupId && urlData.url.groupId) {
+      urlData.groupId = urlData.url.groupId;
+    }
+
+    return true;
+  };
+
   // Create iframes on mount
   useEffect(() => {
     if (!document.body) {
@@ -308,16 +390,20 @@ export default function UrlGroupManagement() {
       return;
     }
 
+    // Check if we're on a mobile device
+    const isMobile = window.matchMedia("(max-width:600px)").matches;
+
     // Track existing and needed iframe IDs
     const existingIframeIds = new Set(Object.keys(iframeRefs));
     const neededIframeIds = new Set<string>();
 
     // Create or update iframes for all URLs
-    urlGroups.forEach((group) => {
+    memoizedUrlGroups.forEach((group) => {
       if (!group?.urls?.length) return;
 
       group.urls.forEach((urlData) => {
-        if (!urlData?.url?.url) {
+        // Use the helper function for validation
+        if (!isValidUrlData(urlData)) {
           console.warn("Invalid URL data", urlData);
           return;
         }
@@ -330,15 +416,17 @@ export default function UrlGroupManagement() {
         if (existingIframeIds.has(urlId)) {
           const existingIframe = iframeRefs[urlId];
           const currentDataSrc = existingIframe.getAttribute("data-src");
-          if (currentDataSrc !== url.url) {
-            existingIframe.setAttribute("data-src", url.url);
+          const effectiveUrl = getEffectiveUrl(url, isMobile);
+
+          if (currentDataSrc !== effectiveUrl) {
+            existingIframe.setAttribute("data-src", effectiveUrl);
             // Only update src if this is the active iframe and it's currently loaded
             if (
               urlId === activeUrlId &&
               existingIframe.src &&
               existingIframe.src !== "about:blank"
             ) {
-              existingIframe.src = url.url;
+              existingIframe.src = effectiveUrl;
             }
           }
           return;
@@ -361,27 +449,28 @@ export default function UrlGroupManagement() {
         // Create new iframe
         const iframe = document.createElement("iframe");
         iframe.setAttribute("data-iframe-id", urlId);
-        iframe.setAttribute("data-src", url.url);
+        const effectiveUrl = getEffectiveUrl(url, isMobile);
+        iframe.setAttribute("data-src", effectiveUrl);
         iframe.title = `iframe-${urlId}`;
         iframe.style.width = "100%";
         iframe.style.height = "100%";
         iframe.style.border = "none";
         iframe.style.background = "#fff";
         iframe.style.overflow = "hidden";
-        iframe.setAttribute("sandbox", "allow-same-origin allow-scripts allow-forms allow-popups");
+        iframe.setAttribute("sandbox", "allow-scripts allow-forms allow-popups");
         iframe.setAttribute(
           "allow",
           "accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture",
         );
 
         // Store ref and add to DOM
-        setIframeRefs((prev) => ({ ...prev, [urlId]: iframe }));
+        updateIframeRefs((prev) => ({ ...prev, [urlId]: iframe }));
         wrapper.appendChild(iframe);
         container.appendChild(wrapper);
 
         // Load active iframe
         if (urlId === activeUrlId) {
-          iframe.src = url.url;
+          iframe.src = effectiveUrl;
         }
       });
     });
@@ -393,7 +482,7 @@ export default function UrlGroupManagement() {
         if (iframe && iframe.parentElement) {
           iframe.parentElement.remove();
         }
-        setIframeRefs((prev) => {
+        updateIframeRefs((prev) => {
           const newRefs = { ...prev };
           delete newRefs[urlId];
           return newRefs;
@@ -421,6 +510,7 @@ export default function UrlGroupManagement() {
       observer.observe(containerRef.current);
     }
 
+    // Return cleanup function
     return () => {
       observer.disconnect();
 
@@ -430,7 +520,7 @@ export default function UrlGroupManagement() {
           iframe.parentElement.remove();
         }
       });
-      setIframeRefs({});
+      updateIframeRefs(() => ({}));
 
       // Only remove the global container if it's empty
       if (container && container.childNodes.length === 0) {
@@ -438,14 +528,17 @@ export default function UrlGroupManagement() {
         globalIframeContainer = null;
       }
     };
-  }, [urlGroups, activeUrlId]);
+  }, [memoizedUrlGroups, activeUrlId, updateIframeRefs]);
 
   // Handle active URL changes
   useEffect(() => {
     if (!activeUrlId) return;
 
+    // Get the current state of iframe refs to avoid closure issues
+    const currentIframeRefs = { ...iframeRefs };
+
     // Update visibility and ensure proper loading for all iframes
-    Object.entries(iframeRefs).forEach(([urlId, iframe]) => {
+    Object.entries(currentIframeRefs).forEach(([urlId, iframe]) => {
       const wrapper = iframe.parentElement;
       const isActive = urlId === activeUrlId;
 
@@ -461,14 +554,30 @@ export default function UrlGroupManagement() {
 
         // Load the iframe content if it's active and not already loaded
         if (isActive && (!iframe.src || iframe.src === "about:blank")) {
-          const effectiveUrl = iframe.getAttribute("data-src");
-          if (effectiveUrl) {
+          const dataSrc = iframe.getAttribute("data-src");
+
+          // Find the URL object matching this iframe
+          const urlGroup = memoizedUrlGroups.find((group) =>
+            group?.urls?.some((u) => u?.url?.id === urlId),
+          );
+
+          const urlItem = urlGroup?.urls?.find((u) => u?.url?.id === urlId);
+
+          // Use the helper function for consistent validation
+          if (isValidUrlData(urlItem)) {
+            const urlData = urlItem.url;
+            // Get the effective URL based on current device
+            const isMobile = window.matchMedia("(max-width:600px)").matches;
+            const effectiveUrl = getEffectiveUrl(urlData, isMobile);
             iframe.src = effectiveUrl;
+          } else if (dataSrc) {
+            // Fallback to data-src if URL object not found
+            iframe.src = dataSrc;
           }
         }
       }
     });
-  }, [activeUrlId, iframeRefs]);
+  }, [activeUrlId, memoizedUrlGroups, iframeRefs]);
 
   const fetchUrlGroups = async () => {
     try {
@@ -633,16 +742,17 @@ export default function UrlGroupManagement() {
     }
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (formData?: any) => {
     try {
-      if (dialogType === "createGroup" || dialogType === "editGroup") {
-        const method = dialogType === "createGroup" ? "POST" : "PUT";
-        const url =
-          dialogType === "createGroup"
-            ? "/api/admin/url-groups"
-            : `/api/admin/url-groups/${selectedGroup?.id}`;
+      let response;
+      let successMessage = "";
 
-        const response = await fetch(url, {
+      if (dialogType === "createGroup") {
+        // Handle group creation
+        const method = "POST";
+        const url = "/api/admin/url-groups";
+
+        response = await fetch(url, {
           method,
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(groupFormValues),
@@ -652,76 +762,30 @@ export default function UrlGroupManagement() {
           throw new Error("Failed to save URL group");
         }
 
-        setSnackbar({
-          open: true,
-          message: `URL group ${dialogType === "createGroup" ? "created" : "updated"} successfully`,
-          severity: "success",
+        successMessage = "URL group created successfully";
+      } else if (dialogType === "editGroup") {
+        // Handle group editing
+        const method = "PUT";
+        const url = `/api/admin/url-groups/${selectedGroup?.id}`;
+
+        response = await fetch(url, {
+          method,
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(groupFormValues),
         });
-      } else if (dialogType === "createUrl" || dialogType === "editUrl") {
-        if (!selectedGroup) {
-          throw new Error("No group selected");
+
+        if (!response.ok) {
+          throw new Error("Failed to save URL group");
         }
 
-        // For creating a new URL
-        if (dialogType === "createUrl") {
-          const response = await fetch(`/api/admin/url-groups/${selectedGroup.id}/urls`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(urlFormValues),
-          });
-
-          if (response.status === 409) {
-            // Handle similar URLs
-            const data = await response.json();
-            setSimilarUrls(data.similarUrls);
-            setShowSimilarUrlsDialog(true);
-            setPendingUrlSubmit({
-              values: urlFormValues,
-              groupId: selectedGroup.id,
-            });
-            return;
-          }
-
-          if (!response.ok) {
-            throw new Error("Failed to create URL");
-          }
-
-          setSnackbar({
-            open: true,
-            message: "URL created successfully",
-            severity: "success",
-          });
-        } else {
-          // For editing an existing URL
-          if (!selectedUrl) {
-            throw new Error("No URL selected");
-          }
-
-          const response = await fetch(
-            `/api/admin/url-groups/${selectedGroup.id}/urls/${selectedUrl.id}`,
-            {
-              method: "PUT",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(urlFormValues),
-            },
-          );
-
-          if (!response.ok) {
-            throw new Error("Failed to update URL");
-          }
-
-          setSnackbar({
-            open: true,
-            message: "URL updated successfully",
-            severity: "success",
-          });
-        }
+        successMessage = "URL group updated successfully";
       } else if (dialogType === "deleteGroup") {
+        // Handle group deletion
         if (!selectedGroup) {
           throw new Error("No group selected");
         }
 
-        const response = await fetch(`/api/admin/url-groups/${selectedGroup.id}`, {
+        response = await fetch(`/api/admin/url-groups/${selectedGroup.id}`, {
           method: "DELETE",
         });
 
@@ -729,33 +793,68 @@ export default function UrlGroupManagement() {
           throw new Error("Failed to delete URL group");
         }
 
-        setSnackbar({
-          open: true,
-          message: "URL group deleted successfully",
-          severity: "success",
+        successMessage = "URL group deleted successfully";
+      } else if (dialogType === "createUrl" && selectedGroup) {
+        // For URL creation, we're now using the UrlDialog component
+        const urlData = formData || urlFormValues;
+
+        response = await fetch(`/api/admin/url-groups/${selectedGroup.id}/urls`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(urlData),
         });
-      } else if (dialogType === "deleteUrl") {
-        if (!selectedGroup || !selectedUrl) {
-          throw new Error("No group or URL selected");
+
+        if (response.status === 409) {
+          // Handle similar URLs
+          const data = await response.json();
+          setSimilarUrls(data.similarUrls);
+          setShowSimilarUrlsDialog(true);
+          setPendingUrlSubmit({
+            values: urlData,
+            groupId: selectedGroup.id,
+          });
+          return;
         }
 
-        const response = await fetch(
-          `/api/admin/url-groups/${selectedGroup.id}/urls/${selectedUrl.id}`,
-          {
-            method: "DELETE",
-          },
-        );
+        if (!response.ok) {
+          throw new Error("Failed to create URL");
+        }
+
+        successMessage = "URL created successfully";
+      } else if (dialogType === "editUrl" && selectedGroup && selectedUrl) {
+        // For URL editing, we're now using the UrlDialog component
+        const urlData = formData || urlFormValues;
+
+        response = await fetch(`/api/admin/url-groups/${selectedGroup.id}/urls/${selectedUrl.id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(urlData),
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to update URL");
+        }
+
+        successMessage = "URL updated successfully";
+      } else if (dialogType === "deleteUrl" && selectedGroup && selectedUrl) {
+        // Handle URL deletion
+        response = await fetch(`/api/admin/url-groups/${selectedGroup.id}/urls/${selectedUrl.id}`, {
+          method: "DELETE",
+        });
 
         if (!response.ok) {
           throw new Error("Failed to delete URL");
         }
 
-        setSnackbar({
-          open: true,
-          message: "URL deleted successfully",
-          severity: "success",
-        });
+        successMessage = "URL deleted successfully";
       }
+
+      // Show success message
+      setSnackbar({
+        open: true,
+        message: successMessage,
+        severity: "success",
+      });
 
       // Refresh the URL groups
       await fetchUrlGroups();
@@ -1083,44 +1182,51 @@ export default function UrlGroupManagement() {
                   expandIcon={<ExpandMoreIcon />}
                   aria-controls={`panel-${group.id}-content`}
                   id={`panel-${group.id}-header`}
+                  component="div"
                 >
                   <Box sx={{ width: "100%", display: "flex", justifyContent: "space-between" }}>
                     <Typography variant="h6">{group.name}</Typography>
                     <Box>
                       <Tooltip title="Edit Group">
-                        <IconButton
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleOpenDialog("editGroup", group);
-                          }}
-                          size="small"
-                        >
-                          <EditIcon fontSize="small" />
-                        </IconButton>
+                        <span>
+                          <IconButton
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleOpenDialog("editGroup", group);
+                            }}
+                            size="small"
+                          >
+                            <EditIcon fontSize="small" />
+                          </IconButton>
+                        </span>
                       </Tooltip>
                       <Tooltip title="Delete Group">
-                        <IconButton
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleOpenDialog("deleteGroup", group);
-                          }}
-                          size="small"
-                          color="error"
-                        >
-                          <DeleteIcon fontSize="small" />
-                        </IconButton>
+                        <span>
+                          <IconButton
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleOpenDialog("deleteGroup", group);
+                            }}
+                            size="small"
+                            color="error"
+                          >
+                            <DeleteIcon fontSize="small" />
+                          </IconButton>
+                        </span>
                       </Tooltip>
                       <Tooltip title="Assign to Users">
-                        <IconButton
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleOpenDialog("assignUsers", group);
-                          }}
-                          size="small"
-                          color="primary"
-                        >
-                          <GroupIcon fontSize="small" />
-                        </IconButton>
+                        <span>
+                          <IconButton
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleOpenDialog("assignUsers", group);
+                            }}
+                            size="small"
+                            color="primary"
+                          >
+                            <GroupIcon fontSize="small" />
+                          </IconButton>
+                        </span>
                       </Tooltip>
                     </Box>
                   </Box>
@@ -1159,7 +1265,10 @@ export default function UrlGroupManagement() {
                   <List sx={{ width: "100%" }}>
                     {group.urls.length === 0 ? (
                       <ListItem>
-                        <ListItemText primary="No URLs in this group" />
+                        <ListItemText
+                          primary="No URLs in this group"
+                          primaryTypographyProps={{ component: "div" }}
+                        />
                       </ListItem>
                     ) : (
                       <>
@@ -1264,77 +1373,23 @@ export default function UrlGroupManagement() {
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseDialog}>Cancel</Button>
-          <Button onClick={handleSubmit} variant="contained">
+          <Button onClick={() => handleSubmit()} variant="contained">
             {dialogType === "createGroup" ? "Create" : "Save"}
           </Button>
         </DialogActions>
       </Dialog>
 
       {/* URL Dialogs */}
-      <Dialog
-        open={openDialog && (dialogType === "createUrl" || dialogType === "editUrl")}
-        onClose={handleCloseDialog}
-      >
-        <DialogTitle>{dialogType === "createUrl" ? "Add New URL" : "Edit URL"}</DialogTitle>
-        <DialogContent>
-          <Grid container spacing={2} sx={{ mt: 1 }}>
-            <Grid item xs={12}>
-              <TextField
-                autoFocus
-                margin="dense"
-                name="title"
-                label="Title"
-                fullWidth
-                variant="outlined"
-                value={urlFormValues.title}
-                onChange={handleUrlFormChange}
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <TextField
-                margin="dense"
-                name="url"
-                label="URL"
-                fullWidth
-                variant="outlined"
-                value={urlFormValues.url}
-                onChange={handleUrlFormChange}
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <TextField
-                margin="dense"
-                name="urlMobile"
-                label="Mobile URL"
-                fullWidth
-                variant="outlined"
-                value={urlFormValues.urlMobile || ""}
-                onChange={handleUrlFormChange}
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <TextField
-                margin="dense"
-                name="idleTimeoutMinutes"
-                label="Idle Timeout (minutes)"
-                type="number"
-                inputProps={{ min: 0 }}
-                helperText="Minutes before iframe is unloaded when inactive. Set to 0 to disable auto-unloading."
-                fullWidth
-                variant="outlined"
-                value={urlFormValues.idleTimeoutMinutes}
-                onChange={handleUrlFormChange}
-              />
-            </Grid>
-          </Grid>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseDialog}>Cancel</Button>
-          <Button onClick={handleSubmit} variant="contained">
-            {dialogType === "createUrl" ? "Add" : "Save"}
-          </Button>
-        </DialogActions>
-      </Dialog>
+      {(dialogType === "createUrl" || dialogType === "editUrl") && (
+        <UrlDialog
+          open={openDialog}
+          onClose={handleCloseDialog}
+          onSubmit={handleSubmit}
+          initialValues={selectedUrl || undefined}
+          dialogTitle={dialogType === "createUrl" ? "Add New URL" : "Edit URL"}
+          submitButtonText={dialogType === "createUrl" ? "Add" : "Save"}
+        />
+      )}
 
       {/* Delete Confirmation Dialogs */}
       <Dialog
@@ -1356,7 +1411,7 @@ export default function UrlGroupManagement() {
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseDialog}>Cancel</Button>
-          <Button onClick={handleSubmit} color="error" variant="contained">
+          <Button onClick={() => handleSubmit()} color="error" variant="contained">
             Delete
           </Button>
         </DialogActions>
@@ -1551,6 +1606,8 @@ export default function UrlGroupManagement() {
                       )}
                     </Box>
                   }
+                  primaryTypographyProps={{ component: "div" }}
+                  secondaryTypographyProps={{ component: "div" }}
                 />
               </ListItem>
             ))}

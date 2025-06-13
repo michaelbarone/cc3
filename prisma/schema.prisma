@@ -39,7 +39,12 @@ model Url {
   url                String
   urlMobile          String?
   iconPath           String?
-  idleTimeoutMinutes Int          @default(10)
+  idleTimeoutMinutes Int           @default(10)
+  isLocalhost        Boolean       @default(false)
+  port               String?
+  path               String?
+  localhostMobilePath String?
+  localhostMobilePort String?
   createdAt          DateTime      @default(now())
   updatedAt          DateTime      @updatedAt
   urlGroups          UrlsInGroups[]

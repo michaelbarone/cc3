@@ -310,9 +310,6 @@ function LoginPage() {
             
             {/* User Tiles Grid */}
             <Box role="region" aria-label="User selection">
-              <Typography component="h2" id="login-instruction">
-                Select your user account to log in
-              </Typography>
               <Grid container spacing={3} justifyContent="center">
                 {users.map((user, index) => (
                   <Grid item xs={12} sm={6} md={4} key={user.id}>

@@ -28,8 +28,8 @@ export async function setAuthCookie(token: string): Promise<void> {
     name: COOKIE_NAME,
     value: token,
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
+    // secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
     path: "/",
     maxAge: 24 * 60 * 60, // 24 hours in seconds
   });

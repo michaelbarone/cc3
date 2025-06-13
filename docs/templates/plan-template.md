@@ -1,5 +1,15 @@
 # Project Plan
 
+## Current Focus (Updated: YYYY-MM-DD HH:MM)
+
+The team is now working on {Epic/Story/Task Name}. Recent progress:
+- Location: [/docs/working-memory/open/{epic-id}](./open/{epic-id})
+- Status: In Progress
+- Current Story: {Story Name}
+   - {Brief description of recent progress}
+- Next Stories: {Next Story Name}
+- {any other high level relevant information}
+
 ## Active Tasks
 
 ### {Task Name} (In Progress)
@@ -42,6 +52,14 @@
 
 <!-- 
 Task Entry Guidelines:
+
+0. Current Focus:
+   - Only include the current focus of the team
+   - Must have clear status
+   - Include current milestones and progress
+   - Include next milestones
+   - Link to working memory location
+   - Include any other high level relevant information to help give context to the current focus
 
 1. Active Tasks:
    - Must have clear status and priority

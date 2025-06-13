@@ -1,5 +1,6 @@
 import { verifyToken } from "@/app/lib/auth/jwt";
 import { prisma } from "@/app/lib/db/prisma";
+import { DEFAULT_APP_CONFIG } from "@/app/lib/utils/constants";
 import fs from "fs";
 import { NextRequest, NextResponse } from "next/server";
 import path from "path";
@@ -21,9 +22,11 @@ export async function GET() {
       appConfig = await prisma.appConfig.create({
         data: {
           id: "app-config",
-          appName: "Control Center",
-          loginTheme: "dark",
-          registrationEnabled: false,
+          appName: DEFAULT_APP_CONFIG.appName,
+          loginTheme: DEFAULT_APP_CONFIG.loginTheme,
+          registrationEnabled: DEFAULT_APP_CONFIG.registrationEnabled,
+          appLogo: DEFAULT_APP_CONFIG.appLogo,
+          favicon: DEFAULT_APP_CONFIG.favicon,
         },
       });
     }

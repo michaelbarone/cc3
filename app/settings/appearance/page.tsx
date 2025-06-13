@@ -21,7 +21,7 @@ import {
 import React, { useContext, useState } from "react";
 
 export default function AppearanceSettingsPage() {
-  const { preferences, loading, updateMenuPosition, updateThemeMode } = useUserPreferences();
+  const { preferences, isLoading: loading, updatePreferences } = useUserPreferences();
   const themeContext = useContext(ThemeContext);
   const [notification, setNotification] = useState<{
     open: boolean;
@@ -40,7 +40,7 @@ export default function AppearanceSettingsPage() {
     const newPosition = event.target.value as "side" | "top";
 
     try {
-      await updateMenuPosition(newPosition);
+      await updatePreferences({ menuPosition: newPosition });
       setNotification({
         open: true,
         message:
@@ -63,16 +63,16 @@ export default function AppearanceSettingsPage() {
     const newMode = event.target.value as "light" | "dark";
 
     // Don't update if it's already the current mode
-    if (preferences.themeMode === newMode) {
+    if (preferences.theme === newMode) {
       console.log("Theme mode already set to", newMode);
       return;
     }
 
-    console.log(`Changing theme mode from ${preferences.themeMode} to ${newMode}`);
+    console.log(`Changing theme mode from ${preferences.theme} to ${newMode}`);
 
     try {
       // First update the database preference
-      await updateThemeMode(newMode);
+      await updatePreferences({ theme: newMode });
 
       // Then toggle the theme in the UI via ThemeContext
       // Only toggle if needed (current mode is different from target)
@@ -146,12 +146,10 @@ export default function AppearanceSettingsPage() {
                         bgcolor: "background.paper",
                         color: "text.primary",
                         border:
-                          preferences.themeMode === "light"
-                            ? "2px solid #1976d2"
-                            : "1px solid #e0e0e0",
+                          preferences.theme === "light" ? "2px solid #1976d2" : "1px solid #e0e0e0",
                         cursor: "pointer",
                         transition: "all 0.2s ease",
-                        transform: preferences.themeMode === "light" ? "scale(1.02)" : "scale(1)",
+                        transform: preferences.theme === "light" ? "scale(1.02)" : "scale(1)",
                         "&:hover": { borderColor: "#1976d2", transform: "scale(1.02)" },
                       }}
                       onClick={() =>
@@ -216,10 +214,10 @@ export default function AppearanceSettingsPage() {
                         bgcolor: "#333",
                         color: "#fff",
                         border:
-                          preferences.themeMode === "dark" ? "2px solid #1976d2" : "1px solid #333",
+                          preferences.theme === "dark" ? "2px solid #1976d2" : "1px solid #333",
                         cursor: "pointer",
                         transition: "all 0.2s ease",
-                        transform: preferences.themeMode === "dark" ? "scale(1.02)" : "scale(1)",
+                        transform: preferences.theme === "dark" ? "scale(1.02)" : "scale(1)",
                         "&:hover": { borderColor: "#1976d2", transform: "scale(1.02)" },
                       }}
                       onClick={() =>
@@ -280,7 +278,7 @@ export default function AppearanceSettingsPage() {
 
                 <Typography variant="body2" color="text.secondary" sx={{ mt: 2, mb: 2 }}>
                   Your current theme:{" "}
-                  <strong>{preferences.themeMode === "light" ? "Light Mode" : "Dark Mode"}</strong>
+                  <strong>{preferences.theme === "light" ? "Light Mode" : "Dark Mode"}</strong>
                 </Typography>
               </Box>
             </Paper>

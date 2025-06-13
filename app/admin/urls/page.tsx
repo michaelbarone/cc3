@@ -1,6 +1,8 @@
 "use client";
 
 import IconUpload from "@/app/components/ui/IconUpload";
+import UrlDialog from "@/app/components/ui/UrlDialog";
+import { getEffectiveUrl } from "@/app/lib/utils/iframe-utils";
 import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
@@ -8,13 +10,13 @@ import {
   Alert,
   Box,
   Button,
+  Chip,
   CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
   DialogContentText,
   DialogTitle,
-  Grid,
   IconButton,
   Paper,
   Snackbar,
@@ -24,7 +26,6 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  TextField,
   Typography,
 } from "@mui/material";
 import React, { useEffect, useState } from "react";
@@ -36,6 +37,11 @@ interface Url {
   urlMobile: string | null;
   iconPath: string | null;
   idleTimeoutMinutes: number | null;
+  isLocalhost: boolean;
+  port?: string | null;
+  path?: string | null;
+  localhostMobilePath?: string | null;
+  localhostMobilePort?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -57,6 +63,12 @@ export default function UrlManagement() {
     urlMobile: "",
     iconPath: "",
     idleTimeoutMinutes: 10,
+    isLocalhost: false,
+    port: "",
+    path: "",
+    enableMobileOverride: false,
+    localhostMobilePort: "",
+    localhostMobilePath: "",
   });
 
   // Snackbar state
@@ -93,12 +105,19 @@ export default function UrlManagement() {
 
     if (url) {
       setSelectedUrl(url);
+      const hasMobileOverride = !!(url.localhostMobilePort || url.localhostMobilePath);
       setFormValues({
         title: url.title,
         url: url.url,
         urlMobile: url.urlMobile || "",
         iconPath: url.iconPath || "",
         idleTimeoutMinutes: url.idleTimeoutMinutes || 10,
+        isLocalhost: url.isLocalhost || false,
+        port: url.port || "",
+        path: url.path || "",
+        enableMobileOverride: hasMobileOverride,
+        localhostMobilePort: url.localhostMobilePort || "",
+        localhostMobilePath: url.localhostMobilePath || "",
       });
     } else {
       setSelectedUrl(null);
@@ -108,6 +127,12 @@ export default function UrlManagement() {
         urlMobile: "",
         iconPath: "",
         idleTimeoutMinutes: 10,
+        isLocalhost: false,
+        port: "",
+        path: "",
+        enableMobileOverride: false,
+        localhostMobilePort: "",
+        localhostMobilePath: "",
       });
     }
 
@@ -126,15 +151,41 @@ export default function UrlManagement() {
     }));
   };
 
-  const handleSubmit = async () => {
+  const handleCheckboxChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, checked } = event.target;
+    setFormValues((prev) => ({
+      ...prev,
+      [name]: checked,
+    }));
+  };
+
+  const isFormValid = () => {
+    if (formValues.title.trim() === "") return false;
+
+    if (formValues.isLocalhost) {
+      // For localhost, require at least port or path
+      const hasPortOrPath = !!formValues.port || !!formValues.path;
+      // If path is provided, it must start with /
+      const pathValid = !formValues.path || formValues.path.startsWith("/");
+      // Check mobile override if enabled
+      const mobileValid =
+        !formValues.enableMobileOverride ||
+        !formValues.localhostMobilePath ||
+        formValues.localhostMobilePath.startsWith("/");
+
+      return hasPortOrPath && pathValid && mobileValid;
+    } else {
+      // For regular URLs, require the url field
+      return formValues.url.trim() !== "";
+    }
+  };
+
+  const handleSubmit = async (formData?: any) => {
     try {
       let response;
       let successMessage = "";
 
-      const submitData = {
-        ...formValues,
-        idleTimeoutMinutes: Number(formValues.idleTimeoutMinutes) || 10,
-      };
+      const submitData = formData || formValues;
 
       if (dialogType === "create") {
         response = await fetch("/api/admin/urls", {
@@ -223,6 +274,7 @@ export default function UrlManagement() {
                 <TableCell>Title</TableCell>
                 <TableCell>URL</TableCell>
                 <TableCell>Mobile URL</TableCell>
+                <TableCell>Localhost</TableCell>
                 <TableCell>Idle Timeout</TableCell>
                 <TableCell>Actions</TableCell>
               </TableRow>
@@ -344,8 +396,39 @@ export default function UrlManagement() {
                     </Box>
                   </TableCell>
                   <TableCell>{url.title}</TableCell>
-                  <TableCell>{url.url}</TableCell>
-                  <TableCell>{url.urlMobile || "-"}</TableCell>
+                  <TableCell>
+                    {url.isLocalhost ? (
+                      <Box>
+                        <Typography variant="body2">{getEffectiveUrl(url, false)}</Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          Uses browser hostname
+                        </Typography>
+                      </Box>
+                    ) : (
+                      url.url
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {url.isLocalhost && (url.localhostMobilePort || url.localhostMobilePath) ? (
+                      <Box>
+                        <Typography variant="body2">{getEffectiveUrl(url, true)}</Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          Mobile override
+                        </Typography>
+                      </Box>
+                    ) : url.isLocalhost ? (
+                      <Typography variant="body2">Same as desktop</Typography>
+                    ) : (
+                      url.urlMobile || "-"
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {url.isLocalhost ? (
+                      <Chip size="small" color="primary" label="Enabled" variant="outlined" />
+                    ) : (
+                      <Chip size="small" color="default" label="Disabled" variant="outlined" />
+                    )}
+                  </TableCell>
                   <TableCell>{url.idleTimeoutMinutes || "-"}</TableCell>
                   <TableCell>
                     <IconButton size="small" onClick={() => handleOpenDialog("edit", url)}>
@@ -367,70 +450,16 @@ export default function UrlManagement() {
       )}
 
       {/* URL Dialog */}
-      <Dialog
-        open={openDialog && (dialogType === "create" || dialogType === "edit")}
-        onClose={handleCloseDialog}
-      >
-        <DialogTitle>{dialogType === "create" ? "Create New URL" : "Edit URL"}</DialogTitle>
-        <DialogContent>
-          <Grid container spacing={2} sx={{ mt: 1 }}>
-            <Grid item xs={12}>
-              <TextField
-                autoFocus
-                margin="dense"
-                name="title"
-                label="Title"
-                fullWidth
-                variant="outlined"
-                value={formValues.title}
-                onChange={handleFormChange}
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <TextField
-                margin="dense"
-                name="url"
-                label="URL"
-                fullWidth
-                variant="outlined"
-                value={formValues.url}
-                onChange={handleFormChange}
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <TextField
-                margin="dense"
-                name="urlMobile"
-                label="Mobile URL (optional)"
-                fullWidth
-                variant="outlined"
-                value={formValues.urlMobile}
-                onChange={handleFormChange}
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <TextField
-                margin="dense"
-                name="idleTimeoutMinutes"
-                label="Idle Timeout (minutes)"
-                type="number"
-                inputProps={{ min: 0 }}
-                helperText="Minutes before iframe is unloaded when inactive. Set to 0 to disable auto-unloading."
-                fullWidth
-                variant="outlined"
-                value={formValues.idleTimeoutMinutes}
-                onChange={handleFormChange}
-              />
-            </Grid>
-          </Grid>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseDialog}>Cancel</Button>
-          <Button onClick={handleSubmit} variant="contained">
-            {dialogType === "create" ? "Create" : "Save"}
-          </Button>
-        </DialogActions>
-      </Dialog>
+      {(dialogType === "create" || dialogType === "edit") && (
+        <UrlDialog
+          open={openDialog}
+          onClose={handleCloseDialog}
+          onSubmit={handleSubmit}
+          initialValues={selectedUrl || undefined}
+          dialogTitle={dialogType === "create" ? "Create New URL" : "Edit URL"}
+          submitButtonText={dialogType === "create" ? "Create" : "Save"}
+        />
+      )}
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={openDialog && dialogType === "delete"} onClose={handleCloseDialog}>
@@ -445,7 +474,7 @@ export default function UrlManagement() {
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseDialog}>Cancel</Button>
-          <Button onClick={handleSubmit} color="error" variant="contained">
+          <Button onClick={() => handleSubmit()} color="error" variant="contained">
             Delete
           </Button>
         </DialogActions>

@@ -18,11 +18,41 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-async function getAppConfig() {
-  const prisma = await getPrismaClient();
-  return await prisma.appConfig.findUnique({
-    where: { id: "app-config" },
-  });
+// Define the AppConfig type based on the Prisma schema
+type AppConfig = {
+  id: string;
+  appName: string;
+  appLogo: string | null;
+  favicon: string | null;
+  loginTheme: string;
+  registrationEnabled: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+// Default configuration for build-time or when database is unavailable
+const defaultAppConfig: AppConfig = {
+  id: "app-config",
+  appName: "Control Center",
+  appLogo: null,
+  favicon: null,
+  loginTheme: "dark",
+  registrationEnabled: false,
+  createdAt: new Date(),
+  updatedAt: new Date(),
+};
+
+async function getAppConfig(): Promise<AppConfig> {
+  try {
+    const prisma = await getPrismaClient();
+    const config = await prisma.appConfig.findUnique({
+      where: { id: "app-config" },
+    });
+    return config || defaultAppConfig;
+  } catch (error) {
+    console.error("Failed to fetch app config:", error);
+    return defaultAppConfig;
+  }
 }
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -30,11 +60,38 @@ export async function generateMetadata(): Promise<Metadata> {
 
   return {
     title: {
-      template: `%s | ${appConfig?.appName || "Control Center"}`,
-      default: appConfig?.appName || "Control Center",
+      template: `%s | ${appConfig.appName}`,
+      default: appConfig.appName,
     },
     description: "A dashboard for managing and displaying URLs in iframes",
-    icons: appConfig?.favicon ? [{ rel: "icon", url: appConfig.favicon }] : [],
+    icons: {
+      apple: [
+        { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+        { url: "/icon-lowrez-58.png", sizes: "58x58", type: "image/png" },
+      ],
+      icon: [
+        { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+        { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
+      ],
+    },
+    manifest: "/site.webmanifest",
+    viewport: {
+      width: "device-width",
+      initialScale: 1,
+      maximumScale: 1,
+      userScalable: false,
+    },
+    other: {
+      "mobile-web-app-capable": "yes",
+      "apple-mobile-web-app-capable": "yes",
+      "apple-mobile-web-app-title": appConfig.appName,
+      "apple-touch-startup-image": "/startup-image-320x460.png",
+      "theme-color": "#3B7FB7",
+      "apple-mobile-web-app-status-bar-style": "black-translucent",
+      "format-detection": "telephone=no",
+      "apple-touch-fullscreen": "yes",
+      "apple-mobile-web-app-orientations": "portrait",
+    } as Record<string, string>,
   };
 }
 

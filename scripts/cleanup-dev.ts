@@ -2,13 +2,45 @@ import fs from "fs";
 import path from "path";
 import { prisma } from "../app/lib/db/prisma";
 
-// Function to recreate directory
-function recreateDirectory(dirPath: string) {
-  if (fs.existsSync(dirPath)) {
-    console.log(`Cleaning directory: ${dirPath}`);
-    fs.rmSync(dirPath, { recursive: true, force: true });
+// Define public directories that need to be cleaned
+const publicDirs = [
+  path.join(process.cwd(), "public", "uploads"),
+  path.join(process.cwd(), "public", "icons"),
+  path.join(process.cwd(), "public", "avatars"),
+  path.join(process.cwd(), "public", "logos"),
+];
+
+// Function to check if a file is a default file
+function isDefaultFile(filePath: string): boolean {
+  return filePath.includes("-default.");
+}
+
+// Function to clean non-default files in a directory
+function cleanNonDefaultFiles(dirPath: string) {
+  if (!fs.existsSync(dirPath)) {
+    fs.mkdirSync(dirPath, { recursive: true });
+    return;
   }
-  fs.mkdirSync(dirPath, { recursive: true });
+
+  const files = fs.readdirSync(dirPath);
+  for (const file of files) {
+    const filePath = path.join(dirPath, file);
+    const stat = fs.statSync(filePath);
+
+    if (stat.isDirectory()) {
+      cleanNonDefaultFiles(filePath); // Recursively clean subdirectories
+      // Remove directory if it's empty and not a base public directory
+      const remainingFiles = fs.readdirSync(filePath);
+      if (remainingFiles.length === 0 && !publicDirs.includes(filePath)) {
+        fs.rmdirSync(filePath);
+      }
+    } else if (!isDefaultFile(file)) {
+      console.log(`Removing non-default file: ${filePath}`);
+      fs.unlinkSync(filePath);
+    } else {
+      console.log(`Preserving default file: ${filePath}`);
+    }
+  }
 }
 
 async function cleanupDev() {
@@ -45,20 +77,13 @@ async function cleanupDev() {
       fs.mkdirSync(dataDir, { recursive: true });
     }
 
-    // 4. Clean public directories
+    // 4. Define and clean public directories
     console.log("Cleaning public directories...");
-    const publicDirs = [
-      path.join(process.cwd(), "public", "uploads"),
-      path.join(process.cwd(), "public", "icons"),
-      path.join(process.cwd(), "public", "avatars"),
-      path.join(process.cwd(), "public", "logos"),
-      path.join(process.cwd(), "public", "favicons"),
-    ];
 
-    // Recreate each directory
+    // Clean each directory while preserving default files
     for (const dir of publicDirs) {
       try {
-        recreateDirectory(dir);
+        cleanNonDefaultFiles(dir);
         console.log(`Successfully cleaned directory: ${dir}`);
       } catch (err) {
         console.error(`Error cleaning directory ${dir}:`, err);

@@ -3,6 +3,35 @@
 ## Overview
 This directory contains comprehensive documentation for the Control Center testing framework, including standards, patterns, and best practices for test implementation and maintenance.
 
+## Test Directory Structure
+
+We follow a clean, organized structure for all tests:
+
+```
+test/
+├── e2e/                      # End-to-end tests with Playwright
+│   ├── helpers/              # E2E test helpers
+│   ├── journeys/             # User journey tests
+│   └── test-assets/          # Test assets for E2E tests
+├── fixtures/                 # Test fixtures and factories
+│   └── data/                 # Static test data
+├── helpers/                  # Common test helpers
+│   ├── file/                 # File system helpers
+│   └── validators/           # Validation utilities
+├── integration/              # Integration tests
+├── mocks/                    # Mock implementations
+│   ├── factories/            # Factory functions
+│   └── services/             # Service mocks
+└── setup/                    # Test setup and configuration
+```
+
+This structure enables:
+- Clear separation between test types
+- Easy discovery of helpers and utilities
+- Consistent patterns across test implementations
+- Proper isolation between test concerns
+- Simple maintenance and extension
+
 ## API Test Review Improvements (April 2025)
 
 We've completed a thorough review and improvement of our API test suite with the following key enhancements:
@@ -31,11 +60,18 @@ We've completed a thorough review and improvement of our API test suite with the
    - Comprehensive edge case testing
    - Type-safe response validation
 
+5. **Dedicated Test Database**:
+   - Separate SQLite database for integration tests
+   - Automated initialization and teardown
+   - Transaction-based test isolation
+   - Test-specific data factories
+
 See the updated documentation for more details:
 - [API Test Coverage](./api-test-coverage.md) - Updated coverage metrics
 - [Error Handling Patterns](./error-handling-patterns.md) - Improved API test error handling
 - [Test Data Management](./test-data-management.md) - Enhanced factory pattern examples
 - [Performance Testing Standards](./performance-testing-standards.md) - API test performance monitoring
+- [Test Database Standards](./test-database-standards.md) - New dedicated test database
 
 ## Testing Standards and Best Practices
 
@@ -44,6 +80,7 @@ See the updated documentation for more details:
 - [Playwright E2E Testing Standards](./playwright-e2e-standards.md)
 - [Prisma Testing Standards](./prisma-testing-standards.md)
 - [Performance Testing Standards](./performance-testing-standards.md)
+- [Test Database Standards](./test-database-standards.md)
 
 ### Core Testing Guidelines
 - [Error Handling Patterns](./error-handling-patterns.md)
@@ -104,6 +141,7 @@ describe('ComponentName or FeatureName', () => {
    - Use proper setup and teardown
    - Avoid shared state between tests
    - Monitor setup/teardown performance
+   - Use transaction isolation for database tests
 
 2. **Test Coverage Requirements**
    - Unit Tests: 80% coverage minimum
@@ -133,6 +171,9 @@ describe('ComponentName or FeatureName', () => {
    npm run test:integration
    npm run test:e2e
    npm run test:performance
+   
+   # Clear test database
+   npm run test:db:clear
    ```
 
 2. **Writing Tests**
@@ -141,6 +182,7 @@ describe('ComponentName or FeatureName', () => {
    - Implement proper error handling
    - Include performance monitoring
    - Follow test data management practices
+   - Use the test database for integration tests
 
 3. **Test Documentation**
    - Document test purpose and scenarios
@@ -173,6 +215,7 @@ describe('ComponentName or FeatureName', () => {
 - [Test Debugging Guide](./test-debugging-guide.md)
 - [API Testing Standards](./api-testing-standards.md)
 - [Performance Testing Standards](./performance-testing-standards.md)
+- [Test Database Standards](./test-database-standards.md)
 
 ## Test Maintenance
 
@@ -197,6 +240,7 @@ describe('ComponentName or FeatureName', () => {
 - [Statistics Testing](./statistics-testing.md) - Guidelines for testing statistical computations
 - [Flaky Test Audit](./flaky-test-audit.md) - Documentation of flaky tests and mitigation strategies
 - [Performance Monitoring](./performance-testing-standards.md) - Standards for test performance and optimization
+- [Test Database Standards](./test-database-standards.md) - Dedicated test database configuration and usage
 
 ## Key Features
 
@@ -206,6 +250,7 @@ describe('ComponentName or FeatureName', () => {
    - E2E testing with Playwright
    - API endpoint testing
    - Performance monitoring
+   - Dedicated test database
 
 2. **Quality Assurance**
    - Error handling standards
@@ -229,7 +274,8 @@ For new developers working with the testing framework:
 2. Review the [Test Data Management](./test-data-management.md) guidelines
 3. Familiarize yourself with the [Performance Testing Standards](./performance-testing-standards.md)
 4. Check [API Test Coverage](./api-test-coverage.md) for endpoint testing requirements
-5. Consult the [Troubleshooting Guide](./troubleshooting-guide.md)
+5. Read [Test Database Standards](./test-database-standards.md) for integration tests
+6. Consult the [Troubleshooting Guide](./troubleshooting-guide.md)
 
 ## Contributing
 
@@ -245,4 +291,4 @@ When contributing to the testing framework:
 
 - [E2E Testing Standards](../testing-framework/playwright-e2e-standards.md)
 - [Test Debugging Standards](../testing-framework/test-debugging-standards.md)
-- [Test Data Management Standards](../testing-framework/test-data-management-standards.md) 
+- [Test Database Standards](../testing-framework/test-database-standards.md) 

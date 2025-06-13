@@ -21,6 +21,26 @@ interface JWTPayload {
   [key: string]: boolean | string | number | undefined; // Standard JWT claim types
 }
 
+// Add a function to check for static asset paths
+const isStaticAssetPath = (pathname: string) => {
+  return (
+    pathname.startsWith("/logos/") ||
+    pathname.startsWith("/icons/") ||
+    pathname.startsWith("/avatars/") ||
+    pathname.startsWith("/public/") ||
+    pathname === "/site.webmanifest" ||
+    pathname === "/apple-touch-icon.png" ||
+    pathname === "/favicon-32x32.png" ||
+    pathname === "/favicon-16x16.png" ||
+    pathname === "/favicon.ico" ||
+    pathname === "/favicon-default.png" ||
+    pathname === "/android-chrome-192x192.png" ||
+    pathname === "/android-chrome-512x512.png" ||
+    pathname === "/startup-image-320x460.png" ||
+    pathname === "/icon-lowrez-58.png"
+  );
+};
+
 export function middleware(request: NextRequest): Promise<NextResponse> | NextResponse {
   const { pathname } = request.nextUrl;
   const method = request.method;
@@ -29,7 +49,8 @@ export function middleware(request: NextRequest): Promise<NextResponse> | NextRe
   // Also, allow GET requests to /api/admin/app-config without auth for the login page
   if (
     publicPaths.some((path) => pathname === path || pathname.startsWith("/api/auth/")) ||
-    (pathname === "/api/admin/app-config" && method === "GET")
+    (pathname === "/api/admin/app-config" && method === "GET") ||
+    isStaticAssetPath(pathname)
   ) {
     return NextResponse.next();
   }

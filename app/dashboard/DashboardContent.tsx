@@ -1,11 +1,11 @@
 "use client";
 
 import IframeContainer from "@/app/components/iframe/IframeContainer";
-import { MenuBarAdapter } from "@/app/components/iframe/MenuBarAdapter";
 import AppLayout from "@/app/components/layout/AppLayout";
+import { AppMenuContent } from "@/app/components/url-menu/AppMenuContent";
 import { useAuth } from "@/app/lib/auth/auth-context";
+import { useUrlGroups } from "@/app/lib/hooks/useUrlGroups";
 import { IframeProvider } from "@/app/lib/state/iframe-state";
-import { UrlGroup } from "@/app/lib/types";
 import { Box, CircularProgress, Snackbar } from "@mui/material";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -14,11 +14,8 @@ export default function DashboardContent() {
   const { user } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [urlGroups, setUrlGroups] = useState<UrlGroup[]>([]);
+  const { urlGroups, isLoading: urlGroupsLoading } = useUrlGroups();
   const [loading, setLoading] = useState(true);
-  const [preferences, setPreferences] = useState<{ menuPosition?: "side" | "top" }>({
-    menuPosition: undefined,
-  });
   const [notification, setNotification] = useState<{
     open: boolean;
     message: string;
@@ -45,51 +42,28 @@ export default function DashboardContent() {
   };
 
   useEffect(() => {
-    const fetchUrlGroups = async () => {
+    const initialize = async () => {
       try {
-        const response = await fetch("/api/url-groups");
-        if (!response.ok) {
-          throw new Error("Failed to fetch URL groups");
-        }
-        const { urlGroups } = await response.json();
-        setUrlGroups(urlGroups);
-
-        // Check for URL parameter and set active URL
+        // Check for URL parameter
         const urlParam = searchParams?.get("url");
         if (urlParam) {
           updateBrowserUrl(urlParam);
-        } else if (urlGroups.length > 0 && urlGroups[0].urls.length > 0) {
-          // Set first URL as active if no URL parameter
-          updateBrowserUrl(urlGroups[0].urls[0].id);
         }
+        // Set loading to false - our AppMenuContent will handle its own loading state
+        setLoading(false);
       } catch (error) {
-        console.error("Error fetching URL groups:", error);
+        console.error("Error initializing dashboard:", error);
         setNotification({
           open: true,
-          message: "Failed to load URL groups",
+          message: "Failed to initialize dashboard",
           severity: "error",
         });
-      } finally {
         setLoading(false);
       }
     };
 
-    const fetchUserPreferences = async () => {
-      try {
-        const response = await fetch("/api/user/preferences");
-        if (!response.ok) {
-          throw new Error("Failed to fetch user preferences");
-        }
-        const data = await response.json();
-        setPreferences(data);
-      } catch (error) {
-        console.error("Error fetching user preferences:", error);
-      }
-    };
-
     if (user) {
-      fetchUrlGroups();
-      fetchUserPreferences();
+      initialize();
     } else {
       // Redirect to login if not authenticated
       router.push("/login");
@@ -98,19 +72,17 @@ export default function DashboardContent() {
 
   return (
     <IframeProvider>
-      {loading ? (
+      {loading || urlGroupsLoading ? (
         <Box
           sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh" }}
         >
           <CircularProgress />
         </Box>
       ) : (
-        <AppLayout
-          menuContent={
-            <MenuBarAdapter urlGroups={urlGroups} menuPosition={preferences.menuPosition} />
-          }
-        >
-          <IframeContainer urlGroups={urlGroups} />
+        <AppLayout menuContent={<AppMenuContent />}>
+          <Box sx={{ width: "100%", height: "100%" }}>
+            <IframeContainer urlGroups={urlGroups || []} />
+          </Box>
         </AppLayout>
       )}
 

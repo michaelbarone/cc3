@@ -3,9 +3,11 @@
 import AppLayout from "@/app/components/layout/AppLayout";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import BrushIcon from "@mui/icons-material/Brush";
+import DashboardIcon from "@mui/icons-material/Dashboard";
 import LockIcon from "@mui/icons-material/Lock";
 import {
   Box,
+  Button,
   Divider,
   List,
   ListItem,
@@ -129,15 +131,32 @@ function SettingsSidebar() {
 
 export default function SettingsLayout({ children }: SettingsLayoutProps) {
   const [mounted, setMounted] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
+  // Add header content with dashboard button
+  const headerContent = (
+    <Button
+      color="inherit"
+      startIcon={<DashboardIcon />}
+      onClick={() => router.replace("/dashboard")}
+      sx={{ mr: 1 }}
+    >
+      Dashboard
+    </Button>
+  );
+
   // During SSR and initial mount, render a simpler version
   if (!mounted) {
     return (
-      <AppLayout menuContent={<SettingsSidebar />} forceMenuPosition="side">
+      <AppLayout
+        menuContent={<SettingsSidebar />}
+        forceMenuPosition="side"
+        headerContent={headerContent}
+      >
         <Box
           sx={{
             display: "flex",
@@ -164,7 +183,11 @@ export default function SettingsLayout({ children }: SettingsLayoutProps) {
   }
 
   return (
-    <AppLayout menuContent={<SettingsSidebar />} forceMenuPosition="side">
+    <AppLayout
+      menuContent={<SettingsSidebar />}
+      forceMenuPosition="side"
+      headerContent={headerContent}
+    >
       <Box
         sx={{
           display: "flex",

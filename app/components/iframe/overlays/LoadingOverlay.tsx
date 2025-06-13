@@ -1,6 +1,8 @@
 "use client";
 
 import { Box, CircularProgress, Typography, useTheme } from "@mui/material";
+import Image from "next/image";
+import { useEffect, useState } from "react";
 
 interface LoadingOverlayProps {
   message?: string;
@@ -12,6 +14,38 @@ interface LoadingOverlayProps {
  */
 export function LoadingOverlay({ message = "Loading content...", isVisible }: LoadingOverlayProps) {
   const theme = useTheme();
+  const [appLogo, setAppLogo] = useState<string | null>(null);
+
+  // Fetch the app logo when the component mounts
+  useEffect(() => {
+    // Only fetch if the overlay is visible
+    if (!isVisible) return;
+
+    async function fetchAppConfig() {
+      try {
+        const response = await fetch("/api/admin/app-config", {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            // Add cache control to prevent unnecessary refetches
+            "Cache-Control": "no-cache",
+            Pragma: "no-cache",
+          },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data.appLogo) {
+            setAppLogo(data.appLogo);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching app logo:", error);
+      }
+    }
+
+    fetchAppConfig();
+  }, [isVisible]);
 
   if (!isVisible) return null;
 
@@ -33,6 +67,34 @@ export function LoadingOverlay({ message = "Loading content...", isVisible }: Lo
         transition: "opacity 0.3s ease-in-out",
       }}
     >
+      {/* App Logo */}
+      {appLogo && (
+        <Box
+          sx={{
+            position: "relative",
+            width: 120,
+            height: 120,
+            mb: 3,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <Image
+            src={appLogo}
+            alt="App Logo"
+            width={120}
+            height={120}
+            style={{
+              objectFit: "contain",
+              maxWidth: "100%",
+              maxHeight: "100%",
+            }}
+            priority
+          />
+        </Box>
+      )}
+
       <CircularProgress size={60} thickness={4} />
       <Typography
         variant="body1"

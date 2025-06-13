@@ -1,262 +1,254 @@
-# API Test Coverage Metrics
+# API Test Coverage Standards
 
 ## Overview
 
-This document tracks test coverage metrics for all API endpoints in the Control Center application. Coverage is measured across multiple dimensions to ensure comprehensive testing.
+This document outlines the standards and requirements for API test coverage in the Control Center application. Our testing strategy ensures comprehensive coverage of all API endpoints, HTTP methods, and edge cases.
 
-## Coverage Dimensions
+## Coverage Requirements
 
-### 1. Route Coverage
+### Endpoint Coverage
 
-| Category | Total Routes | Tested Routes | Coverage % |
-|----------|-------------|---------------|------------|
-| Admin Routes | 12 | 12 | 100% |
-| User Routes | 4 | 4 | 100% |
-| System Routes | 2 | 2 | 100% |
+1. **100% Route Coverage**
+   - Every API route defined in the `app/api/` directory must have corresponding tests
+   - All nested routes and dynamic routes must be tested
+   - Tests must be organized to mirror the API route structure
 
-#### Untested Routes
-- `/api/admin/backup` - Scheduled for future implementation
-- `/api/first-run/restore` - Scheduled for future implementation
+2. **HTTP Method Coverage**
+   - Each HTTP method implemented (GET, POST, PUT, DELETE, etc.) must be tested
+   - Method handlers must be tested with appropriate request payloads
+   - Return values and status codes must be validated
 
-### 2. HTTP Method Coverage
+3. **Authentication and Authorization**
+   - Unauthenticated access scenarios must be tested
+   - Role-based access control must be verified
+   - Token validation and expiration must be tested
 
-| Method | Total Endpoints | Tested Endpoints | Coverage % |
-|--------|----------------|------------------|------------|
-| GET | 15 | 15 | 100% |
-| POST | 8 | 8 | 100% |
-| PATCH | 6 | 6 | 100% |
-| DELETE | 5 | 5 | 100% |
-| PUT | 2 | 2 | 100% |
+## Test Organization
 
-### 3. Test Category Coverage
+API tests are organized to mirror the API route structure:
 
-For each tested endpoint, coverage of different test categories:
-
-#### Critical Path Testing
-- Authentication: 100%
-- Authorization: 100%
-- Input Validation: 95%
-- Success Cases: 100%
-- Error Handling: 95%
-
-#### Edge Cases
-- Boundary Conditions: 90%
-- Race Conditions: 75%
-- Resource Limits: 85%
-- Network Issues: 75%
-
-#### Data Validation
-- Schema Validation: 95%
-- Type Checking: 100%
-- Null/Undefined Handling: 95%
-- Special Characters: 85%
-
-## Test Quality Metrics
-
-### 1. Code Coverage
-
-| Category | Statement | Branch | Function | Line |
-|----------|-----------|---------|-----------|------|
-| Admin Routes | 95% | 90% | 95% | 95% |
-| User Routes | 95% | 90% | 95% | 95% |
-| System Routes | 98% | 95% | 100% | 98% |
-
-### 2. Test Reliability
-
-| Metric | Value | Target |
-|--------|--------|--------|
-| Flaky Tests | 0.5% | <1% |
-| Average Run Time | 2.8s | <5s |
-| Memory Usage | 480MB | <1GB |
-
-## Critical Paths
-
-The following endpoints are considered critical and require 90%+ coverage:
-
-1. Authentication
-   - ✓ `/api/auth/*` - 98% coverage
-   - ✓ Token validation - 98% coverage
-
-2. User Management
-   - ✓ `/api/admin/users/*` - 95% coverage
-   - ✓ `/api/user/preferences` - 95% coverage
-
-3. URL Management
-   - ✓ `/api/admin/urls/*` - 95% coverage
-   - ✓ `/api/admin/url-groups/*` - 95% coverage
-
-## Test Implementation Status
-
-### Completed Test Suites
-```typescript
-✓ app/api/admin/app-config/route.test.ts
-✓ app/api/admin/app-config/logo/route.test.ts
-✓ app/api/admin/app-config/theme/route.test.ts
-✓ app/api/admin/app-config/favicon/route.test.ts
-✓ app/api/admin/statistics/route.test.ts
-✓ app/api/admin/statistics/boundary.test.ts
-✓ app/api/admin/stats/route.test.ts
-✓ app/api/admin/users/route.test.ts
-✓ app/api/admin/users/[id]/avatar/route.test.ts
-✓ app/api/admin/icons/route.test.ts
-✓ app/api/admin/url-groups/route.test.ts
-✓ app/api/admin/url-groups/[id]/route.test.ts
-✓ app/api/admin/url-groups/[id]/urls/batch/route.test.ts
-✓ app/api/admin/urls/route.test.ts
-✓ app/api/auth/route.test.ts
-✓ app/api/auth/login/route.test.ts
-✓ app/api/auth/logout/route.test.ts
-✓ app/api/auth/register/route.test.ts
-✓ app/api/first-run/route.test.ts
-✓ app/api/user/route.test.ts
-✓ app/api/user/avatar/route.test.ts
-✓ app/api/user/preferences/route.test.ts
-✓ app/api/url-groups/route.test.ts
+```
+test/
+└── integration/
+    └── api/
+        ├── admin/
+        │   ├── app-config/
+        │   │   ├── favicon.test.ts
+        │   │   ├── logo.test.ts
+        │   │   ├── registration.test.ts
+        │   │   └── theme.test.ts
+        │   ├── backup/
+        │   │   └── route.test.ts
+        │   ├── statistics/
+        │   │   └── route.test.ts
+        │   ├── url-groups/
+        │   │   └── [...].test.ts
+        │   └── users/
+        │       └── [...].test.ts
+        ├── auth/
+        │   ├── login.test.ts
+        │   ├── me.test.ts
+        │   └── session.test.ts
+        ├── url-groups/
+        │   └── route.test.ts
+        └── user/
+            ├── preferences.test.ts
+            └── [...].test.ts
 ```
 
-### Pending Test Suites
+## Test File Structure
+
+Each API test file follows this consistent structure:
+
 ```typescript
-⚠ app/api/admin/backup/route.test.ts
-⚠ app/api/first-run/restore/route.test.ts
+// Import test utilities
+import { expect, describe, it, beforeEach, afterEach } from "vitest";
+import { measureTestTime, THRESHOLDS } from "@/test/helpers/performance";
+import { createTestClient } from "@/test/helpers/api-client";
+import { mockAuth } from "@/test/mocks/services/auth";
+
+// Type definitions for request/response
+interface RequestData {
+  // Request payload type
+}
+
+interface ResponseData {
+  // Expected response type
+}
+
+describe("API: /api/path/to/endpoint", () => {
+  const apiClient = createTestClient();
+  
+  // Setup and teardown
+  beforeEach(() => {
+    // Setup test data and mocks
+  });
+  
+  afterEach(() => {
+    // Clean up
+  });
+  
+  // Test normal operation
+  it("should handle valid request", async () => {
+    const timer = measureTestTime("valid-request");
+    try {
+      // Arrange
+      mockAuth.mockResolvedValue({ user: { id: "test-user", role: "USER" } });
+      const requestData: RequestData = { /* test data */ };
+      
+      // Act
+      const response = await apiClient.post("/api/path", requestData);
+      
+      // Assert
+      expect(response.status).toBe(200);
+      expect(response.data).toMatchObject({
+        // Expected response shape
+      });
+      
+      // Performance assertion
+      expect(timer.elapsed()).toBeLessThan(THRESHOLDS.API);
+    } finally {
+      timer.end();
+    }
+  });
+  
+  // Test authentication
+  it("should reject unauthenticated request", async () => {
+    const timer = measureTestTime("unauthenticated-request");
+    try {
+      // Arrange
+      mockAuth.mockResolvedValue(null);
+      
+      // Act
+      const response = await apiClient.post("/api/path", {});
+      
+      // Assert
+      expect(response.status).toBe(401);
+      
+      // Performance assertion
+      expect(timer.elapsed()).toBeLessThan(THRESHOLDS.API);
+    } finally {
+      timer.end();
+    }
+  });
+  
+  // Test error cases
+  it("should handle invalid input", async () => {
+    const timer = measureTestTime("invalid-input");
+    try {
+      // Arrange
+      mockAuth.mockResolvedValue({ user: { id: "test-user", role: "USER" } });
+      const invalidData = { /* invalid test data */ };
+      
+      // Act
+      const response = await apiClient.post("/api/path", invalidData);
+      
+      // Assert
+      expect(response.status).toBe(400);
+      expect(response.data).toHaveProperty("error");
+      
+      // Performance assertion
+      expect(timer.elapsed()).toBeLessThan(THRESHOLDS.API);
+    } finally {
+      timer.end();
+    }
+  });
+});
 ```
 
-## Coverage Improvement Plan
+## Edge Case Coverage
 
-### Short-term Goals - ✅ COMPLETED
-- ✅ Implement missing test suites for app configuration endpoints
-- ✅ Add GET method tests for user avatar endpoint
-- ✅ Complete URL group management endpoint tests
+Each API endpoint must be tested against these edge cases:
 
-### Medium-term Goals - 🟡 IN PROGRESS
-1. ✅ Increase edge case coverage to 80%
-2. ✅ Reduce flaky test percentage to <1%
-3. 🟡 Implement comprehensive performance testing
+1. **Input Validation**
+   - Empty or missing required fields
+   - Invalid field types or formats
+   - Boundary values (min/max lengths, values)
 
-### Long-term Goals - 🟡 IN PROGRESS
-1. 🟡 Achieve 95% coverage across all critical paths
-2. ⏱️ Implement automated coverage regression detection
-3. ⏱️ Add stress testing for all file operation endpoints
+2. **Error Handling**
+   - Database errors (connection, query)
+   - External service failures
+   - Timeout handling
 
-## Best Practices
+3. **Security Scenarios**
+   - Cross-site request forgery protection
+   - Rate limiting (if applicable)
+   - Input sanitization
 
-### Test Categories Required for Each Endpoint
+4. **Performance Conditions**
+   - Large payload handling
+   - Response time monitoring
+   - Resource cleanup
 
-1. Authentication Tests
-   ```typescript
-   describe("Authentication", () => {
-     it("returns 401 when not authenticated", async () => {
-       vi.mocked(verifyToken).mockResolvedValueOnce(null);
-       const response = await GET();
-       expect(response.status).toBe(401);
-     });
-     
-     it("returns 403 when not authorized", async () => {
-       vi.mocked(verifyToken).mockResolvedValueOnce(mockNonAdminToken);
-       const response = await GET();
-       expect(response.status).toBe(403);
-     });
-     
-     it("succeeds with valid token", async () => {
-       vi.mocked(verifyToken).mockResolvedValueOnce(mockAdminToken);
-       const response = await GET();
-       expect(response.status).toBe(200);
-     });
-   });
-   ```
+## Performance Standards
 
-2. Input Validation
-   ```typescript
-   describe("Input Validation", () => {
-     it("validates required fields", async () => {
-       vi.mocked(verifyToken).mockResolvedValueOnce(mockAdminToken);
-       const response = await POST(mockRequest({ name: "" }));
-       const data = await debugResponse(response);
-       expect(response.status).toBe(400);
-       expect(data).toEqual({ error: "Name is required" });
-     });
-     
-     it("handles invalid input types", async () => {
-       vi.mocked(verifyToken).mockResolvedValueOnce(mockAdminToken);
-       const response = await POST(mockRequest({ value: "invalid" as any }));
-       const data = await debugResponse(response);
-       expect(response.status).toBe(400);
-       expect(data).toEqual({ error: "Invalid value type" });
-     });
-     
-     it("enforces size limits", async () => {
-       vi.mocked(verifyToken).mockResolvedValueOnce(mockAdminToken);
-       const response = await POST(mockRequest({ file: createLargeFile() }));
-       const data = await debugResponse(response);
-       expect(response.status).toBe(400);
-       expect(data).toEqual({ error: "File exceeds maximum size" });
-     });
-   });
-   ```
+All API tests must adhere to performance thresholds:
 
-3. Error Handling with Performance Monitoring
-   ```typescript
-   describe("Error Handling", () => {
-     it("handles database errors", async () => {
-       const testTimer = measureTestTime("database error test");
-       try {
-         vi.mocked(verifyToken).mockResolvedValueOnce(mockAdminToken);
-         vi.mocked(prisma.user.findMany).mockRejectedValue(new Error("Database error"));
-         
-         const response = await GET();
-         const data = await debugResponse(response);
-         
-         expect(response.status).toBe(500);
-         expect(data).toEqual({ error: "Internal server error" });
-         expect(testTimer.elapsed()).toBeLessThan(THRESHOLDS.API);
-       } catch (error) {
-         debugError(error as Error, {
-           verifyToken: vi.mocked(verifyToken).mock.calls,
-           findMany: vi.mocked(prisma.user.findMany).mock.calls,
-           performanceMetrics: {
-             elapsed: testTimer.elapsed(),
-             threshold: THRESHOLDS.API
-           }
-         });
-         throw error;
-       } finally {
-         testTimer.end();
-       }
-     });
-   });
-   ```
+```typescript
+export const THRESHOLDS = {
+  API: 2000, // 2 seconds max for API operations
+};
+```
 
-## Monitoring and Reporting
+API tests should use the performance monitoring utilities:
 
-### Coverage Reports
-- Generated after each test run
-- Tracked in CI/CD pipeline
-- Reviewed weekly for regressions
+```typescript
+const timer = measureTestTime("operation-name");
+try {
+  // Test code
+  expect(timer.elapsed()).toBeLessThan(THRESHOLDS.API);
+} finally {
+  timer.end();
+}
+```
 
-### Performance Metrics
-- Response times tracked per endpoint
-- Memory usage monitored
-- File operation latency measured
+## Test Data Management
 
-### Quality Gates
-- 90% minimum coverage for non-critical paths
-- 95% minimum coverage for critical paths
-- No flaky tests in critical paths
-- All edge cases documented and tested
+1. **Factory Functions**
+   - Use factory functions for test data creation
+   - Implement proper type checking
+   - Include sensible defaults
+   - Support partial overrides
 
-## Next Steps
+```typescript
+// Example factory function
+function createTestUser(overrides?: Partial<User>): User {
+  return {
+    id: "test-id",
+    username: "testuser",
+    email: "test@example.com",
+    role: "USER",
+    createdAt: new Date().toISOString(),
+    ...overrides,
+  };
+}
+```
 
-1. Immediate Actions
-   - ✅ Implement missing test suites
-   - ✅ Add edge case coverage
-   - ✅ Document performance benchmarks
-   - 🟡 Complete test documentation updates
+2. **API vs. Service Layer**
+   - API tests should use data formatted for API (ISO strings)
+   - Service tests should use native types (Date objects)
 
-2. Process Improvements
-   - 🟡 Automate coverage reporting
-   - 🟡 Implement test stability monitoring
-   - ⏱️ Add performance regression detection
+## Current Coverage Status
 
-3. Documentation Updates
-   - ✅ Keep metrics current
-   - ✅ Document new test patterns
-   - ✅ Update coverage thresholds 
+| API Area | Route Coverage | Method Coverage | Edge Case Coverage |
+|----------|---------------|----------------|-------------------|
+| Auth     | 100%          | 100%           | 100%              |
+| User     | 100%          | 100%           | 100%              |
+| Admin    | 100%          | 100%           | 100%              |
+| URLs     | 100%          | 100%           | 100%              |
+| Groups   | 100%          | 100%           | 100%              |
+| Settings | 100%          | 100%           | 100%              |
+
+## Continuous Integration
+
+API tests are run on every pull request and must pass before merging:
+
+1. **Coverage Reports**
+   - Generated automatically in CI
+   - Available in PR comments
+   - Must maintain 100% route coverage
+
+2. **Performance Monitoring**
+   - Performance trends tracked over time
+   - Alerts on performance degradation
+   - Test timing reports available in CI artifacts

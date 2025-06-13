@@ -538,7 +538,8 @@ function LoginContent() {
               flexDirection: "column",
               alignItems: "center",
               minHeight: "100vh",
-              py: UI.SPACING.XLARGE,
+              py: UI.SPACING.MEDIUM,
+              pt: UI.SPACING.SMALL,
             }}
           >
             {/* App Branding */}
@@ -590,13 +591,6 @@ function LoginContent() {
               role="region"
               aria-label="User selection"
             >
-              <Typography
-                component="h2"
-                id="login-instruction"
-                sx={{ mb: UI.SPACING.SMALL, textAlign: "center" }}
-              >
-                Select your user account to log in
-              </Typography>
               <Grid
                 container
                 spacing={UI.SPACING.MEDIUM}
