@@ -191,6 +191,7 @@ export function AdminLayoutClient({ children }: AdminLayoutClientProps) {
           sx={{
             display: { xs: "block", sm: "none" },
             "& .MuiDrawer-paper": { boxSizing: "border-box", width: drawerWidth },
+            zIndex: (theme) => theme.zIndex.drawer + 4,
           }}
         >
           {drawer}

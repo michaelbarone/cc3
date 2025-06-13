@@ -34,7 +34,9 @@ const isStaticAssetPath = (pathname: string) => {
     pathname === "/favicon.ico" ||
     pathname === "/favicon-default.png" ||
     pathname === "/android-chrome-192x192.png" ||
-    pathname === "/android-chrome-512x512.png"
+    pathname === "/android-chrome-512x512.png" ||
+    pathname === "/startup-image-320x460.png" ||
+    pathname === "/icon-lowrez-58.png"
   );
 };
 

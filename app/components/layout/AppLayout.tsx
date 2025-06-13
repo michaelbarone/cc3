@@ -125,7 +125,7 @@ export default function AppLayout({
           src={appConfig.appLogo}
           alt={appConfig.appName}
           sx={{
-            height: 40,
+            height: 32,
             maxWidth: { xs: 120, sm: 160 },
             objectFit: "contain",
             ...(effectiveMenuPosition === "top" ? { mr: { xs: 1, md: 4 } } : {}),
@@ -226,9 +226,6 @@ export default function AppLayout({
               {menuContent}
             </Box>
 
-            {/* Header content (Dashboard button, etc.) */}
-            {headerContent && <Box>{headerContent}</Box>}
-
             {/* Right section - User menu and theme toggle */}
             <Box
               sx={{
@@ -237,6 +234,9 @@ export default function AppLayout({
                 ml: "auto",
               }}
             >
+              {/* Header content (Dashboard button, etc.) */}
+              {headerContent && <Box>{headerContent}</Box>}
+
               {user && <UserMenu showAdminOption />}
             </Box>
           </Toolbar>

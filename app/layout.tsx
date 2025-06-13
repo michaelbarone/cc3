@@ -65,19 +65,33 @@ export async function generateMetadata(): Promise<Metadata> {
     },
     description: "A dashboard for managing and displaying URLs in iframes",
     icons: {
-      apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
+      apple: [
+        { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+        { url: "/icon-lowrez-58.png", sizes: "58x58", type: "image/png" },
+      ],
       icon: [
         { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
         { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
       ],
     },
     manifest: "/site.webmanifest",
+    viewport: {
+      width: "device-width",
+      initialScale: 1,
+      maximumScale: 1,
+      userScalable: false,
+    },
     other: {
       "mobile-web-app-capable": "yes",
       "apple-mobile-web-app-capable": "yes",
       "apple-mobile-web-app-title": appConfig.appName,
-      "apple-touch-startup-image": "/android-chrome-192x192.png",
-    },
+      "apple-touch-startup-image": "/startup-image-320x460.png",
+      "theme-color": "#3B7FB7",
+      "apple-mobile-web-app-status-bar-style": "black-translucent",
+      "format-detection": "telephone=no",
+      "apple-touch-fullscreen": "yes",
+      "apple-mobile-web-app-orientations": "portrait",
+    } as Record<string, string>,
   };
 }
 
