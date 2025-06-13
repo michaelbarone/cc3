@@ -85,8 +85,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         name: "auth_token",
         value: result.token,
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "strict",
+        // secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
         path: "/",
         maxAge: 24 * 60 * 60, // 24 hours
       });
