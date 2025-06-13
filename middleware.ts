@@ -26,7 +26,15 @@ const isStaticAssetPath = (pathname: string) => {
   return (
     pathname.startsWith("/logos/") ||
     pathname.startsWith("/avatars/") ||
-    pathname.startsWith("/public/")
+    pathname.startsWith("/public/") ||
+    pathname === "/site.webmanifest" ||
+    pathname === "/apple-touch-icon.png" ||
+    pathname === "/favicon-32x32.png" ||
+    pathname === "/favicon-16x16.png" ||
+    pathname === "/favicon.ico" ||
+    pathname === "/favicon-default.png" ||
+    pathname === "/android-chrome-192x192.png" ||
+    pathname === "/android-chrome-512x512.png"
   );
 };
 
