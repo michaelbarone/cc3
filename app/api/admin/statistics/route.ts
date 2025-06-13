@@ -112,8 +112,8 @@ interface StatisticsResponse {
       dark: number;
     };
     menuPositionDistribution: {
-      left: number;
-      right: number;
+      side: number;
+      top: number;
     };
   };
   activity: {
@@ -300,8 +300,8 @@ export async function GET(
 
     // Process menu distribution
     const menuStats = {
-      left: menuDistribution.find((m) => m.menuPosition === "left")?._count._all ?? 0,
-      right: menuDistribution.find((m) => m.menuPosition === "right")?._count._all ?? 0,
+      side: menuDistribution.find((m) => m.menuPosition === "side")?._count._all ?? 0,
+      top: menuDistribution.find((m) => m.menuPosition === "top")?._count._all ?? 0,
     };
 
     // Process admin ratio

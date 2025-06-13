@@ -1,22 +1,22 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import {
+  Alert,
+  Box,
   Card,
   CardContent,
-  Typography,
   Grid,
+  Skeleton,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
   TableRow,
-  Box,
-  Skeleton,
-  Alert,
+  Typography,
 } from "@mui/material";
 import { format } from "date-fns";
+import { useEffect, useState } from "react";
 
 interface Statistics {
   system: {
@@ -66,7 +66,7 @@ interface Statistics {
   };
 }
 
-export default function AdminDashboard() {
+export default function AdminStats() {
   const [statistics, setStatistics] = useState<Statistics | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

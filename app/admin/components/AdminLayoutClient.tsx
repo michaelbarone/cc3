@@ -2,6 +2,7 @@
 
 import UserMenu from "@/app/components/ui/UserMenu";
 import { AppConfig, DEFAULT_APP_CONFIG } from "@/app/lib/utils/constants";
+import BarChartIcon from "@mui/icons-material/BarChart";
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import FolderIcon from "@mui/icons-material/Folder";
 import LinkIcon from "@mui/icons-material/Link";
@@ -64,7 +65,7 @@ export function AdminLayoutClient({ children }: AdminLayoutClientProps) {
   };
 
   const menuItems = [
-    { text: "Dashboard", icon: <DashboardIcon />, href: "/admin" },
+    { text: "Stats", icon: <BarChartIcon />, href: "/admin" },
     { text: "User Management", icon: <PeopleIcon />, href: "/admin/users" },
     { text: "URLs", icon: <LinkIcon />, href: "/admin/urls" },
     { text: "URL Groups", icon: <FolderIcon />, href: "/admin/url-groups" },
