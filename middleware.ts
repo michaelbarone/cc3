@@ -25,6 +25,7 @@ interface JWTPayload {
 const isStaticAssetPath = (pathname: string) => {
   return (
     pathname.startsWith("/logos/") ||
+    pathname.startsWith("/icons/") ||
     pathname.startsWith("/avatars/") ||
     pathname.startsWith("/public/") ||
     pathname === "/site.webmanifest" ||

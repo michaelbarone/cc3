@@ -1,6 +1,7 @@
 "use client";
 
 import { useIframeLifecycle, useUrlManager } from "@/app/lib/hooks/useIframe";
+import { useUserPreferences } from "@/app/lib/hooks/useUserPreferences";
 import { getEffectiveUrl } from "@/app/lib/utils/iframe-utils";
 import type { IframeContainerProps, IframeContainerRef, IframeUrl } from "@/app/types/iframe";
 import { Box, useMediaQuery } from "@mui/material";
@@ -38,6 +39,21 @@ function getGlobalIframeContainer() {
     }
   }
   return globalIframeContainer;
+}
+
+// Add a function to update container position based on menu position
+function updateGlobalContainerPosition(menuPosition: "top" | "side") {
+  if (!globalIframeContainer) return;
+
+  if (menuPosition === "top") {
+    globalIframeContainer.style.top = "64px"; // AppBar height
+    globalIframeContainer.style.bottom = "0";
+    globalIframeContainer.style.height = "auto";
+  } else {
+    globalIframeContainer.style.top = "0";
+    globalIframeContainer.style.bottom = "0";
+    globalIframeContainer.style.height = "100%";
+  }
 }
 
 // Individual iframe component
@@ -199,6 +215,14 @@ const IframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
     const containerRef = useRef<HTMLDivElement>(null);
     const isMobile = useMediaQuery("(max-width:600px)");
     const initialized = useRef(false);
+    const { preferences } = useUserPreferences();
+
+    // Update container position when menu position changes
+    useEffect(() => {
+      if (preferences?.menuPosition) {
+        updateGlobalContainerPosition(preferences.menuPosition);
+      }
+    }, [preferences?.menuPosition]);
 
     // Initialize URLs on mount
     useEffect(() => {
