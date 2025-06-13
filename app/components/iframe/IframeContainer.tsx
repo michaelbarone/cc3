@@ -48,11 +48,15 @@ function updateGlobalContainerPosition(menuPosition: "top" | "side") {
   if (menuPosition === "top") {
     globalIframeContainer.style.top = "64px"; // AppBar height
     globalIframeContainer.style.bottom = "0";
+    globalIframeContainer.style.left = "0";
     globalIframeContainer.style.height = "auto";
   } else {
     globalIframeContainer.style.top = "0";
     globalIframeContainer.style.bottom = "0";
+    globalIframeContainer.style.right = "0";
+    globalIframeContainer.style.left = "240px";
     globalIframeContainer.style.height = "100%";
+    globalIframeContainer.style.width = "calc(100% - 240px)";
   }
 }
 
