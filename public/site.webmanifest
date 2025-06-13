@@ -3,7 +3,7 @@
   "short_name": "CC",
   "description": "A dashboard for managing and displaying URLs in iframes",
   "start_url": "/",
-  "display": "standalone",
+  "display": "fullscreen",
   "background_color": "#000000",
   "theme_color": "#3B7FB7",
   "orientation": "portrait",
@@ -14,6 +14,11 @@
       "name": "Dashboard",
       "url": "/dashboard",
       "description": "Go to dashboard"
+    },
+    {
+      "name": "Settings",
+      "url": "/settings",
+      "description": "Go to settings"
     }
   ],
   "icons": [
@@ -28,6 +33,48 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/favicon.ico",
+      "sizes": "48x48",
+      "type": "image/x-icon",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-lowrez-58.png",
+      "sizes": "58x58",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/startup-image-320x460.png",
+      "sizes": "320x460",
+      "type": "image/png",
+      "purpose": "startup",
+      "label": "Control Center"
     }
-  ]
+  ],
+  "screenshots": [
+    {
+      "src": "/startup-image-320x460.png",
+      "sizes": "320x460",
+      "type": "image/png",
+      "platform": "narrow",
+      "label": "Control Center"
+    }
+  ],
+  "related_applications": [],
+  "scope": "/",
+  "lang": "en-US",
+  "dir": "ltr",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
+  "edge_side_panel": {
+    "preferred_width": 400
+  }
 }
