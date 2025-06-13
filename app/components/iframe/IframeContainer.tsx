@@ -1,11 +1,13 @@
 "use client";
 
+import { useAuth } from "@/app/lib/auth/auth-context";
 import { useIframeLifecycle, useUrlManager } from "@/app/lib/hooks/useIframe";
 import { useUserPreferences } from "@/app/lib/hooks/useUserPreferences";
 import { getEffectiveUrl } from "@/app/lib/utils/iframe-utils";
 import type { IframeContainerProps, IframeContainerRef, IframeUrl } from "@/app/types/iframe";
 import { Box, useMediaQuery } from "@mui/material";
 import React, { forwardRef, useEffect, useImperativeHandle, useMemo, useRef } from "react";
+import { AdminEmptyState } from "./AdminEmptyState";
 import { UnloadedContent } from "./UnloadedContent";
 
 // Create a singleton container for iframes outside of React
@@ -215,11 +217,17 @@ function IframeElement({
 // Main container component
 const IframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
   function IframeContainer({ urlGroups, initialUrlId, onLoad, onError, onUnload }, ref) {
+    const { user } = useAuth();
     const { urls, activeUrlId, initializeUrls, selectUrl, unloadUrl } = useUrlManager(urlGroups);
     const containerRef = useRef<HTMLDivElement>(null);
     const isMobile = useMediaQuery("(max-width:600px)");
     const initialized = useRef(false);
     const { preferences } = useUserPreferences();
+
+    // Check if there are no URLs or URL groups
+    const hasNoUrls = urlGroups.length === 0 || urlGroups.every((group) => group.urls.length === 0);
+    const isAdmin = user?.isAdmin || false;
+    const showAdminEmptyState = isAdmin && hasNoUrls;
 
     // Update container position when menu position changes
     useEffect(() => {
@@ -230,11 +238,11 @@ const IframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
 
     // Initialize URLs on mount
     useEffect(() => {
-      if (!initialized.current) {
+      if (!initialized.current && !hasNoUrls) {
         initializeUrls(initialUrlId);
         initialized.current = true;
       }
-    }, [initializeUrls, initialUrlId]);
+    }, [initializeUrls, initialUrlId, hasNoUrls]);
 
     // Create a memoized mapping of url IDs to avoid re-rendering IframeElements
     const urlIds = useMemo(() => Object.keys(urls), [urls]);
@@ -277,24 +285,30 @@ const IframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
 
     return (
       <Box ref={containerRef} sx={{ width: "100%", height: "100%", position: "relative" }}>
-        {urlIds.map((urlId) => (
-          <IframeElement
-            key={urlId}
-            urlData={urls[urlId]}
-            isMobile={isMobile}
-            onLoad={onLoad}
-            onError={onError}
-            containerRef={containerRef}
-          />
-        ))}
-        {activeUrlId && urls[activeUrlId] && !urls[activeUrlId].isLoaded && (
-          <UnloadedContent
-            urlId={activeUrlId}
-            onReload={(id) => {
-              selectUrl(id);
-              onLoad?.(id);
-            }}
-          />
+        {showAdminEmptyState ? (
+          <AdminEmptyState />
+        ) : (
+          <>
+            {urlIds.map((urlId) => (
+              <IframeElement
+                key={urlId}
+                urlData={urls[urlId]}
+                isMobile={isMobile}
+                onLoad={onLoad}
+                onError={onError}
+                containerRef={containerRef}
+              />
+            ))}
+            {activeUrlId && urls[activeUrlId] && !urls[activeUrlId].isLoaded && (
+              <UnloadedContent
+                urlId={activeUrlId}
+                onReload={(id) => {
+                  selectUrl(id);
+                  onLoad?.(id);
+                }}
+              />
+            )}
+          </>
         )}
       </Box>
     );
