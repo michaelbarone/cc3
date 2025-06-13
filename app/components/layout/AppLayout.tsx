@@ -56,8 +56,13 @@ export default function AppLayout({
 
   // Check if menu should be shown
   const showMenu = useMemo(() => {
+    // If forceMenuPosition is set, we should always show the menu if menuContent exists
+    if (forceMenuPosition && menuContent !== null) {
+      return true;
+    }
+    // Otherwise, use the original condition
     return menuContent !== null && (!urlGroups || urlGroups.length > 0);
-  }, [menuContent, urlGroups]);
+  }, [menuContent, urlGroups, forceMenuPosition]);
 
   // Handle initial mount
   useEffect(() => {

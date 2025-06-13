@@ -1,227 +1,240 @@
 "use client";
 
-import AppLayout from "@/app/components/layout/AppLayout";
+import UserMenu from "@/app/components/ui/UserMenu";
+import { AppConfig, DEFAULT_APP_CONFIG } from "@/app/lib/utils/constants";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import BrushIcon from "@mui/icons-material/Brush";
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import LockIcon from "@mui/icons-material/Lock";
+import MenuIcon from "@mui/icons-material/Menu";
 import {
+  AppBar,
   Box,
   Button,
+  CssBaseline,
   Divider,
+  Drawer,
+  IconButton,
   List,
   ListItem,
   ListItemButton,
   ListItemIcon,
   ListItemText,
-  Paper,
+  Toolbar,
   Typography,
-  useTheme,
 } from "@mui/material";
 import { usePathname, useRouter } from "next/navigation";
 import { ReactNode, useEffect, useState } from "react";
+
+const drawerWidth = 240;
 
 interface SettingsLayoutProps {
   children: ReactNode;
 }
 
-function SettingsSidebar() {
+export default function SettingsLayout({ children }: SettingsLayoutProps) {
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [appConfig, setAppConfig] = useState<AppConfig>(DEFAULT_APP_CONFIG);
+  const [loading, setLoading] = useState(true);
   const pathname = usePathname();
   const router = useRouter();
-  const theme = useTheme();
-  const [mounted, setMounted] = useState(false);
 
+  // Fetch app configuration
   useEffect(() => {
-    setMounted(true);
+    const fetchAppConfig = async () => {
+      try {
+        const response = await fetch("/api/admin/app-config");
+        if (response.ok) {
+          const data = await response.json();
+          setAppConfig(data);
+        }
+      } catch (error) {
+        console.error("Error fetching app config:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAppConfig();
   }, []);
 
+  const handleDrawerToggle = () => {
+    setMobileOpen(!mobileOpen);
+  };
+
   const menuItems = [
-    {
-      title: "Profile",
-      icon: <AccountCircleIcon />,
-      path: "/settings/profile",
-    },
-    {
-      title: "Password",
-      icon: <LockIcon />,
-      path: "/settings/password",
-    },
-    {
-      title: "Appearance",
-      icon: <BrushIcon />,
-      path: "/settings/appearance",
-    },
-    // Add more settings pages here as the app grows
+    { text: "Profile", icon: <AccountCircleIcon />, href: "/settings/profile" },
+    { text: "Password", icon: <LockIcon />, href: "/settings/password" },
+    { text: "Appearance", icon: <BrushIcon />, href: "/settings/appearance" },
   ];
 
-  // During SSR and initial mount, render a simpler version
-  if (!mounted) {
-    return (
-      <Paper
-        elevation={0}
-        sx={{
-          height: "100%",
-          borderRight: `1px solid ${theme.palette.divider}`,
-          borderRadius: 0,
-          overflow: "auto",
-        }}
-      >
-        <Typography variant="h6" sx={{ p: 2, fontWeight: 500 }}>
-          User Settings
-        </Typography>
-        <Divider />
-        <List>
-          {menuItems.map((item) => (
-            <ListItem key={item.title} disablePadding>
-              <ListItemButton>
-                <ListItemIcon>{item.icon}</ListItemIcon>
-                <ListItemText primary={item.title} />
-              </ListItemButton>
-            </ListItem>
-          ))}
-        </List>
-      </Paper>
-    );
-  }
-
-  return (
-    <Paper
-      elevation={0}
-      sx={{
-        height: "100%",
-        borderRight: `1px solid ${theme.palette.divider}`,
-        borderRadius: 0,
-        overflow: "auto",
-      }}
-    >
-      <Typography variant="h6" sx={{ p: 2, fontWeight: 500 }}>
-        User Settings
-      </Typography>
+  const drawer = (
+    <div>
+      <Toolbar>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          {appConfig.appLogo && (
+            <Box
+              sx={{
+                width: 32,
+                height: 32,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                marginRight: 1,
+                borderRadius: "4px",
+                overflow: "hidden",
+                backgroundColor: (theme) =>
+                  theme.palette.mode === "dark" ? "background.paper" : "transparent",
+              }}
+            >
+              <Box
+                component="img"
+                src={appConfig.appLogo}
+                alt="Logo"
+                sx={{
+                  maxWidth: "100%",
+                  maxHeight: "100%",
+                  objectFit: "contain",
+                  display: "block",
+                }}
+                onError={(e) => {
+                  // Hide the image if it fails to load
+                  const target = e.target as HTMLImageElement;
+                  target.style.display = "none";
+                }}
+              />
+            </Box>
+          )}
+          <Typography variant="h6" noWrap component="div">
+            User Settings
+          </Typography>
+        </Box>
+      </Toolbar>
       <Divider />
       <List>
         {menuItems.map((item) => (
-          <ListItem key={item.title} disablePadding>
-            <ListItemButton
-              selected={pathname === item.path}
-              onClick={() => router.replace(item.path)}
+          <ListItem key={item.text} disablePadding>
+            <Box
+              component="div"
+              onClick={() => router.replace(item.href)}
               sx={{
-                "&.Mui-selected": {
-                  bgcolor:
-                    theme.palette.mode === "dark"
-                      ? "rgba(255, 255, 255, 0.08)"
-                      : "rgba(0, 0, 0, 0.04)",
-                },
-                "&.Mui-selected:hover": {
-                  bgcolor:
-                    theme.palette.mode === "dark"
-                      ? "rgba(255, 255, 255, 0.12)"
-                      : "rgba(0, 0, 0, 0.08)",
-                },
+                textDecoration: "none",
+                color: "inherit",
+                width: "100%",
+                cursor: "pointer",
+                display: "block",
               }}
             >
-              <ListItemIcon>{item.icon}</ListItemIcon>
-              <ListItemText primary={item.title} />
-            </ListItemButton>
+              <ListItemButton selected={pathname === item.href}>
+                <ListItemIcon>{item.icon}</ListItemIcon>
+                <ListItemText primary={item.text} primaryTypographyProps={{ component: "div" }} />
+              </ListItemButton>
+            </Box>
           </ListItem>
         ))}
       </List>
-    </Paper>
+    </div>
   );
-}
-
-export default function SettingsLayout({ children }: SettingsLayoutProps) {
-  const [mounted, setMounted] = useState(false);
-  const router = useRouter();
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  // Add header content with dashboard button
-  const headerContent = (
-    <Button
-      color="inherit"
-      startIcon={<DashboardIcon />}
-      onClick={() => router.replace("/dashboard")}
-      sx={{ mr: 1 }}
-    >
-      Dashboard
-    </Button>
-  );
-
-  // During SSR and initial mount, render a simpler version
-  if (!mounted) {
-    return (
-      <AppLayout
-        menuContent={<SettingsSidebar />}
-        forceMenuPosition="side"
-        headerContent={headerContent}
-      >
-        <Box
-          sx={{
-            display: "flex",
-            height: "100%",
-            overflow: "hidden",
-            position: "relative",
-            zIndex: 1100,
-            bgcolor: "background.default",
-          }}
-        >
-          <Box
-            sx={{
-              flexGrow: 1,
-              p: 3,
-              height: "100%",
-              overflow: "auto",
-              position: "relative",
-              zIndex: 1100,
-            }}
-          />
-        </Box>
-      </AppLayout>
-    );
-  }
 
   return (
-    <AppLayout
-      menuContent={<SettingsSidebar />}
-      forceMenuPosition="side"
-      headerContent={headerContent}
-    >
-      <Box
+    <Box sx={{ display: "flex" }}>
+      <CssBaseline />
+      <AppBar
+        position="fixed"
         sx={{
-          display: "flex",
-          height: "100%",
+          width: { sm: `calc(100% - ${drawerWidth}px)` },
+          ml: { sm: `${drawerWidth}px` },
+        }}
+      >
+        <Toolbar>
+          <IconButton
+            color="inherit"
+            aria-label="open drawer"
+            edge="start"
+            onClick={handleDrawerToggle}
+            sx={{ mr: 2, display: { sm: "none" } }}
+          >
+            <MenuIcon />
+          </IconButton>
+
+          {/* Spacer to push elements to the right */}
+          <Box sx={{ flexGrow: 1 }} />
+
+          {/* Dashboard button to return to main dashboard */}
+          <Button
+            color="inherit"
+            startIcon={<DashboardIcon />}
+            onClick={() => router.replace("/dashboard")}
+            sx={{ mr: 1 }}
+          >
+            Dashboard
+          </Button>
+
+          <UserMenu showAdminOption />
+        </Toolbar>
+      </AppBar>
+      <Box component="nav" sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 } }}>
+        <Drawer
+          variant="temporary"
+          open={mobileOpen}
+          onClose={handleDrawerToggle}
+          ModalProps={{
+            keepMounted: true, // Better open performance on mobile.
+          }}
+          sx={{
+            display: { xs: "block", sm: "none" },
+            "& .MuiDrawer-paper": { boxSizing: "border-box", width: drawerWidth },
+            zIndex: (theme) => theme.zIndex.drawer + 4,
+          }}
+        >
+          {drawer}
+        </Drawer>
+        <Drawer
+          variant="permanent"
+          sx={{
+            display: { xs: "none", sm: "block" },
+            "& .MuiDrawer-paper": { boxSizing: "border-box", width: drawerWidth },
+          }}
+          open
+        >
+          {drawer}
+        </Drawer>
+      </Box>
+      <Box
+        component="main"
+        sx={{
+          flexGrow: 1,
+          p: 0,
+          width: { sm: `calc(100% - ${drawerWidth}px)` },
+          marginTop: "64px",
+          height: "calc(100vh - 64px)",
           overflow: "hidden",
           position: "relative",
-          zIndex: 1100,
-          bgcolor: "background.default",
         }}
       >
         <Box
           sx={{
             position: "fixed",
             top: 64, // AppBar height
-            left: 0,
+            left: { sm: drawerWidth, xs: 0 },
             right: 0,
             bottom: 0,
             bgcolor: "background.default",
-            zIndex: 1050,
+            zIndex: (theme) => theme.zIndex.drawer + 2,
           }}
         />
         <Box
           sx={{
-            flexGrow: 1,
-            p: 3,
             height: "100%",
             overflow: "auto",
             position: "relative",
-            zIndex: 1100,
+            zIndex: (theme) => theme.zIndex.drawer + 3,
+            p: 3,
           }}
         >
           {children}
         </Box>
       </Box>
-    </AppLayout>
+    </Box>
   );
 }
