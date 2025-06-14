@@ -64,6 +64,9 @@ else
     fi
 fi
 
+# Disable Next.js telemetry
+npx next telemetry disable
+
 # Start the Next.js server
 echo "Starting Next.js server..."
 exec node server.js

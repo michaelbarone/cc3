@@ -26,6 +26,9 @@ COPY . .
 # Generate Prisma client
 RUN npx prisma generate
 
+# Disable Next.js telemetry
+RUN npx next telemetry disable
+
 # Build application with production optimizations
 ENV NODE_ENV=production
 RUN npx next build
@@ -33,7 +36,7 @@ RUN npx next build
 # Production image
 FROM base AS runner
 
-# WORKDIR /app
+WORKDIR /
 
 ENV NODE_ENV=production
 # Hardcoded standardized database path
@@ -47,6 +50,9 @@ COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/docker-entrypoint.sh ./docker-entrypoint.sh
+
+# Set permissions for the entrypoint script
+RUN chmod +x ./docker-entrypoint.sh
 
 # Create data directories
 RUN mkdir -p ./data ./data/backups
@@ -65,4 +71,4 @@ EXPOSE 3000
 ENV PORT=3000
 
 # Run script for database creation and server startup
-ENTRYPOINT ["./docker-entrypoint.sh"]
+ENTRYPOINT ["/docker-entrypoint.sh"]
