@@ -36,19 +36,21 @@ RUN npx next build
 # Production image
 FROM base AS runner
 
-WORKDIR /
+WORKDIR /app
 
 ENV NODE_ENV=production
 # Hardcoded standardized database path
-ENV DATABASE_URL=file:/data/app.db
+ENV DATABASE_URL=file:/app/data/app.db
 # Set to false in runner to enable seeding when container starts
 ENV SKIP_SEED=false
 
+# Copy necessary files
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=builder /app/app/lib ./app/lib
 COPY --from=builder /app/docker-entrypoint.sh ./docker-entrypoint.sh
 
 # Set permissions for the entrypoint script
@@ -71,4 +73,4 @@ EXPOSE 3000
 ENV PORT=3000
 
 # Run script for database creation and server startup
-ENTRYPOINT ["/docker-entrypoint.sh"]
+ENTRYPOINT ["/app/docker-entrypoint.sh"]

@@ -2,11 +2,11 @@
 set -e
 
 # Create data directory if it doesn't exist
-mkdir -p /data
-mkdir -p /data/backups
+mkdir -p /app/data
+mkdir -p /app/data/backups
 
 # Define the standardized database path
-DB_PATH="/data/app.db"
+DB_PATH="/app/data/app.db"
 DB_URL="file:${DB_PATH}"
 
 # Function to check database health
@@ -29,9 +29,9 @@ check_database() {
 backup_database() {
     if [ -f "${DB_PATH}" ]; then
         echo "Creating database backup..."
-        cp "${DB_PATH}" "/data/backups/app_$(date +%Y%m%d_%H%M%S).db"
+        cp "${DB_PATH}" "/app/data/backups/app_$(date +%Y%m%d_%H%M%S).db"
         # Keep only last 5 backups
-        ls -t /data/backups/app_*.db | tail -n +6 | xargs -r rm
+        ls -t /app/data/backups/app_*.db | tail -n +6 | xargs -r rm
     fi
 }
 
@@ -63,9 +63,6 @@ else
         echo "Check logs above for specific errors if this is unexpected."
     fi
 fi
-
-# Disable Next.js telemetry
-npx next telemetry disable
 
 # Start the Next.js server
 echo "Starting Next.js server..."
