@@ -3,7 +3,6 @@ import { SelectedGroupProvider } from "@/app/lib/state/selected-group-context";
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import React from "react";
-import AddToHomeScreen from "./components/ui/AddToHomeScreen/AddToHomeScreen";
 import "./globals.css";
 import { AuthProvider } from "./lib/auth/auth-context";
 import { Providers } from "./providers";
@@ -107,7 +106,6 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <AuthProvider>
             <ThemeProvider>
               <SelectedGroupProvider>{children}</SelectedGroupProvider>
-              <AddToHomeScreen />
             </ThemeProvider>
           </AuthProvider>
         </Providers>

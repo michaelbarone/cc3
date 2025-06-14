@@ -42,6 +42,7 @@ type AddToHomeScreenPromptType =
   | "";
 const COOKIE_NAME = "addToHomeScreenPrompt";
 
+// not implemented yet -- requires ssl for pwa to work properly
 export default function AddToHomeScreen() {
   const [displayPrompt, setDisplayPrompt] = useState<AddToHomeScreenPromptType>("");
   const { userAgent, isMobile, isStandalone, isIOS } = useUserAgent();

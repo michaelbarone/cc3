@@ -133,7 +133,7 @@ export default function AppLayout({
             height: 32,
             maxWidth: { xs: 120, sm: 160 },
             objectFit: "contain",
-            ...(effectiveMenuPosition === "top" ? { mr: { xs: 1, md: 4 } } : {}),
+            ...(effectiveMenuPosition === "top" ? { mr: { xs: 1, md: 1.5 } } : {}),
           }}
         />
       );

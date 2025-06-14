@@ -44,8 +44,8 @@ const UrlItem = memo(function UrlItem({
   const styles = useMemo(
     () => ({
       iconStyles: {
-        width: 24,
-        height: 24,
+        width: 32,
+        height: 32,
         objectFit: "contain" as const,
       },
       boxStyles: {
@@ -55,10 +55,11 @@ const UrlItem = memo(function UrlItem({
         opacity: isLoaded ? 1.0 : 0.5, // Opacity 0.5 for unloaded, 1.0 for loaded
       },
       buttonStyles: {
-        height: 36, // Fixed height for consistency
-        minHeight: 36, // Ensure minimum height is the same
+        height: 50, // Fixed height for consistency
+        minHeight: 50, // Ensure minimum height is the same
+        minWidth: 50,
         lineHeight: "36px", // Match line height to button height
-        px: 2, // Consistent horizontal padding
+        px: 0, // Consistent horizontal padding
         mx: 0.5,
         textTransform: "none",
         // Position-specific active indicators
