@@ -44,6 +44,7 @@
     "@radix-ui/react-scroll-area": "^1.2.3",
     "archiver": "^7.0.1",
     "bcryptjs": "^3.0.2",
+    "cookies-next": "^6.0.0",
     "date-fns": "^4.1.0",
     "extract-zip": "^2.0.1",
     "formidable": "^3.5.2",

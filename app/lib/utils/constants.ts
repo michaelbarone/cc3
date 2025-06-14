@@ -39,9 +39,9 @@ export const THEME_PALETTE = {
     BACKGROUND: "#121212",
     PAPER: "#1e1e1e",
     SECONDARY: {
-      MAIN: "#f48fb1",
-      LIGHT: "#f8bbd0",
-      DARK: "#e91e63",
+      MAIN: "#9575cd", // Light purple
+      LIGHT: "#d1c4e9", // Very light purple
+      DARK: "#5e35b1", // Deep purple
     },
   },
   LIGHT: {
@@ -51,9 +51,9 @@ export const THEME_PALETTE = {
     BACKGROUND: "#f5f5f5",
     PAPER: "#ffffff",
     SECONDARY: {
-      MAIN: "#dc004e",
-      LIGHT: "#e33371",
-      DARK: "#9a0036",
+      MAIN: "#673ab7", // Purple
+      LIGHT: "#9575cd", // Light purple
+      DARK: "#4527a0", // Dark purple
     },
   },
 };
