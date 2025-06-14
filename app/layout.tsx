@@ -84,6 +84,7 @@ export async function generateMetadata(): Promise<Metadata> {
         { url: "/android-chrome-512x512.png", sizes: "512x512", type: "image/png" },
       ],
     },
+    manifest: "/site.webmanifest",
     other: {
       "mobile-web-app-capable": "yes",
       "apple-mobile-web-app-capable": "yes",
