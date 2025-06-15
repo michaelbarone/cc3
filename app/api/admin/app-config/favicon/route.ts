@@ -1,5 +1,6 @@
 import { verifyToken } from "@/app/lib/auth/jwt";
 import { prisma } from "@/app/lib/db/prisma";
+import { STORAGE_PATHS } from "@/app/lib/utils/file-paths";
 import fs from "fs/promises";
 import { NextRequest, NextResponse } from "next/server";
 import path from "path";
@@ -7,8 +8,9 @@ import sharp from "sharp";
 
 // Define favicon paths
 const PUBLIC_DIR = path.join(process.cwd(), "public");
-const DEFAULT_FAVICON_PATH = path.join(PUBLIC_DIR, "favicon-default.png");
-const CUSTOM_FAVICON_PATH = path.join(PUBLIC_DIR, "favicon-custom.png");
+const FAVICONS_DIR = path.join(PUBLIC_DIR, "favicons");
+const DEFAULT_FAVICON_PATH = path.join(FAVICONS_DIR, "favicon-default.png");
+const CUSTOM_FAVICON_PATH = path.join(FAVICONS_DIR, "favicon-custom.png");
 const ACTIVE_FAVICON_PATH = path.join(PUBLIC_DIR, "favicon.ico");
 
 // Helper to check if custom favicon exists
@@ -53,6 +55,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "File must be an image" }, { status: 400 });
     }
 
+    // Create favicons directory if it doesn't exist
+    await fs.mkdir(FAVICONS_DIR, { recursive: true });
+
     // Process the image
     const buffer = Buffer.from(await faviconFile.arrayBuffer());
 
@@ -77,10 +82,10 @@ export async function POST(request: NextRequest) {
     // This helps during the transition to the file-based approach
     const appConfig = await prisma.appConfig.upsert({
       where: { id: "app-config" },
-      update: { favicon: "/favicon-custom.png" },
+      update: { favicon: `${STORAGE_PATHS.API.FAVICONS}/favicon-custom.png` },
       create: {
         appName: "Control Center",
-        favicon: "/favicon-custom.png",
+        favicon: `${STORAGE_PATHS.API.FAVICONS}/favicon-custom.png`,
         loginTheme: "dark",
         registrationEnabled: false,
       },

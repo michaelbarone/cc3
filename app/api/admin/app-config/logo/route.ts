@@ -1,8 +1,9 @@
-import { NextRequest, NextResponse } from "next/server";
 import { verifyToken } from "@/app/lib/auth/jwt";
 import { prisma } from "@/app/lib/db/prisma";
-import path from "path";
+import { STORAGE_PATHS, getPhysicalPath } from "@/app/lib/utils/file-paths";
 import fs from "fs/promises";
+import { NextRequest, NextResponse } from "next/server";
+import path from "path";
 import sharp from "sharp";
 
 // We can't use the Route Handler API's bodyParser for file uploads
@@ -74,10 +75,10 @@ export async function POST(request: NextRequest) {
 
     // Generate a unique filename
     const filename = `app-logo-${Date.now()}.webp`;
-    const filepath = path.join(process.cwd(), "public/logos", filename);
+    const filepath = path.join(process.cwd(), STORAGE_PATHS.PHYSICAL.LOGOS, filename);
 
     // Create logos directory if it doesn't exist
-    await fs.mkdir(path.join(process.cwd(), "public/logos"), { recursive: true });
+    await fs.mkdir(path.join(process.cwd(), STORAGE_PATHS.PHYSICAL.LOGOS), { recursive: true });
 
     // Process and save the image
     const buffer = Buffer.from(await logoFile.arrayBuffer());
@@ -87,7 +88,7 @@ export async function POST(request: NextRequest) {
       .toFile(filepath);
 
     // Public URL for the logo
-    const appLogo = `/logos/${filename}`;
+    const appLogo = `${STORAGE_PATHS.API.LOGOS}/${filename}`;
 
     // Get current app config
     const currentConfig = await prisma.appConfig.findUnique({
@@ -97,13 +98,7 @@ export async function POST(request: NextRequest) {
     // Delete old logo if it exists
     if (currentConfig?.appLogo) {
       try {
-        const oldLogoPath = path.join(
-          process.cwd(),
-          "public",
-          currentConfig.appLogo.startsWith("/")
-            ? currentConfig.appLogo.substring(1)
-            : currentConfig.appLogo,
-        );
+        const oldLogoPath = path.join(process.cwd(), getPhysicalPath(currentConfig.appLogo));
         await fs.access(oldLogoPath);
         await fs.unlink(oldLogoPath);
       } catch (error) {
@@ -157,11 +152,7 @@ export async function DELETE() {
 
     // Delete the logo file
     try {
-      const logoPath = path.join(
-        process.cwd(),
-        "public",
-        appConfig.appLogo.startsWith("/") ? appConfig.appLogo.substring(1) : appConfig.appLogo,
-      );
+      const logoPath = path.join(process.cwd(), getPhysicalPath(appConfig.appLogo));
       await fs.access(logoPath);
       await fs.unlink(logoPath);
     } catch (error) {

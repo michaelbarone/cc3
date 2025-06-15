@@ -16,10 +16,10 @@ export interface AppConfig {
 
 export const DEFAULT_APP_CONFIG: AppConfig = {
   appName: "Control Center",
-  appLogo: "/logos/app-logo-default.webp",
+  appLogo: "/api/public/logos/app-logo-default.webp",
   loginTheme: "dark",
   registrationEnabled: false,
-  favicon: "/favicon-default.png",
+  favicon: "/api/public/favicons/favicon-default.png",
 };
 
 // Theme constants

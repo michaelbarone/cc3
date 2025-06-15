@@ -1,5 +1,7 @@
 import { verifyToken } from "@/app/lib/auth/jwt";
+import { STORAGE_PATHS } from "@/app/lib/utils/file-paths";
 import fs from "fs/promises";
+import { revalidatePath } from "next/cache";
 import { NextRequest, NextResponse } from "next/server";
 import path from "path";
 import sharp from "sharp";
@@ -45,11 +47,11 @@ export async function POST(request: NextRequest) {
 
     // Generate a unique filename
     const filename = `icon-${Date.now()}.webp`;
-    const filepath = path.join(process.cwd(), "public/icons", filename);
+    const filepath = path.join(process.cwd(), STORAGE_PATHS.PHYSICAL.ICONS, filename);
 
     try {
       // Create icons directory if it doesn't exist
-      await fs.mkdir(path.join(process.cwd(), "public/icons"), { recursive: true });
+      await fs.mkdir(path.join(process.cwd(), STORAGE_PATHS.PHYSICAL.ICONS), { recursive: true });
 
       // Process and save the image
       const buffer = Buffer.from(await iconFile.arrayBuffer());
@@ -59,7 +61,9 @@ export async function POST(request: NextRequest) {
         .toFile(filepath);
 
       // Public URL for the icon
-      const iconUrl = `/icons/${filename}`;
+      const iconUrl = `${STORAGE_PATHS.API.ICONS}/${filename}`;
+
+      revalidatePath("/");
 
       return NextResponse.json({ iconUrl });
     } catch (error) {
@@ -105,6 +109,7 @@ export async function DELETE(request: NextRequest) {
       );
       await fs.access(fullIconPath);
       await fs.unlink(fullIconPath);
+      revalidatePath("/");
       return NextResponse.json({ success: true });
     } catch (error) {
       if (error instanceof Error && "code" in error && error.code === "ENOENT") {

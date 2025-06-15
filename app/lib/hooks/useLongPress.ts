@@ -1,5 +1,5 @@
 /// <reference types="node" />
-import React, { useCallback, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 
 interface UseLongPressOptions {
   onClick?: () => void;
@@ -133,7 +133,7 @@ export function useLongPress({
   }, []);
 
   // Cleanup on unmount
-  React.useEffect(() => {
+  useEffect(() => {
     return () => {
       if (pressTimer.current !== null) {
         window.clearInterval(pressTimer.current);

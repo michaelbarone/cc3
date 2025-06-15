@@ -1,5 +1,6 @@
 import { verifyToken } from "@/app/lib/auth/jwt";
 import { prisma } from "@/app/lib/db/prisma";
+import { STORAGE_PATHS, getPhysicalPath } from "@/app/lib/utils/file-paths";
 import fs from "fs/promises";
 import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
@@ -69,10 +70,10 @@ export async function POST(request: NextRequest, context: RouteContext) {
 
     // Generate a unique filename
     const filename = `${user.id}-${Date.now()}.webp`;
-    const filepath = path.join(process.cwd(), "public/avatars", filename);
+    const filepath = path.join(process.cwd(), STORAGE_PATHS.PHYSICAL.AVATARS, filename);
 
     // Create avatars directory if it doesn't exist
-    await fs.mkdir(path.join(process.cwd(), "public/avatars"), { recursive: true });
+    await fs.mkdir(path.join(process.cwd(), STORAGE_PATHS.PHYSICAL.AVATARS), { recursive: true });
 
     // Process and save the image
     const buffer = Buffer.from(await avatarFile.arrayBuffer());
@@ -82,16 +83,12 @@ export async function POST(request: NextRequest, context: RouteContext) {
       .toFile(filepath);
 
     // Public URL for the avatar
-    const avatarUrl = `/avatars/${filename}`;
+    const avatarUrl = `${STORAGE_PATHS.API.AVATARS}/${filename}`;
 
     // Delete old avatar if it exists
     if (user.avatarUrl) {
       try {
-        const oldAvatarPath = path.join(
-          process.cwd(),
-          "public",
-          user.avatarUrl.startsWith("/") ? user.avatarUrl.substring(1) : user.avatarUrl,
-        );
+        const oldAvatarPath = path.join(process.cwd(), getPhysicalPath(user.avatarUrl));
         await fs.access(oldAvatarPath);
         await fs.unlink(oldAvatarPath);
       } catch (error) {
@@ -151,11 +148,7 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
 
     // Delete the avatar file
     try {
-      const avatarPath = path.join(
-        process.cwd(),
-        "public",
-        user.avatarUrl.startsWith("/") ? user.avatarUrl.substring(1) : user.avatarUrl,
-      );
+      const avatarPath = path.join(process.cwd(), getPhysicalPath(user.avatarUrl));
       await fs.access(avatarPath);
       await fs.unlink(avatarPath);
     } catch (error) {

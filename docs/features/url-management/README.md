@@ -17,7 +17,7 @@ interface Url {
   title: string;
   url: string;
   urlMobile?: string | null;
-  iconPath?: string | null;
+  iconPath?: string | null; // Should use /api/public/icons/* format
   idleTimeoutMinutes: number;
   createdAt: Date;
   updatedAt: Date;

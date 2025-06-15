@@ -48,10 +48,36 @@ function updateGlobalContainerPosition(menuPosition: "top" | "side") {
   if (!globalIframeContainer) return;
 
   if (menuPosition === "top") {
-    globalIframeContainer.style.top = "64px"; // AppBar height
+    // Use media query to determine the correct AppBar height
+    const isMobileView = window.innerWidth < 600;
+    const appBarHeight = isMobileView ? "56px" : "64px"; // AppBar height changes at small screens
+
+    globalIframeContainer.style.top = appBarHeight;
     globalIframeContainer.style.bottom = "0";
     globalIframeContainer.style.left = "0";
     globalIframeContainer.style.height = "auto";
+
+    // Add resize listener to adjust for header height changes
+    const handleResize = () => {
+      if (!globalIframeContainer) return;
+      const isMobileView = window.innerWidth < 600;
+      const appBarHeight = isMobileView ? "56px" : "64px";
+      globalIframeContainer.style.top = appBarHeight;
+
+      // Update all iframe wrapper elements
+      const wrappers = globalIframeContainer.querySelectorAll("[data-iframe-container]");
+      wrappers.forEach((wrapper) => {
+        const rect = wrapper.getBoundingClientRect();
+        if (rect) {
+          (wrapper as HTMLElement).style.top = `${rect.top}px`;
+        }
+      });
+    };
+
+    // Remove any existing resize listener
+    window.removeEventListener("resize", handleResize);
+    // Add new resize listener
+    window.addEventListener("resize", handleResize);
   } else {
     globalIframeContainer.style.top = "0";
     globalIframeContainer.style.bottom = "0";
@@ -59,6 +85,10 @@ function updateGlobalContainerPosition(menuPosition: "top" | "side") {
     globalIframeContainer.style.left = "240px";
     globalIframeContainer.style.height = "100%";
     globalIframeContainer.style.width = "calc(100% - 240px)";
+
+    // Remove resize listener if not needed
+    const handleResize = () => {};
+    window.removeEventListener("resize", handleResize);
   }
 }
 
@@ -88,8 +118,11 @@ function IframeElement({
     const container = getGlobalIframeContainer();
     if (!container || !containerRef.current) return;
 
+    // Check if wrapper already exists for this URL ID
+    const existingWrapper = container.querySelector(`[data-iframe-container="${urlData.id}"]`);
+
     // Create wrapper div if it doesn't exist
-    if (!wrapperRef.current) {
+    if (!existingWrapper && !wrapperRef.current) {
       const wrapper = document.createElement("div");
       wrapper.setAttribute("data-iframe-container", urlData.id);
       wrapper.style.position = "absolute";
@@ -155,21 +188,33 @@ function IframeElement({
         iframe.removeEventListener("load", loadHandler);
         iframe.removeEventListener("error", errorHandler);
       };
+    } else if (existingWrapper && !wrapperRef.current) {
+      // If wrapper exists but we don't have a ref to it, store the ref
+      wrapperRef.current = existingWrapper as HTMLDivElement;
+      iframeRef.current = existingWrapper.querySelector(
+        `[data-iframe-id="${urlData.id}"]`,
+      ) as HTMLIFrameElement;
     }
 
     // Update position when container moves
     const observer = new ResizeObserver(() => {
       const rect = containerRef.current?.getBoundingClientRect();
       if (rect && wrapperRef.current) {
+        // Get the current appBar height
+        const isMobileView = window.innerWidth < 600;
+        const appBarHeight = isMobileView ? 56 : 64; // AppBar height changes at small screens
+
         wrapperRef.current.style.position = "fixed";
-        wrapperRef.current.style.top = `${rect.top}px`;
+        wrapperRef.current.style.top = `${appBarHeight}px`;
         wrapperRef.current.style.left = `${rect.left}px`;
         wrapperRef.current.style.width = `${rect.width}px`;
-        wrapperRef.current.style.height = `${rect.height}px`;
+        wrapperRef.current.style.height = `calc(100% - ${appBarHeight}px)`;
       }
     });
 
-    observer.observe(containerRef.current);
+    if (containerRef.current) {
+      observer.observe(containerRef.current);
+    }
 
     // Cleanup
     return () => {

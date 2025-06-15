@@ -1,5 +1,6 @@
 "use client";
 
+import { convertToApiPath } from "@/app/lib/utils/file-paths";
 import DeleteIcon from "@mui/icons-material/Delete";
 import ImageIcon from "@mui/icons-material/Image";
 import PhotoCameraIcon from "@mui/icons-material/PhotoCamera";
@@ -24,6 +25,9 @@ export default function IconUpload({
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Convert iconUrl to API path if it's a legacy path
+  const apiIconUrl = iconUrl ? convertToApiPath(iconUrl) : iconUrl;
 
   // Handle file selection
   const handleFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
@@ -121,7 +125,7 @@ export default function IconUpload({
 
       {/* Icon Avatar */}
       <Avatar
-        src={iconUrl || undefined}
+        src={apiIconUrl || undefined}
         alt="URL Icon"
         sx={{
           width: size,
@@ -132,7 +136,7 @@ export default function IconUpload({
         }}
         onClick={handleIconClick}
       >
-        {!iconUrl && <ImageIcon />}
+        {!apiIconUrl && <ImageIcon />}
       </Avatar>
 
       {/* Upload buttons */}

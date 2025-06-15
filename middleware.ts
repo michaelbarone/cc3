@@ -10,6 +10,7 @@ const publicPaths = [
   "/api/auth/first-run",
   "/api/admin/app-config", // Allow public read-only access for login page
   "/api/health",
+  "/api/public",
 ];
 
 // Paths that require admin access
@@ -27,8 +28,10 @@ const isStaticAssetPath = (pathname: string) => {
     pathname.startsWith("/logos/") ||
     pathname.startsWith("/icons/") ||
     pathname.startsWith("/avatars/") ||
-    pathname.startsWith("/public/") ||
+    pathname.startsWith("/favicons/") ||
+    pathname.startsWith("/uploads/") ||
     pathname === "/site.webmanifest" ||
+    pathname === "/manifest.json" ||
     pathname === "/apple-touch-icon.png" ||
     pathname === "/favicon-32x32.png" ||
     pathname === "/favicon-16x16.png" ||
@@ -45,6 +48,11 @@ export function middleware(request: NextRequest): Promise<NextResponse> | NextRe
   const { pathname } = request.nextUrl;
   const method = request.method;
 
+  // Allow access to all /api/public/* paths
+  if (pathname.startsWith("/api/public/")) {
+    return NextResponse.next();
+  }
+
   // Skip middleware for public paths
   // Also, allow GET requests to /api/admin/app-config without auth for the login page
   if (
@@ -52,6 +60,18 @@ export function middleware(request: NextRequest): Promise<NextResponse> | NextRe
     (pathname === "/api/admin/app-config" && method === "GET") ||
     isStaticAssetPath(pathname)
   ) {
+    // add check for public folder direct paths like /logos and /favicons and /icons and /avatars and /uploads and convert them to the /api/public/ path
+    if (
+      pathname.startsWith("/public/") ||
+      pathname.startsWith("/logos/") ||
+      pathname.startsWith("/favicons/") ||
+      pathname.startsWith("/icons/") ||
+      pathname.startsWith("/avatars/") ||
+      pathname.startsWith("/uploads/")
+    ) {
+      return NextResponse.redirect(new URL("/api/public" + pathname, request.url));
+    }
+
     return NextResponse.next();
   }
 

@@ -99,7 +99,7 @@ export async function PUT(request: NextRequest, { params }: RouteContext): Promi
 
     // For localhost URLs, validate that either port or path is provided
     if (isLocalhost) {
-      if (!port && !path) {
+      if (("port" in requestData || "path" in requestData) && !port && !path) {
         return NextResponse.json(
           { error: "Either port or path is required for localhost URLs" },
           { status: 400 },
@@ -116,8 +116,8 @@ export async function PUT(request: NextRequest, { params }: RouteContext): Promi
         return NextResponse.json({ error: "Mobile path must start with /" }, { status: 400 });
       }
     } else {
-      // For standard URLs, validate URL field
-      if (!url || url.trim().length === 0) {
+      // For standard URLs, validate URL field only if we're updating the URL
+      if ("url" in requestData && (!url || url.trim().length === 0)) {
         return NextResponse.json({ error: "URL is required" }, { status: 400 });
       }
     }
