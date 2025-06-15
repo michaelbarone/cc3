@@ -52,6 +52,35 @@ This document serves as the main project plan and tracks the status of all tasks
 
 ## Future Tasks
 
+### Iframe UX - no scroll bars on iframe or iframe container
+- **Description**: Remove scroll bars from iframe and iframe container
+- **Priority**: High
+- **Estimated Effort**: 1 week
+
+### admin adding new url functionality
+- **Description**: updates for admin add url include:
+  - when clicking the add url button the inputs should be cleared
+  - when on the add url page, there should be an option to save and add another and we can change the current button to save and close
+  - we should make the default timeout 0 seconds so its disabled by default, and add a note that this functionality is not configured yet.
+- **Priority**: High
+- **Estimated Effort**: 1 week
+
+### admin url groups updates
+- **Description**: updates for admin url groups include:
+  - when adding existing urls to a group, we should remove the urls from the available list that are already in the group or being added so we dont accidentally add duplicate entries which now cause an error that can be confusing to users.
+- **Priority**: High
+- **Estimated Effort**: 1 week
+
+### left side menu touch interaction
+- **Description**: when we touch and drag the menu to scroll it, it should not select menu entries.
+- **Priority**: High
+- **Estimated Effort**: 1 week
+
+### user menu should use avatar if one is available instead of the default avatar image for the menu
+- **Description**: for the user menu in the header, there is an icon next to the username.  if the user has an avatar uploaded we should use that instead of the generic avatar image next to the username.
+- **Priority**: High
+- **Estimated Effort**: 1 week
+
 ### Docker Backup/Restore Validation
 - **Description**: Validate backup and restore functionality with Docker deployment after image storage and database path adjustments
 - **Key Milestones**:

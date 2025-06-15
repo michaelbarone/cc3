@@ -77,13 +77,16 @@ export async function generateMetadata(): Promise<Metadata> {
         { url: "/icon-lowrez-58.png", sizes: "58x58", type: "image/png" },
       ],
       icon: [
+        { url: "/favicon.ico", sizes: "48x48", type: "image/x-icon" },
         { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
         { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
         { url: "/android-chrome-192x192.png", sizes: "192x192", type: "image/png" },
         { url: "/android-chrome-512x512.png", sizes: "512x512", type: "image/png" },
+        { url: "/icon-lowrez-58.png", sizes: "58x58", type: "image/png" },
+        { url: "/startup-image-320x460.png", sizes: "320x460", type: "image/png" },
       ],
     },
-    manifest: "/site.webmanifest",
+    // manifest: "/site.webmanifest",
     other: {
       "mobile-web-app-capable": "yes",
       "apple-mobile-web-app-capable": "yes",

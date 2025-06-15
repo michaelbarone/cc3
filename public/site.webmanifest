@@ -1,14 +1,19 @@
 {
   "name": "Control Center",
   "short_name": "CC",
+  "id": "control-center-pwa",
   "description": "A dashboard for managing and displaying URLs in iframes",
   "start_url": "/",
-  "display": "fullscreen",
+  "display": "standalone",
   "background_color": "#000000",
   "theme_color": "#3B7FB7",
   "orientation": "portrait",
-  "prefer_related_applications": false,
   "categories": ["utilities", "productivity"],
+  "scope": "/",
+  "lang": "en-US",
+  "dir": "ltr",
+  "display_override": ["standalone", "window-controls-overlay", "minimal-ui"],
+
   "shortcuts": [
     {
       "name": "Dashboard",
@@ -26,13 +31,13 @@
       "src": "/android-chrome-192x192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
       "src": "/android-chrome-512x512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
       "src": "/apple-touch-icon.png",
@@ -68,25 +73,7 @@
       "src": "/startup-image-320x460.png",
       "sizes": "320x460",
       "type": "image/png",
-      "purpose": "startup",
-      "label": "Control Center"
+      "purpose": "any"
     }
-  ],
-  "screenshots": [
-    {
-      "src": "/startup-image-320x460.png",
-      "sizes": "320x460",
-      "type": "image/png",
-      "platform": "narrow",
-      "label": "Control Center"
-    }
-  ],
-  "related_applications": [],
-  "scope": "/",
-  "lang": "en-US",
-  "dir": "ltr",
-  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
-  "edge_side_panel": {
-    "preferred_width": 400
-  }
+  ]
 }

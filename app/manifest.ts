@@ -4,14 +4,19 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "Control Center",
     short_name: "CC",
+    id: "control-center-pwa",
     description: "A dashboard for managing and displaying URLs in iframes",
     start_url: "/",
     display: "standalone",
     background_color: "#000000",
     theme_color: "#3B7FB7",
     orientation: "portrait",
-    prefer_related_applications: false,
     categories: ["utilities", "productivity"],
+    scope: "/",
+    lang: "en-US",
+    dir: "ltr",
+    display_override: ["standalone", "window-controls-overlay", "minimal-ui"],
+
     shortcuts: [
       {
         name: "Dashboard",
@@ -50,6 +55,18 @@ export default function manifest(): MetadataRoute.Manifest {
         purpose: "any",
       },
       {
+        src: "/favicon-16x16.png",
+        sizes: "16x16",
+        type: "image/png",
+        purpose: "any",
+      },
+      {
+        src: "/favicon-32x32.png",
+        sizes: "32x32",
+        type: "image/png",
+        purpose: "any",
+      },
+      {
         src: "/icon-lowrez-58.png",
         sizes: "58x58",
         type: "image/png",
@@ -59,13 +76,8 @@ export default function manifest(): MetadataRoute.Manifest {
         src: "/startup-image-320x460.png",
         sizes: "320x460",
         type: "image/png",
+        purpose: "any",
       },
     ],
-    related_applications: [],
-    scope: "/",
-    lang: "en-US",
-    dir: "ltr",
-    display_override: ["window-controls-overlay", "standalone", "minimal-ui"],
-    id: "control-center-pwa",
   };
 }

@@ -30,6 +30,7 @@ const isStaticAssetPath = (pathname: string) => {
     pathname.startsWith("/avatars/") ||
     pathname.startsWith("/favicons/") ||
     pathname.startsWith("/uploads/") ||
+    pathname === "/manifest.webmanifest" ||
     pathname === "/site.webmanifest" ||
     pathname === "/manifest.json" ||
     pathname === "/apple-touch-icon.png" ||
