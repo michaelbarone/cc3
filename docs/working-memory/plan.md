@@ -52,6 +52,19 @@ This document serves as the main project plan and tracks the status of all tasks
 
 ## Future Tasks
 
+### Docker Backup/Restore Validation
+- **Description**: Validate backup and restore functionality with Docker deployment after image storage and database path adjustments
+- **Key Milestones**:
+  - Test backup creation in Docker environment
+  - Verify backup file structure and integrity
+  - Test restore functionality with Docker volumes
+  - Validate image storage path handling during restore
+  - Ensure database paths are correctly managed
+  - Update documentation for Docker-specific backup/restore procedures
+  - Create automated test for backup/restore in Docker environment
+- **Priority**: High
+- **Estimated Effort**: 1 week
+
 ### Database Version Migration Support
 - **Description**: Add support for database version migrations with minimal downtime
 - **Priority**: Medium
@@ -106,19 +119,6 @@ This document serves as the main project plan and tracks the status of all tasks
   - Add manual log pruning capability
 - **Priority**: Medium
 - **Estimated Effort**: 2 weeks
-
-### Docker Backup/Restore Validation
-- **Description**: Validate backup and restore functionality with Docker deployment after image storage and database path adjustments
-- **Key Milestones**:
-  - Test backup creation in Docker environment
-  - Verify backup file structure and integrity
-  - Test restore functionality with Docker volumes
-  - Validate image storage path handling during restore
-  - Ensure database paths are correctly managed
-  - Update documentation for Docker-specific backup/restore procedures
-  - Create automated test for backup/restore in Docker environment
-- **Priority**: High
-- **Estimated Effort**: 1 week
 
 ## Closed Tasks
 
