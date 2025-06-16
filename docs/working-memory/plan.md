@@ -71,11 +71,6 @@ This document serves as the main project plan and tracks the status of all tasks
 - **Priority**: High
 - **Estimated Effort**: 1 week
 
-### left side menu touch interaction
-- **Description**: when we touch and drag the menu to scroll it, it should not select menu entries.
-- **Priority**: High
-- **Estimated Effort**: 1 week
-
 ### user menu should use avatar if one is available instead of the default avatar image for the menu
 - **Description**: for the user menu in the header, there is an icon next to the username.  if the user has an avatar uploaded we should use that instead of the generic avatar image next to the username.
 - **Priority**: High

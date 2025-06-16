@@ -30,6 +30,7 @@ const UrlItem = memo(function UrlItem({
     onMouseUp,
     onMouseLeave,
     onTouchStart,
+    onTouchMove,
     onTouchEnd,
     progress,
     isLongPressing,
@@ -108,6 +109,7 @@ const UrlItem = memo(function UrlItem({
           onMouseUp={onMouseUp}
           onMouseLeave={onMouseLeave}
           onTouchStart={onTouchStart}
+          onTouchMove={onTouchMove}
           onTouchEnd={onTouchEnd}
           sx={styles.buttonStyles}
           disableRipple={false}

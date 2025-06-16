@@ -215,10 +215,10 @@ export function UrlMenu({ urlGroups, initialUrlId, onUrlSelect }: UrlMenuProps) 
         const next = new Set(prev);
 
         // If this is the active group, don't allow it to be collapsed
-        if (groupId === activeGroupId) {
-          next.add(groupId);
-          return next;
-        }
+        // if (groupId === activeGroupId) {
+        //   next.add(groupId);
+        //   return next;
+        // }
 
         // Otherwise toggle as normal
         if (next.has(groupId)) {

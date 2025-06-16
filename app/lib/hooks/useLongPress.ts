@@ -15,6 +15,7 @@ interface UseLongPressResult {
   onMouseUp: (e: React.MouseEvent) => void;
   onMouseLeave: (e: React.MouseEvent) => void;
   onTouchStart: (e: React.TouchEvent) => void;
+  onTouchMove: (e: React.TouchEvent) => void;
   onTouchEnd: (e: React.TouchEvent) => void;
   progress: number;
   isLongPressing: boolean;
@@ -34,15 +35,22 @@ export function useLongPress({
   const pressStartTime = useRef<number>(0);
   const longPressTriggered = useRef<boolean>(false);
   const pressStarted = useRef<boolean>(false);
+  const touchStartPos = useRef<{ x: number; y: number } | null>(null);
   const animationStartDelay = 300; // 0.3 seconds delay before animation starts
+  const touchMoveTolerance = 10; // Pixels of movement allowed before canceling click
 
   const handlePressStart = useCallback(
     (e: React.MouseEvent | React.TouchEvent) => {
       if (disabled) return;
 
-      // Only prevent default for touch events to allow normal click behavior
+      // Store touch start position for touch events
       if (e.type.startsWith("touch")) {
-        e.preventDefault();
+        const touchEvent = e as React.TouchEvent;
+        const touch = touchEvent.touches[0];
+        touchStartPos.current = { x: touch.clientX, y: touch.clientY };
+
+        // Don't prevent default to allow scrolling
+        // e.preventDefault(); - removing this line
       }
 
       // Mark that a real press has started
@@ -91,11 +99,33 @@ export function useLongPress({
           setIsLongPressing(false);
           setProgress(0);
           pressStarted.current = false;
+          touchStartPos.current = null;
         }
       }, 10);
     },
     [disabled, duration, onLongPress, triggerHapticFeedback],
   );
+
+  // Add touch move handler to detect scrolling
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    if (!touchStartPos.current || !pressStarted.current) return;
+
+    const touch = e.touches[0];
+    const deltaX = Math.abs(touch.clientX - touchStartPos.current.x);
+    const deltaY = Math.abs(touch.clientY - touchStartPos.current.y);
+
+    // If user has moved finger more than the tolerance, consider it a scroll, not a tap
+    if (deltaX > touchMoveTolerance || deltaY > touchMoveTolerance) {
+      // Cancel the timer and reset state
+      if (pressTimer.current !== null) {
+        window.clearInterval(pressTimer.current);
+        pressTimer.current = null;
+      }
+      setIsLongPressing(false);
+      setProgress(0);
+      pressStarted.current = false;
+    }
+  }, []);
 
   const handlePressEnd = useCallback(
     (e: React.MouseEvent | React.TouchEvent) => {
@@ -105,9 +135,23 @@ export function useLongPress({
         pressTimer.current = null;
       }
 
-      // Only trigger click if a press actually started and it wasn't a long press
-      if (!disabled && pressStarted.current && !longPressTriggered.current && onClick) {
-        // This was a regular click, not a long press
+      // For touch events, check if it was a scroll or a tap
+      if (e.type.startsWith("touch")) {
+        const touchEvent = e as React.TouchEvent;
+
+        // If we have a touch start position and it's a tap (not a scroll)
+        if (touchStartPos.current && pressStarted.current && !longPressTriggered.current) {
+          const touch = touchEvent.changedTouches[0];
+          const deltaX = Math.abs(touch.clientX - touchStartPos.current.x);
+          const deltaY = Math.abs(touch.clientY - touchStartPos.current.y);
+
+          // Only trigger click if the finger hasn't moved much (it's a tap, not a scroll)
+          if (deltaX <= touchMoveTolerance && deltaY <= touchMoveTolerance && onClick) {
+            onClick();
+          }
+        }
+      } else if (!disabled && pressStarted.current && !longPressTriggered.current && onClick) {
+        // For mouse events, proceed as before
         onClick();
       }
 
@@ -115,8 +159,9 @@ export function useLongPress({
       setIsLongPressing(false);
       setProgress(0);
       pressStarted.current = false;
+      touchStartPos.current = null;
     },
-    [disabled, onClick],
+    [disabled, onClick, touchMoveTolerance],
   );
 
   // Special handler for mouse leave - should NOT trigger click
@@ -130,6 +175,7 @@ export function useLongPress({
     setIsLongPressing(false);
     setProgress(0);
     pressStarted.current = false;
+    touchStartPos.current = null;
   }, []);
 
   // Cleanup on unmount
@@ -146,6 +192,7 @@ export function useLongPress({
     onMouseUp: handlePressEnd,
     onMouseLeave: handleMouseLeave,
     onTouchStart: handlePressStart,
+    onTouchMove: handleTouchMove,
     onTouchEnd: handlePressEnd,
     progress,
     isLongPressing,
