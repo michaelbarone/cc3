@@ -10,7 +10,7 @@ import Brightness7Icon from "@mui/icons-material/Brightness7";
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import LogoutIcon from "@mui/icons-material/Logout";
 import SettingsIcon from "@mui/icons-material/Settings";
-import { Box, Divider, Menu, MenuItem, Typography, useTheme } from "@mui/material";
+import { Avatar, Box, Divider, Menu, MenuItem, Typography, useTheme } from "@mui/material";
 import { useRouter } from "next/navigation";
 import React, { useContext, useState } from "react";
 
@@ -60,7 +60,19 @@ export default function UserMenu({ showAdminOption = false }: UserMenuProps) {
         aria-haspopup="true"
         aria-expanded={anchorEl ? "true" : undefined}
       >
-        <AccountCircleIcon sx={{ mr: { xs: 0, sm: 1 } }} />
+        {user.avatarUrl ? (
+          <Avatar
+            src={user.avatarUrl}
+            alt={user.username}
+            sx={{
+              width: 24,
+              height: 24,
+              mr: { xs: 0, sm: 1 },
+            }}
+          />
+        ) : (
+          <AccountCircleIcon sx={{ mr: { xs: 0, sm: 1 } }} />
+        )}
         <Typography
           variant="body1"
           sx={{
