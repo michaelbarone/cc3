@@ -1,6 +1,7 @@
 "use client";
 
 import { useUrlManager } from "@/app/lib/hooks/useIframe";
+import { useLastActiveUrl } from "@/app/lib/hooks/useLastActiveUrl";
 import { useLongPress } from "@/app/lib/hooks/useLongPress";
 import type { UrlGroup } from "@/app/types/iframe";
 import { ExpandLess, ExpandMore } from "@mui/icons-material";
@@ -155,6 +156,7 @@ export function UrlMenu({ urlGroups, initialUrlId, onUrlSelect }: UrlMenuProps) 
   const [searchQuery, setSearchQuery] = useState("");
   const searchInputRef = useRef<HTMLInputElement>(null);
   const firstGroupHeaderRef = useRef<HTMLDivElement>(null);
+  const { updateLastActiveUrl } = useLastActiveUrl();
 
   // Use useEffect for client-side state initialization
   const [mounted, setMounted] = useState(false);
@@ -175,9 +177,11 @@ export function UrlMenu({ urlGroups, initialUrlId, onUrlSelect }: UrlMenuProps) 
   const handleUrlClick = useCallback(
     (urlId: string) => {
       selectUrl(urlId);
+      // Update the last active URL when a URL is selected
+      updateLastActiveUrl(urlId);
       onUrlSelect?.(urlId);
     },
-    [selectUrl, onUrlSelect],
+    [selectUrl, onUrlSelect, updateLastActiveUrl],
   );
 
   // Handle URL unload (long press)

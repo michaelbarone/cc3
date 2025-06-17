@@ -1,6 +1,7 @@
 "use client";
 
 import { useUrlManager } from "@/app/lib/hooks/useIframe";
+import { useLastActiveUrl } from "@/app/lib/hooks/useLastActiveUrl";
 import type { UrlGroup } from "@/app/types/iframe";
 import { Box, Paper, Popper, useTheme } from "@mui/material";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -21,6 +22,7 @@ export const TopMenuNavigation = memo(function TopMenuNavigation({
   const [expanded, setExpanded] = useState(false);
   const anchorRef = useRef<HTMLDivElement>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const { updateLastActiveUrl } = useLastActiveUrl();
 
   const { urls, activeUrlId, selectUrl, unloadUrl } = useUrlManager(urlGroups, initialUrlId);
 
@@ -43,10 +45,12 @@ export const TopMenuNavigation = memo(function TopMenuNavigation({
   const handleUrlClick = useCallback(
     (urlId: string) => {
       selectUrl(urlId);
+      // Update the last active URL when a URL is selected
+      updateLastActiveUrl(urlId);
       if (onUrlSelect) onUrlSelect(urlId);
       setExpanded(false);
     },
-    [selectUrl, onUrlSelect],
+    [selectUrl, onUrlSelect, updateLastActiveUrl],
   );
 
   // Handle URL unload (long press)

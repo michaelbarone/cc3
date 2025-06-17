@@ -52,11 +52,6 @@ This document serves as the main project plan and tracks the status of all tasks
 
 ## Future Tasks
 
-### remember last url and urlgroup
-- **Description**: when returning to the app, the last url and urlgroup should be selected.
-- **Priority**: High
-- **Estimated Effort**: 1 week
-
 ### Iframe UX - no scroll bars on iframe or iframe container
 - **Description**: Remove scroll bars from iframe and iframe container
 - **Priority**: High

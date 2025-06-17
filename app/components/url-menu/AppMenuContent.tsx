@@ -8,9 +8,13 @@ import { UrlMenu } from "./UrlMenu";
 
 interface AppMenuContentProps {
   forceMenuPosition?: "side" | "top" | null;
+  initialUrlId?: string | null;
 }
 
-export function AppMenuContent({ forceMenuPosition = null }: AppMenuContentProps) {
+export function AppMenuContent({
+  forceMenuPosition = null,
+  initialUrlId = null,
+}: AppMenuContentProps) {
   const theme = useTheme();
   const { preferences } = useUserPreferences();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
@@ -35,9 +39,9 @@ export function AppMenuContent({ forceMenuPosition = null }: AppMenuContentProps
 
   // Render menu based on effective position
   if (effectiveMenuPosition === "top" && !isMobile) {
-    return <TopMenuNavigation urlGroups={urlGroups} />;
+    return <TopMenuNavigation urlGroups={urlGroups} initialUrlId={initialUrlId || undefined} />;
   }
 
   // Default to side menu
-  return <UrlMenu urlGroups={urlGroups} />;
+  return <UrlMenu urlGroups={urlGroups} initialUrlId={initialUrlId || undefined} />;
 }
