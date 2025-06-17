@@ -64,6 +64,12 @@ else
     fi
 fi
 
+# Check for public content in the case it gets overwritten on first mount
+if [ ! -d "/app/public/logos/app-logo-default.png" ]; then
+    echo "Copying public content from public-default..."
+    cp -r /app/public-default/. /app/public
+fi
+
 # Start the Next.js server
 echo "Starting Next.js server..."
 exec node server.js

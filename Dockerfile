@@ -46,6 +46,7 @@ ENV SKIP_SEED=false
 
 # Copy necessary files
 COPY --from=builder /app/public ./public
+COPY --from=builder /app/public ./public-default
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/prisma ./prisma
@@ -59,11 +60,15 @@ RUN chmod +x ./docker-entrypoint.sh
 # Create data directories
 RUN mkdir -p ./data ./data/backups
 
-# Create other directories
+# Create other directories if they don't exist
 RUN mkdir -p ./public/uploads
 RUN mkdir -p ./public/icons
 RUN mkdir -p ./public/avatars
 RUN mkdir -p ./public/logos
+RUN mkdir -p ./public-default/uploads
+RUN mkdir -p ./public-default/icons
+RUN mkdir -p ./public-default/avatars
+RUN mkdir -p ./public-default/logos
 
 # Add healthcheck
 # HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
