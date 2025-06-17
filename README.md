@@ -138,23 +138,23 @@ docker-compose up --build -d
 The system automatically:
 - Creates backups before migrations
 - Maintains rolling backups (last 5 copies)
-- Stores backups in the `/app/backup` volume
+- Stores backups in the `/app/data/backup` directory
 
 ### Manual Backup
 
 ```bash
 # Create a backup
-docker exec next-sqlite-app /bin/sh -c 'cp /app/data/app.db "/app/backup/app_$(date +%Y%m%d_%H%M%S).db"'
+docker exec next-sqlite-app /bin/sh -c 'cp /app/data/app.db "/app/data/backup/app_$(date +%Y%m%d_%H%M%S).db"'
 ```
 
 ### Restore from Backup
 
 ```bash
 # List available backups
-docker exec next-sqlite-app ls -l /app/backup
+docker exec next-sqlite-app ls -l /app/data/backup
 
 # Restore from specific backup
-docker exec next-sqlite-app /bin/sh -c 'cp /app/backup/app_YYYYMMDD_HHMMSS.db /app/data/app.db'
+docker exec next-sqlite-app /bin/sh -c 'cp /app/data/backup/app_YYYYMMDD_HHMMSS.db /app/data/app.db'
 ```
 
 ## Troubleshooting
