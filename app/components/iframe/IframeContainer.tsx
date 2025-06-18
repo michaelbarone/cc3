@@ -41,6 +41,11 @@ function getGlobalIframeContainer() {
     globalIframeContainer.style.pointerEvents = "none";
     globalIframeContainer.style.zIndex = "1000";
 
+    // Set initial viewport height CSS variable
+    if (typeof window !== "undefined") {
+      document.documentElement.style.setProperty("--vh", `${window.innerHeight * 0.01}px`);
+    }
+
     if (document.body) {
       document.body.appendChild(globalIframeContainer);
     } else {
@@ -54,6 +59,11 @@ function getGlobalIframeContainer() {
 function updateGlobalContainerPosition(menuPosition: "top" | "side") {
   if (!globalIframeContainer) return;
 
+  // Update the viewport height CSS variable
+  if (typeof window !== "undefined") {
+    document.documentElement.style.setProperty("--vh", `${window.innerHeight * 0.01}px`);
+  }
+
   if (menuPosition === "top") {
     // Use media query to determine the correct AppBar height
     const isMobileView = window.innerWidth < 600;
@@ -62,21 +72,25 @@ function updateGlobalContainerPosition(menuPosition: "top" | "side") {
     globalIframeContainer.style.top = appBarHeight;
     globalIframeContainer.style.bottom = "0";
     globalIframeContainer.style.left = "0";
-    globalIframeContainer.style.height = "auto";
+    globalIframeContainer.style.height = `calc(var(--vh, 1vh) * 100 - ${appBarHeight})`;
 
-    // Add resize listener to adjust for header height changes
+    // Add resize listener to adjust for header height changes and viewport changes
     const handleResize = () => {
       if (!globalIframeContainer) return;
+
+      // Update the CSS variable
+      document.documentElement.style.setProperty("--vh", `${window.innerHeight * 0.01}px`);
+
       const isMobileView = window.innerWidth < 600;
       const appBarHeight = isMobileView ? "56px" : "64px";
       globalIframeContainer.style.top = appBarHeight;
+      globalIframeContainer.style.height = `calc(var(--vh, 1vh) * 100 - ${appBarHeight})`;
 
       // Update all iframe wrapper elements
       const wrappers = globalIframeContainer.querySelectorAll("[data-iframe-container]");
       wrappers.forEach((wrapper) => {
-        const rect = wrapper.getBoundingClientRect();
-        if (rect) {
-          (wrapper as HTMLElement).style.top = `${rect.top}px`;
+        if (wrapper) {
+          (wrapper as HTMLElement).style.height = `calc(var(--vh, 1vh) * 100 - ${appBarHeight})`;
         }
       });
     };
@@ -85,6 +99,12 @@ function updateGlobalContainerPosition(menuPosition: "top" | "side") {
     window.removeEventListener("resize", handleResize);
     // Add new resize listener
     window.addEventListener("resize", handleResize);
+
+    // Add event listeners for mobile keyboard
+    window.removeEventListener("focusin", handleResize);
+    window.removeEventListener("focusout", handleResize);
+    window.addEventListener("focusin", handleResize);
+    window.addEventListener("focusout", handleResize);
   } else {
     globalIframeContainer.style.top = "0";
     globalIframeContainer.style.bottom = "0";
@@ -93,9 +113,11 @@ function updateGlobalContainerPosition(menuPosition: "top" | "side") {
     globalIframeContainer.style.height = "100%";
     globalIframeContainer.style.width = "calc(100% - 240px)";
 
-    // Remove resize listener if not needed
+    // Remove resize listeners if not needed
     const handleResize = () => {};
     window.removeEventListener("resize", handleResize);
+    window.removeEventListener("focusin", handleResize);
+    window.removeEventListener("focusout", handleResize);
   }
 }
 
@@ -215,7 +237,7 @@ function IframeElement({
         wrapperRef.current.style.top = `${appBarHeight}px`;
         wrapperRef.current.style.left = `${rect.left}px`;
         wrapperRef.current.style.width = `${rect.width}px`;
-        wrapperRef.current.style.height = `calc(100% - ${appBarHeight}px)`;
+        wrapperRef.current.style.height = `calc(var(--vh, 1vh) * 100 - ${appBarHeight}px)`;
       }
     });
 

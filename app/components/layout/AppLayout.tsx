@@ -67,6 +67,27 @@ export default function AppLayout({
   // Handle initial mount
   useEffect(() => {
     setMounted(true);
+
+    // Set viewport height CSS variable
+    const updateViewportHeight = () => {
+      document.documentElement.style.setProperty("--vh", `${window.innerHeight * 0.01}px`);
+    };
+
+    // Initial update
+    updateViewportHeight();
+
+    // Update on resize
+    window.addEventListener("resize", updateViewportHeight);
+
+    // Update on keyboard appearance
+    window.addEventListener("focusin", updateViewportHeight);
+    window.addEventListener("focusout", updateViewportHeight);
+
+    return () => {
+      window.removeEventListener("resize", updateViewportHeight);
+      window.removeEventListener("focusin", updateViewportHeight);
+      window.removeEventListener("focusout", updateViewportHeight);
+    };
   }, []);
 
   // Handle mobile detection with useLayoutEffect to avoid flicker

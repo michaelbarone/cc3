@@ -7,7 +7,6 @@ import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import Brightness4Icon from "@mui/icons-material/Brightness4";
 import Brightness7Icon from "@mui/icons-material/Brightness7";
-import DashboardIcon from "@mui/icons-material/Dashboard";
 import LogoutIcon from "@mui/icons-material/Logout";
 import SettingsIcon from "@mui/icons-material/Settings";
 import { Avatar, Box, Divider, Menu, MenuItem, Typography, useTheme } from "@mui/material";
@@ -65,8 +64,8 @@ export default function UserMenu({ showAdminOption = false }: UserMenuProps) {
             src={user.avatarUrl}
             alt={user.username}
             sx={{
-              width: 24,
-              height: 24,
+              width: 32,
+              height: 32,
               mr: { xs: 0, sm: 1 },
             }}
           />
@@ -100,10 +99,6 @@ export default function UserMenu({ showAdminOption = false }: UserMenuProps) {
           horizontal: "right",
         }}
       >
-        <MenuItem onClick={() => navigateTo("/dashboard")}>
-          <DashboardIcon sx={{ mr: 1 }} />
-          Dashboard
-        </MenuItem>
         <MenuItem onClick={() => navigateTo("/settings")}>
           <SettingsIcon sx={{ mr: 1 }} />
           Settings

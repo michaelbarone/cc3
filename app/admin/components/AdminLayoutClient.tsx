@@ -24,6 +24,8 @@ import {
   ListItemText,
   Toolbar,
   Typography,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
 import { usePathname, useRouter } from "next/navigation";
 import { ReactNode, useEffect, useState } from "react";
@@ -40,6 +42,32 @@ export function AdminLayoutClient({ children }: AdminLayoutClientProps) {
   const [loading, setLoading] = useState(true);
   const pathname = usePathname();
   const router = useRouter();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const appBarHeight = isMobile ? 56 : 64; // AppBar height changes at small screens
+
+  // Set viewport height CSS variable
+  useEffect(() => {
+    const updateViewportHeight = () => {
+      document.documentElement.style.setProperty("--vh", `${window.innerHeight * 0.01}px`);
+    };
+
+    // Initial update
+    updateViewportHeight();
+
+    // Update on resize
+    window.addEventListener("resize", updateViewportHeight);
+
+    // Update on keyboard appearance
+    window.addEventListener("focusin", updateViewportHeight);
+    window.addEventListener("focusout", updateViewportHeight);
+
+    return () => {
+      window.removeEventListener("resize", updateViewportHeight);
+      window.removeEventListener("focusin", updateViewportHeight);
+      window.removeEventListener("focusout", updateViewportHeight);
+    };
+  }, []);
 
   // Fetch app configuration
   useEffect(() => {
@@ -214,8 +242,8 @@ export function AdminLayoutClient({ children }: AdminLayoutClientProps) {
           flexGrow: 1,
           p: 0,
           width: { sm: `calc(100% - ${drawerWidth}px)` },
-          marginTop: "64px",
-          height: "calc(100vh - 64px)",
+          marginTop: `${appBarHeight}px`,
+          height: `calc(var(--vh, 1vh) * 100 - ${appBarHeight}px)`,
           overflow: "hidden",
           position: "relative",
         }}
@@ -224,7 +252,7 @@ export function AdminLayoutClient({ children }: AdminLayoutClientProps) {
         <Box
           sx={{
             position: "fixed",
-            top: 64, // AppBar height
+            top: appBarHeight, // AppBar height
             left: { sm: drawerWidth, xs: 0 },
             right: 0,
             bottom: 0,
