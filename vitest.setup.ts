@@ -12,7 +12,7 @@ process.env = {
   ...process.env,
   NODE_ENV: "test",
   // Set a specific test database path to avoid conflicts
-  DATABASE_URL: path.join(process.cwd(), ".test-db", "test-database.db"),
+  DATABASE_URL: path.join(process.cwd(), "test", "test-database.db"),
 };
 
 // Mock Next.js dynamic imports

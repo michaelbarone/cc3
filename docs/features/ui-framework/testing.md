@@ -64,11 +64,11 @@ afterEach(() => {
 // test/utils/setup/providers.tsx
 import { ThemeProvider } from '@mui/material/styles';
 import { render } from '@testing-library/react';
-import { theme } from '@/app/theme';
+import { lightTheme } from '@/app/theme/theme';
 
 export function renderWithTheme(ui: React.ReactElement) {
   return render(
-    <ThemeProvider>
+    <ThemeProvider theme={lightTheme}>
       {ui}
     </ThemeProvider>
   );

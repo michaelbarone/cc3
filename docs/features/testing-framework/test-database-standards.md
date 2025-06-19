@@ -34,7 +34,7 @@ The test database uses environment variables to control its behavior:
 ```typescript
 // Default configuration
 const TEST_DB_PATH = process.env.TEST_DATABASE_PATH || 
-  path.join(process.cwd(), '.test-db', 'test-database.sqlite');
+  path.join(process.cwd(), 'test', 'test-database.db');
 const TEST_DATABASE_URL = `file:${TEST_DB_PATH}`;
 
 // Test type marker used in vitest.setup.ts

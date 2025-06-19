@@ -502,7 +502,7 @@ const getLargeDataset = lazyLoadFixture<LargeDataset>("large-dataset");
 // Environment configuration
 const getTestConfig = () => ({
   isCI: process.env.CI === "true",
-  testDatabaseUrl: process.env.TEST_DATABASE_URL || `file:${path.join(process.cwd(), '.test-db', 'test-database.sqlite')}`,
+  testDatabaseUrl: process.env.TEST_DATABASE_URL || `file:${path.join(process.cwd(), 'test', 'test-database.db')}`,
   useTestContainer: process.env.USE_TEST_CONTAINER === "true"
 });
 

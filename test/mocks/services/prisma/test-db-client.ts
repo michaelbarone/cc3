@@ -7,7 +7,7 @@ import fs from 'fs/promises';
 import path from 'path';
 
 // Set default test database location if not specified in environment
-const TEST_DB_PATH = process.env.TEST_DATABASE_PATH || path.join(process.cwd(), 'test-database.sqlite');
+const TEST_DB_PATH = process.env.TEST_DATABASE_PATH || path.join(process.cwd(), 'test', 'test-database.db');
 const TEST_DATABASE_URL = `file:${TEST_DB_PATH}`;
 
 // Global reference to prevent multiple instances
