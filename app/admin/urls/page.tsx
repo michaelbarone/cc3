@@ -311,11 +311,8 @@ export default function UrlManagement() {
                               method: "PUT",
                               headers: { "Content-Type": "application/json" },
                               body: JSON.stringify({
-                                title: url.title,
-                                url: url.url,
-                                urlMobile: url.urlMobile,
-                                iconPath: iconUrl,
-                                idleTimeoutMinutes: Number(url.idleTimeoutMinutes) || 10,
+                                ...url, // Include all URL properties
+                                iconPath: iconUrl, // Override just the icon path
                               }),
                             });
 
