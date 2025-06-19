@@ -1,6 +1,6 @@
 import { AuthProvider } from '@/app/lib/auth/auth-context'
 import { IframeProvider } from '@/app/lib/state/iframe-state'
-import { theme } from '@/app/theme'
+import { lightTheme } from '@/app/theme/theme'
 import { ThemeProvider } from '@mui/material/styles'
 import { render, RenderOptions } from '@testing-library/react'
 import { SessionProvider } from 'next-auth/react'
@@ -24,7 +24,7 @@ const renderWithProviders = (
 ) => {
   const Wrapper = ({ children }: { children: ReactNode }) => (
     <SessionProvider session={session}>
-      <ThemeProvider theme={theme}>
+      <ThemeProvider theme={lightTheme}>
         <AuthProvider>
           <IframeProvider initialActiveUrlId={activeUrlId}>
             {children}

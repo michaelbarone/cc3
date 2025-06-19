@@ -1,6 +1,7 @@
 import {
   COMMON_TYPOGRAPHY,
   COMPONENT_STYLES,
+  STATUS_COLORS,
   THEME_OPTIONS,
   THEME_PALETTE,
 } from "@/app/lib/utils/constants";
@@ -33,6 +34,28 @@ const commonThemeOptions: ThemeOptions = {
     h6: {
       fontSize: COMMON_TYPOGRAPHY.HEADING_SIZES.H6,
       fontWeight: COMMON_TYPOGRAPHY.HEADING_WEIGHT,
+    },
+  },
+  palette: {
+    error: {
+      main: STATUS_COLORS.ERROR.MAIN,
+      light: STATUS_COLORS.ERROR.LIGHT,
+      dark: STATUS_COLORS.ERROR.DARK,
+    },
+    warning: {
+      main: STATUS_COLORS.WARNING.MAIN,
+      light: STATUS_COLORS.WARNING.LIGHT,
+      dark: STATUS_COLORS.WARNING.DARK,
+    },
+    success: {
+      main: STATUS_COLORS.SUCCESS.MAIN,
+      light: STATUS_COLORS.SUCCESS.LIGHT,
+      dark: STATUS_COLORS.SUCCESS.DARK,
+    },
+    info: {
+      main: STATUS_COLORS.INFO.MAIN,
+      light: STATUS_COLORS.INFO.LIGHT,
+      dark: STATUS_COLORS.INFO.DARK,
     },
   },
   components: {
@@ -80,6 +103,9 @@ const lightThemeOptions: ThemeOptions = {
       default: THEME_PALETTE.LIGHT.BACKGROUND,
       paper: THEME_PALETTE.LIGHT.PAPER,
     },
+    highlight: {
+      main: THEME_PALETTE.LIGHT.HIGHLIGHT,
+    },
   },
 };
 
@@ -101,6 +127,9 @@ const darkThemeOptions: ThemeOptions = {
     background: {
       default: THEME_PALETTE.DARK.BACKGROUND,
       paper: THEME_PALETTE.DARK.PAPER,
+    },
+    highlight: {
+      main: THEME_PALETTE.DARK.HIGHLIGHT,
     },
   },
 };

@@ -10,8 +10,8 @@ export function LongPressProgress({ progress, isActive }: LongPressProgressProps
 
   if (!isActive) return null;
 
-  // Using orange color as specified in requirements
-  const progressColor = theme.palette.warning.main;
+  // Using the theme highlight color
+  const progressColor = theme.palette.highlight.main;
 
   return (
     <Box

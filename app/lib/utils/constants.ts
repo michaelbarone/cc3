@@ -36,6 +36,7 @@ export const THEME_PALETTE = {
     PRIMARY: "#90caf9",
     LIGHT: "#e3f2fd",
     DARK: "#42a5f5",
+    HIGHLIGHT: "#FF8C00",
     BACKGROUND: "#121212",
     PAPER: "#1e1e1e",
     SECONDARY: {
@@ -48,6 +49,7 @@ export const THEME_PALETTE = {
     PRIMARY: "#1976d2",
     LIGHT: "#4791db",
     DARK: "#115293",
+    HIGHLIGHT: "#FF8C00",
     BACKGROUND: "#f5f5f5",
     PAPER: "#ffffff",
     SECONDARY: {
@@ -55,6 +57,30 @@ export const THEME_PALETTE = {
       LIGHT: "#9575cd", // Light purple
       DARK: "#4527a0", // Dark purple
     },
+  },
+};
+
+// Add common status colors
+export const STATUS_COLORS = {
+  ERROR: {
+    MAIN: "#d32f2f",
+    LIGHT: "#ef5350",
+    DARK: "#c62828",
+  },
+  WARNING: {
+    MAIN: "#ed6c02",
+    LIGHT: "#ff9800",
+    DARK: "#e65100",
+  },
+  SUCCESS: {
+    MAIN: "#2e7d32",
+    LIGHT: "#4caf50",
+    DARK: "#1b5e20",
+  },
+  INFO: {
+    MAIN: "#0288d1",
+    LIGHT: "#03a9f4",
+    DARK: "#01579b",
   },
 };
 
