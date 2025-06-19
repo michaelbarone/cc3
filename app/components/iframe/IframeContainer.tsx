@@ -8,6 +8,7 @@ import type { IframeContainerProps, IframeContainerRef, IframeUrl } from "@/app/
 import { Box, useMediaQuery } from "@mui/material";
 import React, {
   forwardRef,
+  useCallback,
   useEffect,
   useImperativeHandle,
   useMemo,
@@ -214,6 +215,14 @@ function IframeElement({
       // Set initial src if visible
       if (urlData.isVisible) {
         iframe.src = effectiveUrl;
+
+        // Force update the loaded state after a short delay to ensure the iframe has loaded
+        setTimeout(() => {
+          if (iframe.src && iframe.src !== "about:blank") {
+            handleLoad();
+            onLoad?.(urlData.id);
+          }
+        }, 500);
       }
 
       // Return cleanup function that removes event listeners
@@ -271,6 +280,19 @@ function IframeElement({
 
       // Only set src if it's empty or about:blank
       if (!currentSrc || currentSrc === "about:blank") {
+        // Make sure we have a load handler to update the state
+        const loadHandler = () => {
+          if (iframeRef.current?.src && iframeRef.current.src !== "about:blank") {
+            handleLoad();
+            onLoad?.(urlData.id);
+          }
+        };
+
+        // Remove any existing handler and add a new one
+        iframeRef.current.removeEventListener("load", loadHandler);
+        iframeRef.current.addEventListener("load", loadHandler);
+
+        // Set the src to trigger the load event
         iframeRef.current.src = effectiveUrl;
       }
     }
@@ -287,6 +309,9 @@ function IframeElement({
     urlData.localhostMobilePort,
     urlData.localhostMobilePath,
     isMobile,
+    handleLoad,
+    onLoad,
+    urlData.id,
   ]);
 
   return null; // This component only manages the imperative iframe
@@ -296,7 +321,8 @@ function IframeElement({
 const IframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
   function IframeContainer({ urlGroups, initialUrlId, onLoad, onError, onUnload }, ref) {
     const { user } = useAuth();
-    const { urls, activeUrlId, initializeUrls, selectUrl, unloadUrl } = useUrlManager(urlGroups);
+    const { urls, activeUrlId, initializeUrls, selectUrl, unloadUrl, dispatch } =
+      useUrlManager(urlGroups);
     const containerRef = useRef<HTMLDivElement>(null);
     const isMobile = useMediaQuery("(max-width:600px)");
     const initialized = useRef(false);
@@ -333,6 +359,18 @@ const IframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
     // Create a memoized mapping of url IDs to avoid re-rendering IframeElements
     const urlIds = useMemo(() => Object.keys(urls), [urls]);
 
+    // Create a custom onLoad handler that also updates the state
+    const handleIframeLoad = useCallback(
+      (urlId: string) => {
+        // Mark the URL as loaded in the state
+        dispatch({ type: "LOAD_URL", payload: { urlId } });
+
+        // Call the original onLoad callback if provided
+        onLoad?.(urlId);
+      },
+      [dispatch, onLoad],
+    );
+
     // Expose methods via ref
     useImperativeHandle(
       ref,
@@ -346,9 +384,14 @@ const IframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
               `[data-iframe-id="${urlId}"]`,
             ) as HTMLIFrameElement;
             if (iframe) {
+              // Make sure the URL is marked as loaded in the state
+              dispatch({ type: "LOAD_URL", payload: { urlId } });
+
+              // Reset the iframe
               iframe.src = "about:blank";
               setTimeout(() => {
                 iframe.src = effectiveUrl;
+                onLoad?.(urlId);
               }, 100);
             }
           }
@@ -362,11 +405,26 @@ const IframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
           }
         },
         reloadUnloadedIframe: (urlId: string) => {
-          selectUrl(urlId);
+          const url = urls[urlId];
+          if (!url) return;
+
+          // Only update state if the URL is not already loaded
+          if (!url.isLoaded) {
+            dispatch({ type: "LOAD_URL", payload: { urlId } });
+          }
+
+          // Find the iframe element and set its src
+          const effectiveUrl = getEffectiveUrl(url, isMobile);
+          const iframe = document.querySelector(`[data-iframe-id="${urlId}"]`) as HTMLIFrameElement;
+
+          if (iframe) {
+            iframe.src = effectiveUrl;
+            onLoad?.(urlId);
+          }
         },
         getLoadedUrlIds: () => Object.keys(urls).filter((id) => urls[id].isLoaded),
       }),
-      [urls, unloadUrl, selectUrl, isMobile, onUnload],
+      [urls, unloadUrl, selectUrl, isMobile, onUnload, dispatch, onLoad],
     );
 
     return (
@@ -380,7 +438,7 @@ const IframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
                 key={urlId}
                 urlData={urls[urlId]}
                 isMobile={isMobile}
-                onLoad={onLoad}
+                onLoad={handleIframeLoad}
                 onError={onError}
                 containerRef={containerRef}
               />

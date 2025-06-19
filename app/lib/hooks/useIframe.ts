@@ -69,6 +69,7 @@ export function useUrlManager(urlGroups: UrlGroup[], initialUrlId?: string) {
       initializeUrls,
       selectUrl,
       unloadUrl,
+      dispatch,
     }),
     [
       state.activeUrlId,
@@ -79,6 +80,7 @@ export function useUrlManager(urlGroups: UrlGroup[], initialUrlId?: string) {
       initializeUrls,
       selectUrl,
       unloadUrl,
+      dispatch,
     ],
   );
 }

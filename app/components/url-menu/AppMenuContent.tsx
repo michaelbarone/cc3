@@ -2,18 +2,22 @@
 
 import { useUrlGroups } from "@/app/lib/hooks/useUrlGroups";
 import { useUserPreferences } from "@/app/lib/hooks/useUserPreferences";
+import { IframeContainerRef } from "@/app/types/iframe";
 import { useMediaQuery, useTheme } from "@mui/material";
+import { RefObject } from "react";
 import { TopMenuNavigation } from "./TopMenuNavigation";
 import { UrlMenu } from "./UrlMenu";
 
 interface AppMenuContentProps {
   forceMenuPosition?: "side" | "top" | null;
   initialUrlId?: string | null;
+  iframeContainerRef?: RefObject<IframeContainerRef>;
 }
 
 export function AppMenuContent({
   forceMenuPosition = null,
   initialUrlId = null,
+  iframeContainerRef,
 }: AppMenuContentProps) {
   const theme = useTheme();
   const { preferences } = useUserPreferences();
@@ -39,9 +43,21 @@ export function AppMenuContent({
 
   // Render menu based on effective position
   if (effectiveMenuPosition === "top" && !isMobile) {
-    return <TopMenuNavigation urlGroups={urlGroups} initialUrlId={initialUrlId || undefined} />;
+    return (
+      <TopMenuNavigation
+        urlGroups={urlGroups}
+        initialUrlId={initialUrlId || undefined}
+        iframeContainerRef={iframeContainerRef}
+      />
+    );
   }
 
   // Default to side menu
-  return <UrlMenu urlGroups={urlGroups} initialUrlId={initialUrlId || undefined} />;
+  return (
+    <UrlMenu
+      urlGroups={urlGroups}
+      initialUrlId={initialUrlId || undefined}
+      iframeContainerRef={iframeContainerRef}
+    />
+  );
 }

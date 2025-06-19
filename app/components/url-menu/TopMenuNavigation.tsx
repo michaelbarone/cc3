@@ -2,21 +2,24 @@
 
 import { useUrlManager } from "@/app/lib/hooks/useIframe";
 import { useLastActiveUrl } from "@/app/lib/hooks/useLastActiveUrl";
-import type { UrlGroup } from "@/app/types/iframe";
-import { Box, Paper, Popper, useTheme } from "@mui/material";
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { getEffectiveUrl } from "@/app/lib/utils/iframe-utils";
+import type { IframeContainerRef, UrlGroup } from "@/app/types/iframe";
+import { Box, Paper, Popper, useMediaQuery, useTheme } from "@mui/material";
+import { memo, RefObject, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { UrlItem } from "./UrlItem";
 
 interface TopMenuNavigationProps {
   urlGroups: UrlGroup[];
   initialUrlId?: string;
   onUrlSelect?: (urlId: string) => void;
+  iframeContainerRef?: RefObject<IframeContainerRef>;
 }
 
 export const TopMenuNavigation = memo(function TopMenuNavigation({
   urlGroups,
   initialUrlId,
   onUrlSelect,
+  iframeContainerRef,
 }: TopMenuNavigationProps) {
   const theme = useTheme();
   const [expanded, setExpanded] = useState(false);
@@ -44,21 +47,43 @@ export const TopMenuNavigation = memo(function TopMenuNavigation({
   // Handle URL selection
   const handleUrlClick = useCallback(
     (urlId: string) => {
-      selectUrl(urlId);
+      const isActive = urlId === activeUrlId;
+      const isLoaded = urls[urlId]?.isLoaded ?? false;
+
+      if (isActive) {
+        if (isLoaded && iframeContainerRef?.current) {
+          // If already active and loaded, reset the iframe
+          iframeContainerRef.current.resetIframe(urlId);
+        } else if (!isLoaded && iframeContainerRef?.current) {
+          // If active but not loaded, use reloadUnloadedIframe
+          iframeContainerRef.current.reloadUnloadedIframe(urlId);
+        } else {
+          // Fallback if ref is not available
+          selectUrl(urlId);
+        }
+      } else {
+        // Not active - make it active
+        selectUrl(urlId);
+      }
+
       // Update the last active URL when a URL is selected
       updateLastActiveUrl(urlId);
       if (onUrlSelect) onUrlSelect(urlId);
       setExpanded(false);
     },
-    [selectUrl, onUrlSelect, updateLastActiveUrl],
+    [selectUrl, onUrlSelect, updateLastActiveUrl, activeUrlId, urls, iframeContainerRef],
   );
 
   // Handle URL unload (long press)
   const handleUrlUnload = useCallback(
     (urlId: string) => {
-      unloadUrl(urlId);
+      if (iframeContainerRef?.current) {
+        iframeContainerRef.current.unloadIframe(urlId);
+      } else {
+        unloadUrl(urlId);
+      }
     },
-    [unloadUrl],
+    [unloadUrl, iframeContainerRef],
   );
 
   // Handle hover to expand/collapse with delay
@@ -97,9 +122,29 @@ export const TopMenuNavigation = memo(function TopMenuNavigation({
       const urlData = urls[url.id];
       const isActive = url.id === activeUrlId;
       const isLoaded = urlData?.isLoaded ?? false;
+      const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
       // If url has a title property, use it; otherwise use the ID
       const urlTitle = (url as any).title || url.id;
+
+      // Create tooltip text in format "name - url"
+      const tooltipUrl = url.isLocalhost
+        ? getEffectiveUrl(
+            {
+              id: url.id,
+              url: url.url,
+              urlMobile: url.urlMobile,
+              isLocalhost: true,
+              port: url.port || null,
+              path: url.path || null,
+              localhostMobilePath: url.localhostMobilePath || null,
+              localhostMobilePort: url.localhostMobilePort || null,
+            },
+            isMobile,
+          )
+        : url.url;
+
+      const tooltipText = `${url.title || url.id} - ${tooltipUrl}`;
 
       return (
         <UrlItem
@@ -115,7 +160,7 @@ export const TopMenuNavigation = memo(function TopMenuNavigation({
           }}
           isActive={isActive}
           isLoaded={isLoaded}
-          tooltipText={url.url}
+          tooltipText={tooltipText}
           onUrlClick={() => handleUrlClick(url.id)}
           onLongPress={() => handleUrlUnload(url.id)}
           menuPosition="top"

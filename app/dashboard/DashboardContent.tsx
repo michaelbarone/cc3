@@ -7,9 +7,10 @@ import { useAuth } from "@/app/lib/auth/auth-context";
 import { useLastActiveUrl } from "@/app/lib/hooks/useLastActiveUrl";
 import { useUrlGroups } from "@/app/lib/hooks/useUrlGroups";
 import { IframeProvider } from "@/app/lib/state/iframe-state";
+import { IframeContainerRef } from "@/app/types/iframe";
 import { Box, CircularProgress, Snackbar } from "@mui/material";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState, type RefObject } from "react";
 
 export default function DashboardContent() {
   const { user } = useAuth();
@@ -19,6 +20,7 @@ export default function DashboardContent() {
   const { lastActiveUrl, isLoading: lastActiveUrlLoading } = useLastActiveUrl();
   const [loading, setLoading] = useState(true);
   const [initialUrlId, setInitialUrlId] = useState<string | null>(null);
+  const iframeContainerRef = useRef<IframeContainerRef>(null);
   const [notification, setNotification] = useState<{
     open: boolean;
     message: string;
@@ -117,9 +119,20 @@ export default function DashboardContent() {
           <CircularProgress />
         </Box>
       ) : (
-        <AppLayout menuContent={<AppMenuContent initialUrlId={initialUrlId} />}>
+        <AppLayout
+          menuContent={
+            <AppMenuContent
+              initialUrlId={initialUrlId}
+              iframeContainerRef={iframeContainerRef as RefObject<IframeContainerRef>}
+            />
+          }
+        >
           <Box sx={{ width: "100%", height: "100%" }}>
-            <IframeContainer urlGroups={urlGroups || []} initialUrlId={initialUrlId || undefined} />
+            <IframeContainer
+              ref={iframeContainerRef}
+              urlGroups={urlGroups || []}
+              initialUrlId={initialUrlId || undefined}
+            />
           </Box>
         </AppLayout>
       )}

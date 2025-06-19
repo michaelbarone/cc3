@@ -3,9 +3,19 @@
 import { useUrlManager } from "@/app/lib/hooks/useIframe";
 import { useLastActiveUrl } from "@/app/lib/hooks/useLastActiveUrl";
 import { useLongPress } from "@/app/lib/hooks/useLongPress";
-import type { UrlGroup } from "@/app/types/iframe";
+import { getEffectiveUrl } from "@/app/lib/utils/iframe-utils";
+import type { IframeContainerRef, UrlGroup } from "@/app/types/iframe";
 import { ExpandLess, ExpandMore } from "@mui/icons-material";
-import { Box, Collapse, List, ListItem, ListItemButton, ListItemText } from "@mui/material";
+import {
+  Box,
+  Collapse,
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemText,
+  useMediaQuery,
+  useTheme,
+} from "@mui/material";
 import {
   forwardRef,
   memo,
@@ -15,6 +25,7 @@ import {
   useRef,
   useState,
   type ChangeEvent,
+  type RefObject,
 } from "react";
 import { LongPressProgress } from "./LongPressProgress";
 
@@ -22,6 +33,7 @@ interface UrlMenuProps {
   urlGroups: UrlGroup[];
   initialUrlId?: string;
   onUrlSelect?: (urlId: string) => void;
+  iframeContainerRef?: RefObject<IframeContainerRef>;
 }
 
 // Extract UrlMenuItem to a separate memoized component
@@ -56,6 +68,24 @@ const UrlMenuItem = memo(
           ? `/api/public${url.iconPath}`
           : url.iconPath
       : null;
+
+    const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down("md"));
+    const tooltipUrl = url.isLocalhost
+      ? getEffectiveUrl(
+          {
+            id: url.id,
+            url: url.url,
+            urlMobile: url.urlMobile,
+            isLocalhost: true,
+            port: url.port || null,
+            path: url.path || null,
+            localhostMobilePath: url.localhostMobilePath || null,
+            localhostMobilePort: url.localhostMobilePort || null,
+          },
+          isMobile,
+        )
+      : url.url;
 
     return (
       <ListItem
@@ -107,7 +137,7 @@ const UrlMenuItem = memo(
           )}
           <ListItemText
             primary={url.title || url.url}
-            secondary={url.url}
+            secondary={tooltipUrl}
             primaryTypographyProps={{
               fontWeight: isActive ? "bold" : "normal",
             }}
@@ -150,10 +180,16 @@ const GroupHeader = memo(
 GroupHeader.displayName = "GroupHeader";
 UrlMenuItem.displayName = "UrlMenuItem";
 
-export function UrlMenu({ urlGroups, initialUrlId, onUrlSelect }: UrlMenuProps) {
-  // State
-  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+export const UrlMenu = memo(function UrlMenu({
+  urlGroups,
+  initialUrlId,
+  onUrlSelect,
+  iframeContainerRef,
+}: UrlMenuProps) {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const [searchQuery, setSearchQuery] = useState("");
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const searchInputRef = useRef<HTMLInputElement>(null);
   const firstGroupHeaderRef = useRef<HTMLDivElement>(null);
   const { updateLastActiveUrl } = useLastActiveUrl();
@@ -176,20 +212,42 @@ export function UrlMenu({ urlGroups, initialUrlId, onUrlSelect }: UrlMenuProps) 
   // Handle URL selection
   const handleUrlClick = useCallback(
     (urlId: string) => {
-      selectUrl(urlId);
+      const isActive = urlId === activeUrlId;
+      const isLoaded = urls[urlId]?.isLoaded ?? false;
+
+      if (isActive) {
+        if (isLoaded && iframeContainerRef?.current) {
+          // If already active and loaded, reset the iframe
+          iframeContainerRef.current.resetIframe(urlId);
+        } else if (!isLoaded && iframeContainerRef?.current) {
+          // If active but not loaded, use reloadUnloadedIframe
+          iframeContainerRef.current.reloadUnloadedIframe(urlId);
+        } else {
+          // Fallback if ref is not available
+          selectUrl(urlId);
+        }
+      } else {
+        // Not active - make it active
+        selectUrl(urlId);
+      }
+
       // Update the last active URL when a URL is selected
       updateLastActiveUrl(urlId);
       onUrlSelect?.(urlId);
     },
-    [selectUrl, onUrlSelect, updateLastActiveUrl],
+    [selectUrl, onUrlSelect, updateLastActiveUrl, activeUrlId, urls, iframeContainerRef],
   );
 
   // Handle URL unload (long press)
   const handleUrlUnload = useCallback(
     (urlId: string) => {
-      unloadUrl(urlId);
+      if (iframeContainerRef?.current) {
+        iframeContainerRef.current.unloadIframe(urlId);
+      } else {
+        unloadUrl(urlId);
+      }
     },
-    [unloadUrl],
+    [unloadUrl, iframeContainerRef],
   );
 
   // Find the group containing the active URL
@@ -256,6 +314,26 @@ export function UrlMenu({ urlGroups, initialUrlId, onUrlSelect }: UrlMenuProps) 
       }))
       .filter((group) => group.urls.length > 0);
   }, [urlGroups, searchQuery]);
+
+  // Render URL items with appropriate state
+  const renderUrlItem = useCallback(
+    (url: UrlGroup["urls"][0]) => {
+      const isActive = url.id === activeUrlId;
+      const isLoaded = urls[url.id]?.isLoaded ?? false;
+
+      return (
+        <UrlMenuItem
+          key={url.id}
+          url={{ ...url, title: url.title || url.url }}
+          isActive={isActive}
+          isLoaded={isLoaded}
+          onUrlClick={() => handleUrlClick(url.id)}
+          onLongPress={() => handleUrlUnload(url.id)}
+        />
+      );
+    },
+    [activeUrlId, urls, handleUrlClick, handleUrlUnload],
+  );
 
   // Focus search input on keyboard shortcut
   useEffect(() => {
@@ -328,16 +406,7 @@ export function UrlMenu({ urlGroups, initialUrlId, onUrlSelect }: UrlMenuProps) 
               />
               <Collapse in={expandedGroups.has(group.id)} timeout="auto" unmountOnExit>
                 <List component="div" disablePadding aria-label={`${group.name} URLs`}>
-                  {group.urls.map((url) => (
-                    <UrlMenuItem
-                      key={url.id}
-                      url={{ ...url, title: url.title || url.url }}
-                      isActive={url.id === activeUrlId}
-                      isLoaded={urls[url.id]?.isLoaded ?? false}
-                      onUrlClick={handleUrlClick}
-                      onLongPress={handleUrlUnload}
-                    />
-                  ))}
+                  {group.urls.map(renderUrlItem)}
                 </List>
               </Collapse>
             </Box>
@@ -346,4 +415,4 @@ export function UrlMenu({ urlGroups, initialUrlId, onUrlSelect }: UrlMenuProps) 
       </List>
     </Box>
   );
-}
+});
