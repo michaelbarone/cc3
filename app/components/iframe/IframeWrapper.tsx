@@ -43,7 +43,7 @@ export const IframeWrapper = forwardRef<HTMLIFrameElement, IframeWrapperProps>(
       status,
       error,
       isActive,
-      sandbox = "allow-same-origin allow-scripts allow-forms allow-popups",
+      sandbox = "allow-same-origin allow-scripts allow-forms allow-downloads allow-popups allow-popups-to-escape-sandbox allow-modals allow-presentation allow-top-navigation-by-user-activation",
       title = `iframe-${id}`,
       isLocalhost = false,
       port = null,

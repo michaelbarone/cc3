@@ -176,11 +176,15 @@ function IframeElement({
       iframe.style.border = "none";
       iframe.style.background = "#fff";
       iframe.style.overflow = "hidden";
-      iframe.setAttribute("sandbox", "allow-same-origin allow-scripts allow-forms allow-popups");
+      iframe.setAttribute(
+        "sandbox",
+        "allow-same-origin allow-scripts allow-forms allow-downloads allow-popups allow-popups-to-escape-sandbox allow-modals allow-presentation allow-top-navigation-by-user-activation",
+      );
       iframe.setAttribute(
         "allow",
         "accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture",
       );
+      iframe.setAttribute("referrerPolicy", "no-referrer-when-downgrade");
 
       // Add event listeners
       const loadHandler = () => {
