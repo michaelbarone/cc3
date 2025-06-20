@@ -169,7 +169,9 @@ function IframeElement({
       // Create iframe if it doesn't exist
       const iframe = document.createElement("iframe");
       iframe.setAttribute("data-iframe-id", urlData.id);
-      const effectiveUrl = getEffectiveUrl(urlData, isMobile);
+      // Get the current isMobile value at creation time
+      const currentIsMobile = window.matchMedia("(max-width:600px)").matches;
+      const effectiveUrl = getEffectiveUrl(urlData, currentIsMobile);
       iframe.setAttribute("data-src", effectiveUrl);
       iframe.title = `iframe-${urlData.id}`;
       iframe.style.width = "100%";
@@ -275,7 +277,9 @@ function IframeElement({
 
     // Load URL only when visible and not already loaded
     if (urlData.isVisible) {
-      const effectiveUrl = getEffectiveUrl(urlData, isMobile);
+      // Get the current isMobile value at effect time, not closure time
+      const currentIsMobile = window.matchMedia("(max-width:600px)").matches;
+      const effectiveUrl = getEffectiveUrl(urlData, currentIsMobile);
       const currentSrc = iframeRef.current?.getAttribute("src") || undefined;
 
       // Only set src if it's empty or about:blank
@@ -308,7 +312,7 @@ function IframeElement({
     urlData.path,
     urlData.localhostMobilePort,
     urlData.localhostMobilePath,
-    isMobile,
+    // Remove isMobile from dependencies
     handleLoad,
     onLoad,
     urlData.id,
@@ -427,8 +431,9 @@ const IframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
             dispatch({ type: "LOAD_URL", payload: { urlId } });
           }
 
-          // Find the iframe element and set its src
-          const effectiveUrl = getEffectiveUrl(url, isMobile);
+          // Get the current isMobile value at call time, not closure time
+          const currentIsMobile = window.matchMedia("(max-width:600px)").matches;
+          const effectiveUrl = getEffectiveUrl(url, currentIsMobile);
           const iframe = document.querySelector(`[data-iframe-id="${urlId}"]`) as HTMLIFrameElement;
 
           if (iframe) {
@@ -438,7 +443,8 @@ const IframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
         },
         getLoadedUrlIds: () => Object.keys(urls).filter((id) => urls[id].isLoaded),
       }),
-      [urls, unloadUrl, selectUrl, isMobile, onUnload, dispatch, onLoad],
+      // Remove isMobile from the dependency array to prevent recreation on screen size changes
+      [urls, unloadUrl, selectUrl, onUnload, dispatch, onLoad],
     );
 
     return (
