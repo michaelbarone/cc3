@@ -381,26 +381,38 @@ const IframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
       () => ({
         resetIframe: (urlId: string) => {
           const url = urls[urlId];
-          if (url) {
-            // Get the current isMobile value at call time, not closure time
-            const currentIsMobile = window.matchMedia("(max-width:600px)").matches;
-            let effectiveUrl = getEffectiveUrl(url, currentIsMobile);
+          if (!url) return;
 
-            const iframe = document.querySelector(
-              `[data-iframe-id="${urlId}"]`,
-            ) as HTMLIFrameElement;
-            if (iframe) {
-              // Make sure the URL is marked as loaded in the state
-              dispatch({ type: "LOAD_URL", payload: { urlId } });
+          // If the URL is already active and loaded, we should only reset it
+          // if the user explicitly wants to refresh the content
+          const iframe = document.querySelector(`[data-iframe-id="${urlId}"]`) as HTMLIFrameElement;
+          if (!iframe) return;
 
-              // Reset the iframe
-              iframe.src = "about:blank";
-              setTimeout(() => {
-                iframe.src = effectiveUrl;
-                onLoad?.(urlId);
-              }, 100);
-            }
+          // Check if the iframe actually has content loaded (not about:blank)
+          const hasContent = iframe.src && iframe.src !== "about:blank";
+
+          // If the iframe is already loaded with content, we should only
+          // reset it if this is an explicit refresh action (e.g., clicking
+          // on an already active URL in the menu)
+          if (hasContent) {
+            // For an already loaded iframe, store the current URL
+            const currentUrl = iframe.src;
+
+            // Reset the iframe
+            iframe.src = "about:blank";
+            setTimeout(() => {
+              iframe.src = currentUrl;
+              onLoad?.(urlId);
+            }, 100);
+          } else {
+            // If the iframe doesn't have content, load it
+            const effectiveUrl = getEffectiveUrl(url, isMobile);
+            iframe.src = effectiveUrl;
+            onLoad?.(urlId);
           }
+
+          // Make sure the URL is marked as loaded in the state
+          dispatch({ type: "LOAD_URL", payload: { urlId } });
         },
         unloadIframe: (urlId: string) => {
           unloadUrl(urlId);

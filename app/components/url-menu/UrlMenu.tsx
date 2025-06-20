@@ -186,8 +186,6 @@ export const UrlMenu = memo(function UrlMenu({
   onUrlSelect,
   iframeContainerRef,
 }: UrlMenuProps) {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const [searchQuery, setSearchQuery] = useState("");
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -209,24 +207,50 @@ export const UrlMenu = memo(function UrlMenu({
     }
   }, [initialUrlId, selectUrl, mounted]);
 
+  // Add this ref at the component level
+  const lastClickRef = useRef<{ time: number; urlId: string }>({ time: 0, urlId: "" });
+
   // Handle URL selection
   const handleUrlClick = useCallback(
     (urlId: string) => {
+      // Add debounce to prevent double-clicks
+      const now = Date.now();
+
+      // If this is a duplicate click within 300ms, ignore it
+      if (now - lastClickRef.current.time < 300 && lastClickRef.current.urlId === urlId) {
+        // console.log("Ignoring duplicate click");
+        return;
+      }
+
+      // Update last click time and URL
+      lastClickRef.current = { time: now, urlId };
+
       const isActive = urlId === activeUrlId;
       const isLoaded = urls[urlId]?.isLoaded ?? false;
 
-      if (isActive) {
-        if (isLoaded && iframeContainerRef?.current) {
-          // If already active and loaded, reset the iframe
+      // console.log(
+      //   isActive ? "active" : "not active",
+      //   isLoaded ? "and loaded" : "but not loaded",
+      //   urlId,
+      // );
+
+      if (isActive && isLoaded) {
+        // console.log("active and loaded - reset it", urlId);
+        // If the URL is already active and loaded, the user is clicking
+        // to refresh the content, so we should reset the iframe
+        if (iframeContainerRef?.current) {
           iframeContainerRef.current.resetIframe(urlId);
-        } else if (!isLoaded && iframeContainerRef?.current) {
-          // If active but not loaded, use reloadUnloadedIframe
+        }
+      } else if (isActive && !isLoaded) {
+        // console.log("active but not loaded - load it", urlId);
+        // If active but not loaded, load it
+        if (iframeContainerRef?.current) {
           iframeContainerRef.current.reloadUnloadedIframe(urlId);
         } else {
-          // Fallback if ref is not available
           selectUrl(urlId);
         }
       } else {
+        // console.log("not active - make it active", urlId);
         // Not active - make it active
         selectUrl(urlId);
       }
