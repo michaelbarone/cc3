@@ -25,6 +25,8 @@ const IframeContext = createContext<{
 
 // Optimized reducer that prevents unnecessary state updates
 function iframeReducer(state: IframeState, action: IframeAction): IframeState {
+  console.log(`[IframeReducer] Action: ${action.type}`, action.payload);
+
   switch (action.type) {
     case "INIT_URLS": {
       const urls: Record<string, IframeUrl> = {};
@@ -55,6 +57,8 @@ function iframeReducer(state: IframeState, action: IframeAction): IframeState {
         };
       }
 
+      console.log(`[IframeReducer] INIT_URLS - initialUrlId: ${action.payload.initialUrlId}`);
+
       return {
         ...state,
         urls,
@@ -68,6 +72,7 @@ function iframeReducer(state: IframeState, action: IframeAction): IframeState {
 
       // Check if already selected to prevent unnecessary updates
       if (state.activeUrlId === urlId && state.urls[urlId]?.isVisible) {
+        console.log(`[IframeReducer] SELECT_URL - URL already selected and visible: ${urlId}`);
         return state;
       }
 
@@ -75,6 +80,7 @@ function iframeReducer(state: IframeState, action: IframeAction): IframeState {
 
       // Hide previous active URL if it exists
       if (state.activeUrlId && urls[state.activeUrlId]) {
+        console.log(`[IframeReducer] SELECT_URL - Hiding previous URL: ${state.activeUrlId}`);
         urls[state.activeUrlId] = {
           ...urls[state.activeUrlId],
           isVisible: false,
@@ -82,6 +88,9 @@ function iframeReducer(state: IframeState, action: IframeAction): IframeState {
       }
 
       // Show selected URL but don't change its loaded state
+      const isLoaded = urls[urlId]?.isLoaded ?? false;
+      console.log(`[IframeReducer] SELECT_URL - Showing URL: ${urlId}, isLoaded: ${isLoaded}`);
+
       urls[urlId] = {
         ...urls[urlId],
         isVisible: true,
@@ -101,8 +110,11 @@ function iframeReducer(state: IframeState, action: IframeAction): IframeState {
 
       // Check if already loaded to prevent unnecessary updates
       if (state.urls[urlId]?.isLoaded) {
+        console.log(`[IframeReducer] LOAD_URL - URL already loaded: ${urlId}`);
         return state;
       }
+
+      console.log(`[IframeReducer] LOAD_URL - Loading URL: ${urlId}`);
 
       return {
         ...state,

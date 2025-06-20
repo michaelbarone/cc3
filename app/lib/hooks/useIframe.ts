@@ -29,14 +29,21 @@ export function useUrlManager(urlGroups: UrlGroup[], initialUrlId?: string) {
   // Select and make a URL visible
   const selectUrl = useCallback(
     (urlId: string) => {
+      console.log(
+        `[useUrlManager] selectUrl called - urlId: ${urlId}, isMobile: ${typeof window !== "undefined" && window.innerWidth < 600}`,
+      );
+      console.log(
+        `[useUrlManager] Current state - activeUrlId: ${state.activeUrlId}, isLoaded: ${state.urls[urlId]?.isLoaded}`,
+      );
       dispatch({ type: "SELECT_URL", payload: { urlId } });
     },
-    [dispatch],
+    [dispatch, state],
   );
 
   // Unload a URL's content
   const unloadUrl = useCallback(
     (urlId: string) => {
+      console.log(`[useUrlManager] unloadUrl called - urlId: ${urlId}`);
       dispatch({ type: "UNLOAD_URL", payload: { urlId } });
     },
     [dispatch],

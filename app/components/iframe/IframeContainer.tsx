@@ -268,6 +268,10 @@ function IframeElement({
   useEffect(() => {
     if (!wrapperRef.current || !iframeRef.current) return;
 
+    console.log(
+      `[IframeElement] Visibility effect - urlId: ${urlData.id}, isVisible: ${urlData.isVisible}, isMobile: ${isMobile}`,
+    );
+
     // Update visibility
     wrapperRef.current.style.visibility = urlData.isVisible ? "visible" : "hidden";
     wrapperRef.current.style.display = urlData.isVisible ? "block" : "none";
@@ -278,11 +282,17 @@ function IframeElement({
       const effectiveUrl = getEffectiveUrl(urlData, isMobile);
       const currentSrc = iframeRef.current?.getAttribute("src") || undefined;
 
+      console.log(
+        `[IframeElement] Visibility effect - effectiveUrl: ${effectiveUrl}, currentSrc: ${currentSrc}`,
+      );
+
       // Only set src if it's empty or about:blank
       if (!currentSrc || currentSrc === "about:blank") {
+        console.log(`[IframeElement] Visibility effect - Setting src for iframe`);
         // Make sure we have a load handler to update the state
         const loadHandler = () => {
           if (iframeRef.current?.src && iframeRef.current.src !== "about:blank") {
+            console.log(`[IframeElement] Load handler fired - urlId: ${urlData.id}`);
             handleLoad();
             onLoad?.(urlData.id);
           }
@@ -376,9 +386,13 @@ const IframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
       ref,
       () => ({
         resetIframe: (urlId: string) => {
+          console.log(
+            `[IframeContainer] resetIframe called - urlId: ${urlId}, isMobile: ${isMobile}`,
+          );
           const url = urls[urlId];
           if (url) {
             let effectiveUrl = getEffectiveUrl(url, isMobile);
+            console.log(`[IframeContainer] resetIframe - effectiveUrl: ${effectiveUrl}`);
 
             const iframe = document.querySelector(
               `[data-iframe-id="${urlId}"]`,
@@ -388,8 +402,12 @@ const IframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
               dispatch({ type: "LOAD_URL", payload: { urlId } });
 
               // Reset the iframe
+              console.log(`[IframeContainer] resetIframe - setting src to about:blank`);
               iframe.src = "about:blank";
               setTimeout(() => {
+                console.log(
+                  `[IframeContainer] resetIframe - setting src to effectiveUrl after timeout`,
+                );
                 iframe.src = effectiveUrl;
                 onLoad?.(urlId);
               }, 100);
@@ -397,6 +415,9 @@ const IframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
           }
         },
         unloadIframe: (urlId: string) => {
+          console.log(
+            `[IframeContainer] unloadIframe called - urlId: ${urlId}, isMobile: ${isMobile}`,
+          );
           unloadUrl(urlId);
           const iframe = document.querySelector(`[data-iframe-id="${urlId}"]`) as HTMLIFrameElement;
           if (iframe) {
@@ -405,19 +426,27 @@ const IframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
           }
         },
         reloadUnloadedIframe: (urlId: string) => {
+          console.log(
+            `[IframeContainer] reloadUnloadedIframe called - urlId: ${urlId}, isMobile: ${isMobile}`,
+          );
           const url = urls[urlId];
           if (!url) return;
 
           // Only update state if the URL is not already loaded
           if (!url.isLoaded) {
+            console.log(
+              `[IframeContainer] reloadUnloadedIframe - URL not loaded, dispatching LOAD_URL`,
+            );
             dispatch({ type: "LOAD_URL", payload: { urlId } });
           }
 
           // Find the iframe element and set its src
           const effectiveUrl = getEffectiveUrl(url, isMobile);
+          console.log(`[IframeContainer] reloadUnloadedIframe - effectiveUrl: ${effectiveUrl}`);
           const iframe = document.querySelector(`[data-iframe-id="${urlId}"]`) as HTMLIFrameElement;
 
           if (iframe) {
+            console.log(`[IframeContainer] reloadUnloadedIframe - setting iframe src`);
             iframe.src = effectiveUrl;
             onLoad?.(urlId);
           }

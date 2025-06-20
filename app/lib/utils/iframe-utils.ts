@@ -44,6 +44,8 @@ export interface UrlWithLocalhost {
  * @returns The effective URL to use
  */
 export function getEffectiveUrl(url: UrlWithLocalhost, isMobile: boolean): string {
+  console.log(`[getEffectiveUrl] Processing URL - id: ${url.id}, isMobile: ${isMobile}`);
+
   if (url.isLocalhost) {
     // Get current protocol and hostname from browser
     const protocol = typeof window !== "undefined" ? window.location.protocol : "http:";
@@ -60,13 +62,19 @@ export function getEffectiveUrl(url: UrlWithLocalhost, isMobile: boolean): strin
       useMobile && url.localhostMobilePath ? url.localhostMobilePath : url.path || "/";
 
     // Build URL with appropriate parts
-    return effectivePort
+    const result = effectivePort
       ? `${protocol}//${hostname}:${effectivePort}${effectivePath}`
       : `${protocol}//${hostname}${effectivePath}`;
+
+    console.log(`[getEffectiveUrl] Localhost URL - result: ${result}, useMobile: ${useMobile}`);
+    return result;
   } else {
     // Use standard URL selection logic for non-localhost URLs
     const selectedUrl = isMobile && url.urlMobile ? url.urlMobile : url.url;
     // Return empty string if the URL is null or empty
+    console.log(
+      `[getEffectiveUrl] Standard URL - selectedUrl: ${selectedUrl}, urlMobile: ${url.urlMobile}, url: ${url.url}`,
+    );
     return selectedUrl || "";
   }
 }

@@ -113,7 +113,12 @@ const UrlMenuItem = memo(
         <ListItemButton
           selected={isActive}
           data-url-id={url.id}
-          {...longPressHandlers}
+          onMouseDown={longPressHandlers.onMouseDown}
+          onMouseUp={longPressHandlers.onMouseUp}
+          onMouseLeave={longPressHandlers.onMouseLeave}
+          onTouchStart={longPressHandlers.onTouchStart}
+          onTouchMove={longPressHandlers.onTouchMove}
+          onTouchEnd={longPressHandlers.onTouchEnd}
           sx={{
             pl: 4,
             position: "relative",
@@ -186,8 +191,6 @@ export const UrlMenu = memo(function UrlMenu({
   onUrlSelect,
   iframeContainerRef,
 }: UrlMenuProps) {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const [searchQuery, setSearchQuery] = useState("");
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -215,18 +218,27 @@ export const UrlMenu = memo(function UrlMenu({
       const isActive = urlId === activeUrlId;
       const isLoaded = urls[urlId]?.isLoaded ?? false;
 
+      console.log(
+        `[UrlMenu] handleUrlClick - urlId: ${urlId}, isActive: ${isActive}, isLoaded: ${isLoaded}, isMobile: ${window.innerWidth < 600}`,
+      );
+
       if (isActive) {
+        console.log(`[UrlMenu] URL is already active`);
         if (isLoaded && iframeContainerRef?.current) {
+          console.log(`[UrlMenu] URL is loaded, resetting iframe`);
           // If already active and loaded, reset the iframe
           iframeContainerRef.current.resetIframe(urlId);
         } else if (!isLoaded && iframeContainerRef?.current) {
+          console.log(`[UrlMenu] URL is not loaded, reloading unloaded iframe`);
           // If active but not loaded, use reloadUnloadedIframe
           iframeContainerRef.current.reloadUnloadedIframe(urlId);
         } else {
+          console.log(`[UrlMenu] Fallback: using selectUrl`);
           // Fallback if ref is not available
           selectUrl(urlId);
         }
       } else {
+        console.log(`[UrlMenu] URL is not active, selecting URL`);
         // Not active - make it active
         selectUrl(urlId);
       }
