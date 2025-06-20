@@ -1,6 +1,4 @@
-import Image from "next/image";
-
-import ffIcon from "@/public/icons/firefox-install.png";
+// import ffIcon from "@/public/icons/firefox-install.png";
 import CloseIcon from "@mui/icons-material/Close";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import SouthEastIcon from "@mui/icons-material/SouthEast";
@@ -126,7 +124,7 @@ export default function AddToMobileFirefox(props: Props) {
           </Typography>
           <AddToHomeOption>
             <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-              <Image src={ffIcon} alt="Firefox install icon" width={32} height={32} />
+              {/* <Image src={ffIcon} alt="Firefox install icon" width={32} height={32} /> */}
               <Typography variant="body1">Install</Typography>
             </Box>
           </AddToHomeOption>
