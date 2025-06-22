@@ -1,5 +1,5 @@
-import { NextResponse } from "next/server";
 import { prisma } from "@/app/lib/db/prisma";
+import { NextResponse } from "next/server";
 
 // Define a type for the user from prisma
 type UserWithAuth = {
@@ -7,6 +7,8 @@ type UserWithAuth = {
   username: string;
   avatarUrl: string | null;
   passwordHash: string | null;
+  isAdmin: boolean;
+  lastLoginAt?: Date | null;
 };
 
 // GET /api/auth/users - Get all users for login screen
@@ -19,18 +21,27 @@ export async function GET() {
         username: true,
         avatarUrl: true,
         passwordHash: true, // Needed to determine if password is required
+        isAdmin: true, // Needed to detect admin users
+        lastLoginAt: true, // Needed to detect first-run state
       },
       orderBy: {
         username: "asc",
       },
     });
 
+    // Sort case-insensitively
+    const sortedUsers = [...users].sort((a, b) =>
+      a.username.toLowerCase().localeCompare(b.username.toLowerCase()),
+    );
+
     // Transform data to only expose necessary information
-    const transformedUsers = users.map((user: UserWithAuth) => ({
+    const transformedUsers = sortedUsers.map((user: UserWithAuth) => ({
       id: user.id,
       username: user.username,
       avatarUrl: user.avatarUrl,
       requiresPassword: !!user.passwordHash,
+      isAdmin: user.isAdmin,
+      lastLoginAt: user.lastLoginAt?.toISOString(),
     }));
 
     return NextResponse.json(transformedUsers);

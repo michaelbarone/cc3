@@ -21,7 +21,12 @@ export async function GET() {
       orderBy: { username: "asc" },
     });
 
-    return NextResponse.json(users);
+    // Sort case-insensitively
+    const sortedUsers = [...users].sort((a, b) =>
+      a.username.toLowerCase().localeCompare(b.username.toLowerCase()),
+    );
+
+    return NextResponse.json(sortedUsers);
   } catch (error) {
     console.error("Error fetching users:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
