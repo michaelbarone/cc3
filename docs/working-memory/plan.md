@@ -6,50 +6,6 @@ This document serves as the main project plan and tracks the status of all tasks
 
 ## Active Tasks
 
-### 1. E2E Test Coverage Expansion
-- **Location**: `/docs/working-memory/open/e2e-test-expansion`
-- **Created**: `2025-03-20`
-- **Description**: Expand end-to-end test coverage across critical user flows
-- **Key Milestones**:
-  - Auth flow coverage
-  - Settings management coverage
-  - Error case coverage
-  - Navigation test coverage
-- **Priority**: High
-- **Target**: 2025-04-15
-- **Progress**: 70% complete
-
-### 2. Testing Framework Implementation
-- **Location**: `/docs/working-memory/open/testing-framework`
-- **Created**: `2025-02-15`
-- **Description**: Implement comprehensive testing framework for unit, integration, and API testing
-- **Key Milestones**:
-  - ✅ Vitest + Testing Library Setup
-  - ✅ Performance monitoring tools
-  - ✅ Error handling patterns
-  - ✅ API test coverage metrics
-  - ✅ Test data management
-  - ⏳ Backup/Restore endpoint testing
-  - ⏳ URL Group Management endpoint testing
-  - ⏳ Test stability monitoring
-- **Priority**: High
-- **Target**: 2025-05-31
-- **Progress**: 85% complete - Added comprehensive API test review improvements, standardized error handling and performance monitoring patterns
-
-### 3. IFrame State Management Refactor
-- **Location**: `/docs/working-memory/open/iframe-state-refactor-20240401`
-- **Created**: `2025-04-01`
-- **Description**: Simplify iframe state management and improve performance
-- **Key Milestones**:
-  - Consolidate state logic
-  - Improve type safety
-  - Enhance error handling
-  - Optimize performance
-  - Ensure proper cleanup
-- **Priority**: High
-- **Target**: 2025-04-15
-- **Progress**: 90% complete - Pending edge case testing
-
 ## Future Tasks
 
 ### Iframe UX - user registration
