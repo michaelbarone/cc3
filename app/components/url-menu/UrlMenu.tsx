@@ -52,13 +52,32 @@ const UrlMenuItem = memo(
     onLongPress: (urlId: string) => void;
   }) => {
     // Use the hook directly at the top level, not inside useMemo
-    const longPressHandlers = useLongPress({
+    const {
+      onMouseDown,
+      onMouseUp,
+      onMouseLeave,
+      onTouchStart,
+      onTouchMove,
+      onTouchEnd,
+      progress,
+      isLongPressing,
+    } = useLongPress({
       onClick: () => onUrlClick(url.id),
       onLongPress: () => onLongPress(url.id),
       duration: 2000,
       disabled: false,
       visualFeedback: true,
     });
+
+    // Extract only the event handlers, not the state properties
+    const eventHandlers = {
+      onMouseDown,
+      onMouseUp,
+      onMouseLeave,
+      onTouchStart,
+      onTouchMove,
+      onTouchEnd,
+    };
 
     // Convert legacy icon paths to API paths if needed
     const iconPath = url.iconPath
@@ -113,7 +132,7 @@ const UrlMenuItem = memo(
         <ListItemButton
           selected={isActive}
           data-url-id={url.id}
-          {...longPressHandlers}
+          {...eventHandlers}
           sx={{
             pl: isMobile ? 3 : 4,
             position: "relative",
@@ -142,10 +161,7 @@ const UrlMenuItem = memo(
               fontWeight: isActive ? "bold" : "normal",
             }}
           />
-          <LongPressProgress
-            progress={longPressHandlers.progress}
-            isActive={longPressHandlers.isLongPressing}
-          />
+          <LongPressProgress progress={progress} isActive={isLongPressing} />
         </ListItemButton>
       </ListItem>
     );
