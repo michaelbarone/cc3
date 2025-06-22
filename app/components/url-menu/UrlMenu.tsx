@@ -115,7 +115,7 @@ const UrlMenuItem = memo(
           data-url-id={url.id}
           {...longPressHandlers}
           sx={{
-            pl: 4,
+            pl: isMobile ? 3 : 4,
             position: "relative",
             borderRight: isActive ? 3 : 0,
             borderColor: "primary.main",
