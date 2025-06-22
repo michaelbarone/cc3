@@ -1,5 +1,6 @@
 import { verifyToken } from "@/app/lib/auth/jwt";
 import { hashPassword, verifyPassword } from "@/app/lib/auth/password";
+import { validatePassword } from "@/app/lib/auth/password-validation";
 import { db } from "@/app/lib/db";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -42,7 +43,7 @@ export async function PUT(request: NextRequest) {
 
     // Update the user's password
     if (newPassword === null) {
-      // Remove password
+      // Remove password - no validation needed
       await db.user.update({
         where: { id: user.id },
         data: { passwordHash: null },
@@ -53,6 +54,18 @@ export async function PUT(request: NextRequest) {
         hasPassword: false,
       });
     } else {
+      // Validate new password against current policy
+      const validation = await validatePassword(newPassword);
+      if (!validation.isValid) {
+        return NextResponse.json(
+          {
+            message: "Password does not meet requirements",
+            validationErrors: validation.errors,
+          },
+          { status: 400 },
+        );
+      }
+
       // Update with new password
       const passwordHash = await hashPassword(newPassword);
 

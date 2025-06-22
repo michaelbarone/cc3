@@ -78,6 +78,47 @@ interface UpdateRegistrationResponse {
 }
 ```
 
+### GET /api/admin/app-config/password-policy
+
+Retrieves the current password complexity requirements.
+
+```typescript
+// Response Type
+interface PasswordPolicyResponse {
+  minPasswordLength: number;
+  requireUppercase: boolean;
+  requireLowercase: boolean;
+  requireNumbers: boolean;
+  requireSpecialChars: boolean;
+}
+```
+
+### PATCH /api/admin/app-config/password-policy
+
+Updates password complexity requirements.
+
+```typescript
+// Request Type
+interface UpdatePasswordPolicyRequest {
+  minPasswordLength?: number;
+  requireUppercase?: boolean;
+  requireLowercase?: boolean;
+  requireNumbers?: boolean;
+  requireSpecialChars?: boolean;
+}
+
+// Response Type
+interface UpdatePasswordPolicyResponse {
+  id: string;
+  minPasswordLength: number;
+  requireUppercase: boolean;
+  requireLowercase: boolean;
+  requireNumbers: boolean;
+  requireSpecialChars: boolean;
+  // Other AppConfig fields
+}
+```
+
 ## Asset Management Endpoints
 
 ### POST /api/admin/app-config/logo

@@ -31,6 +31,11 @@ interface AppConfig {
   favicon: string | null;
   loginTheme: string;
   registrationEnabled: boolean;
+  minPasswordLength: number;
+  requireUppercase: boolean;
+  requireLowercase: boolean;
+  requireNumbers: boolean;
+  requireSpecialChars: boolean;
   createdAt: Date;
   updatedAt: Date;
 }

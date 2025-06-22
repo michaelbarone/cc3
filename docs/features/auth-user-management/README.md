@@ -1,5 +1,17 @@
 # Authentication & User Management
 
+## Feature Overview
+
+This module provides comprehensive authentication and user management functionality for the application, including:
+
+- User registration and login
+- Password management with configurable complexity requirements
+- User profile management
+- Admin user management
+- Session handling
+- Avatar management
+- User preferences
+
 ## Overview
 
 This feature group handles user authentication, session management, user settings, and profile management. It provides a simplified yet secure authentication system with optional password protection and role-based access control.

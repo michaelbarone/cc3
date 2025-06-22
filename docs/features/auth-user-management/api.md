@@ -185,8 +185,16 @@ interface PasswordUpdateRequest {
 interface PasswordUpdateResponse {
   success: boolean;
   error?: string;
+  validationErrors?: string[]; // Array of validation errors if password doesn't meet complexity requirements
 }
 ```
+
+Key Features:
+- Validates new passwords against configured complexity requirements
+- Only validates new passwords, not existing ones
+- Returns specific validation errors when requirements aren't met
+- Complexity requirements are configurable in admin settings
+- Current password verification for security
 
 ## Settings Management Endpoints
 

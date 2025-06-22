@@ -221,3 +221,59 @@ const uploadConfig = {
    - Set up CSRF protection
    - Initialize rate limiters
    - Configure error handlers 
+
+## Password Management
+
+### Password Validation Architecture
+
+```
+/app/
+├── lib/
+│   ├── auth/
+│   │   ├── password.ts           # Password hashing and verification
+│   │   ├── password-validation.ts # Password complexity validation
+│   │   └── auth-service.ts       # Authentication service
+```
+
+The password validation system enforces configurable complexity requirements:
+
+```typescript
+interface PasswordPolicy {
+  minPasswordLength: number;
+  requireUppercase: boolean;
+  requireLowercase: boolean;
+  requireNumbers: boolean;
+  requireSpecialChars: boolean;
+}
+
+interface ValidationResult {
+  isValid: boolean;
+  errors: string[];
+}
+
+// Validation function
+async function validatePassword(password: string): Promise<ValidationResult> {
+  // Retrieves current policy from AppConfig
+  // Validates password against policy
+  // Returns validation result with specific errors
+}
+```
+
+Key Features:
+- Centralized validation logic in password-validation.ts
+- Dynamic policy retrieval from AppConfig database
+- Only applies to new password creation, not verification
+- Detailed error messages for failed requirements
+- Used in both registration and password change flows
+- Configurable through admin interface
+
+### Integration Points
+
+1. **Registration Flow**: Validates new user passwords during account creation
+2. **Password Change**: Validates new passwords when users update their password
+3. **Admin User Creation**: Validates passwords when admins create new users
+4. **Password Reset**: Validates new passwords during password reset process
+
+The validation system deliberately does not apply to:
+- Login attempts with existing passwords
+- Verification of current password during password change 

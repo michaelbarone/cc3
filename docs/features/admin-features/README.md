@@ -1,5 +1,17 @@
 # Application Configuration & Admin Dashboard
 
+## Feature Overview
+
+This module provides administrative functionality for configuring the application, including:
+
+- Application name and branding
+- Login page theme customization
+- User registration settings
+- Password complexity requirements configuration
+- Database backup and restore
+- User management
+- System statistics
+
 ## Overview
 
 This feature group handles application-wide configuration, appearance settings, user preferences, and administrative functions. It provides a comprehensive admin dashboard for managing the application and monitoring system statistics.

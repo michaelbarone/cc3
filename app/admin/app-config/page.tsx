@@ -29,6 +29,11 @@ interface AppConfig {
   favicon: string | null;
   loginTheme: string;
   registrationEnabled: boolean;
+  minPasswordLength: number;
+  requireUppercase: boolean;
+  requireLowercase: boolean;
+  requireNumbers: boolean;
+  requireSpecialChars: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -41,6 +46,11 @@ export default function AppConfigPage() {
   const [appName, setAppName] = useState("");
   const [loginTheme, setLoginTheme] = useState("dark");
   const [registrationEnabled, setRegistrationEnabled] = useState(false);
+  const [minPasswordLength, setMinPasswordLength] = useState(4);
+  const [requireUppercase, setRequireUppercase] = useState(false);
+  const [requireLowercase, setRequireLowercase] = useState(false);
+  const [requireNumbers, setRequireNumbers] = useState(false);
+  const [requireSpecialChars, setRequireSpecialChars] = useState(false);
 
   // Snackbar state
   const [snackbar, setSnackbar] = useState({
@@ -64,6 +74,11 @@ export default function AppConfigPage() {
       setAppName(data.appName);
       setLoginTheme(data.loginTheme || "dark");
       setRegistrationEnabled(data.registrationEnabled || false);
+      setMinPasswordLength((data as any).minPasswordLength || 4);
+      setRequireUppercase((data as any).requireUppercase || false);
+      setRequireLowercase((data as any).requireLowercase || false);
+      setRequireNumbers((data as any).requireNumbers || false);
+      setRequireSpecialChars((data as any).requireSpecialChars || false);
     } catch (err) {
       setError(err instanceof Error ? err.message : "An unknown error occurred");
     } finally {
@@ -217,6 +232,50 @@ export default function AppConfigPage() {
       setSnackbar({
         open: true,
         message: "Registration settings updated successfully",
+        severity: "success",
+      });
+    } catch (err) {
+      setSnackbar({
+        open: true,
+        message: err instanceof Error ? err.message : "An unknown error occurred",
+        severity: "error",
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Handle password policy changes
+  const handleMinPasswordLengthChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setMinPasswordLength(parseInt(event.target.value, 10) || 4);
+  };
+
+  // Save password policy
+  const handleSavePasswordPolicy = async () => {
+    try {
+      setSaving(true);
+      const response = await fetch("/api/admin/app-config/password-policy", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          minPasswordLength,
+          requireUppercase,
+          requireLowercase,
+          requireNumbers,
+          requireSpecialChars,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to update password policy");
+      }
+
+      const data = await response.json();
+      setAppConfig((prev) => ({ ...prev, ...data }));
+
+      setSnackbar({
+        open: true,
+        message: "Password policy updated successfully",
         severity: "success",
       });
     } catch (err) {
@@ -583,6 +642,94 @@ export default function AppConfigPage() {
                   disabled={saving || registrationEnabled === appConfig?.registrationEnabled}
                 >
                   {saving ? <CircularProgress size={24} /> : "Save Registration Setting"}
+                </Button>
+              </Box>
+
+              <Divider sx={{ my: 3 }} />
+
+              {/* Password Policy Settings */}
+              <Box>
+                <Typography variant="subtitle1" sx={{ mb: 1 }}>
+                  Password Complexity Requirements
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                  Configure password complexity requirements for user accounts.
+                </Typography>
+
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 2, mb: 3 }}>
+                  {/* Minimum Password Length with improved layout */}
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                    <Typography sx={{ minWidth: 180 }}>Minimum Password Length:</Typography>
+                    <TextField
+                      type="number"
+                      value={minPasswordLength}
+                      onChange={handleMinPasswordLengthChange}
+                      slotProps={{
+                        input: {
+                          inputProps: { min: 1, max: 10 },
+                          sx: { width: "80px" },
+                        },
+                      }}
+                      size="small"
+                      variant="outlined"
+                    />
+                  </Box>
+
+                  {/* Required Character Types Header */}
+                  <Typography variant="subtitle2" sx={{ mt: 1 }}>
+                    Required Character Types:
+                  </Typography>
+
+                  {/* 2x2 Grid for Toggles */}
+                  <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2 }}>
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          checked={requireUppercase}
+                          onChange={(e) => setRequireUppercase(e.target.checked)}
+                          color="primary"
+                        />
+                      }
+                      label="Uppercase"
+                    />
+
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          checked={requireLowercase}
+                          onChange={(e) => setRequireLowercase(e.target.checked)}
+                          color="primary"
+                        />
+                      }
+                      label="Lowercase"
+                    />
+
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          checked={requireNumbers}
+                          onChange={(e) => setRequireNumbers(e.target.checked)}
+                          color="primary"
+                        />
+                      }
+                      label="Numbers"
+                    />
+
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          checked={requireSpecialChars}
+                          onChange={(e) => setRequireSpecialChars(e.target.checked)}
+                          color="primary"
+                        />
+                      }
+                      label="Special Chars"
+                    />
+                  </Box>
+                </Box>
+
+                <Button variant="contained" onClick={handleSavePasswordPolicy} disabled={saving}>
+                  {saving ? <CircularProgress size={24} /> : "Save Password Policy"}
                 </Button>
               </Box>
             </CardContent>

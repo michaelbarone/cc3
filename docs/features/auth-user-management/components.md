@@ -138,6 +138,48 @@ Key Features:
 - Seamless integration with login flow
 - Automatic page refresh after successful restore
 
+### PasswordChangeForm
+
+Purpose: Allows users to change their password with validation against complexity requirements.
+
+```typescript
+interface PasswordChangeFormProps {
+  onSuccess?: () => void;
+  onError?: (error: string) => void;
+}
+
+const PasswordChangeForm: React.FC<PasswordChangeFormProps> = ({
+  onSuccess,
+  onError
+}) => {
+  // Component implementation
+};
+```
+
+Key Features:
+- Current password verification
+- New password input with confirmation
+- Real-time validation against password complexity requirements
+- Displays specific validation errors for failed requirements
+- Success/error notifications
+- Respects admin-configured password policy
+- Only validates new passwords, not existing ones
+- Secure password handling
+
+Usage Example:
+```typescript
+function PasswordSettingsPage() {
+  return (
+    <SettingsLayout title="Password Settings">
+      <PasswordChangeForm 
+        onSuccess={() => showNotification("Password updated successfully")} 
+        onError={(error) => showNotification(error, "error")} 
+      />
+    </SettingsLayout>
+  );
+}
+```
+
 ## Profile Components
 
 ### AvatarUpload

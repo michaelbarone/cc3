@@ -52,6 +52,11 @@ This document serves as the main project plan and tracks the status of all tasks
 
 ## Future Tasks
 
+### Iframe UX - user registration
+- **Description**: check if user registration is working as expected.  if so, add option to specify default groups for new users.
+- **Priority**: High
+- **Estimated Effort**: 1 week
+
 ### Iframe UX - no scroll bars on iframe or iframe container
 - **Description**: Remove scroll bars from iframe and iframe container
 - **Priority**: High
@@ -265,3 +270,17 @@ This document serves as the main project plan and tracks the status of all tasks
 
 ### Login Page
 - **Location**: `/docs/working-memory/done/login-page`
+
+### Password Complexity Requirements
+
+**Location**: `/docs/working-memory/done/password-complexity-20250622/`  
+**Completion Date**: 2025-06-22  
+**Description**: Added configurable password complexity requirements to the admin area and integrated password validation throughout the application.
+
+**Key Achievements**:
+- Added password complexity fields to the AppConfig model
+- Created a centralized password validation utility
+- Added UI for configuring password requirements in the admin area
+- Updated registration and password change flows to validate against requirements
+- Ensured only new passwords are validated, not existing ones
+- Updated documentation for the password complexity feature

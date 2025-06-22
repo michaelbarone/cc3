@@ -18,6 +18,11 @@ interface AppConfig {
   favicon: string | null;
   loginTheme: string;
   registrationEnabled: boolean;
+  minPasswordLength: number;
+  requireUppercase: boolean;
+  requireLowercase: boolean;
+  requireNumbers: boolean;
+  requireSpecialChars: boolean;
 }
 
 const AppConfigPage: React.FC = () => {
@@ -31,6 +36,9 @@ Key Features:
 - Favicon management
 - Login theme selection
 - Registration control
+- Password complexity configuration
+  - Minimum password length
+  - Character type requirements (uppercase, lowercase, numbers, special characters)
 - Settings persistence
 
 ### UserManagement

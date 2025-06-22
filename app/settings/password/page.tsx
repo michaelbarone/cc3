@@ -1,6 +1,7 @@
 "use client";
 
 import { useAuth } from "@/app/lib/auth/auth-context";
+import { PasswordPolicy } from "@/app/lib/auth/password-validation";
 import {
   Alert,
   Box,
@@ -13,7 +14,7 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 
 export default function PasswordSettingsPage() {
   const { user } = useAuth();
@@ -23,18 +24,39 @@ export default function PasswordSettingsPage() {
   const [passwordEnabled, setPasswordEnabled] = useState(!!user?.hasPassword);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [loading, setLoading] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
+  const [passwordPolicy, setPasswordPolicy] = useState<PasswordPolicy>({
+    minPasswordLength: 4,
+    requireUppercase: false,
+    requireLowercase: false,
+    requireNumbers: false,
+    requireSpecialChars: false,
+  });
+
+  // Fetch password policy
+  useEffect(() => {
+    const fetchPasswordPolicy = async () => {
+      try {
+        const response = await fetch("/api/admin/app-config/password-policy");
+        if (response.ok) {
+          const policy = await response.json();
+          setPasswordPolicy(policy);
+        }
+      } catch (error) {
+        console.error("Error fetching password policy:", error);
+      }
+    };
+
+    fetchPasswordPolicy();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setMessage(null);
+    setValidationErrors([]);
 
     if (passwordEnabled && newPassword !== confirmPassword) {
       setMessage({ type: "error", text: "Passwords do not match." });
-      return;
-    }
-
-    if (passwordEnabled && newPassword.length < 8) {
-      setMessage({ type: "error", text: "Password must be at least 8 characters." });
       return;
     }
 
@@ -59,7 +81,11 @@ export default function PasswordSettingsPage() {
         setNewPassword("");
         setConfirmPassword("");
       } else {
-        setMessage({ type: "error", text: data.message || "Failed to update password." });
+        if (data.validationErrors) {
+          setValidationErrors(data.validationErrors);
+        } else {
+          setMessage({ type: "error", text: data.message || "Failed to update password." });
+        }
       }
     } catch (error) {
       setMessage({ type: "error", text: "An error occurred. Please try again." });
@@ -77,6 +103,19 @@ export default function PasswordSettingsPage() {
     }
   };
 
+  // Generate password requirements text
+  const getPasswordRequirementsText = () => {
+    const requirements = [
+      `Password must be at least ${passwordPolicy.minPasswordLength} characters`,
+    ];
+    if (passwordPolicy.requireUppercase) requirements.push("include uppercase letters");
+    if (passwordPolicy.requireLowercase) requirements.push("include lowercase letters");
+    if (passwordPolicy.requireNumbers) requirements.push("include numbers");
+    if (passwordPolicy.requireSpecialChars) requirements.push("include special characters");
+
+    return requirements.join(", ");
+  };
+
   return (
     <Box>
       <Typography variant="h5" gutterBottom>
@@ -91,6 +130,17 @@ export default function PasswordSettingsPage() {
         {message && (
           <Alert severity={message.type} sx={{ mb: 3 }} onClose={() => setMessage(null)}>
             {message.text}
+          </Alert>
+        )}
+
+        {validationErrors.length > 0 && (
+          <Alert severity="error" sx={{ mb: 3 }}>
+            <Typography variant="subtitle2">Password does not meet requirements:</Typography>
+            <ul style={{ marginTop: 0, paddingLeft: "1.5rem" }}>
+              {validationErrors.map((error, index) => (
+                <li key={index}>{error}</li>
+              ))}
+            </ul>
           </Alert>
         )}
 
@@ -129,7 +179,7 @@ export default function PasswordSettingsPage() {
                   onChange={(e) => setNewPassword(e.target.value)}
                   required={passwordEnabled}
                   disabled={loading}
-                  helperText="Password must be at least 8 characters"
+                  helperText={getPasswordRequirementsText()}
                 />
 
                 <TextField

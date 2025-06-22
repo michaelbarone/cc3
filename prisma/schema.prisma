@@ -81,6 +81,11 @@ model AppConfig {
   favicon            String?
   loginTheme         String   @default("dark")
   registrationEnabled Boolean  @default(false)
+  minPasswordLength      Int      @default(4)
+  requireUppercase       Boolean  @default(false)
+  requireLowercase       Boolean  @default(false)
+  requireNumbers         Boolean  @default(false)
+  requireSpecialChars    Boolean  @default(false)
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 }

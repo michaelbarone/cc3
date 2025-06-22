@@ -12,6 +12,11 @@ export interface AppConfig {
   loginTheme: string;
   registrationEnabled: boolean;
   favicon: string | null;
+  minPasswordLength: number;
+  requireUppercase: boolean;
+  requireLowercase: boolean;
+  requireNumbers: boolean;
+  requireSpecialChars: boolean;
 }
 
 export const DEFAULT_APP_CONFIG: AppConfig = {
@@ -20,6 +25,11 @@ export const DEFAULT_APP_CONFIG: AppConfig = {
   loginTheme: "dark",
   registrationEnabled: false,
   favicon: "/api/public/favicons/favicon-default.png",
+  minPasswordLength: 4,
+  requireUppercase: false,
+  requireLowercase: false,
+  requireNumbers: false,
+  requireSpecialChars: false,
 };
 
 // Theme constants

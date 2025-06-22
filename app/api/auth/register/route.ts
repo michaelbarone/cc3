@@ -1,5 +1,6 @@
 import { loginUser, registerUser } from "@/app/lib/auth/auth-service";
 import { verifyToken } from "@/app/lib/auth/jwt";
+import { validatePassword } from "@/app/lib/auth/password-validation";
 import { prisma } from "@/app/lib/db/prisma";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -28,6 +29,20 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         return NextResponse.json(
           { error: "User registration is currently disabled" },
           { status: 403 },
+        );
+      }
+    }
+
+    // Validate password against current policy
+    if (password) {
+      const validation = await validatePassword(password);
+      if (!validation.isValid) {
+        return NextResponse.json(
+          {
+            error: "Password does not meet requirements",
+            validationErrors: validation.errors,
+          },
+          { status: 400 },
         );
       }
     }
