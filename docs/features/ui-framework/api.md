@@ -30,6 +30,51 @@ function ThemeToggle() {
 }
 ```
 
+### useUserPreferences Hook
+
+Hook for managing user preferences including theme settings.
+
+```typescript
+interface UserPreferences {
+  theme: 'light' | 'dark';
+  menuPosition: 'side' | 'top';
+  // Other user preferences
+}
+
+interface UserPreferencesAPI {
+  preferences: UserPreferences;
+  isLoading: boolean;
+  updatePreferences: (updates: Partial<UserPreferences>) => Promise<void>;
+}
+
+function useUserPreferences(): UserPreferencesAPI;
+```
+
+Example Usage:
+```typescript
+function AppearanceSettings() {
+  const { preferences, updatePreferences } = useUserPreferences();
+  const themeContext = useContext(ThemeContext);
+  
+  const handleThemeChange = async (newTheme: 'light' | 'dark') => {
+    // Update database preference
+    await updatePreferences({ theme: newTheme });
+    
+    // Update UI theme if needed
+    if (themeContext && themeContext.mode !== newTheme) {
+      themeContext.toggleColorMode();
+    }
+  };
+  
+  return (
+    <ThemeSelector 
+      currentTheme={preferences.theme}
+      onChange={handleThemeChange}
+    />
+  );
+}
+```
+
 ### createTheme
 
 Function to create a custom theme with our default configuration.

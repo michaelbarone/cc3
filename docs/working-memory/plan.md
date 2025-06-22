@@ -107,6 +107,33 @@ This document serves as the main project plan and tracks the status of all tasks
 
 ## Closed Tasks
 
+### IFrame Container Refactor
+- **Location**: `/docs/working-memory/done/iframe-container-refactor`
+- **Completion Date**: `2025-03-18`
+- **Description**: Comprehensive refactor of the IFrame container system for improved performance and resource management
+- **Key Achievements**:
+  - Created robust state management with TypeScript types and interfaces
+  - Implemented global container approach with direct DOM manipulation for performance
+  - Developed modular hook system for iframe lifecycle management
+  - Added support for mobile/desktop URLs and cross-origin handling
+  - Implemented URL-specific idle timeout system
+  - Built flexible component architecture with proper error boundaries
+  - Integrated menu system with state synchronization
+  - Fixed menu format issues and iframe visibility problems
+
+### Menu State Management
+- **Location**: `/docs/working-memory/done/url-menu-state-management`
+- **Completion Date**: `2025-04-05`
+- **Description**: Implemented four specific states for URL menu items with comprehensive state management
+- **Key Achievements**:
+  - Implemented state management system with proper transitions
+  - Added visual indicators for loading states (green dot)
+  - Implemented long press functionality with visual feedback
+  - Created comprehensive edge case tests for all interaction patterns
+  - Added detailed documentation with state transition diagrams
+  - Optimized performance with memoization techniques
+  - Integrated haptic feedback for mobile devices
+
 ### Library and Test Directory Refactoring
 - **Location**: `/docs/working-memory/done/lib-test-refactor-20240405`
 - **Completion Date**: `2025-05-08`
@@ -137,19 +164,6 @@ This document serves as the main project plan and tracks the status of all tasks
   - Updated testing documentation with examples from improvements
   - Achieved 100% route and HTTP method coverage
   - Standardized test patterns across all API tests
-
-### URL Menu State Management
-- **Location**: `/docs/working-memory/done/url-menu-state-management`
-- **Completion Date**: `2025-04-05`
-- **Description**: Implemented four specific states for URL menu items with comprehensive state management
-- **Key Achievements**:
-  - Implemented state management system with proper transitions
-  - Added visual indicators for loading states (green dot)
-  - Implemented long press functionality with visual feedback
-  - Created comprehensive edge case tests for all interaction patterns
-  - Added detailed documentation with state transition diagrams
-  - Optimized performance with memoization techniques
-  - Integrated haptic feedback for mobile devices
 
 ### URL Group Management Refactor
 - **Location**: `/docs/working-memory/done/url-group-management-refactor-20250326`

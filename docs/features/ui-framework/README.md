@@ -20,6 +20,8 @@ The UI Framework provides a comprehensive foundation for building consistent, ac
 - Typography system with responsive scaling
 - Component-level theme customization
 - Runtime theme switching
+- Theme preferences persistence
+- Dedicated appearance settings page
 
 ### Layout Components
 - Responsive app layout with dynamic menu positioning
@@ -64,6 +66,8 @@ The UI Framework provides a comprehensive foundation for building consistent, ac
 - [x] Mobile-first design approach
 - [x] Accessibility support
 - [x] Custom hooks and utilities
+- [x] Dedicated appearance settings page
+- [x] Theme picker in user settings
 
 ### Known Limitations
 - Theme customization limited to runtime
@@ -104,3 +108,9 @@ The UI Framework provides a comprehensive foundation for building consistent, ac
 - Improved performance
 - Added error boundaries
 - Enhanced mobile support 
+
+### Phase 5: Theme Management Improvements (March 2024)
+- Relocated theme picker from header to user settings
+- Created dedicated appearance settings page
+- Added visual theme mode selection
+- Improved theme persistence 

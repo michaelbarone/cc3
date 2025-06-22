@@ -401,6 +401,77 @@ function MyComponent() {
 - **Edge Cases**: Test rapid clicks, interrupted actions, and browser tab switching
 - **Accessibility**: Ensure keyboard navigation, proper focus management, and screen reader support
 
+## Theme Components
+
+### ThemeSelector
+
+Visual theme selection component for the appearance settings page.
+
+```typescript
+interface ThemeSelectorProps {
+  currentTheme: 'light' | 'dark';
+  onChange: (theme: 'light' | 'dark') => void;
+}
+
+export function ThemeSelector(props: ThemeSelectorProps) {
+  // Provides visual theme selection
+  // Handles theme switching
+  // Shows preview of each theme
+}
+```
+
+Key Features:
+- Visual theme previews
+- Interactive selection cards
+- Visual indicators for active theme
+- Smooth transition animations
+- Accessibility support
+
+### MenuPositionSelector
+
+Component for selecting menu position preference.
+
+```typescript
+interface MenuPositionSelectorProps {
+  value: 'side' | 'top';
+  onChange: (position: 'side' | 'top') => void;
+  disabled?: boolean;
+}
+
+export function MenuPositionSelector(props: MenuPositionSelectorProps) {
+  // Provides visual position selection
+  // Handles position switching
+  // Shows preview of each position
+}
+```
+
+Key Features:
+- Visual position previews
+- Interactive selection cards
+- Visual indicators for active position
+- Responsive design
+- Accessibility support
+
+### AppearanceSettingsPage
+
+Page component for managing theme and layout preferences.
+
+```typescript
+export function AppearanceSettingsPage() {
+  // Manages user appearance preferences
+  // Provides theme and menu position selection
+  // Handles preference persistence
+}
+```
+
+Key Features:
+- Theme mode selection
+- Menu position selection
+- Visual previews
+- Preference persistence
+- Success/error notifications
+- Loading states
+
 ## Usage Examples
 
 ### Theme Integration
