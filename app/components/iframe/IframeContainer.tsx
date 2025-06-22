@@ -331,12 +331,11 @@ const IframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
     const isMobile = useMediaQuery("(max-width:600px)");
     const initialized = useRef(false);
     const { preferences } = useUserPreferences();
-    const [dataLoaded, setDataLoaded] = useState(false);
+    const [showAdminEmptyState, setShowAdminEmptyState] = useState(false);
 
     // Check if there are no URLs or URL groups
     const hasNoUrls = urlGroups.length === 0 || urlGroups.every((group) => group.urls.length === 0);
     const isAdmin = user?.isAdmin || false;
-    const showAdminEmptyState = isAdmin && hasNoUrls && dataLoaded;
 
     // Update container position when menu position changes
     useEffect(() => {
@@ -352,10 +351,10 @@ const IframeContainer = forwardRef<IframeContainerRef, IframeContainerProps>(
         initialized.current = true;
       }
 
-      // Set dataLoaded to true after a small delay to ensure all data is properly loaded
+      // Set dataLoaded after a small delay to ensure all data is properly loaded
       const timer = setTimeout(() => {
-        setDataLoaded(true);
-      }, 1000);
+        setShowAdminEmptyState(isAdmin && hasNoUrls);
+      }, 2500);
 
       return () => clearTimeout(timer);
     }, [initializeUrls, initialUrlId, hasNoUrls]);
