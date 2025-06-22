@@ -57,6 +57,11 @@ This document serves as the main project plan and tracks the status of all tasks
 - **Priority**: High
 - **Estimated Effort**: 1 week
 
+### Iframe UX - url option to link out to new tab
+- **Description**: add url config option to link out to new tab.  this should be a toggle on the url config page.  if the toggle is on, the url will be opened in a new tab.  if the toggle is off, the url will be opened in the iframe.  this is for konwn urls that have issues in iframes but we still want to be able to use them.
+- **Priority**: High
+- **Estimated Effort**: 1 week
+
 ### Iframe UX - no scroll bars on iframe or iframe container
 - **Description**: Remove scroll bars from iframe and iframe container
 - **Priority**: High
