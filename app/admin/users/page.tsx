@@ -4,11 +4,13 @@ import AvatarUpload from "@/app/components/ui/AvatarUpload";
 import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
+import GroupIcon from "@mui/icons-material/Group";
 import {
   Alert,
   Avatar,
   Box,
   Button,
+  Checkbox,
   Chip,
   CircularProgress,
   Dialog,
@@ -18,6 +20,8 @@ import {
   DialogTitle,
   FormControlLabel,
   IconButton,
+  List,
+  ListItem,
   Paper,
   Snackbar,
   Switch,
@@ -40,6 +44,12 @@ interface User {
   createdAt: string;
   updatedAt: string;
   avatarUrl?: string | null;
+}
+
+interface UrlGroup {
+  id: string;
+  name: string;
+  description: string | null;
 }
 
 export default function UserManagement() {
@@ -67,6 +77,19 @@ export default function UserManagement() {
     severity: "success" as "success" | "error" | "info" | "warning",
   });
 
+  // Groups dialog state
+  const [openGroupsDialog, setOpenGroupsDialog] = useState(false);
+  const [selectedUserForGroups, setSelectedUserForGroups] = useState<User | null>(null);
+  const [urlGroups, setUrlGroups] = useState<UrlGroup[]>([]);
+  const [selectedGroups, setSelectedGroups] = useState<string[]>([]);
+  const [loadingGroups, setLoadingGroups] = useState(false);
+
+  // Add a new state variable to track user groups
+  const [userGroups, setUserGroups] = useState<Record<string, UrlGroup[]>>({});
+
+  // Add a new state variable to track loading state for user groups
+  const [loadingUserGroups, setLoadingUserGroups] = useState(true);
+
   const fetchUsers = async () => {
     try {
       setLoading(true);
@@ -78,15 +101,29 @@ export default function UserManagement() {
 
       const data = await response.json();
       setUsers(data);
+
+      // Fetch groups for all users after users are loaded
+      if (data.length > 0) {
+        await fetchUserGroups(data);
+      }
+
+      // Return data for chaining
+      return data;
     } catch (err) {
       setError(err instanceof Error ? err.message : "An unknown error occurred");
+      return [];
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchUsers();
+    const loadData = async () => {
+      await fetchUsers();
+    };
+
+    loadData();
+    // Empty dependency array to run only once on component mount
   }, []);
 
   const handleOpenDialog = (type: "create" | "edit" | "delete", user?: User) => {
@@ -127,6 +164,155 @@ export default function UserManagement() {
     }
   };
 
+  // Groups dialog functions
+  const handleOpenGroupsDialog = (user: User) => {
+    setSelectedUserForGroups(user);
+    setOpenGroupsDialog(true);
+    fetchUserGroupsForManagement(user.id);
+    fetchAllGroups();
+  };
+
+  const handleCloseGroupsDialog = () => {
+    setOpenGroupsDialog(false);
+    setSelectedUserForGroups(null);
+  };
+
+  const fetchAllGroups = async () => {
+    try {
+      setLoadingGroups(true);
+      const response = await fetch("/api/admin/url-groups");
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch URL groups");
+      }
+
+      const data = await response.json();
+      setUrlGroups(data);
+    } catch (err) {
+      setSnackbar({
+        open: true,
+        message: err instanceof Error ? err.message : "Failed to fetch URL groups",
+        severity: "error",
+      });
+    } finally {
+      setLoadingGroups(false);
+    }
+  };
+
+  const fetchUserGroupsForManagement = async (userId: string) => {
+    try {
+      setLoadingGroups(true);
+      const response = await fetch(`/api/admin/users/${userId}/url-groups`);
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch user groups");
+      }
+
+      const data = await response.json();
+      setSelectedGroups(data.map((group: { id: string }) => group.id));
+    } catch (err) {
+      setSnackbar({
+        open: true,
+        message: err instanceof Error ? err.message : "Failed to fetch user groups",
+        severity: "error",
+      });
+    } finally {
+      setLoadingGroups(false);
+    }
+  };
+
+  const handleGroupToggle = (groupId: string) => {
+    setSelectedGroups((prev) => {
+      if (prev.includes(groupId)) {
+        return prev.filter((id) => id !== groupId);
+      } else {
+        return [...prev, groupId];
+      }
+    });
+  };
+
+  const handleSaveUserGroups = async () => {
+    if (!selectedUserForGroups) return;
+
+    try {
+      setLoadingGroups(true);
+      const response = await fetch(`/api/admin/users/${selectedUserForGroups.id}/url-groups`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ urlGroupIds: selectedGroups }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData?.error || "Failed to update user groups");
+      }
+
+      // Update the userGroups state with the new selection
+      const updatedGroups = urlGroups.filter((group) => selectedGroups.includes(group.id));
+      setUserGroups((prev) => ({
+        ...prev,
+        [selectedUserForGroups.id]: updatedGroups,
+      }));
+
+      setSnackbar({
+        open: true,
+        message: "User groups updated successfully",
+        severity: "success",
+      });
+
+      handleCloseGroupsDialog();
+    } catch (err) {
+      setSnackbar({
+        open: true,
+        message: err instanceof Error ? err.message : "Failed to update user groups",
+        severity: "error",
+      });
+    } finally {
+      setLoadingGroups(false);
+    }
+  };
+
+  // Update the fetchUserGroups function to handle loading state
+  const fetchUserGroups = async (usersList: User[]) => {
+    try {
+      setLoadingUserGroups(true);
+      // Instead of fetching groups for each user individually,
+      // we'll fetch groups for users in small batches to avoid too many concurrent requests
+      const userGroupsMap: Record<string, UrlGroup[]> = {};
+      const batchSize = 3; // Process users in small batches
+
+      for (let i = 0; i < usersList.length; i += batchSize) {
+        const batch = usersList.slice(i, i + batchSize);
+
+        // Create an array of promises for this batch
+        const promises = batch.map((user) =>
+          fetch(`/api/admin/users/${user.id}/url-groups`)
+            .then((response) => {
+              if (response.ok) {
+                return response.json().then((groups) => {
+                  userGroupsMap[user.id] = groups;
+                });
+              }
+              return null;
+            })
+            .catch((err) => {
+              console.error(`Error fetching groups for user ${user.id}:`, err);
+              return null;
+            }),
+        );
+
+        // Wait for this batch to complete before moving to the next
+        await Promise.all(promises);
+      }
+
+      setUserGroups(userGroupsMap);
+    } catch (err) {
+      console.error("Error fetching user groups:", err);
+    } finally {
+      setLoadingUserGroups(false);
+    }
+  };
+
   const handleSubmit = async () => {
     try {
       let response;
@@ -156,6 +342,15 @@ export default function UserManagement() {
         response = await fetch(`/api/admin/users/${selectedUser.id}`, {
           method: "DELETE",
         });
+
+        // If deleting a user, remove their groups from the state
+        if (selectedUser) {
+          setUserGroups((prev) => {
+            const updated = { ...prev };
+            delete updated[selectedUser.id];
+            return updated;
+          });
+        }
       }
 
       if (!response?.ok) {
@@ -170,8 +365,8 @@ export default function UserManagement() {
         severity: "success",
       });
 
-      // Refresh user list
-      fetchUsers();
+      // Refresh user list and their groups
+      await fetchUsers();
       handleCloseDialog();
     } catch (err) {
       setSnackbar({
@@ -220,6 +415,7 @@ export default function UserManagement() {
               <TableCell>Role</TableCell>
               <TableCell>Password</TableCell>
               <TableCell>Created At</TableCell>
+              <TableCell>Groups</TableCell>
               <TableCell>Actions</TableCell>
             </TableRow>
           </TableHead>
@@ -238,19 +434,51 @@ export default function UserManagement() {
                 <TableCell>{user.username}</TableCell>
                 <TableCell>
                   {user.isAdmin ? (
-                    <Chip label="Admin" color="primary" size="small" />
+                    <Chip label="Admin" color="warning" size="small" />
                   ) : (
-                    <Chip label="User" color="default" size="small" />
+                    <Chip label="User" color="primary" size="small" />
                   )}
                 </TableCell>
                 <TableCell>
                   {user.passwordHash ? (
                     <Chip label="Set" color="success" size="small" />
                   ) : (
-                    <Chip label="None" color="warning" size="small" />
+                    <Chip label="None" color="default" size="small" />
                   )}
                 </TableCell>
                 <TableCell>{new Date(user.createdAt).toLocaleString()}</TableCell>
+                <TableCell>
+                  <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                    <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5, mb: 1 }}>
+                      {loadingUserGroups ? (
+                        <CircularProgress size={20} />
+                      ) : userGroups[user.id]?.length > 0 ? (
+                        userGroups[user.id].map((group) => (
+                          <Chip
+                            key={group.id}
+                            label={group.name}
+                            size="small"
+                            color="success"
+                            variant="outlined"
+                            sx={{ mb: 0.5 }}
+                          />
+                        ))
+                      ) : (
+                        <Typography variant="body2" color="text.secondary">
+                          No groups assigned
+                        </Typography>
+                      )}
+                    </Box>
+                    <Button
+                      startIcon={<GroupIcon />}
+                      size="small"
+                      variant="outlined"
+                      onClick={() => handleOpenGroupsDialog(user)}
+                    >
+                      Manage
+                    </Button>
+                  </Box>
+                </TableCell>
                 <TableCell>
                   <IconButton aria-label="edit" onClick={() => handleOpenDialog("edit", user)}>
                     <EditIcon />
@@ -364,6 +592,58 @@ export default function UserManagement() {
           <Button onClick={handleCloseDialog}>Cancel</Button>
           <Button onClick={handleSubmit} color="error" variant="contained">
             Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* User Groups Dialog */}
+      <Dialog open={openGroupsDialog} onClose={handleCloseGroupsDialog} maxWidth="md" fullWidth>
+        <DialogTitle>Manage Groups for {selectedUserForGroups?.username}</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+            Select which URL groups this user should have access to
+          </Typography>
+
+          {loadingGroups ? (
+            <Box sx={{ display: "flex", justifyContent: "center", p: 3 }}>
+              <CircularProgress size={24} />
+            </Box>
+          ) : urlGroups.length === 0 ? (
+            <Typography variant="body1" sx={{ textAlign: "center", py: 2 }}>
+              No URL groups found
+            </Typography>
+          ) : (
+            <List sx={{ maxHeight: "400px", overflow: "auto" }}>
+              {urlGroups.map((group) => (
+                <ListItem key={group.id}>
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={selectedGroups.includes(group.id)}
+                        onChange={() => handleGroupToggle(group.id)}
+                      />
+                    }
+                    label={
+                      <Box>
+                        <Typography variant="body1">{group.name}</Typography>
+                        {group.description && (
+                          <Typography variant="body2" color="text.secondary">
+                            {group.description}
+                          </Typography>
+                        )}
+                      </Box>
+                    }
+                    sx={{ width: "100%" }}
+                  />
+                </ListItem>
+              ))}
+            </List>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseGroupsDialog}>Cancel</Button>
+          <Button onClick={handleSaveUserGroups} variant="contained" disabled={loadingGroups}>
+            Save
           </Button>
         </DialogActions>
       </Dialog>
