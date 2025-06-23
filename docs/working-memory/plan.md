@@ -23,14 +23,6 @@ This document serves as the main project plan and tracks the status of all tasks
 - **Priority**: High
 - **Estimated Effort**: 1 week
 
-### admin adding new url functionality
-- **Description**: updates for admin add url include:
-  - when clicking the add url button the inputs should be cleared
-  - when on the add url page, there should be an option to save and add another and we can change the current button to save and close
-  - we should make the default timeout 0 seconds so its disabled by default, and add a note that this functionality is not configured yet.
-- **Priority**: High
-- **Estimated Effort**: 1 week
-
 ### Docker Backup/Restore Validation
 - **Description**: Validate backup and restore functionality with Docker deployment after image storage and database path adjustments
 - **Key Milestones**:
@@ -100,6 +92,18 @@ This document serves as the main project plan and tracks the status of all tasks
 - **Estimated Effort**: 2 weeks
 
 ## Closed Tasks
+
+### Admin URL Management Improvements
+- **Location**: `/docs/working-memory/done/admin-url-management-20250614`
+- **Completion Date**: `2025-06-14`
+- **Description**: Enhanced URL management in the admin area with improved UX and functionality
+- **Key Achievements**:
+  - Fixed dialog to clear inputs when adding a new URL
+  - Added "Save and Add Another" button for efficient URL creation
+  - Set default timeout to 0 seconds (disabled by default)
+  - Added tooltip indicating timeout functionality is not yet configured
+  - Added URL group management directly from the URLs admin page
+  - Fixed issues with form state management during URL creation
 
 ### IFrame Container Refactor
 - **Location**: `/docs/working-memory/done/iframe-container-refactor`

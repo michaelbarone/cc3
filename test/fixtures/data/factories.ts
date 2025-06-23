@@ -108,6 +108,11 @@ export function createTestAppConfig(overrides = {}) {
     loginTheme: "dark",
     registrationEnabled: false,
     favicon: null,
+    minPasswordLength: 4,
+    requireUppercase: false,
+    requireLowercase: false,
+    requireNumbers: false,
+    requireSpecialChars: false,
     createdAt: now,
     updatedAt: now,
     ...overrides

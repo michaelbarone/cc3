@@ -9,6 +9,11 @@ export function createMockAppConfig(overrides?: Partial<AppConfig>): AppConfig {
     favicon: null,
     loginTheme: "dark",
     registrationEnabled: false,
+    minPasswordLength: 4,
+    requireUppercase: false,
+    requireLowercase: false,
+    requireNumbers: false,
+    requireSpecialChars: false,
     createdAt: now,
     updatedAt: now,
     ...overrides

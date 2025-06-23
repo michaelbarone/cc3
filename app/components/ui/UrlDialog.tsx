@@ -10,6 +10,7 @@ import {
   FormControlLabel,
   Grid,
   TextField,
+  Tooltip,
   Typography,
 } from "@mui/material";
 import React, { useEffect, useState } from "react";
@@ -29,6 +30,7 @@ interface Url {
   enableMobileOverride?: boolean;
   createdAt?: string;
   updatedAt?: string;
+  saveAndAddAnother?: boolean;
 }
 
 interface UrlDialogProps {
@@ -38,6 +40,7 @@ interface UrlDialogProps {
   initialValues?: Partial<Url>;
   dialogTitle: string;
   submitButtonText: string;
+  showSaveAndAddAnother?: boolean;
 }
 
 export default function UrlDialog({
@@ -47,13 +50,14 @@ export default function UrlDialog({
   initialValues,
   dialogTitle,
   submitButtonText,
+  showSaveAndAddAnother = false,
 }: UrlDialogProps) {
   const [formValues, setFormValues] = useState<Url>({
     title: "",
     url: "",
     urlMobile: "",
     iconPath: null,
-    idleTimeoutMinutes: 10,
+    idleTimeoutMinutes: 0,
     isLocalhost: false,
     port: "",
     path: "",
@@ -72,8 +76,23 @@ export default function UrlDialog({
         ...initialValues,
         enableMobileOverride: hasMobileOverride,
       } as Url);
+    } else if (open) {
+      // Reset form values when dialog opens with no initialValues
+      setFormValues({
+        title: "",
+        url: "",
+        urlMobile: "",
+        iconPath: null,
+        idleTimeoutMinutes: 0,
+        isLocalhost: false,
+        port: "",
+        path: "",
+        enableMobileOverride: false,
+        localhostMobilePort: "",
+        localhostMobilePath: "",
+      } as Url);
     }
-  }, [initialValues]);
+  }, [initialValues, open]);
 
   const handleFormChange = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = event.target;
@@ -112,16 +131,41 @@ export default function UrlDialog({
     }
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = (saveAndAddAnother = false) => {
+    if (!isFormValid()) return;
+
     const submitData = {
       ...formValues,
-      idleTimeoutMinutes: Number(formValues.idleTimeoutMinutes) || 10,
+      idleTimeoutMinutes: Number(formValues.idleTimeoutMinutes) || 0,
       // Set to null any mobile override fields if not enabled
       localhostMobilePort: formValues.enableMobileOverride ? formValues.localhostMobilePort : null,
       localhostMobilePath: formValues.enableMobileOverride ? formValues.localhostMobilePath : null,
+      saveAndAddAnother,
     };
 
     onSubmit(submitData);
+
+    // Reset the form immediately if using Save and Add Another
+    if (saveAndAddAnother) {
+      resetForm();
+    }
+  };
+
+  // Function to reset the form
+  const resetForm = () => {
+    setFormValues({
+      title: "",
+      url: "",
+      urlMobile: "",
+      iconPath: null,
+      idleTimeoutMinutes: 0,
+      isLocalhost: false,
+      port: "",
+      path: "",
+      enableMobileOverride: false,
+      localhostMobilePort: "",
+      localhostMobilePath: "",
+    } as Url);
   };
 
   return (
@@ -330,24 +374,32 @@ export default function UrlDialog({
           )}
 
           <Grid item xs={12}>
-            <TextField
-              margin="dense"
-              name="idleTimeoutMinutes"
-              label="Idle Timeout (minutes)"
-              type="number"
-              inputProps={{ min: 0 }}
-              helperText="Minutes before iframe is unloaded when inactive. Set to 0 to disable auto-unloading."
-              fullWidth
-              variant="outlined"
-              value={formValues.idleTimeoutMinutes || 0}
-              onChange={handleFormChange}
-            />
+            <Tooltip title="This feature is not yet available.">
+              <TextField
+                margin="dense"
+                name="idleTimeoutMinutes"
+                label="Idle Timeout (minutes)"
+                type="number"
+                inputProps={{ min: 0 }}
+                helperText="Minutes before iframe is unloaded when inactive. Set to 0 to disable auto-unloading."
+                fullWidth
+                variant="outlined"
+                value={formValues.idleTimeoutMinutes || 0}
+                onChange={handleFormChange}
+                disabled={true}
+              />
+            </Tooltip>
           </Grid>
         </Grid>
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>Cancel</Button>
-        <Button onClick={handleSubmit} variant="contained" disabled={!isFormValid()}>
+        {showSaveAndAddAnother && (
+          <Button onClick={() => handleSubmit(true)} variant="outlined" disabled={!isFormValid()}>
+            Save and Add Another
+          </Button>
+        )}
+        <Button onClick={() => handleSubmit(false)} variant="contained" disabled={!isFormValid()}>
           {submitButtonText}
         </Button>
       </DialogActions>
