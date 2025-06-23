@@ -38,6 +38,7 @@ export function useLongPress({
   const touchStartPos = useRef<{ x: number; y: number } | null>(null);
   const animationStartDelay = 300; // 0.3 seconds delay before animation starts
   const touchMoveTolerance = 10; // Pixels of movement allowed before canceling click
+  const animationStarted = useRef<boolean>(false); // New ref to track if animation has started
 
   const handlePressStart = useCallback(
     (e: React.MouseEvent | React.TouchEvent) => {
@@ -57,6 +58,8 @@ export function useLongPress({
       pressStarted.current = true;
       // Reset long press tracker at the start of a new press
       longPressTriggered.current = false;
+      // Reset animation started flag
+      animationStarted.current = false;
       pressStartTime.current = Date.now();
       setIsLongPressing(true);
 
@@ -67,6 +70,11 @@ export function useLongPress({
         if (elapsed < animationStartDelay) {
           setProgress(0);
           return;
+        }
+
+        // Mark that animation has started once we pass the delay
+        if (!animationStarted.current && elapsed >= animationStartDelay) {
+          animationStarted.current = true;
         }
 
         // Calculate progress based on time after delay
@@ -100,6 +108,7 @@ export function useLongPress({
           setProgress(0);
           pressStarted.current = false;
           touchStartPos.current = null;
+          animationStarted.current = false;
         }
       }, 10);
     },
@@ -124,6 +133,7 @@ export function useLongPress({
       setIsLongPressing(false);
       setProgress(0);
       pressStarted.current = false;
+      animationStarted.current = false;
     }
   }, []);
 
@@ -140,7 +150,13 @@ export function useLongPress({
         const touchEvent = e as React.TouchEvent;
 
         // If we have a touch start position and it's a tap (not a scroll)
-        if (touchStartPos.current && pressStarted.current && !longPressTriggered.current) {
+        // AND the animation hasn't started yet
+        if (
+          touchStartPos.current &&
+          pressStarted.current &&
+          !longPressTriggered.current &&
+          !animationStarted.current
+        ) {
           const touch = touchEvent.changedTouches[0];
           const deltaX = Math.abs(touch.clientX - touchStartPos.current.x);
           const deltaY = Math.abs(touch.clientY - touchStartPos.current.y);
@@ -150,8 +166,14 @@ export function useLongPress({
             onClick();
           }
         }
-      } else if (!disabled && pressStarted.current && !longPressTriggered.current && onClick) {
-        // For mouse events, proceed as before
+      } else if (
+        !disabled &&
+        pressStarted.current &&
+        !longPressTriggered.current &&
+        !animationStarted.current &&
+        onClick
+      ) {
+        // For mouse events, only trigger click if animation hasn't started
         onClick();
       }
 
@@ -160,6 +182,7 @@ export function useLongPress({
       setProgress(0);
       pressStarted.current = false;
       touchStartPos.current = null;
+      animationStarted.current = false;
     },
     [disabled, onClick, touchMoveTolerance],
   );
@@ -176,6 +199,7 @@ export function useLongPress({
     setProgress(0);
     pressStarted.current = false;
     touchStartPos.current = null;
+    animationStarted.current = false;
   }, []);
 
   // Cleanup on unmount
