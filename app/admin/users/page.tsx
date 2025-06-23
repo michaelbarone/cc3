@@ -464,7 +464,7 @@ export default function UserManagement() {
                           />
                         ))
                       ) : (
-                        <Typography variant="body2" color="text.secondary">
+                        <Typography variant="body2" color="warning.main">
                           No groups assigned
                         </Typography>
                       )}
