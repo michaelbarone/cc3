@@ -2,14 +2,14 @@ import { verifyToken } from "@/app/lib/auth/jwt";
 import { prisma } from "@/app/lib/db/prisma";
 import { NextRequest, NextResponse } from "next/server";
 
-interface Props {
+export interface RouteContext {
   params: {
     id: string;
   };
 }
 
 // GET - Fetch URL groups for a specific URL
-export async function GET(request: NextRequest, props: Props): Promise<NextResponse> {
+export async function GET(request: NextRequest, { params }: RouteContext): Promise<NextResponse> {
   try {
     const userData = await verifyToken();
 
@@ -17,7 +17,7 @@ export async function GET(request: NextRequest, props: Props): Promise<NextRespo
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const { id } = props.params;
+    const { id } = params;
 
     // Get all URL groups that contain this URL
     const urlInGroups = await prisma.urlsInGroups.findMany({
@@ -38,7 +38,7 @@ export async function GET(request: NextRequest, props: Props): Promise<NextRespo
 }
 
 // PUT - Update URL groups for a specific URL
-export async function PUT(request: NextRequest, props: Props): Promise<NextResponse> {
+export async function PUT(request: NextRequest, { params }: RouteContext): Promise<NextResponse> {
   try {
     const userData = await verifyToken();
 
@@ -46,7 +46,7 @@ export async function PUT(request: NextRequest, props: Props): Promise<NextRespo
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const { id } = props.params;
+    const { id } = params;
     const { urlGroupIds } = await request.json();
 
     if (!Array.isArray(urlGroupIds)) {
