@@ -1,6 +1,7 @@
 "use client";
 
 import UrlDialog from "@/app/components/ui/UrlDialog";
+import { convertToApiPath } from "@/app/lib/utils/file-paths";
 import { getEffectiveUrl, UrlWithLocalhost } from "@/app/lib/utils/iframe-utils";
 import AddIcon from "@mui/icons-material/Add";
 import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
@@ -111,7 +112,7 @@ const MemoizedUrlItem = React.memo(function UrlItem({
             <Box sx={{ mr: 1 }}>
               {url.url.iconPath ? (
                 <Image
-                  src={url.url.iconPath}
+                  src={convertToApiPath(url.url.iconPath)}
                   alt={url.url.title}
                   width={16}
                   height={16}
@@ -191,7 +192,7 @@ const MemoizedUrlItem = React.memo(function UrlItem({
             </IconButton>
           </span>
         </Tooltip>
-        <Tooltip title="Delete URL">
+        {/* <Tooltip title="Delete URL">
           <span>
             <IconButton
               edge="end"
@@ -203,7 +204,7 @@ const MemoizedUrlItem = React.memo(function UrlItem({
               <DeleteIcon fontSize="small" />
             </IconButton>
           </span>
-        </Tooltip>
+        </Tooltip> */}
       </ListItemSecondaryAction>
     </ListItem>
   );
@@ -1017,7 +1018,9 @@ export default function UrlGroupManagement() {
         throw new Error("Failed to fetch URLs");
       }
 
-      const data = await response.json();
+      const data = (await response.json()) as Url[];
+
+      // Set all URLs as available (we'll filter in the Autocomplete component)
       setAvailableUrls(data);
     } catch (err) {
       setSnackbar({
@@ -1050,20 +1053,24 @@ export default function UrlGroupManagement() {
     if (!selectedGroup) return;
 
     try {
+      // Get all selected URL IDs
+      const selectedUrlIds = selectedUrls.map((url) => url.id);
+
+      // Make a single API call to update all URLs for the group
       const response = await fetch(`/api/admin/url-groups/${selectedGroup.id}/urls`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ urlIds: selectedUrls.map((url) => url.id) }),
+        body: JSON.stringify({ urlIds: selectedUrlIds }),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData?.error || "Failed to save URL assignments");
+        throw new Error(errorData?.error || "Failed to update URLs");
       }
 
       setSnackbar({
         open: true,
-        message: "URLs assigned successfully",
+        message: "URLs updated successfully",
         severity: "success",
       });
 
@@ -1072,7 +1079,7 @@ export default function UrlGroupManagement() {
     } catch (err) {
       setSnackbar({
         open: true,
-        message: err instanceof Error ? err.message : "Failed to save URL assignments",
+        message: err instanceof Error ? err.message : "Failed to update URLs",
         severity: "error",
       });
     }
@@ -1239,7 +1246,7 @@ export default function UrlGroupManagement() {
                   </Box>
 
                   <Box sx={{ mb: 2 }}>
-                    <Button
+                    {/* <Button
                       variant="outlined"
                       startIcon={<AddIcon />}
                       onClick={() => handleOpenDialog("createUrl", group)}
@@ -1247,18 +1254,19 @@ export default function UrlGroupManagement() {
                       sx={{ mr: 1 }}
                     >
                       Add URL
-                    </Button>
+                    </Button> */}
                     <Button
                       variant="outlined"
                       startIcon={<LinkIcon />}
                       onClick={() => {
                         setSelectedGroup(group);
+                        // Pre-select URLs that are already in the group
                         setSelectedUrls(group.urls.map((u) => u.url));
                         handleOpenUrlSelectionDialog();
                       }}
                       size="small"
                     >
-                      Select Existing URLs
+                      Manage URLs
                     </Button>
                   </Box>
 
@@ -1478,10 +1486,11 @@ export default function UrlGroupManagement() {
         maxWidth="md"
         fullWidth
       >
-        <DialogTitle>Select URLs for {selectedGroup?.name}</DialogTitle>
+        <DialogTitle>Manage URLs for {selectedGroup?.name}</DialogTitle>
         <DialogContent>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-            Select URLs to add to this group
+            Select or deselect URLs for this group. Selected URLs will be removed from the dropdown
+            menu.
           </Typography>
 
           {loadingUrls ? (
@@ -1491,7 +1500,11 @@ export default function UrlGroupManagement() {
           ) : (
             <Autocomplete
               multiple
-              options={availableUrls}
+              options={availableUrls.filter(
+                (url) =>
+                  // Only show URLs that aren't already selected
+                  !selectedUrls.some((selectedUrl) => selectedUrl.id === url.id),
+              )}
               getOptionLabel={(option) => option.title}
               value={selectedUrls}
               onChange={(_, newValue) => handleUrlSelection(newValue)}
@@ -1517,7 +1530,7 @@ export default function UrlGroupManagement() {
                   <Box sx={{ display: "flex", alignItems: "center" }}>
                     {option.iconPath ? (
                       <Image
-                        src={option.iconPath}
+                        src={convertToApiPath(option.iconPath)}
                         alt={option.title}
                         width={16}
                         height={16}

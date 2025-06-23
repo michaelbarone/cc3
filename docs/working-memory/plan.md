@@ -31,12 +31,6 @@ This document serves as the main project plan and tracks the status of all tasks
 - **Priority**: High
 - **Estimated Effort**: 1 week
 
-### admin url groups updates
-- **Description**: updates for admin url groups include:
-  - when adding existing urls to a group, we should remove the urls from the available list that are already in the group or being added so we dont accidentally add duplicate entries which now cause an error that can be confusing to users.
-- **Priority**: High
-- **Estimated Effort**: 1 week
-
 ### Docker Backup/Restore Validation
 - **Description**: Validate backup and restore functionality with Docker deployment after image storage and database path adjustments
 - **Key Milestones**:
