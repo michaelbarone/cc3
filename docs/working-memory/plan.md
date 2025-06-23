@@ -94,6 +94,11 @@ This document serves as the main project plan and tracks the status of all tasks
 
 ## Closed Tasks
 
+### login page locked user improvement flow
+- **Description**: When a locked user is selected on the login page, we should select/highlight the password field for easy entry of password.  Other UX enhancements including tile focus and keyboard navigation testing.
+- **Priority**: Medium
+- **Estimated Effort**: 1 week
+
 ### Admin URL Management Improvements
 - **Location**: `/docs/working-memory/done/admin-url-management-20250614`
 - **Completion Date**: `2025-06-14`

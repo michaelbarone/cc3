@@ -301,16 +301,21 @@ function LoginContent() {
       setPassword("");
       setError("");
       setShowPassword(false); // Reset password visibility
-
-      // Focus on password field
-      if (passwordInputRef.current) {
-        setTimeout(() => {
-          passwordInputRef.current?.focus();
-        }, TIMEOUTS.PASSWORD_FIELD_FOCUS);
-      }
     },
-    [performLogin, handleLoginError, passwordInputRef],
+    [performLogin, handleLoginError],
   );
+
+  // Add effect to focus password field when a user is selected
+  useEffect(() => {
+    if (selectedUser && passwordInputRef.current) {
+      // Use setTimeout to ensure the DOM has updated with the newly rendered password field
+      setTimeout(() => {
+        if (passwordInputRef.current) {
+          passwordInputRef.current.focus();
+        }
+      }, TIMEOUTS.PASSWORD_FIELD_FOCUS);
+    }
+  }, [selectedUser, passwordInputRef]);
 
   // Memoize the filtered admin users to avoid recalculation on renders
   const adminUsers = useMemo(() => users.filter((u) => u.isAdmin), [users]);
@@ -752,114 +757,107 @@ function LoginContent() {
                           </Box>
 
                           {/* Password Form - Inside the card */}
-                          <Box
-                            component="form"
-                            onSubmit={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              handleSubmit(e);
-                            }}
-                            aria-label={`Password form for ${user.username}`}
-                            noValidate // Prevent browser validation
-                            // Stop click propagation to parent
-                            onClick={(e) => e.stopPropagation()}
-                            sx={{
-                              position: "absolute",
-                              bottom: 0,
-                              left: 0,
-                              right: 0,
-                              p: 3,
-                              background: "rgba(0,0,0,0.3)",
-                              backdropFilter: "blur(10px)",
-                              display: "flex",
-                              flexDirection: "column",
-                              gap: 2,
-                              transition: "transform 0.3s ease-in-out, opacity 0.3s ease-in-out",
-                              transform:
-                                user.requiresPassword && selectedUser?.id === user.id
-                                  ? "translateY(0)"
-                                  : "translateY(100%)",
-                              opacity:
-                                user.requiresPassword && selectedUser?.id === user.id ? 1 : 0,
-                              pointerEvents:
-                                user.requiresPassword && selectedUser?.id === user.id
-                                  ? "auto"
-                                  : "none",
-                              zIndex: 2,
-                            }}
-                          >
-                            <TextField
-                              fullWidth
-                              name="password"
-                              label="Password"
-                              type={showPassword ? "text" : "password"}
-                              value={password}
-                              onChange={(e) => setPassword(e.target.value)}
-                              onKeyDown={handlePasswordKeyDown}
-                              inputRef={passwordInputRef}
-                              aria-invalid={!!error}
-                              aria-describedby={error ? "password-error" : undefined}
-                              InputProps={{
-                                endAdornment: (
-                                  <InputAdornment position="end">
-                                    <IconButton
-                                      onClick={(e) => {
-                                        e.stopPropagation(); // Prevent event bubbling
-                                        handleTogglePasswordVisibility();
-                                      }}
-                                      onKeyDown={(e) => {
-                                        if (e.key === "Enter" || e.key === " ") {
-                                          e.preventDefault();
-                                          e.stopPropagation();
-                                          handleTogglePasswordVisibility();
-                                        }
-                                      }}
-                                      edge="end"
-                                      aria-label={showPassword ? "Hide password" : "Show password"}
-                                      sx={{ color: "white" }}
-                                    >
-                                      {showPassword ? <VisibilityOff /> : <Visibility />}
-                                    </IconButton>
-                                  </InputAdornment>
-                                ),
-                              }}
-                              sx={{
-                                "& .MuiInputLabel-root": {
-                                  color: "white",
-                                  transition: "all 0.3s ease-in-out",
-                                },
-                                "& .MuiInputBase-root": {
-                                  color: "white",
-                                  transition: "all 0.3s ease-in-out",
-                                  "&:before": {
-                                    borderColor: "rgba(255,255,255,0.5)",
-                                    transition: "all 0.3s ease-in-out",
-                                  },
-                                  "&:hover:not(.Mui-disabled):before": {
-                                    borderColor: "rgba(255,255,255,0.7)",
-                                  },
-                                  "& .MuiInputAdornment-root": {
-                                    "& .MuiIconButton-root": {
-                                      transition: "all 0.3s ease-in-out",
-                                    },
-                                  },
-                                },
-                              }}
-                            />
-                            <Button
-                              type="submit"
-                              variant="contained"
-                              fullWidth
-                              disabled={isLoading}
-                              onKeyDown={handleLoginButtonKeyDown}
-                              onClick={(e) => {
-                                e.stopPropagation(); // Prevent event from bubbling to parent
+                          {user.requiresPassword && selectedUser?.id === user.id && (
+                            <Box
+                              component="form"
+                              onSubmit={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
                                 handleSubmit(e);
                               }}
+                              aria-label={`Password form for ${user.username}`}
+                              noValidate // Prevent browser validation
+                              // Stop click propagation to parent
+                              onClick={(e) => e.stopPropagation()}
+                              sx={{
+                                position: "absolute",
+                                bottom: 0,
+                                left: 0,
+                                right: 0,
+                                p: 3,
+                                background: "rgba(0,0,0,0.3)",
+                                backdropFilter: "blur(10px)",
+                                display: "flex",
+                                flexDirection: "column",
+                                gap: 2,
+                                zIndex: 2,
+                              }}
                             >
-                              {isLoading ? <CircularProgress size={24} /> : "Log In"}
-                            </Button>
-                          </Box>
+                              <TextField
+                                fullWidth
+                                name="password"
+                                label="Password"
+                                type={showPassword ? "text" : "password"}
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                onKeyDown={handlePasswordKeyDown}
+                                inputRef={passwordInputRef}
+                                aria-invalid={!!error}
+                                aria-describedby={error ? "password-error" : undefined}
+                                InputProps={{
+                                  endAdornment: (
+                                    <InputAdornment position="end">
+                                      <IconButton
+                                        onClick={(e) => {
+                                          e.stopPropagation(); // Prevent event bubbling
+                                          handleTogglePasswordVisibility();
+                                        }}
+                                        onKeyDown={(e) => {
+                                          if (e.key === "Enter" || e.key === " ") {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            handleTogglePasswordVisibility();
+                                          }
+                                        }}
+                                        edge="end"
+                                        aria-label={
+                                          showPassword ? "Hide password" : "Show password"
+                                        }
+                                        sx={{ color: "white" }}
+                                      >
+                                        {showPassword ? <VisibilityOff /> : <Visibility />}
+                                      </IconButton>
+                                    </InputAdornment>
+                                  ),
+                                }}
+                                sx={{
+                                  "& .MuiInputLabel-root": {
+                                    color: "white",
+                                    transition: "all 0.3s ease-in-out",
+                                  },
+                                  "& .MuiInputBase-root": {
+                                    color: "white",
+                                    transition: "all 0.3s ease-in-out",
+                                    "&:before": {
+                                      borderColor: "rgba(255,255,255,0.5)",
+                                      transition: "all 0.3s ease-in-out",
+                                    },
+                                    "&:hover:not(.Mui-disabled):before": {
+                                      borderColor: "rgba(255,255,255,0.7)",
+                                    },
+                                    "& .MuiInputAdornment-root": {
+                                      "& .MuiIconButton-root": {
+                                        transition: "all 0.3s ease-in-out",
+                                      },
+                                    },
+                                  },
+                                }}
+                              />
+                              <Button
+                                type="submit"
+                                variant="contained"
+                                fullWidth
+                                disabled={isLoading}
+                                onKeyDown={handleLoginButtonKeyDown}
+                                onClick={(e) => {
+                                  e.stopPropagation(); // Prevent event from bubbling to parent
+                                  handleSubmit(e);
+                                }}
+                              >
+                                {isLoading ? <CircularProgress size={24} /> : "Log In"}
+                              </Button>
+                            </Box>
+                          )}
                         </Box>
                       </Card>
                     </Box>
