@@ -1,20 +1,21 @@
 # Project Plan
 
-*Last updated: 2025-06-14 21:45*
+*Last updated: 2025-06-22 20:28*
 
 This document serves as the main project plan and tracks the status of all tasks related to the project.
 
 ## Active Tasks
 
+### Iframe UX - url option to link out to new tab
+- **Location**: `/docs/working-memory/open/iframe-link-out-20250701`
+- **Description**: Add URL config option to link out to new tab. This should be a toggle on the URL config page. If the toggle is on, the URL will be opened in a new tab. If the toggle is off, the URL will be opened in the iframe. This is for known URLs that have issues in iframes but we still want to be able to use them.
+- **Priority**: High
+- **Estimated Effort**: 1 week
+
 ## Future Tasks
 
 ### Iframe UX - user registration
 - **Description**: check if user registration is working as expected.  if so, add option to specify default groups for new users.
-- **Priority**: High
-- **Estimated Effort**: 1 week
-
-### Iframe UX - url option to link out to new tab
-- **Description**: add url config option to link out to new tab.  this should be a toggle on the url config page.  if the toggle is on, the url will be opened in a new tab.  if the toggle is off, the url will be opened in the iframe.  this is for konwn urls that have issues in iframes but we still want to be able to use them.
 - **Priority**: High
 - **Estimated Effort**: 1 week
 

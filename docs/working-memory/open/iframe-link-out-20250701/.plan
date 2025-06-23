@@ -1,0 +1,113 @@
+# Iframe UX - URL Option to Link Out to New Tab
+
+## Task Overview
+
+**Date Created**: 2025-06-22 20:28
+**Priority**: High
+**Estimated Effort**: 1 week
+
+## Requirements
+
+1. Add a new boolean field to the URL model to indicate if a URL should open in a new tab
+2. Update the URL creation/edit dialog in the admin area to include this toggle option
+3. Update the URL table in admin/urls to show this setting
+4. Modify the URL click handling to open URLs in new tabs when configured
+5. Ensure this works in all menu locations (top menu, side menu, mobile menu)
+6. Do not update the lastActiveUrl when opening URLs in new tabs
+7. Add visual indicator to URL menu buttons for URLs that open in new tabs (CONSULT USER BEFORE IMPLEMENTING)
+
+## Current Status
+
+**Status**: Planning
+
+- What's working: N/A - New feature
+- What's not: N/A - New feature
+- Blocking issues: None
+- Next actions: Create database migration for the new field
+
+## Technical Analysis
+
+### Database Changes
+
+Need to add a new boolean field `openInNewTab` to the `Url` model in Prisma schema.
+
+### UI Changes
+
+1. Add toggle switch to the URL dialog form
+2. Add visual indicator in the URL admin table
+3. Add visual indicator in the URL menu buttons for URLs that open in new tabs
+   - **IMPORTANT**: Must consult with user for feedback BEFORE implementing any visual indicators
+   - Get user approval on design and placement of indicators
+
+### Functional Changes
+
+1. Modify URL click handlers to check the `openInNewTab` flag
+   - Identify all click handler locations (top menu, side menu, mobile menu)
+   - Ensure minimal impact on current functionality
+   - For URLs with `openInNewTab` set to true:
+     - Intercept the normal click early in the process
+     - Use `window.open()` to open in new tab
+     - Prevent further processing of the click event
+     - Skip updating `lastActiveUrl`
+   - For long-press handling:
+     - Check if URL is set to open in new tab
+     - If true, prevent long-press functionality
+
+2. When true, use `window.open()` instead of updating iframe
+3. Skip updating `lastActiveUrl` when opening in new tab
+
+### Click Handling Considerations
+
+- Identify all URL click handler locations:
+  - TopMenuNavigation component: `handleUrlClick` function in `app/components/url-menu/TopMenuNavigation.tsx`
+  - UrlMenu component: `handleUrlClick` function in `app/components/url-menu/UrlMenu.tsx`
+  - UrlItem component: Used by both menu components, handles click events in `app/components/url-menu/UrlItem.tsx`
+  - useLongPress hook: Needs to be updated to check if URL is set to open in new tab in `app/lib/hooks/useLongPress.ts`
+
+- Ensure minimal impact on existing functionality
+- Early interception of click events for "open in new tab" URLs
+- Prevent long-press functionality for "open in new tab" URLs
+
+### Implementation Details
+
+1. For TopMenuNavigation component:
+   - Modify `handleUrlClick` function to check for `openInNewTab` flag
+   - If true, use `window.open()` and return early
+   - Pass the `openInNewTab` property to the UrlItem component
+
+2. For UrlMenu component:
+   - Similar modification to `handleUrlClick` function
+   - Pass the `openInNewTab` property to the UrlMenuItem component
+
+3. For UrlItem component:
+   - Update props interface to include `openInNewTab` property
+   - Modify click handling to check for this flag
+
+4. For useLongPress hook:
+   - Add option to disable long press functionality for URLs that open in new tabs
+
+## Implementation Plan
+
+1. Create database migration for the new field
+2. Update Prisma schema and generate client
+3. Update UrlDialog component to include the new toggle
+4. Update URL table in admin area to show the setting
+5. Modify URL click handlers to check the flag and open in new tab when needed:
+   - Identify all click handler locations
+   - Implement early interception for "open in new tab" URLs
+   - Prevent further processing for these URLs
+   - Ensure long-press handling is updated appropriately
+6. CONSULT USER before implementing any visual indicators in menus
+7. Add tests for the new functionality
+8. Update documentation
+
+## Progress History
+
+### 2025-06-22 20:28 - Initial Planning
+
+- ✓ Created task plan
+- ✓ Analyzed requirements
+- ✓ Identified necessary changes
+- ✓ Identified specific components that need modification
+- 📚 Documentation: Created initial plan
+- ⏭️ Next: Create database migration
