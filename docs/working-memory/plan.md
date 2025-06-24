@@ -1,16 +1,10 @@
 # Project Plan
 
-*Last updated: 2025-06-22 20:36*
+*Last updated: 2025-06-24 15:20*
 
 This document serves as the main project plan and tracks the status of all tasks related to the project.
 
 ## Active Tasks
-
-### Iframe UX - url option to link out to new tab
-- **Location**: `/docs/working-memory/open/iframe-link-out-20250701`
-- **Description**: Add URL config option to link out to new tab. This should be a toggle on the URL config page. If the toggle is on, the URL will be opened in a new tab. If the toggle is off, the URL will be opened in the iframe. This is for known URLs that have issues in iframes but we still want to be able to use them.
-- **Priority**: High
-- **Estimated Effort**: 1 week
 
 ## Future Tasks
 
@@ -99,6 +93,19 @@ This document serves as the main project plan and tracks the status of all tasks
 
 ## Closed Tasks
 
+### Iframe UX - URL Option to Link Out to New Tab
+- **Location**: `/docs/working-memory/done/iframe-link-out-20250701`
+- **Completion Date**: `2025-06-24`
+- **Description**: Added URL config option to link out to new tab instead of loading in iframe
+- **Key Achievements**:
+  - Added openInNewTab boolean field to URL model with database migration
+  - Created toggle in URL dialog for configuring external link behavior
+  - Implemented ExternalUrlItem component for URLs that open in new tabs
+  - Added visual indicators for URLs that open in new tabs
+  - Updated URL click handling across all menu locations (top, side, mobile)
+  - Ensured lastActiveUrl is not updated when opening URLs in new tabs
+  - Updated documentation across components, API, and architecture
+
 ### login page locked user improvement flow
 - **Description**: When a locked user is selected on the login page, we should select/highlight the password field for easy entry of password.  Other UX enhancements including tile focus and keyboard navigation testing.
 - **Priority**: Medium
@@ -115,6 +122,18 @@ This document serves as the main project plan and tracks the status of all tasks
   - Added tooltip indicating timeout functionality is not yet configured
   - Added URL group management directly from the URLs admin page
   - Fixed issues with form state management during URL creation
+
+### Password Complexity Requirements
+- **Location**: `/docs/working-memory/done/password-complexity-20250622/`  
+- **Completion Date**: 2025-06-22  
+- **Description**: Added configurable password complexity requirements to the admin area and integrated password validation throughout the application.
+- **Key Achievements**:
+  - Added password complexity fields to the AppConfig model
+  - Created a centralized password validation utility
+  - Added UI for configuring password requirements in the admin area
+  - Updated registration and password change flows to validate against requirements
+  - Ensured only new passwords are validated, not existing ones
+  - Updated documentation for the password complexity feature
 
 ### IFrame Container Refactor
 - **Location**: `/docs/working-memory/done/iframe-container-refactor`
@@ -254,17 +273,3 @@ This document serves as the main project plan and tracks the status of all tasks
 
 ### Login Page
 - **Location**: `/docs/working-memory/done/login-page`
-
-### Password Complexity Requirements
-
-**Location**: `/docs/working-memory/done/password-complexity-20250622/`  
-**Completion Date**: 2025-06-22  
-**Description**: Added configurable password complexity requirements to the admin area and integrated password validation throughout the application.
-
-**Key Achievements**:
-- Added password complexity fields to the AppConfig model
-- Created a centralized password validation utility
-- Added UI for configuring password requirements in the admin area
-- Updated registration and password change flows to validate against requirements
-- Ensured only new passwords are validated, not existing ones
-- Updated documentation for the password complexity feature
