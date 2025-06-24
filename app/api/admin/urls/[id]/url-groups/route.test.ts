@@ -91,7 +91,7 @@ describe("URL Groups for URL API", () => {
         } as JwtPayload);
 
         const request = new NextRequest("http://localhost/api/admin/urls/123/url-groups");
-        const response = await GET(request, { params: { id: testUrl.id } });
+        const response = await GET(request, { params: Promise.resolve({ id: testUrl.id }) });
         const data = await debugResponse(response);
 
         expect(response.status).toBe(403);
@@ -122,7 +122,7 @@ describe("URL Groups for URL API", () => {
         vi.mocked(prisma.urlsInGroups.findMany).mockResolvedValue(urlInGroups as any);
 
         const request = new NextRequest("http://localhost/api/admin/urls/123/url-groups");
-        const response = await GET(request, { params: { id: testUrl.id } });
+        const response = await GET(request, { params: Promise.resolve({ id: testUrl.id }) });
         const data = await debugResponse(response);
 
         expect(response.status).toBe(200);
@@ -150,7 +150,7 @@ describe("URL Groups for URL API", () => {
         vi.mocked(prisma.urlsInGroups.findMany).mockRejectedValue(new Error("Database error"));
 
         const request = new NextRequest("http://localhost/api/admin/urls/123/url-groups");
-        const response = await GET(request, { params: { id: testUrl.id } });
+        const response = await GET(request, { params: Promise.resolve({ id: testUrl.id }) });
         const data = await debugResponse(response);
 
         expect(response.status).toBe(500);
@@ -176,7 +176,7 @@ describe("URL Groups for URL API", () => {
           method: "PUT",
           body: JSON.stringify({ urlGroupIds: [testUrlGroup1.id] }),
         });
-        const response = await PUT(request, { params: { id: testUrl.id } });
+        const response = await PUT(request, { params: Promise.resolve({ id: testUrl.id }) });
         const data = await debugResponse(response);
 
         expect(response.status).toBe(403);
@@ -193,7 +193,7 @@ describe("URL Groups for URL API", () => {
           method: "PUT",
           body: JSON.stringify({ urlGroupIds: "not-an-array" }),
         });
-        const response = await PUT(request, { params: { id: testUrl.id } });
+        const response = await PUT(request, { params: Promise.resolve({ id: testUrl.id }) });
         const data = await debugResponse(response);
 
         expect(response.status).toBe(400);
@@ -212,7 +212,7 @@ describe("URL Groups for URL API", () => {
           method: "PUT",
           body: JSON.stringify({ urlGroupIds: [testUrlGroup1.id] }),
         });
-        const response = await PUT(request, { params: { id: "non-existent-id" } });
+        const response = await PUT(request, { params: Promise.resolve({ id: "non-existent-id" }) });
         const data = await debugResponse(response);
 
         expect(response.status).toBe(404);
@@ -255,7 +255,7 @@ describe("URL Groups for URL API", () => {
           method: "PUT",
           body: JSON.stringify({ urlGroupIds: newGroupIds }),
         });
-        const response = await PUT(request, { params: { id: testUrl.id } });
+        const response = await PUT(request, { params: Promise.resolve({ id: testUrl.id }) });
         const data = await debugResponse(response);
 
         expect(response.status).toBe(200);
@@ -277,7 +277,7 @@ describe("URL Groups for URL API", () => {
           method: "PUT",
           body: JSON.stringify({ urlGroupIds: [testUrlGroup1.id] }),
         });
-        const response = await PUT(request, { params: { id: testUrl.id } });
+        const response = await PUT(request, { params: Promise.resolve({ id: testUrl.id }) });
         const data = await debugResponse(response);
 
         expect(response.status).toBe(500);
