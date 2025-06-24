@@ -43,6 +43,7 @@ interface Url {
   iconPath: string | null;
   idleTimeoutMinutes: number | null;
   isLocalhost: boolean;
+  openInNewTab: boolean;
   port?: string | null;
   path?: string | null;
   localhostMobilePath?: string | null;
@@ -486,6 +487,7 @@ export default function UrlManagement() {
                 <TableCell>URL</TableCell>
                 <TableCell>Mobile URL</TableCell>
                 <TableCell>Localhost</TableCell>
+                <TableCell>Open in New Tab</TableCell>
                 <TableCell>Idle Timeout</TableCell>
                 <TableCell>Groups</TableCell>
                 <TableCell>Actions</TableCell>
@@ -636,6 +638,13 @@ export default function UrlManagement() {
                       <Chip size="small" color="primary" label="Enabled" variant="outlined" />
                     ) : (
                       <Chip size="small" color="default" label="Disabled" variant="outlined" />
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {url.openInNewTab ? (
+                      <Chip size="small" color="primary" label="Yes" variant="outlined" />
+                    ) : (
+                      <Chip size="small" color="default" label="No" variant="outlined" />
                     )}
                   </TableCell>
                   <TableCell>{url.idleTimeoutMinutes || "-"}</TableCell>

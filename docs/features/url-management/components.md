@@ -42,6 +42,7 @@ Key Features:
 - Active URL tracking
 - Loading state indicators
 - Mobile responsiveness
+- Support for external URLs that open in new tabs
 
 ### UrlMenuItem
 
@@ -73,6 +74,35 @@ Key Features:
 - Progress indicator
 - Error state display
 - Icon support
+
+### ExternalUrlItem
+
+Purpose: Represents a URL that opens in a new browser tab instead of within the iframe.
+
+```typescript
+interface ExternalUrlItemProps {
+  url: Url;
+  tooltipText: string;
+  menuPosition: "top" | "side";
+  theme: Theme;
+}
+
+const ExternalUrlItem: React.FC<ExternalUrlItemProps> = ({
+  url,
+  tooltipText,
+  menuPosition,
+  theme
+}) => {
+  // Component implementation
+};
+```
+
+Key Features:
+- Opens URL in new browser tab
+- Visual indicator showing it's an external link
+- Position-specific styling (top menu vs side menu)
+- Tooltip with URL information
+- No iframe state management or long-press functionality
 
 ## IFrame Components
 

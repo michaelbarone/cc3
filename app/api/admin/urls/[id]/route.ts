@@ -86,6 +86,7 @@ export async function PUT(request: NextRequest, { params }: RouteContext): Promi
       iconPath,
       idleTimeoutMinutes,
       isLocalhost,
+      openInNewTab,
       port,
       path,
       localhostMobilePort,
@@ -143,8 +144,10 @@ export async function PUT(request: NextRequest, { params }: RouteContext): Promi
         urlMobile: urlMobile || null,
         iconPath: iconPath || null,
         idleTimeoutMinutes: timeoutMinutes,
-        // @ts-ignore - These fields exist in our schema but TypeScript doesn't know about them yet
+        // @ts-ignore - This field exists in our schema but TypeScript doesn't know about it yet
         isLocalhost: isLocalhost || false,
+        // @ts-ignore - New field added to schema
+        openInNewTab: openInNewTab || false,
         port: port || null,
         path: path || null,
         localhostMobilePort: localhostMobilePort || null,

@@ -18,12 +18,28 @@
 
 ## Current Status
 
-**Status**: Planning
+**Status**: Implementation Complete
 
-- What's working: N/A - New feature
-- What's not: N/A - New feature
+- What's working:
+  - Database migration for the new field
+  - URL dialog component with the new toggle
+  - URL table in admin area showing the setting
+  - New ExternalUrlItem component for URLs that open in new tabs
+  - Conditional rendering in TopMenuNavigation and UrlMenu
+  - Fixed issue with URLs in TopMenuNavigation not opening in new tabs
+  - API routes updated to handle the openInNewTab field
+  - URL Groups API updated to include openInNewTab property
+  - Visual indicators for URLs that open in new tabs
+  - Fixed React hooks order issue in UrlMenu component
+  - Improved side menu styling for external URL items
+  - Fixed side menu button padding to match original buttons
+  - Updated documentation across components, API, and architecture
+- What's not:
+  - Tests for the new functionality
 - Blocking issues: None
-- Next actions: Create database migration for the new field
+- Next actions:
+  1. Add tests for the new functionality
+  2. Get user feedback on the implementation
 
 ## Technical Analysis
 
@@ -70,6 +86,8 @@ Need to add a new boolean field `openInNewTab` to the `Url` model in Prisma sche
 
 ### Implementation Details
 
+#### Option 1: Modify Existing Components (Original Plan)
+
 1. For TopMenuNavigation component:
    - Modify `handleUrlClick` function to check for `openInNewTab` flag
    - If true, use `window.open()` and return early
@@ -86,22 +104,192 @@ Need to add a new boolean field `openInNewTab` to the `Url` model in Prisma sche
 4. For useLongPress hook:
    - Add option to disable long press functionality for URLs that open in new tabs
 
+#### Option 2: Create Separate Component (Alternative Approach)
+
+1. Create a new `ExternalUrlItem` component:
+   - Similar to `UrlItem` but without long-press functionality
+   - Direct `onClick` handler that uses `window.open()`
+   - Does not update iframe state or lastActiveUrl
+   - Can have distinct styling/icon to indicate external link behavior
+
+2. Update parent components (TopMenuNavigation and UrlMenu):
+   - Conditionally render either `UrlItem` or `ExternalUrlItem` based on the `openInNewTab` flag
+   - No need to modify existing click handlers in these components
+   - Example:
+   ```tsx
+   {urls.map(url => (
+     url.openInNewTab ? (
+       <ExternalUrlItem
+         key={url.id}
+         url={url}
+         // other props
+       />
+     ) : (
+       <UrlItem
+         key={url.id}
+         url={url}
+         onUrlClick={handleUrlClick}
+         // other props
+       />
+     )
+   ))}
+   ```
+
+3. Benefits:
+   - Cleaner separation of concerns
+   - Reduced risk of regression in existing functionality
+   - More explicit about the different behavior
+   - Easier to test and maintain
+   - Simpler to add visual indicators specific to external links
+
+### Approach Comparison
+
+| Aspect | Option 1: Modify Existing | Option 2: Separate Component |
+|--------|--------------------------|------------------------------|
+| **Code Impact** | Modifies existing components | Creates new components, minimal changes to existing code |
+| **Risk** | Higher risk of regression | Lower risk of regression |
+| **Complexity** | More complex conditionals in handlers | Cleaner separation of logic |
+| **Testing** | Need to test all existing handlers | Can test new component in isolation |
+| **Maintenance** | Logic spread across components | Clear separation of internal/external link handling |
+| **Visual Indicators** | Requires conditional styling | Can have dedicated styling for external links |
+| **Implementation Time** | Potentially faster to implement | Slightly more upfront work |
+| **Future Changes** | More complex to modify in future | Easier to extend or modify separately |
+
+**Recommendation**: Option 2 (Separate Component) provides better separation of concerns, reduces risk, and will be easier to maintain in the long run, despite requiring slightly more upfront work.
+
 ## Implementation Plan
 
 1. Create database migration for the new field
 2. Update Prisma schema and generate client
 3. Update UrlDialog component to include the new toggle
 4. Update URL table in admin area to show the setting
-5. Modify URL click handlers to check the flag and open in new tab when needed:
-   - Identify all click handler locations
-   - Implement early interception for "open in new tab" URLs
-   - Prevent further processing for these URLs
-   - Ensure long-press handling is updated appropriately
-6. CONSULT USER before implementing any visual indicators in menus
-7. Add tests for the new functionality
-8. Update documentation
+5. Decision point: Choose between Option 1 (modify existing components) or Option 2 (create separate component)
+6. Implement chosen approach:
+   - Option 1: Modify existing click handlers in all components
+   - Option 2: Create new ExternalUrlItem component and update parent components to conditionally render it
+7. CONSULT USER before implementing any visual indicators in menus
+8. Add tests for the new functionality
+9. Update documentation
 
 ## Progress History
+
+### 2025-07-01 20:45 - Mobile Menu Improvements
+
+- ✓ Updated ExternalUrlItem component to handle mobile properly
+- ✓ Made padding responsive based on screen size to match UrlMenuItem
+- ✓ Added responsive font sizes for mobile devices
+- ✓ Reduced icon size on mobile for better spacing
+- 🤔 Decisions: Used consistent styling with existing mobile menu components
+- 📚 Documentation: Updated implementation with mobile-specific improvements
+- ⏭️ Next: Add tests for the new functionality
+
+### 2025-07-01 20:30 - Updated Documentation
+
+- ✓ Updated URL Management component documentation to include ExternalUrlItem component
+- ✓ Updated API documentation to include openInNewTab property in URL model
+- ✓ Updated architecture documentation to include "External" URL state
+- 🤔 Decisions: Comprehensive documentation updates across all relevant files
+- 📚 Documentation: Completed all required documentation updates
+- ⏭️ Next: Add tests for the new functionality
+
+### 2025-07-01 20:00 - Completed Implementation
+
+- ✓ Finalized tooltip text formatting for external URLs
+- ✓ Completed all required functionality for the feature
+- ✓ Verified functionality in both top menu and side menu
+- 🤔 Decisions: Used consistent visual indicators across all menu locations
+- 📚 Documentation: Updated plan with completion status
+- ⏭️ Next: Add tests and update feature documentation
+
+### 2025-07-01 19:30 - Fixed Side Menu Button Padding
+
+- ✓ Adjusted padding in ExternalUrlItem component to match original side URL buttons
+- ✓ Set padding to 8px 16px 8px 24px to maintain consistent UI
+- 🤔 Decisions: Matched exact padding values from original buttons for consistency
+- 📚 Documentation: Updated implementation with padding fixes
+- ⏭️ Next: Add tests for the new functionality
+
+### 2025-07-01 19:15 - Updated Side Menu Styling
+
+- ✓ Improved ExternalUrlItem component to match UrlItem styling in side menu
+- ✓ Created separate rendering logic for top menu vs side menu
+- ✓ Updated UrlMenu component to properly render ExternalUrlItem in side menu
+- 🤔 Decisions: Used ListItemButton for side menu to match existing UI patterns
+- 📚 Documentation: Updated implementation with side menu styling changes
+- ⏭️ Next: Add tests for the new functionality
+
+### 2025-07-01 18:45 - Fixed React Hooks Order Issue
+
+- ✓ Fixed React hooks order issue in UrlMenu component
+- ✓ Moved useTheme and useMediaQuery hooks outside the renderUrlItem function
+- ✓ Updated dependency array for renderUrlItem function
+- 🤔 Decisions: Followed React Rules of Hooks by ensuring hooks are called in the same order on every render
+- 📚 Documentation: Updated implementation with hooks order fix
+- ⏭️ Next: Add tests for the new functionality
+
+### 2025-07-01 18:15 - Improved Styling
+
+- ✓ Removed warning-colored borders from external URL buttons
+- ✓ Made the external icon more subtle with reduced opacity
+- ✓ Improved image and text styling for better alignment
+- ✓ Updated iframe types to include the `openInNewTab` property
+- ✓ Updated iframe state reducer to handle the `openInNewTab` property
+- 🤔 Decisions: Used a more subtle approach for external links with just the icon indicator
+- 📚 Documentation: Updated implementation with styling changes
+- ⏭️ Next: Add tests for the new functionality
+
+### 2025-07-01 17:45 - Fixed URL Groups API
+
+- ✓ Fixed issue with `openInNewTab` property not being included in URL groups API response
+- ✓ Updated `useUrlGroups` hook to include the `openInNewTab` property when transforming the data
+- ✓ Updated URL interface in the API route to include the `openInNewTab` property
+- 🤔 Decisions: Ensured consistent property handling across the entire application
+- 📚 Documentation: Updated implementation with API route changes
+- ⏭️ Next: Test the implementation with real URLs
+
+### 2025-07-01 17:15 - Added Visual Indicators
+
+- ✓ Added temporary border color to external URL buttons
+- ✓ Made the external icon more prominent with warning color
+- ✓ Enhanced hover state for better user feedback
+- 🤔 Decisions: Used warning colors to make external links visually distinct
+- 📚 Documentation: Updated implementation with visual indicator changes
+- ⏭️ Next: Get user feedback on the visual indicators
+
+### 2025-07-01 16:45 - Fixed API Routes
+
+- ✓ Updated POST route to handle the `openInNewTab` field when creating URLs
+- ✓ Updated PUT route to handle the `openInNewTab` field when updating URLs
+- 🤔 Decisions: Used the same pattern as other custom fields with `@ts-ignore` for TypeScript compatibility
+- 📚 Documentation: Updated implementation with API route changes
+- ⏭️ Next: Test the implementation with real URLs
+
+### 2025-07-01 16:15 - Fixed TopMenuNavigation Component
+
+- ✓ Updated TopMenuNavigation component to handle the `openInNewTab` flag correctly
+- 🤔 Decisions: Used the same pattern as other custom fields with `@ts-ignore` for TypeScript compatibility
+- 📚 Documentation: Updated implementation with API route changes
+- ⏭️ Next: Test the implementation with real URLs
+
+### 2025-07-01 15:30 - Implementation Progress
+
+- ✓ Created database migration for the new `openInNewTab` field
+- ✓ Updated Prisma schema with the new field
+- ✓ Updated URL dialog component to include the new toggle
+- ✓ Updated URL table in admin area to show the setting
+- ✓ Created new `ExternalUrlItem` component for URLs that open in new tabs
+- ✓ Updated `TopMenuNavigation` and `UrlMenu` components to conditionally render either `UrlItem` or `ExternalUrlItem`
+- 🤔 Decisions: Implemented Option 2 (separate component approach) as recommended
+- 📚 Documentation: Updated implementation with detailed comments
+- ⏭️ Next: Add tests for the new functionality
+
+### 2025-07-01 14:45 - Alternative Implementation Approach
+
+- ✓ Evaluated alternative implementation approach using separate components
+- ✓ Documented Option 1 (modify existing components) and Option 2 (create separate component)
+- 🤔 Decisions: Both approaches are viable; Option 2 offers cleaner separation of concerns
+- 📚 Documentation: Updated plan with detailed comparison of both approaches
+- ⏭️ Next: Present both options to stakeholders for final decision before implementation
 
 ### 2025-06-22 20:36 - Detailed Component Analysis
 

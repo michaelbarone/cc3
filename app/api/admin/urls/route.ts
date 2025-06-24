@@ -67,6 +67,7 @@ export async function POST(request: Request) {
       iconPath,
       idleTimeoutMinutes,
       isLocalhost,
+      openInNewTab,
       port,
       path,
       localhostMobilePort,
@@ -113,6 +114,8 @@ export async function POST(request: Request) {
         idleTimeoutMinutes: idleTimeoutMinutes ? Number(idleTimeoutMinutes) : 10,
         // @ts-ignore - These fields exist in our schema but TypeScript doesn't know about them yet
         isLocalhost: isLocalhost || false,
+        // @ts-ignore - New field added to schema
+        openInNewTab: openInNewTab || false,
         port: port || null,
         path: path || null,
         localhostMobilePort: localhostMobilePort || null,

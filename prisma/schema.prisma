@@ -41,6 +41,7 @@ model Url {
   iconPath           String?
   idleTimeoutMinutes Int           @default(10)
   isLocalhost        Boolean       @default(false)
+  openInNewTab       Boolean       @default(false)
   port               String?
   path               String?
   localhostMobilePath String?

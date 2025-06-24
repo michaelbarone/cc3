@@ -36,6 +36,7 @@ export function useUrlGroups() {
                 idleTimeoutMinutes: url.idleTimeoutMinutes || null,
                 displayOrder: url.displayOrder || 0,
                 isLocalhost: url.isLocalhost || false,
+                openInNewTab: url.openInNewTab || false,
                 port: url.port || null,
                 path: url.path || null,
                 localhostMobilePath: url.localhostMobilePath || null,
