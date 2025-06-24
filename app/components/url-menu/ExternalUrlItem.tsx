@@ -1,6 +1,14 @@
 import { Url } from "@/app/lib/types";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
-import { Box, Button, ListItemButton, ListItemText, Theme, Tooltip } from "@mui/material";
+import {
+  Box,
+  Button,
+  ListItemButton,
+  ListItemText,
+  Theme,
+  Tooltip,
+  useMediaQuery,
+} from "@mui/material";
 import { memo, useMemo } from "react";
 
 interface ExternalUrlItemProps {
@@ -20,6 +28,9 @@ const ExternalUrlItem = memo(function ExternalUrlItem({
   const handleClick = () => {
     window.open(url.url, "_blank", "noopener,noreferrer");
   };
+
+  // Check if we're on mobile
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 
   // For top menu, use Button-based styling
   if (menuPosition === "top") {
@@ -55,7 +66,6 @@ const ExternalUrlItem = memo(function ExternalUrlItem({
           pb: 0,
           "&:hover": {
             opacity: 0.8,
-            backgroundColor: theme.palette.action.hover,
           },
         },
         containerStyles: {
@@ -115,9 +125,7 @@ const ExternalUrlItem = memo(function ExternalUrlItem({
     <ListItemButton
       onClick={handleClick}
       sx={{
-        pl: 3,
-        pr: 2,
-        py: 1,
+        pl: isMobile ? 3 : 4,
         position: "relative",
         borderRight: 0,
         display: "flex",
@@ -138,11 +146,20 @@ const ExternalUrlItem = memo(function ExternalUrlItem({
           }}
         />
       )}
-      <ListItemText primary={url.title || url.url} secondary={url.url} />
+      <ListItemText
+        primary={url.title || url.url}
+        secondary={url.url}
+        primaryTypographyProps={{
+          fontSize: isMobile ? "0.875rem" : "inherit", // Smaller font on mobile
+        }}
+        secondaryTypographyProps={{
+          fontSize: isMobile ? "0.75rem" : "inherit", // Smaller font on mobile
+        }}
+      />
       <OpenInNewIcon
         sx={{
           ml: 1,
-          fontSize: 14,
+          fontSize: isMobile ? 12 : 14, // Smaller icon on mobile
           color: theme.palette.text.secondary,
           opacity: 0.7,
         }}
