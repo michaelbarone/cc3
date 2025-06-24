@@ -397,7 +397,7 @@ export const UrlMenu = memo(function UrlMenu({
         path: url.path || null,
         localhostMobilePath: url.localhostMobilePath || null,
         localhostMobilePort: url.localhostMobilePort || null,
-        openInNewTab: (url as any).openInNewTab || false,
+        openInNewTab: url.openInNewTab || false,
       };
 
       const tooltipText = `${fullUrlObj.title} - ${tooltipUrl}${fullUrlObj.openInNewTab ? " (opens in new tab)" : ""}`;

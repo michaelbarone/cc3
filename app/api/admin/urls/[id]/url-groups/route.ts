@@ -3,7 +3,7 @@ import { prisma } from "@/app/lib/db/prisma";
 import { NextRequest, NextResponse } from "next/server";
 
 export interface RouteContext {
-  params: Promise<{ id: string }>;
+  params: { id: string };
 }
 
 // GET - Fetch URL groups for a specific URL
@@ -15,7 +15,7 @@ export async function GET(request: NextRequest, { params }: RouteContext): Promi
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const { id } = await params;
+    const { id } = params;
 
     // Get all URL groups that contain this URL
     const urlInGroups = await prisma.urlsInGroups.findMany({
@@ -44,7 +44,7 @@ export async function PUT(request: NextRequest, { params }: RouteContext): Promi
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const { id } = await params;
+    const { id } = params;
     const { urlGroupIds } = await request.json();
 
     if (!Array.isArray(urlGroupIds)) {

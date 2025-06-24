@@ -126,7 +126,7 @@ export const TopMenuNavigation = memo(function TopMenuNavigation({
       const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
       // If url has a title property, use it; otherwise use the ID
-      const urlTitle = (url as any).title || url.id;
+      const urlTitle = url.title || url.id;
 
       // Create tooltip text in format "name - url"
       const tooltipUrl = url.isLocalhost
@@ -151,15 +151,14 @@ export const TopMenuNavigation = memo(function TopMenuNavigation({
         title: urlTitle,
         url: url.url,
         urlMobile: url.urlMobile ?? null,
-        iconPath: (url as any).iconPath || null,
-        idleTimeoutMinutes: (url as any).idleTimeoutMinutes,
-        displayOrder: (url as any).displayOrder || 0,
+        iconPath: url.iconPath || null,
+        displayOrder: url.displayOrder || 0,
         isLocalhost: url.isLocalhost || false,
         port: url.port || null,
         path: url.path || null,
         localhostMobilePath: url.localhostMobilePath || null,
         localhostMobilePort: url.localhostMobilePort || null,
-        openInNewTab: (url as any).openInNewTab || false,
+        openInNewTab: url.openInNewTab || false,
       };
 
       const tooltipText = `${fullUrlObj.title} - ${tooltipUrl}${fullUrlObj.openInNewTab ? " (opens in new tab)" : ""}`;
