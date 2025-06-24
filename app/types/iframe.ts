@@ -11,6 +11,7 @@ export interface UrlGroup {
     idleTimeoutMinutes?: number | null;
     displayOrder?: number;
     isLocalhost?: boolean;
+    openInNewTab?: boolean;
     port?: string | null;
     path?: string | null;
     localhostMobilePath?: string | null;
@@ -24,6 +25,7 @@ export interface IframeUrl {
   url: string;
   urlMobile: string | null;
   isLocalhost: boolean;
+  openInNewTab?: boolean;
   port?: string | null;
   path?: string | null;
   localhostMobilePath?: string | null;

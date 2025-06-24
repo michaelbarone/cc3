@@ -6,6 +6,7 @@ import { getEffectiveUrl } from "@/app/lib/utils/iframe-utils";
 import type { IframeContainerRef, UrlGroup } from "@/app/types/iframe";
 import { Box, Paper, Popper, useMediaQuery, useTheme } from "@mui/material";
 import { memo, RefObject, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ExternalUrlItem } from "./ExternalUrlItem";
 import { UrlItem } from "./UrlItem";
 
 interface TopMenuNavigationProps {
@@ -144,20 +145,43 @@ export const TopMenuNavigation = memo(function TopMenuNavigation({
           )
         : url.url;
 
-      const tooltipText = `${url.title || url.id} - ${tooltipUrl}`;
+      // Create a complete URL object with all properties
+      const fullUrlObj = {
+        id: url.id,
+        title: urlTitle,
+        url: url.url,
+        urlMobile: url.urlMobile ?? null,
+        iconPath: (url as any).iconPath || null,
+        idleTimeoutMinutes: (url as any).idleTimeoutMinutes,
+        displayOrder: (url as any).displayOrder || 0,
+        isLocalhost: url.isLocalhost || false,
+        port: url.port || null,
+        path: url.path || null,
+        localhostMobilePath: url.localhostMobilePath || null,
+        localhostMobilePort: url.localhostMobilePort || null,
+        openInNewTab: (url as any).openInNewTab || false,
+      };
 
+      const tooltipText = `${fullUrlObj.title} - ${tooltipUrl}${fullUrlObj.openInNewTab ? " (opens in new tab)" : ""}`;
+
+      // Check if URL should open in new tab
+      if (fullUrlObj.openInNewTab) {
+        return (
+          <ExternalUrlItem
+            key={url.id}
+            url={fullUrlObj}
+            tooltipText={tooltipText}
+            menuPosition="top"
+            theme={theme}
+          />
+        );
+      }
+
+      // Use regular UrlItem for normal URLs
       return (
         <UrlItem
           key={url.id}
-          url={{
-            id: url.id,
-            title: urlTitle,
-            url: url.url,
-            urlMobile: url.urlMobile ?? null,
-            iconPath: (url as any).iconPath || null,
-            idleTimeoutMinutes: (url as any).idleTimeoutMinutes,
-            displayOrder: (url as any).displayOrder || 0,
-          }}
+          url={fullUrlObj}
           isActive={isActive}
           isLoaded={isLoaded}
           tooltipText={tooltipText}

@@ -1,0 +1,155 @@
+import { Url } from "@/app/lib/types";
+import OpenInNewIcon from "@mui/icons-material/OpenInNew";
+import { Box, Button, ListItemButton, ListItemText, Theme, Tooltip } from "@mui/material";
+import { memo, useMemo } from "react";
+
+interface ExternalUrlItemProps {
+  url: Url;
+  tooltipText: string;
+  menuPosition: "top" | "side";
+  theme: Theme;
+}
+
+const ExternalUrlItem = memo(function ExternalUrlItem({
+  url,
+  tooltipText,
+  menuPosition,
+  theme,
+}: ExternalUrlItemProps) {
+  // Simple click handler that opens the URL in a new tab
+  const handleClick = () => {
+    window.open(url.url, "_blank", "noopener,noreferrer");
+  };
+
+  // For top menu, use Button-based styling
+  if (menuPosition === "top") {
+    const styles = useMemo(
+      () => ({
+        iconStyles: {
+          width: 24,
+          height: 24,
+          objectFit: "contain" as const,
+          marginRight: url.title && url.iconPath ? 1 : 0,
+        },
+        boxStyles: {
+          position: "relative" as const,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          width: "100%",
+        },
+        buttonStyles: {
+          height: 50, // Fixed height for consistency
+          minHeight: 50, // Ensure minimum height is the same
+          minWidth: 50,
+          lineHeight: "36px", // Match line height to button height
+          px: 0, // Slightly more horizontal padding
+          mx: 0.5,
+          textTransform: "none",
+          borderRadius: 1,
+          color: theme.palette.text.primary,
+          fontWeight: "normal",
+          backgroundColor: "transparent",
+          position: "relative",
+          overflow: "hidden",
+          pb: 0,
+          "&:hover": {
+            opacity: 0.8,
+            backgroundColor: theme.palette.action.hover,
+          },
+        },
+        containerStyles: {
+          display: "inline-block",
+          position: "relative" as const,
+        },
+        externalIconStyles: {
+          position: "relative" as const,
+          marginLeft: 1,
+          fontSize: 14,
+          color: theme.palette.text.secondary,
+          opacity: 0.7,
+          padding: "1px",
+        },
+        titleStyles: {
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          fontSize: "0.875rem",
+          whiteSpace: "nowrap" as const,
+          overflow: "hidden" as const,
+          textOverflow: "ellipsis" as const,
+          maxWidth: 100,
+        },
+      }),
+      [theme.palette.text.primary, theme.palette.text.secondary, url.title, url.iconPath],
+    );
+
+    return (
+      <Box sx={styles.containerStyles}>
+        <Tooltip title={tooltipText} placement="bottom" enterDelay={700}>
+          <Button
+            onClick={handleClick}
+            sx={styles.buttonStyles}
+            disableRipple={false}
+            aria-label={`${url.title} (opens in new tab)`}
+          >
+            <Box sx={styles.boxStyles}>
+              {url.iconPath ? (
+                <>
+                  <Box component="img" src={url.iconPath} alt="" sx={styles.iconStyles} />
+                  {url.title && <Box sx={styles.titleStyles}>{url.title}</Box>}
+                </>
+              ) : (
+                <Box sx={styles.titleStyles}>{url.title}</Box>
+              )}
+              <OpenInNewIcon sx={styles.externalIconStyles} fontSize="small" />
+            </Box>
+          </Button>
+        </Tooltip>
+      </Box>
+    );
+  }
+
+  // For side menu, use ListItemButton-based styling to match UrlItem
+  return (
+    <ListItemButton
+      onClick={handleClick}
+      sx={{
+        pl: 3,
+        pr: 2,
+        py: 1,
+        position: "relative",
+        borderRight: 0,
+        display: "flex",
+        alignItems: "center",
+      }}
+    >
+      {url.iconPath && (
+        <Box
+          component="img"
+          src={url.iconPath}
+          alt=""
+          sx={{
+            width: 20,
+            height: 20,
+            objectFit: "contain",
+            mr: 1.5,
+            flexShrink: 0,
+          }}
+        />
+      )}
+      <ListItemText primary={url.title || url.url} secondary={url.url} />
+      <OpenInNewIcon
+        sx={{
+          ml: 1,
+          fontSize: 14,
+          color: theme.palette.text.secondary,
+          opacity: 0.7,
+        }}
+        fontSize="small"
+      />
+    </ListItemButton>
+  );
+});
+
+export { ExternalUrlItem };

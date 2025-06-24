@@ -35,6 +35,7 @@ function iframeReducer(state: IframeState, action: IframeAction): IframeState {
             url: url.url,
             urlMobile: url.urlMobile ?? null,
             isLocalhost: url.isLocalhost ?? false,
+            openInNewTab: url.openInNewTab ?? false,
             port: url.port ?? null,
             path: url.path ?? null,
             localhostMobilePath: url.localhostMobilePath ?? null,

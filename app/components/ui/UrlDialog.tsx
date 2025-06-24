@@ -23,6 +23,7 @@ interface Url {
   iconPath?: string | null;
   idleTimeoutMinutes: number | null;
   isLocalhost: boolean;
+  openInNewTab: boolean;
   port?: string | null;
   path?: string | null;
   localhostMobilePath?: string | null;
@@ -59,6 +60,7 @@ export default function UrlDialog({
     iconPath: null,
     idleTimeoutMinutes: 0,
     isLocalhost: false,
+    openInNewTab: false,
     port: "",
     path: "",
     enableMobileOverride: false,
@@ -74,6 +76,7 @@ export default function UrlDialog({
       setFormValues({
         ...formValues,
         ...initialValues,
+        openInNewTab: initialValues.openInNewTab ?? false,
         enableMobileOverride: hasMobileOverride,
       } as Url);
     } else if (open) {
@@ -85,6 +88,7 @@ export default function UrlDialog({
         iconPath: null,
         idleTimeoutMinutes: 0,
         isLocalhost: false,
+        openInNewTab: false,
         port: "",
         path: "",
         enableMobileOverride: false,
@@ -160,6 +164,7 @@ export default function UrlDialog({
       iconPath: null,
       idleTimeoutMinutes: 0,
       isLocalhost: false,
+      openInNewTab: false,
       port: "",
       path: "",
       enableMobileOverride: false,
@@ -387,6 +392,21 @@ export default function UrlDialog({
                 value={formValues.idleTimeoutMinutes || 0}
                 onChange={handleFormChange}
                 disabled={true}
+              />
+            </Tooltip>
+          </Grid>
+
+          <Grid item xs={12}>
+            <Tooltip title="For websites that do not support iframe embedding, this will open the URL in a new tab instead of inside this app.">
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    name="openInNewTab"
+                    checked={formValues.openInNewTab}
+                    onChange={handleCheckboxChange}
+                  />
+                }
+                label="Open in new tab"
               />
             </Tooltip>
           </Grid>

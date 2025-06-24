@@ -10,6 +10,7 @@ export interface Url {
   displayOrder: number;
   idleTimeoutMinutes?: number;
   isLocalhost?: boolean;
+  openInNewTab?: boolean;
   port?: string | null;
   path?: string | null;
   localhostMobilePath?: string | null;

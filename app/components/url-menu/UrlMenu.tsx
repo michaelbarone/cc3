@@ -27,6 +27,7 @@ import {
   type ChangeEvent,
   type RefObject,
 } from "react";
+import { ExternalUrlItem } from "./ExternalUrlItem";
 import { LongPressProgress } from "./LongPressProgress";
 
 interface UrlMenuProps {
@@ -355,16 +356,70 @@ export const UrlMenu = memo(function UrlMenu({
       .filter((group) => group.urls.length > 0);
   }, [urlGroups, searchQuery]);
 
+  // Get theme and media query at component level, not inside renderUrlItem
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
+
   // Render URL items with appropriate state
   const renderUrlItem = useCallback(
     (url: UrlGroup["urls"][0]) => {
       const isActive = url.id === activeUrlId;
       const isLoaded = urls[url.id]?.isLoaded ?? false;
 
+      // Create tooltip text
+      const tooltipUrl = url.isLocalhost
+        ? getEffectiveUrl(
+            {
+              id: url.id,
+              url: url.url,
+              urlMobile: url.urlMobile,
+              isLocalhost: true,
+              port: url.port || null,
+              path: url.path || null,
+              localhostMobilePath: url.localhostMobilePath || null,
+              localhostMobilePort: url.localhostMobilePort || null,
+            },
+            isMobile,
+          )
+        : url.url;
+
+      // Create a complete URL object with all properties
+      const fullUrlObj = {
+        id: url.id,
+        title: url.title || url.url,
+        url: url.url,
+        urlMobile: url.urlMobile ?? null,
+        iconPath: url.iconPath || null,
+        idleTimeoutMinutes: url.idleTimeoutMinutes || undefined,
+        displayOrder: url.displayOrder || 0,
+        isLocalhost: url.isLocalhost || false,
+        port: url.port || null,
+        path: url.path || null,
+        localhostMobilePath: url.localhostMobilePath || null,
+        localhostMobilePort: url.localhostMobilePort || null,
+        openInNewTab: (url as any).openInNewTab || false,
+      };
+
+      const tooltipText = `${fullUrlObj.title} - ${tooltipUrl}${fullUrlObj.openInNewTab ? " (opens in new tab)" : ""}`;
+
+      // For URLs that open in new tabs, use ExternalUrlItem
+      if (fullUrlObj.openInNewTab) {
+        return (
+          <ExternalUrlItem
+            key={url.id}
+            url={fullUrlObj}
+            tooltipText={tooltipText}
+            menuPosition="side"
+            theme={theme}
+          />
+        );
+      }
+
+      // For normal URLs, use the UrlMenuItem
       return (
         <UrlMenuItem
           key={url.id}
-          url={{ ...url, title: url.title || url.url }}
+          url={fullUrlObj}
           isActive={isActive}
           isLoaded={isLoaded}
           onUrlClick={() => handleUrlClick(url.id)}
@@ -372,7 +427,7 @@ export const UrlMenu = memo(function UrlMenu({
         />
       );
     },
-    [activeUrlId, urls, handleUrlClick, handleUrlUnload],
+    [activeUrlId, urls, handleUrlClick, handleUrlUnload, theme, isMobile],
   );
 
   // Focus search input on keyboard shortcut

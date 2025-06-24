@@ -12,6 +12,7 @@ interface Url {
   idleTimeoutMinutes: number | null;
   displayOrder: number;
   isLocalhost: boolean;
+  openInNewTab: boolean;
   port: string | null;
   path: string | null;
   localhostMobilePath: string | null;
@@ -48,6 +49,7 @@ interface UserUrlGroupItem {
         idleTimeoutMinutes: number | null;
         // These fields might be missing in the Prisma output but we handle them in the map function
         isLocalhost?: boolean;
+        openInNewTab?: boolean;
         port?: string | null;
         path?: string | null;
         localhostMobilePath?: string | null;
@@ -116,6 +118,7 @@ export async function GET() {
           idleTimeoutMinutes: urlInGroup.url.idleTimeoutMinutes,
           displayOrder: urlInGroup.displayOrder,
           isLocalhost: urlInGroup.url.isLocalhost || false,
+          openInNewTab: urlInGroup.url.openInNewTab || false,
           port: urlInGroup.url.port || null,
           path: urlInGroup.url.path || null,
           localhostMobilePath: urlInGroup.url.localhostMobilePath || null,
