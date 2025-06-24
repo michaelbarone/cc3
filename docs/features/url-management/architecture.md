@@ -84,6 +84,7 @@ sequenceDiagram
 - **Assigned**: URL belongs to one or more groups
 - **Ordered**: URL has display order in group
 - **Mobile Configured**: URL has mobile variant
+- **External**: URL configured to open in a new browser tab instead of the iframe
 
 ### Group States
 - **Empty**: Group with no URLs

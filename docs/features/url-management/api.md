@@ -56,7 +56,13 @@ Request Body:
   "title": "string",
   "url": "string",
   "urlMobile": "string?",
-  "idleTimeoutMinutes": "number?"
+  "idleTimeoutMinutes": "number?",
+  "isLocalhost": "boolean?",
+  "openInNewTab": "boolean?",
+  "port": "string?",
+  "path": "string?",
+  "localhostMobilePort": "string?",
+  "localhostMobilePath": "string?"
 }
 ```
 
@@ -69,6 +75,12 @@ Response:
   "urlMobile": "string?",
   "iconPath": "string?",
   "idleTimeoutMinutes": "number",
+  "isLocalhost": "boolean",
+  "openInNewTab": "boolean",
+  "port": "string?",
+  "path": "string?",
+  "localhostMobilePort": "string?",
+  "localhostMobilePath": "string?",
   "createdAt": "string",
   "updatedAt": "string"
 }
@@ -85,7 +97,13 @@ Request Body:
   "title": "string?",
   "url": "string?",
   "urlMobile": "string?",
-  "idleTimeoutMinutes": "number?"
+  "idleTimeoutMinutes": "number?",
+  "isLocalhost": "boolean?",
+  "openInNewTab": "boolean?",
+  "port": "string?",
+  "path": "string?",
+  "localhostMobilePort": "string?",
+  "localhostMobilePath": "string?"
 }
 ```
 
@@ -98,6 +116,12 @@ Response:
   "urlMobile": "string?",
   "iconPath": "string?",
   "idleTimeoutMinutes": "number",
+  "isLocalhost": "boolean",
+  "openInNewTab": "boolean",
+  "port": "string?",
+  "path": "string?",
+  "localhostMobilePort": "string?",
+  "localhostMobilePath": "string?",
   "createdAt": "string",
   "updatedAt": "string"
 }

@@ -33,6 +33,7 @@
   - Fixed React hooks order issue in UrlMenu component
   - Improved side menu styling for external URL items
   - Fixed side menu button padding to match original buttons
+  - Updated documentation across components, API, and architecture
 - What's not:
   - Tests for the new functionality
 - Blocking issues: None
@@ -171,6 +172,24 @@ Need to add a new boolean field `openInNewTab` to the `Url` model in Prisma sche
 9. Update documentation
 
 ## Progress History
+
+### 2025-07-01 20:30 - Updated Documentation
+
+- ✓ Updated URL Management component documentation to include ExternalUrlItem component
+- ✓ Updated API documentation to include openInNewTab property in URL model
+- ✓ Updated architecture documentation to include "External" URL state
+- 🤔 Decisions: Comprehensive documentation updates across all relevant files
+- 📚 Documentation: Completed all required documentation updates
+- ⏭️ Next: Add tests for the new functionality
+
+### 2025-07-01 20:00 - Completed Implementation
+
+- ✓ Finalized tooltip text formatting for external URLs
+- ✓ Completed all required functionality for the feature
+- ✓ Verified functionality in both top menu and side menu
+- 🤔 Decisions: Used consistent visual indicators across all menu locations
+- 📚 Documentation: Updated plan with completion status
+- ⏭️ Next: Add tests and update feature documentation
 
 ### 2025-07-01 19:30 - Fixed Side Menu Button Padding
 
