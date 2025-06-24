@@ -14,6 +14,11 @@ This document serves as the main project plan and tracks the status of all tasks
 
 ## Future Tasks
 
+### url context different in groups
+- **Description**: When a URL is added to a group, the context of the URL should be different in the group than it is in the main menu.  For example, each url should get its own iframe and iframe loaded state, even if the same url is added to multiple groups that the user has access to.
+- **Priority**: Medium
+- **Estimated Effort**: 1 week
+
 ### Iframe UX - user registration
 - **Description**: check if user registration is working as expected.  if so, add option to specify default groups for new users.
 - **Priority**: High
