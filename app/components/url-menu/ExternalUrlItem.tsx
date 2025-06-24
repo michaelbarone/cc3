@@ -93,14 +93,16 @@ const ExternalUrlItem = memo(function ExternalUrlItem({
           position: "relative" as const,
         },
         externalIconStyles: {
-          position: "relative" as const,
-          marginLeft: 1,
+          position: "absolute" as const,
+          right: 0,
+          top: "5px",
           fontSize: 14,
           color: theme.palette.text.secondary,
           opacity: 0.7,
           padding: "1px",
         },
         titleStyles: {
+          mx: 1.5,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
@@ -125,15 +127,12 @@ const ExternalUrlItem = memo(function ExternalUrlItem({
           >
             <Box sx={styles.boxStyles}>
               {url.iconPath ? (
-                <>
-                  <Box component="img" src={url.iconPath} alt="" sx={styles.iconStyles} />
-                  {url.title && <Box sx={styles.titleStyles}>{url.title}</Box>}
-                </>
+                <Box component="img" src={url.iconPath} alt="" sx={styles.iconStyles} />
               ) : (
                 <Box sx={styles.titleStyles}>{url.title}</Box>
               )}
-              <OpenInNewIcon sx={styles.externalIconStyles} fontSize="small" />
             </Box>
+            <OpenInNewIcon sx={styles.externalIconStyles} fontSize="small" />
           </Button>
         </Tooltip>
       </Box>
