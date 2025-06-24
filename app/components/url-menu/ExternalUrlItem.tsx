@@ -1,4 +1,5 @@
 import { Url } from "@/app/lib/types";
+import { getEffectiveUrl } from "@/app/lib/utils/iframe-utils";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import {
   Box,
@@ -24,13 +25,32 @@ const ExternalUrlItem = memo(function ExternalUrlItem({
   menuPosition,
   theme,
 }: ExternalUrlItemProps) {
-  // Simple click handler that opens the URL in a new tab
-  const handleClick = () => {
-    window.open(url.url, "_blank", "noopener,noreferrer");
-  };
-
   // Check if we're on mobile
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
+
+  // Simple click handler that opens the URL in a new tab
+  const handleClick = () => {
+    // Get the effective URL based on localhost settings and device
+    const effectiveUrl = url.isLocalhost
+      ? getEffectiveUrl(
+          {
+            id: url.id,
+            url: url.url,
+            urlMobile: url.urlMobile,
+            isLocalhost: true,
+            port: url.port || null,
+            path: url.path || null,
+            localhostMobilePath: url.localhostMobilePath || null,
+            localhostMobilePort: url.localhostMobilePort || null,
+          },
+          isMobile,
+        )
+      : isMobile && url.urlMobile
+        ? url.urlMobile
+        : url.url;
+
+    window.open(effectiveUrl, "_blank", "noopener,noreferrer");
+  };
 
   // For top menu, use Button-based styling
   if (menuPosition === "top") {
